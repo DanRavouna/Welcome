@@ -1,0 +1,17 @@
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#FFD86B}a:hover{color:#FFE69A}
+button:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
+@keyframes revealA{0%{filter:brightness(0);transform:scale(.92)}15%{transform:translateX(-4px) scale(.92)}30%{transform:translateX(4px) scale(.92)}45%{filter:brightness(0);transform:translateX(-3px) scale(.94)}60%{filter:brightness(0);transform:translateX(0) scale(.96)}72%{filter:brightness(1.5);transform:scale(1.08)}100%{filter:brightness(1);transform:scale(1)}}
+@keyframes revealB{0%{filter:brightness(0);transform:scale(.92)}15%{transform:translateX(-4px) scale(.92)}30%{transform:translateX(4px) scale(.92)}45%{filter:brightness(0);transform:translateX(-3px) scale(.94)}60%{filter:brightness(0);transform:translateX(0) scale(.96)}72%{filter:brightness(1.5);transform:scale(1.08)}100%{filter:brightness(1);transform:scale(1)}}
+@keyframes glowA{0%{opacity:0}55%{opacity:1}100%{opacity:0}}
+@keyframes glowB{0%{opacity:0}55%{opacity:1}100%{opacity:0}}
+.reveal-a{animation:revealA 1s ease-out both}.reveal-b{animation:revealB 1s ease-out both}
+.glow-a{animation:glowA 1.2s ease-out both}.glow-b{animation:glowB 1.2s ease-out both}
+@keyframes hitA{0%{transform:translateX(0)}20%{transform:translateX(-7px);filter:brightness(1.6)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}100%{transform:translateX(0);filter:brightness(1)}}
+@keyframes hitB{0%{transform:translateX(0)}20%{transform:translateX(-7px);filter:brightness(1.6)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}100%{transform:translateX(0);filter:brightness(1)}}
+.hit-a{animation:hitA 420ms ease-out}.hit-b{animation:hitB 420ms ease-out}
+@media (prefers-reduced-motion: reduce){.reveal-a,.reveal-b,.glow-a,.glow-b,.hit-a,.hit-b{animation:none}}
+</style>

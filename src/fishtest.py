@@ -1,0 +1,29 @@
+from playwright.sync_api import sync_playwright
+errs=[]
+with sync_playwright() as p:
+  b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
+  pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1100)
+  pg.evaluate("APP.game.update({caught:[{seed:2,stage:2,lv:9},{seed:5001,stage:1}], party:[2,5001], fighter:2, npc:{done:['fern'],beaten:{},cleared:[],seals:[]}})")
+  # follower: walk right for a second
+  pg.evaluate("WORLD.enter('town'); WORLD.setPos(20*WORLD.TS, 23.6*WORLD.TS)"); pg.wait_for_timeout(100)
+  for _ in range(40): pg.evaluate("WORLD.input.jx=1; WORLD.step(1/30)")
+  pg.evaluate("WORLD.input.jx=0"); pg.wait_for_timeout(200)
+  f=pg.evaluate("(()=>{const F=WORLD.follower(), P=WORLD.pos(); return {behind: +((P.x-F.x)/WORLD.TS).toFixed(2), dy:+((P.y-F.y)/WORLD.TS).toFixed(2)}})()")
+  print('follower tiles behind player (x, y):', f['behind'], f['dy'])
+  pg.screenshot(path='/tmp/follow.png', clip={'x':95,'y':380,'width':200,'height':170})
+  pg.evaluate("WORLD.enter('in-home')"); pg.wait_for_timeout(100); print('follower indoors:', pg.evaluate("!!WORLD.follower()"))
+  # fishing at Mossbrook pond
+  pg.evaluate("WORLD.enter('mossbrook'); WORLD.setPos(16.5*WORLD.TS, 22.4*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(60)
+  print('label by pond:', pg.inner_text('#act-label'))
+  s0=pg.evaluate("(APP.game.state.sight||{n:0}).n"); pg.click('#act'); pg.wait_for_timeout(300)
+  print('cast toast:', pg.inner_text('#toast'))
+  pg.screenshot(path='/tmp/bobber.png', clip={'x':95,'y':380,'width':200,'height':170})
+  pg.wait_for_timeout(3600)
+  print('encounter opened:', pg.evaluate("!document.getElementById('screen').hidden && APP.game.state.tab==='roll'"), '| caught type:', pg.evaluate("APP.game.make(APP.game.state.seed,1).element.name"), '| sightings used:', pg.evaluate("(APP.game.state.sight||{n:0}).n")-s0)
+  pg.evaluate("APP.close()")
+  print('fish type mix over 1000 casts (Moss Forest):', pg.evaluate("""(()=>{const M={types:['Moss','Bloom']}; const c={}; for(let i=0;i<1000;i++){ const local=M.types.filter(t=>t!=='Tide'); const types=Math.random()<0.7||!local.length?['Tide']:local; const t=APP.game.make(APP.game.pickSeed(types,false),1).element.name; c[t]=(c[t]||0)+1; } return c;})()"""))
+  pg.evaluate("WORLD.enter('cinderport'); WORLD.setPos(5.5*WORLD.TS, 14.6*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(60)
+  print('label next to lava:', pg.inner_text('#act-label'), '| lava tile near:', pg.evaluate("[13,14,15].some(y=>[4,5,6].some(x=>WORLD.MAPS.cinderport.grid[y][x]==='~'))"))
+  pg.evaluate("APP.game.update({settings:Object.assign({},APP.game.state.settings,{follow:false})})"); pg.wait_for_timeout(50)
+  print('follow off -> follower data null:', pg.evaluate("APP.game.state.settings.follow===false"))
+  print('errors:', errs or 'none'); b.close()

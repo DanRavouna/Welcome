@@ -1,0 +1,25 @@
+
+<div role="img" aria-label="{{k.alt}}" style="position: relative; width: 240px; height: 210px; color: #1E2340">
+  <div aria-hidden="true" style="position: absolute; left: 45px; top: 191px; width: 150px; height: 16px; border-radius: 50%; background: radial-gradient(closest-side, rgba(10,40,10,0.38), rgba(10,40,10,0))"></div>
+  <sc-for list="{{k.parts}}" as="p" hint-placeholder-count="2">
+    <div aria-hidden="true" style="position: absolute; box-sizing: border-box; left: {{p.x}}px; top: {{p.y}}px; width: {{p.w}}px; height: {{p.h}}px; border-radius: {{p.r}}; transform: rotate({{p.rot}}deg); background: {{p.bg}}; border: {{p.bw}}px solid {{p.bc}}"></div>
+  </sc-for>
+  <div aria-hidden="true" style="position: absolute; box-sizing: border-box; left: {{k.body.x}}px; top: {{k.body.y}}px; width: {{k.body.w}}px; height: {{k.body.h}}px; border-radius: {{k.body.r}}; background: {{k.bodyFill}}; border: 3px solid {{k.outline}}; box-shadow: inset 0 -8px 14px rgba(0,0,0,0.12)"></div>
+  <div aria-hidden="true" style="position: absolute; left: {{k.belly.x}}px; top: {{k.belly.y}}px; width: {{k.belly.w}}px; height: {{k.belly.h}}px; border-radius: 50%; background: {{k.bellyBg}}"></div>
+  <sc-for list="{{k.over}}" as="o" hint-placeholder-count="2">
+    <div aria-hidden="true" style="position: absolute; left: {{o.x}}px; top: {{o.y}}px; width: {{o.w}}px; height: {{o.h}}px; border-radius: {{o.r}}; transform: rotate({{o.rot}}deg); background: {{o.bg}}"></div>
+  </sc-for>
+  <div aria-hidden="true" style="position: absolute; left: {{k.eyeRow.x}}px; top: {{k.eyeRow.y}}px; width: {{k.eyeRow.w}}px; display: flex; justify-content: center; gap: 8px">
+    <sc-for list="{{k.eyes}}" as="e" hint-placeholder-count="2">
+      <div style="width: {{e.s}}px; height: {{e.s}}px; box-sizing: border-box; border-radius: 50%; border: 2.5px solid #1E2340; background: #FFFFFF; display: flex; align-items: center; padding: 2px; justify-content: {{k.look}}">
+        <div style="position: relative; width: {{e.ps}}px; height: {{e.ps}}px; border-radius: 50%; background: radial-gradient(circle at 50% 60%, #3B4A8C 0%, #1E2340 70%)">
+          <div style="position: absolute; left: 18%; top: 14%; width: 38%; height: 38%; border-radius: 50%; background: #FFFFFF"></div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div aria-hidden="true" style="position: absolute; box-sizing: border-box; left: {{k.mouth.x}}px; top: {{k.mouth.y}}px; width: {{k.mouth.w}}px; height: {{k.mouth.h}}px; border-radius: {{k.mouth.r}}; background: {{k.mouth.bg}}; border-style: solid; border-color: #1E2340; border-width: {{k.mouth.bw}}"></div>
+  <sc-for list="{{k.fx}}" as="x" hint-placeholder-count="0">
+    <div aria-hidden="true" style="position: absolute; left: {{x.x}}px; top: {{x.y}}px; width: {{x.s}}px; height: {{x.s}}px; transform: rotate(45deg); border-radius: 2px; background: #FFF7D6; box-shadow: 0 0 8px #FFD86B, 0 0 2px #FFFFFF"></div>
+  </sc-for>
+</div>
