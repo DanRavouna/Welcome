@@ -639,6 +639,18 @@ class Component extends Base {
     const types = {};
     caught.forEach((k) => { types[k.element.name] = true; });
     const typesFound = Object.keys(types).length;
+    // Dex filters and sorting (view settings only: not saved)
+    const DEXT = ['Ember', 'Tide', 'Moss', 'Volt', 'Frost', 'Dusk', 'Stone', 'Bloom'], dexType = st.dexType || null, dexSort = st.dexSort || 'order', dexShiny = !!st.dexShiny, dexMissing = !!st.dexMissing;
+    const RANK = { Mythic: 0, Rare: 1, Uncommon: 2, Common: 3 };
+    let caughtShown = caught.filter((k) => (!dexType || k.element.name === dexType) && (!dexShiny || k.shiny));
+    const idx = new Map(caught.map((k, i) => [k, i]));
+    const cmp = { order: (a, b) => idx.get(a) - idx.get(b), newest: (a, b) => idx.get(b) - idx.get(a), level: (a, b) => (b.lv || 1) - (a.lv || 1) || idx.get(a) - idx.get(b), rarity: (a, b) => RANK[a.rarity] - RANK[b.rarity] || idx.get(a) - idx.get(b), name: (a, b) => a.name.localeCompare(b.name) }[dexSort] || ((a, b) => 0);
+    caughtShown = caughtShown.slice().sort(cmp);
+    const chip = (label, on, go, dot) => ({ label: label, pressed: on ? 'true' : 'false', go: go, bg: on ? '#1E2A4A' : 'rgba(255,255,255,0.75)', fg: on ? '#FFFFFF' : '#1E2A4A', dot: dot || 'transparent' });
+    const dexTypeChips = [chip('All types', !dexType, () => this.setState({ dexType: null }))].concat(DEXT.map((t) => chip(t, dexType === t, () => this.setState({ dexType: dexType === t ? null : t }), { Ember: '#FF7A45', Tide: '#3E8EF7', Moss: '#4FB06D', Volt: '#F5C518', Frost: '#8FD8EA', Dusk: '#8B6CF0', Stone: '#A79C90', Bloom: '#F27BB5' }[t])));
+    const dexSortChips = [['order', 'Kept order'], ['newest', 'Newest'], ['level', 'Level'], ['rarity', 'Rarity'], ['name', 'Name']].map(([id, l]) => chip(l, dexSort === id, () => this.setState({ dexSort: id })))
+      .concat([chip('★ Shiny only', dexShiny, () => this.setState({ dexShiny: !dexShiny }))]);
+    const dexCount = 'Showing ' + caughtShown.length + ' of ' + caught.length;
 
     const beats = this.beats();
     const b = st.battle;
@@ -745,13 +757,15 @@ class Component extends Base {
           select: () => this.setState({ speciesSel: no })
         };
       });
-      return { name: tn, color: TCOL[tn], count: cells.filter((x) => x.found).length + '/6', cells: cells };
-    });
+      return { name: tn, color: TCOL[tn], count: cells.filter((x) => x.found).length + '/6', cells: dexMissing ? cells.filter((x) => !x.found) : cells };
+    }).filter((r) => r.cells.length > 0);
+    const speciesChips = [chip('All species', !dexMissing, () => this.setState({ dexMissing: false })), chip('Not yet found', dexMissing, () => this.setState({ dexMissing: true }))];
     const spTi = Math.floor((spSel - 1) / 6), spSi = (spSel - 1) % 6, spFound = seen.indexOf(spSel) !== -1;
     const spd = {
       no: String(spSel).padStart(3, '0'),
       name: spFound ? this.speciesName(spTi, spSi) : 'Unknown species',
       line: TYPES[spTi] + ' type · ' + SHAPE_NAMES[spSi] + ' body',
+      extra: 'Ability ' + ABILITIES[TYPES[spTi]].name + ': ' + ABILITIES[TYPES[spTi]].text + (Object.keys(WEATHER.KINDS).filter((k) => WEATHER.KINDS[k].type === TYPES[spTi]).map((k) => ' Appears more in ' + WEATHER.KINDS[k].label.toLowerCase() + '.')[0] || ''),
       status: spFound ? 'Discovered' + (caught.filter((k) => k.speciesNo === spSel).length ? ' · ' + caught.filter((k) => k.speciesNo === spSel).length + ' kept' : '') : 'Not found yet. Keep one to discover it.',
       color: TCOL[TYPES[spTi]], radius: shapes[spSi],
       fill: spFound ? 'radial-gradient(circle at 34% 26%, #FFFFFF 0%, ' + TCOL[TYPES[spTi]] + ' 55%)' : '#5A6890'
@@ -855,7 +869,7 @@ class Component extends Base {
       rollBg: noEnergy ? offBg : primaryBg,
       rollFg: noEnergy ? offFg : '#2A1B00',
       rollShadow: noEnergy ? 'none' : glowShadow,
-      caught: caught,
+      caught: caughtShown, dexTypeChips: dexTypeChips, dexSortChips: dexSortChips, dexCount: dexCount, dexNoMatch: caught.length > 0 && caughtShown.length === 0,
       caughtCount: st.caught.length,
       typesFound: typesFound,
       hasCaught: st.caught.length > 0,
@@ -918,7 +932,7 @@ class Component extends Base {
       speciesFound: seen.length,
       dexToggle: dexToggle,
       showDexToggle: tab === 'dex' && !detail,
-      showSpecies: tab === 'dex' && !detail && dexView === 'species',
+      showSpecies: tab === 'dex' && !detail && dexView === 'species', speciesChips: speciesChips, dexNoMissing: dexMissing && speciesRows.length === 0,
       showLevelUp: !!st.levelUp,
       levelUpText: st.levelUp ? 'Trainer level ' + st.levelUp + '! +2 essence' : '',
       badgeCount: badges.filter((x) => x.earned).length,

@@ -158,6 +158,10 @@ Attach this file plus `critter-roll-growth-source.tar.gz` (latest source + tests
 - Weather details in `world.js`: `waterFx` (rain ripples on `~` tiles, storm whitecaps), `snowCaps` (white scalloped cap on the top third of ordinary building roofs while it snows; skips board/device/shrine). All drawn before the entities; interiors get none.
 - Test: `ambienttest.py` (per-map counts, none indoors, bird flees, crabs on sand, day/night/rain visibility, screenshots to /tmp/amb-*.png). Perf: perf.py world_frame_avg 0.6 -> 0.9 ms headless (machine noise is +-40%, but the new drawing does cost something; compare on a real phone).
 
+## Dex polish (done, Nov 2026)
+- "My critters": filter chips by type (8 types, colour dots) and "Shiny only", sort chips (Kept order = old default, Newest, Level, Rarity, Name), a "Showing X of Y" line and an empty-match message. "Species": "All species" / "Not yet found" chips (hides found cells and empty type rows; message when everything is found). Species detail now shows the type's ability and the weather that favours it.
+- Filters live in UI state only (`dexType`, `dexSort`, `dexShiny`, `dexMissing` via `setState`), never in the save. Code: `renderVals` in `base.js` (chips are plain objects `{label, pressed, go, bg, fg, dot}`), template in `screen.html`. Test: `dextest.py`.
+
 ## Housekeeping (done)
 - `app.js` is now four files in build order: `base.js` (Base + Component), `data.js` (constants), `game.js` (Game), `app.js` (APP). Pure split: built output is identical apart from one comment. `weather.js` was added (see weather section below in git history). Tests run by group: `bash src/run-tests.sh @world|@battle|@saves|@ui`.
 

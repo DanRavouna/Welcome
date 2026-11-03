@@ -144,6 +144,15 @@
           <span style="padding: 3px 10px; border-radius: 999px; background: rgba(14,20,80,0.4); font-size: 13px; font-weight: 900; color: #FFFFFF; white-space: nowrap">{{speciesFound}}/48 found</span>
         </div>
 
+        <div role="group" aria-label="Species filter" style="display: flex; gap: 6px">
+          <sc-for list="{{speciesChips}}" as="ch" hint-placeholder-count="2">
+            <button onClick="{{ch.go}}" aria-pressed="{{ch.pressed}}" style="min-height: 36px; padding: 0 14px; border: 1.5px solid #1E2A4A; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; background: {{ch.bg}}; color: {{ch.fg}}">{{ch.label}}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{dexNoMissing}}" hint-placeholder-val="{{ false }}">
+          <p style="margin: 0; padding: 16px; border-radius: 16px; text-align: center; font-size: 14px; font-weight: 800; color: #3A4868; background: rgba(255,255,255,0.7); border: 1.5px dashed #6A7CA8">You have found every species. Nothing is missing.</p>
+        </sc-if>
+
         <div aria-live="polite" style="border-radius: 20px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; background: #1E2A4A; border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 10px 26px rgba(20,30,70,0.3)">
           <div style="flex-shrink: 0; width: 56px; height: 56px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid #F5C542; background: #EAF2FF">
             <img src="{{spd.icon}}" alt="" width="36" height="32" style="width: 36px; height: 32px; image-rendering: pixelated">
@@ -152,6 +161,7 @@
             <span style="font-size: 12px; font-weight: 800; color: #C9D6F2">#{{spd.no}} · {{spd.line}}</span>
             <span style="font-size: 18px; font-weight: 900; color: #FFD86B">{{spd.name}}</span>
             <span style="font-size: 13px; font-weight: 700; line-height: 1.3; color: #E6ECF7">{{spd.status}}</span>
+            <span style="font-size: 12px; font-weight: 700; line-height: 1.3; color: #C9D6F2">{{spd.extra}}</span>
           </div>
         </div>
 
@@ -185,6 +195,22 @@
           </div>
         </div>
         <p style="margin: 0 4px; font-size: 13px; font-weight: 700; line-height: 1.4; color: #3A4868">Tap a critter to evolve or release it. Releasing gives essence.</p>
+        <sc-if value="{{hasCaught}}" hint-placeholder-val="{{ false }}">
+          <div role="group" aria-label="Filter by type" style="display: flex; flex-wrap: wrap; gap: 6px">
+            <sc-for list="{{dexTypeChips}}" as="ch" hint-placeholder-count="9">
+              <button onClick="{{ch.go}}" aria-pressed="{{ch.pressed}}" style="min-height: 36px; padding: 0 12px; border: 1.5px solid #1E2A4A; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: {{ch.bg}}; color: {{ch.fg}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: {{ch.dot}}"></span>{{ch.label}}</button>
+            </sc-for>
+          </div>
+          <div role="group" aria-label="Sort" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+            <sc-for list="{{dexSortChips}}" as="ch" hint-placeholder-count="6">
+              <button onClick="{{ch.go}}" aria-pressed="{{ch.pressed}}" style="min-height: 36px; padding: 0 12px; border: 1.5px solid #1E2A4A; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; background: {{ch.bg}}; color: {{ch.fg}}">{{ch.label}}</button>
+            </sc-for>
+          </div>
+          <span aria-live="polite" style="margin: 0 4px; font-size: 12px; font-weight: 800; color: #3A4868">{{dexCount}}</span>
+          <sc-if value="{{dexNoMatch}}" hint-placeholder-val="{{ false }}">
+            <p style="margin: 0; padding: 16px; border-radius: 16px; text-align: center; font-size: 14px; font-weight: 700; color: #3A4868; background: rgba(255,255,255,0.7); border: 1.5px dashed #6A7CA8">No critter matches these filters. Tap a chip again to clear it.</p>
+          </sc-if>
+        </sc-if>
 
         <sc-if value="{{noCaught}}" hint-placeholder-val="{{ true }}">
           <div style="border-radius: 20px; padding: 26px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; background: rgba(255,255,255,0.7); border: 1.5px dashed #6A7CA8">

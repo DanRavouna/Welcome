@@ -459,6 +459,15 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
           <span style="padding: 3px 10px; border-radius: 999px; background: rgba(14,20,80,0.4); font-size: 13px; font-weight: 900; color: #FFFFFF; white-space: nowrap">{{speciesFound}}/48 found</span>
         </div>
 
+        <div role="group" aria-label="Species filter" style="display: flex; gap: 6px">
+          <sc-for list="{{speciesChips}}" as="ch" hint-placeholder-count="2">
+            <button onClick="{{ch.go}}" aria-pressed="{{ch.pressed}}" style="min-height: 36px; padding: 0 14px; border: 1.5px solid #1E2A4A; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; background: {{ch.bg}}; color: {{ch.fg}}">{{ch.label}}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{dexNoMissing}}" hint-placeholder-val="{{ false }}">
+          <p style="margin: 0; padding: 16px; border-radius: 16px; text-align: center; font-size: 14px; font-weight: 800; color: #3A4868; background: rgba(255,255,255,0.7); border: 1.5px dashed #6A7CA8">You have found every species. Nothing is missing.</p>
+        </sc-if>
+
         <div aria-live="polite" style="border-radius: 20px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; background: #1E2A4A; border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 10px 26px rgba(20,30,70,0.3)">
           <div style="flex-shrink: 0; width: 56px; height: 56px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid #F5C542; background: #EAF2FF">
             <img src="{{spd.icon}}" alt="" width="36" height="32" style="width: 36px; height: 32px; image-rendering: pixelated">
@@ -467,6 +476,7 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
             <span style="font-size: 12px; font-weight: 800; color: #C9D6F2">#{{spd.no}} · {{spd.line}}</span>
             <span style="font-size: 18px; font-weight: 900; color: #FFD86B">{{spd.name}}</span>
             <span style="font-size: 13px; font-weight: 700; line-height: 1.3; color: #E6ECF7">{{spd.status}}</span>
+            <span style="font-size: 12px; font-weight: 700; line-height: 1.3; color: #C9D6F2">{{spd.extra}}</span>
           </div>
         </div>
 
@@ -500,6 +510,22 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
           </div>
         </div>
         <p style="margin: 0 4px; font-size: 13px; font-weight: 700; line-height: 1.4; color: #3A4868">Tap a critter to evolve or release it. Releasing gives essence.</p>
+        <sc-if value="{{hasCaught}}" hint-placeholder-val="{{ false }}">
+          <div role="group" aria-label="Filter by type" style="display: flex; flex-wrap: wrap; gap: 6px">
+            <sc-for list="{{dexTypeChips}}" as="ch" hint-placeholder-count="9">
+              <button onClick="{{ch.go}}" aria-pressed="{{ch.pressed}}" style="min-height: 36px; padding: 0 12px; border: 1.5px solid #1E2A4A; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: {{ch.bg}}; color: {{ch.fg}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: {{ch.dot}}"></span>{{ch.label}}</button>
+            </sc-for>
+          </div>
+          <div role="group" aria-label="Sort" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+            <sc-for list="{{dexSortChips}}" as="ch" hint-placeholder-count="6">
+              <button onClick="{{ch.go}}" aria-pressed="{{ch.pressed}}" style="min-height: 36px; padding: 0 12px; border: 1.5px solid #1E2A4A; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; background: {{ch.bg}}; color: {{ch.fg}}">{{ch.label}}</button>
+            </sc-for>
+          </div>
+          <span aria-live="polite" style="margin: 0 4px; font-size: 12px; font-weight: 800; color: #3A4868">{{dexCount}}</span>
+          <sc-if value="{{dexNoMatch}}" hint-placeholder-val="{{ false }}">
+            <p style="margin: 0; padding: 16px; border-radius: 16px; text-align: center; font-size: 14px; font-weight: 700; color: #3A4868; background: rgba(255,255,255,0.7); border: 1.5px dashed #6A7CA8">No critter matches these filters. Tap a chip again to clear it.</p>
+          </sc-if>
+        </sc-if>
 
         <sc-if value="{{noCaught}}" hint-placeholder-val="{{ true }}">
           <div style="border-radius: 20px; padding: 26px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; background: rgba(255,255,255,0.7); border: 1.5px dashed #6A7CA8">
@@ -3429,6 +3455,18 @@ class Component extends Base {
     const types = {};
     caught.forEach((k) => { types[k.element.name] = true; });
     const typesFound = Object.keys(types).length;
+    // Dex filters and sorting (view settings only: not saved)
+    const DEXT = ['Ember', 'Tide', 'Moss', 'Volt', 'Frost', 'Dusk', 'Stone', 'Bloom'], dexType = st.dexType || null, dexSort = st.dexSort || 'order', dexShiny = !!st.dexShiny, dexMissing = !!st.dexMissing;
+    const RANK = { Mythic: 0, Rare: 1, Uncommon: 2, Common: 3 };
+    let caughtShown = caught.filter((k) => (!dexType || k.element.name === dexType) && (!dexShiny || k.shiny));
+    const idx = new Map(caught.map((k, i) => [k, i]));
+    const cmp = { order: (a, b) => idx.get(a) - idx.get(b), newest: (a, b) => idx.get(b) - idx.get(a), level: (a, b) => (b.lv || 1) - (a.lv || 1) || idx.get(a) - idx.get(b), rarity: (a, b) => RANK[a.rarity] - RANK[b.rarity] || idx.get(a) - idx.get(b), name: (a, b) => a.name.localeCompare(b.name) }[dexSort] || ((a, b) => 0);
+    caughtShown = caughtShown.slice().sort(cmp);
+    const chip = (label, on, go, dot) => ({ label: label, pressed: on ? 'true' : 'false', go: go, bg: on ? '#1E2A4A' : 'rgba(255,255,255,0.75)', fg: on ? '#FFFFFF' : '#1E2A4A', dot: dot || 'transparent' });
+    const dexTypeChips = [chip('All types', !dexType, () => this.setState({ dexType: null }))].concat(DEXT.map((t) => chip(t, dexType === t, () => this.setState({ dexType: dexType === t ? null : t }), { Ember: '#FF7A45', Tide: '#3E8EF7', Moss: '#4FB06D', Volt: '#F5C518', Frost: '#8FD8EA', Dusk: '#8B6CF0', Stone: '#A79C90', Bloom: '#F27BB5' }[t])));
+    const dexSortChips = [['order', 'Kept order'], ['newest', 'Newest'], ['level', 'Level'], ['rarity', 'Rarity'], ['name', 'Name']].map(([id, l]) => chip(l, dexSort === id, () => this.setState({ dexSort: id })))
+      .concat([chip('★ Shiny only', dexShiny, () => this.setState({ dexShiny: !dexShiny }))]);
+    const dexCount = 'Showing ' + caughtShown.length + ' of ' + caught.length;
 
     const beats = this.beats();
     const b = st.battle;
@@ -3535,13 +3573,15 @@ class Component extends Base {
           select: () => this.setState({ speciesSel: no })
         };
       });
-      return { name: tn, color: TCOL[tn], count: cells.filter((x) => x.found).length + '/6', cells: cells };
-    });
+      return { name: tn, color: TCOL[tn], count: cells.filter((x) => x.found).length + '/6', cells: dexMissing ? cells.filter((x) => !x.found) : cells };
+    }).filter((r) => r.cells.length > 0);
+    const speciesChips = [chip('All species', !dexMissing, () => this.setState({ dexMissing: false })), chip('Not yet found', dexMissing, () => this.setState({ dexMissing: true }))];
     const spTi = Math.floor((spSel - 1) / 6), spSi = (spSel - 1) % 6, spFound = seen.indexOf(spSel) !== -1;
     const spd = {
       no: String(spSel).padStart(3, '0'),
       name: spFound ? this.speciesName(spTi, spSi) : 'Unknown species',
       line: TYPES[spTi] + ' type · ' + SHAPE_NAMES[spSi] + ' body',
+      extra: 'Ability ' + ABILITIES[TYPES[spTi]].name + ': ' + ABILITIES[TYPES[spTi]].text + (Object.keys(WEATHER.KINDS).filter((k) => WEATHER.KINDS[k].type === TYPES[spTi]).map((k) => ' Appears more in ' + WEATHER.KINDS[k].label.toLowerCase() + '.')[0] || ''),
       status: spFound ? 'Discovered' + (caught.filter((k) => k.speciesNo === spSel).length ? ' · ' + caught.filter((k) => k.speciesNo === spSel).length + ' kept' : '') : 'Not found yet. Keep one to discover it.',
       color: TCOL[TYPES[spTi]], radius: shapes[spSi],
       fill: spFound ? 'radial-gradient(circle at 34% 26%, #FFFFFF 0%, ' + TCOL[TYPES[spTi]] + ' 55%)' : '#5A6890'
@@ -3645,7 +3685,7 @@ class Component extends Base {
       rollBg: noEnergy ? offBg : primaryBg,
       rollFg: noEnergy ? offFg : '#2A1B00',
       rollShadow: noEnergy ? 'none' : glowShadow,
-      caught: caught,
+      caught: caughtShown, dexTypeChips: dexTypeChips, dexSortChips: dexSortChips, dexCount: dexCount, dexNoMatch: caught.length > 0 && caughtShown.length === 0,
       caughtCount: st.caught.length,
       typesFound: typesFound,
       hasCaught: st.caught.length > 0,
@@ -3708,7 +3748,7 @@ class Component extends Base {
       speciesFound: seen.length,
       dexToggle: dexToggle,
       showDexToggle: tab === 'dex' && !detail,
-      showSpecies: tab === 'dex' && !detail && dexView === 'species',
+      showSpecies: tab === 'dex' && !detail && dexView === 'species', speciesChips: speciesChips, dexNoMissing: dexMissing && speciesRows.length === 0,
       showLevelUp: !!st.levelUp,
       levelUpText: st.levelUp ? 'Trainer level ' + st.levelUp + '! +2 essence' : '',
       badgeCount: badges.filter((x) => x.earned).length,
