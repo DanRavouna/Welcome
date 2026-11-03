@@ -821,7 +821,7 @@ const APP = (() => {
     WORLD.init($('world'), {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
-      weather: () => weatherAt(WORLD.map.id), still: stillMotion,
+      weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
       exitLocked: (e) => !game.props.testMode && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.testMode && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       follower: () => {

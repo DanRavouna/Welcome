@@ -619,6 +619,35 @@ const WORLD = (() => {
     ctx.fillStyle = gold ? '#FFF1BF' : '#3A4A78'; ctx.fillRect(x + 2, y + 2, w - 4, 2);
     ctx.fillStyle = gold ? '#2A1B00' : '#FFFFFF'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, x + w / 2, y + 12);
   }
+  const hash2 = (a, b, c) => { let h = Math.imul(a + 374761393, 668265263) ^ Math.imul(b + 1274126177, 2246822519) ^ Math.imul(c + 99, 3266489917); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+  // rain ripples / storm whitecaps on visible water tiles (pixel rings, 2 px steps)
+  function waterFx(kind, cx, cy) {
+    const x0 = Math.max(0, Math.floor(cx / TS)), x1 = Math.min(M.W - 1, Math.floor((cx + vw) / TS)), y0 = Math.max(0, Math.floor(cy / TS)), y1 = Math.min(M.H - 1, Math.floor((cy + vh) / TS));
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
+      if (M.grid[ty][tx] !== '~') continue;
+      const sx = Math.round(tx * TS - cx), sy = Math.round(ty * TS - cy);
+      if (kind === 'storm') { // choppy whitecaps flicker on and off
+        const f = Math.floor(tAnim * 2.5); ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        for (let k = 0; k < 2; k++) if (hash2(tx, ty, f * 2 + k) < 0.35) { const ox = Math.floor(hash2(tx, ty, 50 + k + f) * 20) & ~1, oy = (6 + Math.floor(hash2(tx, ty, 90 + k) * 18)) & ~1; ctx.fillRect(sx + ox, sy + oy, 8, 2); ctx.fillRect(sx + ox + 2, sy + oy - 2, 4, 2); }
+      } else {
+        for (let k = 0; k < 2; k++) { const ph = (tAnim * 0.9 + hash2(tx, ty, k) * 3) % 1.6; if (ph > 0.8) continue;
+          const sz = 2 + Math.floor(ph * 8) * 2, ox = 8 + Math.floor(hash2(tx, ty, 10 + k) * 14), oy = 8 + Math.floor(hash2(tx, ty, 20 + k) * 14), a = (1 - ph / 0.8) * 0.55;
+          ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; const w = sz * 2, h = sz, x = sx + (ox & ~1) - sz, y = sy + (oy & ~1) - (sz >> 1);
+          ctx.fillRect(x + 2, y, w - 4, 2); ctx.fillRect(x + 2, y + h - 2, w - 4, 2); ctx.fillRect(x, y + 2, 2, Math.max(0, h - 4)); ctx.fillRect(x + w - 2, y + 2, 2, Math.max(0, h - 4)); }
+      }
+    }
+  }
+  // snow settles on the roofs of ordinary buildings
+  function snowCaps(cx, cy) {
+    M.places.forEach((p) => {
+      if (p.w < 3 || ['board', 'device', 'shrine'].indexOf(p.kind) !== -1) return;
+      const x = Math.round(p.x * TS - cx), y = Math.round(p.y * TS - cy), w = p.w * TS; if (x > vw + 40 || x + w < -40 || y > vh + 40 || y + p.h * TS < -40) return;
+      const roofH = Math.round(p.h * TS * 0.5), capH = Math.max(12, Math.round(roofH * 0.36) & ~1);
+      ctx.fillStyle = 'rgba(255,255,255,0.96)'; ctx.fillRect(x + 6, y + 2, w - 12, 4); ctx.fillRect(x + 2, y + 6, w - 4, capH - 4);
+      ctx.fillStyle = 'rgba(200,216,238,0.97)'; ctx.fillRect(x + 2, y + capH + 2, w - 4, 2); // shaded lower edge
+      for (let i = 0; i < Math.floor((w - 4) / 6); i++) { const dr = ((i * 7 + p.x) % 3) * 2; ctx.fillStyle = 'rgba(255,255,255,0.96)'; ctx.fillRect(x + 2 + i * 6, y + capH + 4, 4, 2 + dr); }
+    });
+  }
   function draw() {
     if (!terrain || terrainFor !== M.id) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -663,6 +692,12 @@ const WORLD = (() => {
         ctx.fillStyle = '#4A2A14'; ctx.fillRect(x, y + 8, 32, 12);
         for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? '#F8F8F8' : '#D8574A'; ctx.fillRect(x + 2 + i * 7, y + 10, 7, 8); }
       } });
+    // ambient scenery critters + weather on the ground (ripples, whitecaps, snow caps), under the entities
+    const wk = M.interior ? null : (opts.weather ? opts.weather() : null), todNow = M.interior ? 'day' : (opts.tint ? opts.tint() : 'day');
+    const ambEnv = { M: M, TS: TS, solidAt: (x, y) => solidAt(x, y), tileAt: (x, y) => (M.grid[y] ? M.grid[y][x] : 'T'), player: { x: P.x, y: P.y }, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, dt: frameDt, tod: todNow, weather: wk, still: opts.still ? opts.still() : false, on: opts.ambient ? opts.ambient() : true };
+    if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'ground', ambEnv);
+    if (!ambEnv.still && (wk === 'rain' || wk === 'storm')) waterFx(wk, cx, cy);
+    if (wk === 'snow') snowCaps(cx, cy);
     const fol = opts.follower ? opts.follower() : null;
     if (!FOL) followerReset();
     const list = (NPCS[M.id] || []).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
@@ -682,6 +717,7 @@ const WORLD = (() => {
       ctx.drawImage(n.frames[n.dir][0], x - 16, y - 38, 32, 40);
       if (n.alert > 0) { ctx.fillStyle = '#1E2A4A'; ctx.fillRect(x - 8, y - 66, 16, 22); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x - 6, y - 64, 12, 18); ctx.fillStyle = '#D8574A'; ctx.fillRect(x - 2, y - 61, 4, 9); ctx.fillRect(x - 2, y - 50, 4, 3); }
     });
+    if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'air', ambEnv);
     if (fishAt) { // bobber
       const bx = snap((fishAt.x + 0.5) * TS - cx), by = snap((fishAt.y + 0.55) * TS - cy + Math.sin(tAnim * (fishAt.bite ? 22 : 4)) * (fishAt.bite ? 3 : 1.5));
       ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(bx - 8, by + 3, 16, 2);
@@ -723,6 +759,7 @@ const WORLD = (() => {
           const gr = ctx.createRadialGradient(x + 14, y + 10, 2, x + 14, y + 10, 34); gr.addColorStop(0, 'rgba(255,214,120,0.55)'); gr.addColorStop(1, 'rgba(255,214,120,0)'); ctx.fillStyle = gr; ctx.fillRect(x - 24, y - 26, 76, 72);
           ctx.fillStyle = '#FFD86B'; ctx.fillRect(x, y, 28, 20); }); });
     }
+    if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'glow', ambEnv); // lights (fireflies) shine over the night tint
     const near = nearest();
     M.places.forEach((p) => { const tx = (p.x + p.w / 2) * TS - cx, ty = p.y * TS - cy - (p.kind === 'board' ? 26 : 14); if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag(p.name, tx, ty, near && near.place === p); });
     if (M.rare) { const tx = (M.rare.x + 1.5) * TS - cx, ty = M.rare.y * TS - cy - 12; if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag('Rare grass', tx, ty, true); }
@@ -736,8 +773,8 @@ const WORLD = (() => {
     });
     if (flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.9, flash * 3) + ')'; ctx.fillRect(0, 0, vw, vh); }
   }
-  let last = 0;
-  function frame(t) { const dt = Math.min(0.05, (t - last) / 1000 || 0); last = t; tAnim += dt; update(dt); draw(); requestAnimationFrame(frame); }
+  let last = 0, frameDt = 0.016;
+  function frame(t) { const dt = Math.min(0.05, (t - last) / 1000 || 0); last = t; frameDt = dt; tAnim += dt; update(dt); draw(); requestAnimationFrame(frame); }
   function resize() { vw = canvas.clientWidth; vh = canvas.clientHeight; dpr = Math.min(3, window.devicePixelRatio || 1); canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr); if (!terrain || terrainFor !== M.id) prerender(); }
   function init(cv, o) {
     canvas = cv; ctx = cv.getContext('2d'); opts = Object.assign({ random: () => Math.random() }, o);
