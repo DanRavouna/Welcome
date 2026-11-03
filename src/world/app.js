@@ -11,7 +11,7 @@ class Component extends Base {
       seed: null, previewSeed: null, caught: [], tab: 'roll', selected: null, earned: [],
       seedInput: '', loadError: false, armed: false,
       essence: 0, wins: 0, day: '', used: 0,
-      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true }
+      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true }
     };
   }
 
@@ -57,7 +57,7 @@ class Component extends Base {
         const r = t.run && typeof t.run === 'object' && Array.isArray(t.run.party) ? { floor: Math.max(1, t.run.floor | 0), party: t.run.party.filter((n) => Number.isInteger(n)).slice(0, 3), hp: t.run.hp && typeof t.run.hp === 'object' ? t.run.hp : {} } : null;
         return { best: Math.max(0, t.best | 0), day: typeof t.day === 'string' ? t.day : '', runs: t.runs | 0, clears: t.clears | 0, run: r && r.party.length ? r : null };
       })(),
-      settings: d.settings && typeof d.settings === 'object' ? { sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false } : { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true },
+      settings: d.settings && typeof d.settings === 'object' ? { sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false } : { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true },
       seen: (() => {
         const seen = Array.isArray(d.seen) ? d.seen.filter((n) => Number.isInteger(n) && n >= 1 && n <= 48) : [];
         (Array.isArray(d.caught) ? d.caught : []).forEach((e) => { if (e && Number.isInteger(e.seed)) { const no = this.make(e.seed, 1).speciesNo; if (seen.indexOf(no) === -1) seen.push(no); } });
@@ -807,6 +807,7 @@ class Component extends Base {
         ['vibrate', 'Vibration', 'Buzz on Mythic rolls, wins and level-ups (Android).'],
         ['calm', 'Reduce motion', 'Skip the roll reveal and hit shakes.'],
         ['daynight', 'Day and night', 'Tint the world by your local time. Dusk critters come out at night.'],
+        ['weather', 'Weather', 'Rain, snow, fog and sun that change every 6 hours and bring out other critters.'],
         ['test', 'Test mode (developer)', 'Unlimited rolls and all trails open. Turning it on skips the real progression.']
       ].filter((r) => r[0] !== 'test' || st.dev || (st.settings && st.settings.test)).map((r) => {
         const cfg = st.settings || {}, on = !!cfg[r[0]];
@@ -1632,6 +1633,7 @@ const APP = (() => {
     if ((game.state.charm || 0) > 0 && !info.rare) { info = Object.assign({}, info, { rare: true }); game.update({ charm: game.state.charm - 1 }); }
     const night = timeOfDay() === 'night' && game.state.settings && game.state.settings.daynight !== false;
     if (night && !Number.isInteger(info.seed) && Math.random() < 0.25 && info.types.indexOf('Dusk') === -1) info = Object.assign({}, info, { types: ['Dusk'] });
+    else info = WEATHER.tilt(info, weatherAt(WORLD.map.id)); // weather: 20% chance of its type when the area lacks it
     setTimeout(() => {
       if (game.encounter(info)) { game.questTick('see', WORLD.map.id); showScreen(); setTimeout(() => hint('keep', 'Seeing critters is free (' + FREE_SIGHTINGS + ' per day). Keeping one costs rolls: 1 for Common, 2 Uncommon, 4 Rare, 8 Mythic.'), 1300); } else WORLD.setPaused(false); }, calm ? 0 : 280);
   }
@@ -1709,6 +1711,27 @@ const APP = (() => {
   }
   // ---------- time of day ----------
   function timeOfDay(d) { const h = (d || new Date()).getHours(); return h >= 21 || h < 5 ? 'night' : (h < 7 ? 'dawn' : (h >= 18 ? 'dusk' : 'day')); }
+  // ---------- weather ----------
+  const reduceMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  function weatherAt(id) { // kind for a map, or null indoors / when the setting is off; window.__weather is a test override
+    if (game && game.state.settings && game.state.settings.weather === false) return null;
+    if (!WEATHER.region(id)) return null;
+    return typeof window.__weather === 'string' ? window.__weather : WEATHER.at(id);
+  }
+  function stillMotion() { return !!((game && game.state.settings && game.state.settings.calm) || (reduceMQ && reduceMQ.matches)); }
+  function weatherText(k) { const K = WEATHER.KINDS[k]; return K ? K.label + (K.type ? ': more ' + K.type + ' critters' : '') : ''; }
+  let wxShown = null;
+  function renderWeather() {
+    if (!game) return;
+    const id = WORLD.map.id, k = weatherAt(id), sig = id + ':' + k, el = $('loc-wx');
+    if (!el || sig === wxShown) return; wxShown = sig;
+    const show = k && k !== 'clear';
+    el.innerHTML = show ? WEATHER.icon(k) : '';
+    $('plank').classList.toggle('hasWx', !!show);
+    if (show) { el.setAttribute('role', 'img'); el.setAttribute('aria-label', 'Weather: ' + WEATHER.KINDS[k].label); el.title = weatherText(k); }
+    else { el.removeAttribute('role'); el.removeAttribute('aria-label'); el.removeAttribute('title'); }
+    if (show && game.state.intro && game.state.caught.length) setTimeout(() => hint('weather', WEATHER.KINDS[k].label + ' in ' + mapName(id) + ': ' + WEATHER.KINDS[k].note + ' more often. Weather changes every 6 hours, and the Map shows each area\u2019s sky.'), 1600);
+  }
   // ---------- world map ----------
   let mapOpen = false;
   function renderMap() {
@@ -1718,21 +1741,21 @@ const APP = (() => {
     const zoneTypes = { frost: ['Frost', 'Stone'], ember: ['Ember', 'Volt'], moss: ['Moss', 'Bloom'], tide: ['Tide', 'Dusk'] };
     const found = (z) => zoneTypes[z].reduce((n, t) => { const ti = TYPES.indexOf(t); return n + seen.filter((no) => Math.floor((no - 1) / 6) === ti).length; }, 0);
     const card = (id) => {
-      if (id === 'town') return { id, name: 'Sproutvale', sub: 'Home, Lab, Shrine, Arena', open: true, lockTxt: '', seal: '', found: '' };
+      if (id === 'town') return { id, name: 'Sproutvale', sub: 'Home, Lab, Shrine, Arena', open: true, lockTxt: '', seal: '', found: '', wx: weatherText(weatherAt('town')) };
       const L = LEADERS.find((x) => x.zone === id), open = test || lv >= GATES[id];
-      return { id, name: ZONE_NAMES[id], sub: zoneTypes[id].join(' and ') + ' critters', open, lockTxt: open ? '' : 'Opens at level ' + GATES[id],
+      return { id, name: ZONE_NAMES[id], sub: zoneTypes[id].join(' and ') + ' critters', open, lockTxt: open ? '' : 'Opens at level ' + GATES[id], wx: weatherText(weatherAt(id)),
         seal: L.name + (seals.indexOf(L.id) !== -1 ? ': seal earned' : ': not yet beaten'), found: found(id) + '/12 species found' };
     };
     const node = (id, cls) => { const c = card(id), isHere = here === id;
       return '<div class="mnode ' + cls + (c.open ? '' : ' locked') + (isHere ? ' here' : '') + '"><b>' + c.name + '</b><span>' + c.sub + '</span>' +
-        (c.found ? '<span>' + c.found + '</span>' : '') + (c.seal ? '<span>' + c.seal + '</span>' : '') + (c.lockTxt ? '<span class="lk">' + c.lockTxt + '</span>' : '') +
+        (c.wx ? '<span class="wx">' + c.wx + '</span>' : '') + (c.found ? '<span>' + c.found + '</span>' : '') + (c.seal ? '<span>' + c.seal + '</span>' : '') + (c.lockTxt ? '<span class="lk">' + c.lockTxt + '</span>' : '') +
         (isHere ? '<span class="you">You are here</span>' : (c.open ? '<button data-travel="' + id + '">Travel here</button>' : '')) + '</div>'; };
     const vis = st.visited || [], CITY = [['mossbrook', 'Mossbrook', 'past Moss Forest, to the west', 'Elder Wren\u2019s gym'], ['frosthold', 'Frosthold', 'past Frost Peaks, to the north', 'Glacia\u2019s gym'], ['cinderport', 'Cinderport', 'past Ember Fields, to the south', 'Blaze\u2019s gym'], ['coralbay', 'Coralbay', 'past Tide Shore, to the east', 'Admiral Coral\u2019s gym'], ['peak', "Champion's Peak", 'up the trail north of the plaza', 'The Tower']];
     const cnode = ([id, name, where, what]) => { const v = test || vis.indexOf(id) !== -1, isHere = here === id;
-      return '<div class="mnode' + (v ? '' : ' locked') + (isHere ? ' here' : '') + '" style="min-width: 0; overflow-wrap: break-word"><b>' + (v ? name : 'Undiscovered') + '</b><span>' + (v ? what : 'Somewhere ' + where) + '</span>' + (isHere ? '<span class="you">You are here</span>' : (v ? '<button data-travel="' + id + '">Travel here</button>' : '<span class="lk">Find it on foot first</span>')) + '</div>'; };
+      return '<div class="mnode' + (v ? '' : ' locked') + (isHere ? ' here' : '') + '" style="min-width: 0; overflow-wrap: break-word"><b>' + (v ? name : 'Undiscovered') + '</b><span>' + (v ? what : 'Somewhere ' + where) + '</span>' + (v && weatherAt(id) ? '<span class="wx">' + weatherText(weatherAt(id)) + '</span>' : '') + (isHere ? '<span class="you">You are here</span>' : (v ? '<button data-travel="' + id + '">Travel here</button>' : '<span class="lk">Find it on foot first</span>')) + '</div>'; };
     $('wm-grid').innerHTML = '<div></div>' + node('frost', 'n') + '<div></div>' + node('moss', 'w') + node('town', 'c') + node('tide', 'e') + '<div></div>' + node('ember', 's') + '<div></div>' +
       '<div style="grid-column: 1 / -1; font-weight: 900; margin-top: 6px">Cities and the Peak</div>' + '<div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: inherit">' + CITY.map(cnode).join('') + '</div>';
-    $('wm-tod').textContent = { night: 'Night: Dusk critters roam every zone.', dawn: 'Dawn', dusk: 'Dusk', day: 'Daytime' }[timeOfDay()];
+    $('wm-tod').textContent = { night: 'Night: Dusk critters roam every zone.', dawn: 'Dawn', dusk: 'Dusk', day: 'Daytime' }[timeOfDay()] + (weatherAt('town') ? ' The weather changes at ' + String(WEATHER.nextChange().getHours()).padStart(2, '0') + ':00.' : '');
   }
   function openMap() { closeMenu(true); mapOpen = true; renderMap(); $('wmap').hidden = false; $('hud').hidden = true; WORLD.setPaused(true); $('wm-close').focus(); }
   function closeMap() { mapOpen = false; $('wmap').hidden = true; $('hud').hidden = false; WORLD.setPaused(false); }
@@ -2379,7 +2402,7 @@ const APP = (() => {
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
-    setInterval(musicLoop, 400);
+    setInterval(() => { musicLoop(); renderWeather(); }, 400);
     setInterval(() => { if (!document.hidden && game) game.addPlayTime(0.5); }, 30000);
     const comps = { Critter: TPL.compile(document.getElementById('tpl-critter').innerHTML) };
     const screenTpl = TPL.compile(document.getElementById('tpl-screen').innerHTML);
@@ -2390,6 +2413,7 @@ const APP = (() => {
     WORLD.init($('world'), {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
+      weather: () => weatherAt(WORLD.map.id), still: stillMotion,
       exitLocked: (e) => !game.props.testMode && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.testMode && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       follower: () => {
@@ -2404,7 +2428,7 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { plank(m.name); setNear(null); if (game && (m.city || m.id === 'peak') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
+      onMap: (m) => { plank(m.name); setNear(null); renderWeather(); if (game && (m.city || m.id === 'peak') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
       objective: () => null, // no guide arrow or marker: signposts, paths and townsfolk lead the way
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map
@@ -2501,6 +2525,6 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);

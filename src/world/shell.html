@@ -92,6 +92,7 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .plank b{font-family:'Pixelify Sans','Trebuchet MS',monospace;font-weight:700;font-size:19px;letter-spacing:.02em}
 .plank::before,.plank::after{content:'';position:absolute;top:50%;width:4px;height:4px;margin-top:-2px;background:#4A2A14}
 .plank::before{left:5px}.plank::after{right:5px}
+.plank .wx{position:absolute;right:12px;top:50%;width:18px;height:18px;margin-top:-9px;filter:drop-shadow(0 1px 0 #4A2A14)}.plank .wx:empty{display:none}.plank.hasWx{padding-right:36px}
 .plank.drop{animation:plankDrop 600ms steps(6) both}
 @keyframes plankDrop{0%{transform:translateY(-140%)}70%{transform:translateY(6px)}100%{transform:translateY(0)}}
 #menu{position:fixed;inset:0;z-index:6;background:linear-gradient(90deg,rgba(8,16,40,.15) 0%,rgba(8,16,40,.6) 45%,rgba(8,16,40,.7) 100%)}
@@ -134,7 +135,7 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .mnode b{font-size:13px;font-weight:900;color:#1E2A4A}
 .mnode.c{background:#FFF4C7}.mnode.locked{background:#E3E9F4;border-style:dashed}
 .mnode.here{border-color:#E0A830;box-shadow:0 0 0 3px #FFD86B}
-.mnode .lk{color:#8A3A10;font-weight:900}.mnode .you{color:#8A6510;font-weight:900}
+.mnode .wx{color:#2C5E9E;font-weight:800}.mnode .lk{color:#8A3A10;font-weight:900}.mnode .you{color:#8A6510;font-weight:900}
 .mnode button{margin-top:auto;min-height:36px;border:0;border-radius:999px;background:#1E2A4A;color:#fff;font:inherit;font-size:12px;font-weight:900;cursor:pointer}
 .bk-p{margin:6px 0;font-size:13px;font-weight:700;line-height:1.4;color:#3A4868}
 .bk-l{display:block;margin:10px 0 4px;font-size:14px;font-weight:900}
@@ -182,7 +183,7 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
   <canvas id="world" role="img" aria-label="World map. Walk with the joystick or arrow keys. Press Enter to use a place. Tall grass hides wild critters."></canvas>
   <div id="hud">
     <div class="top">
-      <div class="lcol"><div class="plank" id="plank"><b id="loc-name">Sproutvale</b></div>
+      <div class="lcol"><div class="plank" id="plank"><b id="loc-name">Sproutvale</b><span id="loc-wx" class="wx"></span></div>
       <button class="goal" id="goal" aria-pressed="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFD86B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg><span id="goal-text"></span></button></div>
       <div class="rcol">
       <div class="chips">

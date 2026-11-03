@@ -683,8 +683,10 @@ const WORLD = (() => {
         ctx.restore();
       }
     }
+    // weather (outdoors only), under the time-of-day tint so night darkens it too
+    if (typeof WEATHER !== 'undefined') WEATHER.draw(ctx, { kind: M.interior ? null : (opts.weather ? opts.weather() : null), mapId: M.id, vw: vw, vh: vh, cx: cx, cy: cy, t: tAnim, still: opts.still ? opts.still() : false });
     // time of day: tint the world (tags drawn later stay crisp)
-    const tod = M.interior ? 'day' : (opts.tint ? opts.tint() : 'day'); // lamplit rooms: no night tint indoors
+    const tod =M.interior ? 'day' : (opts.tint ? opts.tint() : 'day'); // lamplit rooms: no night tint indoors
     tintNow = tod;
     if (tod !== 'day') {
       ctx.fillStyle = { night: 'rgba(14,24,70,0.42)', dusk: 'rgba(255,110,50,0.14)', dawn: 'rgba(255,190,140,0.12)' }[tod];
