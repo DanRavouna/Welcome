@@ -18,8 +18,9 @@ These rules apply to every task in this repository.
 
 ## Layout
 - `index.html` is the built game that GitHub Pages serves (plus `vendor/`). Never edit it by hand.
-- `src/world/` holds the source pieces (`shell.html`, `screen.html`, `runtime.js`, `pixel.js`, `pxworld.js`, `world.js`, `cloud.js`, `music.js`, `app.js`). `logic.js`, `critter.html`, `helmet.html`, `build.py` and `reassemble.py` are older leftovers that the current build does not use.
+- `src/world/` holds the source pieces (`shell.html`, `screen.html`, `runtime.js`, `pixel.js`, `pxworld.js`, `world.js`, `weather.js`, `cloud.js`, `music.js`, then `base.js` (Base + Component), `data.js` (constants), `game.js` (Game class) and `app.js` (APP: HUD, menus, screens)). `logic.js`, `critter.html`, `helmet.html`, `build.py` and `reassemble.py` are older leftovers that the current build does not use.
 - `src/*.py` and `src/*.js` are the tests and balance sims from the handoff.
+- Run tests by group: `bash src/run-tests.sh @world` (also `@battle`, `@saves`, `@ui`); no argument runs everything.
 
 ## Build
 ```bash

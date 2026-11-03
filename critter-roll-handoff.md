@@ -141,6 +141,9 @@ Attach this file plus `critter-roll-growth-source.tar.gz` (latest source + tests
 - One-time hint `online` for signed-out players with 3+ critters.
 - Test: `supatest.py` (real project; see `CLAUDE.md`). Note: its seed uses a localStorage marker; a sessionStorage-based seed re-seeded mid-test under file:// and looked like data loss.
 
+## Housekeeping (done)
+- `app.js` is now four files in build order: `base.js` (Base + Component), `data.js` (constants), `game.js` (Game), `app.js` (APP). Pure split: built output is identical apart from one comment. `weather.js` was added (see weather section below in git history). Tests run by group: `bash src/run-tests.sh @world|@battle|@saves|@ui`.
+
 ## Next step
 Endgame phase is complete (Tower, shinies, milestones/titles all live).
 Cities + route loop are live. Dan declined dailies and the rival for now. Next ideas: weather, critter abilities (big balance job), real-phone playtest + stats (the 3 newest share Mossbrook's street plan; routes share the zone builder's structure). Waiting on Dan's phone playtest + stats. Candidate features: weekly Tower twist, daily challenge battle, Tower leaderboard (only if friends play). Housekeeping: split the test run, split app.js, and keep balance checks per change. Real-phone check of Tower, shiny sparkle/vibration and titles still pending.

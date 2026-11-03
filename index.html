@@ -2550,6 +2550,7 @@ const MUSIC = (() => {
   };
 })();
 
+// ---- Glue part 1: Base and Component (game logic ported from the original canvas) ----
 // ---- Glue: game state, screens over the world, HUD ----
 class Base {
   get props() { const s = (this.state && this.state.settings) || {}; return { accent: '#FFC94D', testMode: s.test !== false }; }
@@ -3553,6 +3554,7 @@ class Component extends Base {
   }
 }
 
+
 const FREE_SIGHTINGS = 40;
 const KEEP_COST = { Common: 1, Uncommon: 2, Rare: 4, Mythic: 8 };
 const GATES = { moss: 1, frost: 3, ember: 6, tide: 9 };
@@ -3607,6 +3609,7 @@ const TOWER_CURVE = { size: [3, 3, 3, 3, 4, 3, 4, 4, 4, 5, 4, 4, 4, 4, 5, 4, 5, 
 const HABITAT = { Frost: 'Frost Peaks', Stone: 'Frost Peaks', Ember: 'Ember Fields', Volt: 'Ember Fields', Moss: 'Moss Forest', Bloom: 'Moss Forest', Tide: 'Tide Shore', Dusk: 'Tide Shore' };
 const MAX_LV = 20;
 const lvNeed = (lv) => 20 + 10 * (lv - 1);
+
 class Game extends Component {
   make(seed, stage, lv) {
     const k = super.make(seed, stage);
@@ -4141,6 +4144,7 @@ class Game extends Component {
     return this._rep[no] || 1;
   }
 }
+
 
 const APP = (() => {
   const $ = (id) => document.getElementById(id);
