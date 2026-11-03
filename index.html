@@ -173,6 +173,18 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion: reduce){.dmore{animation:none}}
 @media (prefers-reduced-motion: reduce){.plank.drop{animation:none}}
+/* accessibility: Settings "Larger text" scales the overlays (not the map HUD); "High contrast" makes panels solid and text stronger */
+html.bigtext #screen,html.bigtext #menu,html.bigtext #wmap,html.bigtext #bk,html.bigtext #cf,html.bigtext #starter,html.bigtext #party,html.bigtext #bag,html.bigtext #shop,html.bigtext #dlg{zoom:1.25}
+html.hc{--glass:#050B1C;--glass-line:#FFFFFF;--light:#FFFFFF}
+html.hc [style*="color: #C9D6F2"],html.hc [style*="color: #E6ECF7"],html.hc [style*="color:#C9D6F2"],html.hc [style*="color:#E6ECF7"]{color:#FFFFFF!important}
+html.hc [style*="color: #3A4868"],html.hc [style*="color:#3A4868"]{color:#0A1226!important}
+html.hc [style*="rgba(14,26,56,0.78)"],html.hc [style*="rgba(14,20,80,0.4)"]{background:#08122A!important}
+html.hc [style*="rgba(255,255,255,0.62)"],html.hc [style*="rgba(255,255,255,0.7)"],html.hc [style*="rgba(255,255,255,0.72)"]{background:#FFFFFF!important}
+html.hc #wmap,html.hc #bk,html.hc .ovl,html.hc #menu{background:#050B1C!important;backdrop-filter:none!important}
+html.hc .wm-panel,html.hc .tile,html.hc .loc{background:#FFFFFF!important;backdrop-filter:none!important}
+html.hc .prof{background:#12204A!important;backdrop-filter:none!important}
+html.hc button,html.hc .chip{outline-color:#FFFFFF}
+html.hc :focus-visible{outline:3px solid #FFD86B!important;outline-offset:2px}
 #screen[hidden],#toast[hidden],#tip[hidden],#hud[hidden],.dot[hidden]{display:none}
 button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
 </style>
@@ -2885,7 +2897,7 @@ class Component extends Base {
       seed: null, previewSeed: null, caught: [], tab: 'roll', selected: null, earned: [],
       seedInput: '', loadError: false, armed: false,
       essence: 0, wins: 0, day: '', used: 0,
-      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true }
+      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true, bigtext: false, contrast: false }
     };
   }
 
@@ -2931,7 +2943,7 @@ class Component extends Base {
         const r = t.run && typeof t.run === 'object' && Array.isArray(t.run.party) ? { floor: Math.max(1, t.run.floor | 0), party: t.run.party.filter((n) => Number.isInteger(n)).slice(0, 3), hp: t.run.hp && typeof t.run.hp === 'object' ? t.run.hp : {} } : null;
         return { best: Math.max(0, t.best | 0), day: typeof t.day === 'string' ? t.day : '', runs: t.runs | 0, clears: t.clears | 0, run: r && r.party.length ? r : null };
       })(),
-      settings: d.settings && typeof d.settings === 'object' ? { sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false } : { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true },
+      settings: d.settings && typeof d.settings === 'object' ? { sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false, bigtext: d.settings.bigtext === true, contrast: d.settings.contrast === true } : { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true, bigtext: false, contrast: false },
       seen: (() => {
         const seen = Array.isArray(d.seen) ? d.seen.filter((n) => Number.isInteger(n) && n >= 1 && n <= 48) : [];
         (Array.isArray(d.caught) ? d.caught : []).forEach((e) => { if (e && Number.isInteger(e.seed)) { const no = this.make(e.seed, 1).speciesNo; if (seen.indexOf(no) === -1) seen.push(no); } });
@@ -3708,6 +3720,8 @@ class Component extends Base {
         ['vibrate', 'Vibration', 'Buzz on Mythic rolls, wins and level-ups (Android).'],
         ['calm', 'Reduce motion', 'Skip the roll reveal and hit shakes.'],
         ['daynight', 'Day and night', 'Tint the world by your local time. Dusk critters come out at night.'],
+        ['bigtext', 'Larger text', 'Menus, screens and dialogue are 25% bigger. The map HUD stays the same.'],
+        ['contrast', 'High contrast', 'Solid dark panels, brighter text and stronger outlines.'],
         ['ambient', 'Wildlife', 'Butterflies, birds, crabs and fireflies that wander the world. Looks only.'],
         ['weather', 'Weather', 'Rain, snow, fog and sun that change every 6 hours and bring out other critters.'],
         ['test', 'Test mode (developer)', 'Unlimited rolls and all trails open. Turning it on skips the real progression.']
@@ -4635,6 +4649,8 @@ const APP = (() => {
   }
   function stillMotion() { return !!((game && game.state.settings && game.state.settings.calm) || (reduceMQ && reduceMQ.matches)); }
   function weatherText(k) { const K = WEATHER.KINDS[k]; return K ? K.label + (K.type ? ': more ' + K.type + ' critters' : '') : ''; }
+  // accessibility: Settings "Larger text" and "High contrast" become classes on <html> (CSS in shell.html)
+  function applyA11y() { const s = (game && game.state.settings) || {}, h = document.documentElement; h.classList.toggle('bigtext', s.bigtext === true); h.classList.toggle('hc', s.contrast === true); }
   let wxShown = null;
   function renderWeather() {
     if (!game) return;
@@ -5337,7 +5353,7 @@ const APP = (() => {
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
-    setInterval(() => { musicLoop(); renderWeather(); }, 400);
+    setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
     setInterval(() => { if (!document.hidden && game) game.addPlayTime(0.5); }, 30000);
     const comps = { Critter: TPL.compile(document.getElementById('tpl-critter').innerHTML) };
     const screenTpl = TPL.compile(document.getElementById('tpl-screen').innerHTML);

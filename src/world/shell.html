@@ -173,6 +173,18 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion: reduce){.dmore{animation:none}}
 @media (prefers-reduced-motion: reduce){.plank.drop{animation:none}}
+/* accessibility: Settings "Larger text" scales the overlays (not the map HUD); "High contrast" makes panels solid and text stronger */
+html.bigtext #screen,html.bigtext #menu,html.bigtext #wmap,html.bigtext #bk,html.bigtext #cf,html.bigtext #starter,html.bigtext #party,html.bigtext #bag,html.bigtext #shop,html.bigtext #dlg{zoom:1.25}
+html.hc{--glass:#050B1C;--glass-line:#FFFFFF;--light:#FFFFFF}
+html.hc [style*="color: #C9D6F2"],html.hc [style*="color: #E6ECF7"],html.hc [style*="color:#C9D6F2"],html.hc [style*="color:#E6ECF7"]{color:#FFFFFF!important}
+html.hc [style*="color: #3A4868"],html.hc [style*="color:#3A4868"]{color:#0A1226!important}
+html.hc [style*="rgba(14,26,56,0.78)"],html.hc [style*="rgba(14,20,80,0.4)"]{background:#08122A!important}
+html.hc [style*="rgba(255,255,255,0.62)"],html.hc [style*="rgba(255,255,255,0.7)"],html.hc [style*="rgba(255,255,255,0.72)"]{background:#FFFFFF!important}
+html.hc #wmap,html.hc #bk,html.hc .ovl,html.hc #menu{background:#050B1C!important;backdrop-filter:none!important}
+html.hc .wm-panel,html.hc .tile,html.hc .loc{background:#FFFFFF!important;backdrop-filter:none!important}
+html.hc .prof{background:#12204A!important;backdrop-filter:none!important}
+html.hc button,html.hc .chip{outline-color:#FFFFFF}
+html.hc :focus-visible{outline:3px solid #FFD86B!important;outline-offset:2px}
 #screen[hidden],#toast[hidden],#tip[hidden],#hud[hidden],.dot[hidden]{display:none}
 button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
 </style>

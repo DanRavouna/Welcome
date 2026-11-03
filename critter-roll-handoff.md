@@ -168,6 +168,12 @@ Attach this file plus `critter-roll-growth-source.tar.gz` (latest source + tests
 - New people (talk): Scholar Edda (Highland Pass, by the ruin), Camper Dell (Ashwood Trail, camp), Lamplighter Joss (Glacier Coast, lighthouse), Beachcomber Neri (Reef Causeway, wreck), Gardener Mae (Sproutvale, by the fountain). Placed at load by `spot()` in `npcList()` = nearest free walkable tile to a hint (near the landmark via `near()`), never in the route trainer's reserved rectangle. Their lines point to the connected cities and critter types (checked against ROUTE_LINKS).
 - Test: `flavortest.py` (reachability of the new people, remark per weather/time, stability, indoor remark, longest line, settings off). Test hook: `CR_WEATHER=storm bash src/run-tests.sh ...` forces a weather kind in every test page (talk-heavy suites passed under it).
 
+## Accessibility: larger text + high contrast (done, Nov 2026)
+- Settings `bigtext` (Larger text) and `contrast` (High contrast), default off, safe defaults for old saves. `applyA11y()` in app.js toggles classes `bigtext` / `hc` on `<html>` every 400 ms; CSS at the end of the `@media (prefers-reduced-motion)` block in `shell.html`.
+- Larger text = CSS `zoom: 1.25` on the overlays only (#screen, #menu, #wmap, #bk, #cf, #starter, #party, #bag, #shop, #dlg). All font sizes in the templates are fixed px (about 170), so there is no global size switch; the map HUD is NOT scaled (hudcheck guards its layout). No horizontal overflow at 320/360/390/430 px on menu, dex, roll, battle, map, shop and save.
+- High contrast = solid backdrops and panels (no see-through, no blur), brighter greys (#C9D6F2/#E6ECF7 -> white, #3A4868 -> near-black via inline-style attribute selectors, so a new template colour needs adding there), stronger focus ring. axe-core: 0 contrast violations before and after; but axe could not judge many elements over glass/gradients ("incomplete"). Those counts fall with high contrast (menu 26->1, roll 30->2, battle 19->3, map 3->0, shop 3->0, save 10->2, dex 25->18). So the normal theme is NOT proven AA-clean, only unjudged by axe.
+- Test: `a11ytest.py` (overflow at four widths, zoom applied, axe counts, classes clear when off).
+
 ## Housekeeping (done)
 - `app.js` is now four files in build order: `base.js` (Base + Component), `data.js` (constants), `game.js` (Game), `app.js` (APP). Pure split: built output is identical apart from one comment. `weather.js` was added (see weather section below in git history). Tests run by group: `bash src/run-tests.sh @world|@battle|@saves|@ui`.
 

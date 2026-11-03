@@ -128,6 +128,8 @@ const APP = (() => {
   }
   function stillMotion() { return !!((game && game.state.settings && game.state.settings.calm) || (reduceMQ && reduceMQ.matches)); }
   function weatherText(k) { const K = WEATHER.KINDS[k]; return K ? K.label + (K.type ? ': more ' + K.type + ' critters' : '') : ''; }
+  // accessibility: Settings "Larger text" and "High contrast" become classes on <html> (CSS in shell.html)
+  function applyA11y() { const s = (game && game.state.settings) || {}, h = document.documentElement; h.classList.toggle('bigtext', s.bigtext === true); h.classList.toggle('hc', s.contrast === true); }
   let wxShown = null;
   function renderWeather() {
     if (!game) return;
@@ -830,7 +832,7 @@ const APP = (() => {
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
-    setInterval(() => { musicLoop(); renderWeather(); }, 400);
+    setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
     setInterval(() => { if (!document.hidden && game) game.addPlayTime(0.5); }, 30000);
     const comps = { Critter: TPL.compile(document.getElementById('tpl-critter').innerHTML) };
     const screenTpl = TPL.compile(document.getElementById('tpl-screen').innerHTML);
