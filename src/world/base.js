@@ -185,7 +185,7 @@ class Component extends Base {
     const sizeMult = [1, 1.12, 1.22][stage - 1];
     const w0 = Math.round(110 + r() * 60);
     const h0 = Math.round(100 + r() * 70);
-    const w = stage === 1 ? w0 : Math.max(w0, Math.min(186, Math.round(w0 * sizeMult)));
+    const w = stage === 1 ? w0 : Math.min(150, Math.round(w0 * sizeMult)); // evolved forms are a little slimmer than the widest blobs: limbs, wings and tail need room inside the 240 px sprite
     let h = stage === 1 ? h0 : Math.max(h0, Math.min(170, Math.round(h0 * sizeMult)));
     const SHAPES = this.shapes();
     const shapeIdx = Math.floor(r() * SHAPES.length);
@@ -203,15 +203,18 @@ class Component extends Base {
     const tail = weighted([['none', 45], ['stub', 20], ['ball', 20], ['spike', 15]]);
     const head = r() < 0.7 ? pick(element.heads) : pick(['none', 'nubs', 'ears', 'horns', 'antenna', 'fins', 'flame', 'leaf']);
     const headroom = { none: 0, fins: 0, nubs: 12, horns: 20, flame: 38, leaf: 44, ears: 50, antenna: 52 }[head];
-    h = Math.min(h, 198 - Math.max(headroom, stage === 3 ? 24 : 0) - 4);
+    const legH = stage === 1 ? 0 : (stage === 2 ? 12 : 16), crestRoom = stage === 1 ? 0 : (stage === 2 ? 42 : 54); // evolved forms stand on legs and carry a crest (it shares its spot with the head decoration, so the taller of the two sets the headroom)
+    h = Math.min(h, 198 - legH - Math.max(headroom, crestRoom, stage === 3 ? 24 : 0) - 4);
     const bx = Math.round(120 - w / 2);
-    const by = 198 - h;
+    const by = 198 - legH - h;
 
     const parts = [];
     if (stage === 3) parts.push({ x: Math.round(120 - (w + 44) / 2), y: by - 22, w: w + 44, h: h + 24, r: '50%', rot: 0, bg: 'rgba(255,216,77,0.45)', bw: 0, bc: INK });
-    if (tail === 'stub') parts.push({ x: bx + w - 22, y: by + h - 48, w: 44, h: 26, r: '50%', rot: -30, bg: fill, bw: 3, bc: outline });
-    if (tail === 'ball') parts.push({ x: bx + w - 16, y: by + h - 52, w: 34, h: 34, r: '50%', rot: 0, bg: fill, bw: 3, bc: outline });
-    if (tail === 'spike') parts.push({ x: bx + w - 14, y: by + h - 50, w: 30, h: 30, r: '4px', rot: 45, bg: fill, bw: 3, bc: outline });
+    let evo = null;
+    if (stage > 1) { evo = this.evoKit({ type: element.name, shapeIdx: shapeIdx, stage: stage, bx: bx, by: by, w: w, h: h, fill: fill, outline: outline, seed: seed }); evo.back.forEach((q) => parts.push(q)); }
+    if (stage === 1 && tail === 'stub') parts.push({ x: bx + w - 22, y: by + h - 48, w: 44, h: 26, r: '50%', rot: -30, bg: fill, bw: 3, bc: outline });
+    if (stage === 1 && tail === 'ball') parts.push({ x: bx + w - 16, y: by + h - 52, w: 34, h: 34, r: '50%', rot: 0, bg: fill, bw: 3, bc: outline });
+    if (stage === 1 && tail === 'spike') parts.push({ x: bx + w - 14, y: by + h - 50, w: 30, h: 30, r: '4px', rot: 45, bg: fill, bw: 3, bc: outline });
 
     if (head === 'nubs') {
       parts.push({ x: Math.round(bx + w * 0.2 - 14), y: by - 10, w: 28, h: 28, r: '50%', rot: 0, bg: fill, bw: 3, bc: outline });
@@ -256,6 +259,7 @@ class Component extends Base {
       over.push({ x: 117, y: by + 6, w: 6, h: 14, r: '3px', rot: 0, bg: shade });
       over.push({ x: 129, y: by + 8, w: 6, h: 14, r: '3px', rot: 12, bg: shade });
     }
+    if (evo) evo.over.forEach((q) => over.push(q));
     if (r() < 0.5) {
       over.push({ x: Math.round(bx + w * 0.18), y: eyeY + s + 2, w: 16, h: 9, r: '50%', rot: 0, bg: 'rgba(255,110,110,0.45)' });
       over.push({ x: Math.round(bx + w * 0.82 - 16), y: eyeY + s + 2, w: 16, h: 9, r: '50%', rot: 0, bg: 'rgba(255,110,110,0.45)' });
@@ -374,6 +378,40 @@ class Component extends Base {
     const cfg = settings || this.state.settings || {};
     if (!cfg.vibrate) return;
     try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+  }
+
+  // Parts for an evolved form (stage 2, 3). Pure geometry from the seed's stage-specific stream, so the base form, stats and names never change.
+  evoKit(o) {
+    const E = EVO_COL[o.type], F = EVO_FEAT[o.type], plan = EVO_PLAN[o.shapeIdx], st = o.stage, bx = o.bx, by = o.by, w = o.w, h = o.h, mid = bx + w / 2, bot = by + h, INK = '#1E2340';
+    const R = this.rng(o.seed * 53 + st * 7 + 3), back = [], over = [];
+    const col = (k) => (k === 'f' ? o.fill : (E[k] || E.a));
+    const mirrorR = (r) => String(r).split(' / ').map((s) => { const t = s.trim().split(/\s+/); if (t.length === 1) return t[0]; if (t.length === 2) return t[1] + ' ' + t[0]; if (t.length === 3) return t[1] + ' ' + t[0] + ' ' + t[1]; return t[1] + ' ' + t[0] + ' ' + t[3] + ' ' + t[2]; }).join(' / ');
+    // a primitive list around an anchor, scaled, optionally mirrored about the body centre
+    const place = (list, ax, ay, sc, mirror) => list.forEach(([x, y, pw, ph, r, rot, c]) => {
+      const X = ax + x * sc, Y = ay + y * sc, Pw = pw * sc, Ph = ph * sc;
+      back.push({ x: Math.round(mirror ? 2 * mid - X - Pw : X), y: Math.round(Y), w: Math.round(Pw), h: Math.round(Ph), r: mirror ? mirrorR(r) : r, rot: mirror ? -rot : rot, bg: col(c), bw: 3, bc: c === 'f' ? o.outline : INK });
+    });
+    if (st === 3) { const wing = EVO_WING[F.wing]; place(wing, bx + w - 20, by + h * 0.2, 0.95, false); place(wing, bx + w - 20, by + h * 0.2, 0.95, true); }
+    const ts = st === 3 ? 1.0 : 0.85;
+    place(F.tail, bx + w - 4, bot - 40, ts, false);
+    place(F.crest, mid, by + 2, st === 3 ? 1.1 : 0.75, false);
+    // arms (behind the body, hanging outward) with a hand; Boxy bodies get shoulder plates instead
+    if (plan.arm) {
+      const ay = by + h * plan.at, len = Math.round(plan.arm * (st === 3 ? 1.15 : 1)), aw = plan.aw;
+      [1, -1].forEach((sd) => {
+        const ax = sd === 1 ? bx + w - 10 : bx - aw + 10, th = (sd === 1 ? -plan.tilt : plan.tilt) * Math.PI / 180, cx = ax + aw / 2, cy = ay + len / 2;
+        back.push({ x: Math.round(ax), y: Math.round(ay), w: aw, h: len, r: '50%', rot: sd === 1 ? -plan.tilt : plan.tilt, bg: o.fill, bw: 3, bc: o.outline });
+        const hx = cx - Math.sin(th) * len / 2, hy = cy + Math.cos(th) * len / 2, hd = aw + 8;
+        back.push({ x: Math.round(hx - hd / 2), y: Math.round(hy - hd / 2), w: hd, h: hd, r: '50%', rot: 0, bg: o.fill, bw: 3, bc: o.outline });
+      });
+    } else {
+      [[bx - 8, 1], [bx + w - 26, -1]].forEach(([px]) => over.push({ x: Math.round(px), y: Math.round(by + h * 0.14), w: 34, h: 26, r: '8px', rot: 0, bg: E.d }));
+    }
+    // legs: two feet under the body (the body is lifted by legH), wider for squat bodies
+    const lw = plan.leg;
+    [bx + w * 0.26, bx + w * 0.74].forEach((cx2) => back.push({ x: Math.round(cx2 - lw / 2), y: Math.round(bot - 8), w: lw, h: 198 - Math.round(bot - 8), r: '40% 40% 50% 50%', rot: 0, bg: o.fill, bw: 3, bc: o.outline }));
+    if (st === 3) over.push({ x: Math.round(mid - 7), y: Math.round(by + h * 0.5), w: 14, h: 14, r: '3px', rot: 45, bg: E.a });
+    return { back: back, over: over };
   }
 
   shapes() {
@@ -634,6 +672,7 @@ class Component extends Base {
       k.isMythic = k.rarity === 'Mythic';
       k.medalRing = k.isMythic ? '#F5C542' : '#1E2A4A';
       k.medalGlow = k.isMythic ? '0 0 14px rgba(245,197,66,0.8)' : 'none';
+      k.medalScale = e.stage === 1 ? 0.44 : 0.38; // evolved forms are wider (wings), so the round card shows them a little smaller
       return k;
     });
     const types = {};

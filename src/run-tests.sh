@@ -10,7 +10,7 @@ HOOKED="hudcheck wplay p14 p15 p18r ctest ntest ptest ztest jitter perf peaktest
 GROUP_world="transitiontest flavortest ambienttest landmarkstest wplay ztest jitter perf peaktest citytest routes cities interiors hometest guidetest fishtest weathertest"
 GROUP_battle="abilitytest ntest ptest aggrotest fxtest towertest twisttest itemtest shinytest"
 GROUP_saves="menutest dextest p14 p15 p18r ctest statstest titletest questtest p17"
-GROUP_ui="a11ytest hudcheck musictest"
+GROUP_ui="evotest a11ytest hudcheck musictest"
 expand() { for a in "$@"; do case "$a" in @*) v="GROUP_${a#@}"; for t in ${!v}; do echo $t.py; done;; *) echo "$a";; esac; done; }
 if [ $# -gt 0 ]; then TESTS="$(expand "$@")"; else TESTS="$(for t in $HOOKED weathertest p17; do echo $t.py; done)"; fi
 cd /tmp
