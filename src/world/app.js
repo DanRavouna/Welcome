@@ -84,10 +84,24 @@ const APP = (() => {
     $('m-title').textContent = game.titleName(); $('m-lv').textContent = lv.level; $('m-xp').style.width = Math.round(lv.into / lv.need * 100) + '%';
     $('m-sound').setAttribute('aria-pressed', st.settings && st.settings.sound ? 'true' : 'false');
     $('m-sound-off').setAttribute('display', st.settings && st.settings.sound ? 'none' : 'inline');
-    $('m-grid').innerHTML = menuTiles().map((t) => '<button class="tile' + (t.wide ? ' wide' : '') + (t.locked ? ' locked' : '') + '" data-tile="' + t.id + '"' + (t.locked ? ' aria-disabled="true"' : '') + '>' +
+    const tiles = menuTiles(), byId = {}; tiles.forEach((t) => { byId[t.id] = t; });
+    const GROUPS = [['critters', 'My critters', ['dex', 'species', 'party', 'bag'], 'M12 3l3 6 6 1-4.5 4.5 1 6.5L12 17l-5.5 3 1-6.5L3 10l6-1z'], ['journey', 'Journey', ['map', 'quests', 'trainer', 'badges', 'seals'], 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14'], ['game', 'Game', ['settings', 'backup'], 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z']];
+    const open = menuGroupsOpen();
+    const tileHtml = (t) => '<button class="tile' + (t.wide ? ' wide' : '') + (t.locked ? ' locked' : '') + '" data-tile="' + t.id + '"' + (t.locked ? ' aria-disabled="true"' : '') + '>' +
       '<span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + t.icon + '"></path></svg></span>' +
-      '<span class="tl">' + t.label + '</span><span class="ts">' + t.sub + '</span>' + (t.badge ? '<span class="tb">' + t.badge + '</span>' : '') + '</button>').join('');
+      '<span class="tl">' + t.label + '</span><span class="ts">' + t.sub + '</span>' + (t.badge ? '<span class="tb">' + t.badge + '</span>' : '') + '</button>';
+    $('m-grid').innerHTML = GROUPS.map(([gid, label, ids, icon]) => {
+      const ts = ids.map((i) => byId[i]).filter(Boolean), isOpen = open.indexOf(gid) !== -1, ready = ts.reduce((n, x) => n + (x.badge ? 1 : 0), 0);
+      return '<section class="mgroup' + (isOpen ? ' open' : '') + '"><button class="mhead" data-group="' + gid + '" aria-expanded="' + (isOpen ? 'true' : 'false') + '" aria-controls="mg-' + gid + '">' +
+        '<span class="mhi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + icon + '"></path></svg></span>' +
+        '<span class="mht"><b>' + label + '</b><span>' + ts.map((x) => x.label).join(' · ') + '</span></span>' + (ready && !isOpen ? '<span class="tb mhb">' + ts.filter((x) => x.badge).map((x) => x.badge).join(', ') + '</span>' : '') +
+        '<svg class="mchev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>' +
+        '<div class="mbody" id="mg-' + gid + '"' + (isOpen ? '' : ' hidden') + '>' + ts.map(tileHtml).join('') + '</div></section>';
+    }).join('');
   }
+  // which menu sections are open (a UI preference, kept in this browser only; the first section starts open)
+  function menuGroupsOpen() { try { const v = JSON.parse(localStorage.getItem('critter-roll:menu') || 'null'); if (Array.isArray(v)) return v; } catch (e) {} return ['critters']; }
+  function toggleMenuGroup(gid) { const o = menuGroupsOpen(), i = o.indexOf(gid); if (i === -1) o.push(gid); else o.splice(i, 1); try { localStorage.setItem('critter-roll:menu', JSON.stringify(o)); } catch (e) {} renderMenu(); const h = document.querySelector('[data-group="' + gid + '"]'); if (h) h.focus(); }
   function openMenu() {
     lastOpener = document.activeElement; menuOpen = true; renderMenu(); cloudStatus();
     try { const fr = PXW.frames().down[0], g = $('m-ava').getContext('2d'); g.imageSmoothingEnabled = false; g.clearRect(0, 0, 16, 10); g.drawImage(fr, 0, 0, 16, 10, 0, 0, 16, 10); } catch (e) {}
@@ -172,8 +186,7 @@ const APP = (() => {
   function travel(id) {
     closeMap();
     if (WORLD.map.id === id) return;
-    if (ZONE_NAMES[id] && WORLD.map.id !== 'town') WORLD.enter('town');
-    WORLD.enter(id); toast('You travel to ' + mapName(id) + '.');
+    WORLD.go(id, ZONE_NAMES[id] && WORLD.map.id !== 'town' ? 'town' : null); toast('You travel to ' + mapName(id) + '.');
   }
   // ---------- save backup ----------
   const SAVE_KEYS = ['critter-roll:v2', 'critter-roll:world', 'critter-roll:id', 'critter-roll:tip'];
@@ -761,10 +774,10 @@ const APP = (() => {
     }
     if (n.kind === 'water') { fish(n); return; }
     if (n.kind === 'npc') { talk(n.npc); return; }
-    if (n.place.enter && n.place.open !== 'house' && WORLD.MAPS[n.place.enter]) { game.sfx('tap'); WORLD.enter(n.place.enter); return; }
+    if (n.place.enter && n.place.open !== 'house' && WORLD.MAPS[n.place.enter]) { game.sfx('tap'); WORLD.go(n.place.enter); return; }
     if (n.place.open === 'tower') { towerLobby(); return; }
     if (n.place.open === 'gym') { const L = (WORLD.allNpcs()[WORLD.map.id] || []).find((x) => x.id === n.place.leader); if (L) talk(L); return; }
-    if (n.place.open === 'house') { if (n.place.enter && WORLD.MAPS[n.place.enter]) { game.sfx('tap'); WORLD.enter(n.place.enter); } else toast(n.place.text || 'Nobody seems to be home.'); return; }
+    if (n.place.open === 'house') { if (n.place.enter && WORLD.MAPS[n.place.enter]) { game.sfx('tap'); WORLD.go(n.place.enter); } else toast(n.place.text || 'Nobody seems to be home.'); return; }
     if (n.place.open === 'shop' && n.place.id !== 'shop') { const k = (WORLD.allNpcs()[WORLD.map.id] || []).find((x) => x.kind === 'shop'); if (k) talk(k); else openPanel('shop'); return; }
     openScreen(n.place.open);
   }
@@ -927,7 +940,7 @@ const APP = (() => {
     $('m-close').addEventListener('click', () => closeMenu());
     $('m-help').addEventListener('click', () => { closeMenu(); toast('Walk with the joystick. Tall grass hides wild critters, sparkling grass hides rarer ones. The shrine rolls any type, the Arena is for battles.'); });
     $('m-sound').addEventListener('click', () => { const s = Object.assign({}, game.state.settings); s.sound = !s.sound; game.update({ settings: s }); if (s.sound) game.sfx('tap'); renderMenu(); });
-    $('m-grid').addEventListener('click', (e) => { const t = e.target.closest('[data-tile]'); if (t) tile(t.dataset.tile); });
+    $('m-grid').addEventListener('click', (e) => { const g = e.target.closest('[data-group]'); if (g) { toggleMenuGroup(g.dataset.group); return; } const t = e.target.closest('[data-tile]'); if (t) tile(t.dataset.tile); });
     $('menu').addEventListener('click', (e) => { if (e.target.id === 'menu') closeMenu(); });
     let pid = null; try { pid = localStorage.getItem('critter-roll:id'); if (!pid) { pid = String(100000000 + Math.floor(Math.random() * 899999999)); localStorage.setItem('critter-roll:id', pid); } } catch (e) { pid = '000000000'; }
     $('m-id').textContent = 'ID ' + pid;

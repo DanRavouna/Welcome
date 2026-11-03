@@ -526,6 +526,35 @@ const WORLD = (() => {
     if (canvas) prerender();
     if (opts.onMap) opts.onMap(M);
   }
+  // ---------- map transitions: zoom toward the player, pixelate and darken, swap maps at the midpoint, then settle back ----------
+  // go(mapId, pre?) is for real player moves (exits, doors, Travel); enter() stays instant for code and tests.
+  // Reduce motion / calm mode: a short fade only. window.__noTransition (test hook) makes go() instant.
+  let TR = null, fxC = null;
+  function go(mapId, pre) {
+    if (TR || !MAPS[mapId]) return;
+    if (typeof window !== 'undefined' && window.__noTransition) { if (pre) enter(pre); enter(mapId); return; }
+    const still = opts.still ? !!opts.still() : false;
+    TR = { t: 0, dur: still ? 0.3 : 0.62, mapId: mapId, pre: pre || null, swapped: false, still: still };
+    input.jx = 0; input.jy = 0; input.keys = {}; P.moving = false;
+  }
+  function stepTR(dt) {
+    TR.t += dt;
+    if (!TR.swapped && TR.t >= TR.dur / 2) { TR.swapped = true; if (TR.pre) enter(TR.pre); enter(TR.mapId); }
+    if (TR.t >= TR.dur) TR = null;
+  }
+  function transitionFx() { // call last in draw(): everything already drawn is pixelated, zoomed and darkened by how far the transition is
+    const u = Math.min(1, TR.t / TR.dur), kk = 1 - Math.abs(u * 2 - 1), k = kk * kk * (3 - 2 * kk), W = canvas.width, H = canvas.height;
+    if (TR.still) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = 'rgba(10,14,30,' + (k * 0.9).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return; }
+    const px = Math.max(1, Math.round((1 + k * 11) * dpr)), tw = Math.max(1, Math.ceil(W / px)), th = Math.max(1, Math.ceil(H / px)), z = 1 + 0.4 * k;
+    if (!fxC) fxC = document.createElement('canvas');
+    if (fxC.width !== tw || fxC.height !== th) { fxC.width = tw; fxC.height = th; }
+    const f = fxC.getContext('2d'); f.imageSmoothingEnabled = true; f.drawImage(canvas, 0, 0, W, H, 0, 0, tw, th);
+    const pc = lastPlayerScreen ? [lastPlayerScreen.x * dpr, (lastPlayerScreen.y - 18) * dpr] : [W / 2, H / 2];
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false; ctx.fillStyle = '#0A0E1E'; ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(fxC, 0, 0, tw, th, pc[0] - pc[0] * z, pc[1] - pc[1] * z, tw * px * z, th * px * z);
+    ctx.fillStyle = 'rgba(10,14,30,' + (k * k * 0.92).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
   function nearest() {
     const tx = P.x / TS, ty = P.y / TS; let best = null, bd = 1.7;
     (NPCS[M.id] || []).forEach((n) => { const d = Math.hypot(tx - (n.x + 0.5), ty - (n.y + 0.9)); if (d < 1.45 && d < bd + 0.3) { bd = Math.min(bd, d); best = { kind: 'npc', npc: n }; } });
@@ -552,7 +581,7 @@ const WORLD = (() => {
     if (tgt) { FOL.moving = Math.hypot(tgt.x - FOL.x, tgt.y - FOL.y) > 0.5; FOL.x += (tgt.x - FOL.x) * 0.35; FOL.y += (tgt.y - FOL.y) * 0.35; } else FOL.moving = false;
   }
   function update(dt) {
-    if (paused) { P.moving = false; return; }
+    if (paused || TR) { P.moving = false; return; }
     followerStep();
     let vx = input.jx, vy = input.jy; const k = input.keys;
     if (k.ArrowLeft || k.a) vx -= 1; if (k.ArrowRight || k.d) vx += 1; if (k.ArrowUp || k.w) vy -= 1; if (k.ArrowDown || k.s) vy += 1;
@@ -567,7 +596,7 @@ const WORLD = (() => {
     } else P.moving = false;
     // left the map through an exit?
     const tx = Math.floor(P.x / TS), ty = Math.floor(P.y / TS);
-    if (tx < 0 || ty < 0 || tx >= M.W || ty >= M.H) { const e = exitAt(tx, ty); if (e) { enter(e.to); return; } }
+    if (tx < 0 || ty < 0 || tx >= M.W || ty >= M.H) { const e = exitAt(tx, ty); if (e) { go(e.to); return; } }
     // grass steps
     const key = tx + ',' + ty;
     if (key !== lastTile) {
@@ -772,9 +801,10 @@ const WORLD = (() => {
       if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag(lab ? name + ' · ' + lab : 'To ' + name, tx, ty, false);
     });
     if (flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.9, flash * 3) + ')'; ctx.fillRect(0, 0, vw, vh); }
+    if (TR) transitionFx();
   }
   let last = 0, frameDt = 0.016;
-  function frame(t) { const dt = Math.min(0.05, (t - last) / 1000 || 0); last = t; frameDt = dt; tAnim += dt; update(dt); draw(); requestAnimationFrame(frame); }
+  function frame(t) { const dt = Math.min(0.05, (t - last) / 1000 || 0); last = t; frameDt = dt; tAnim += dt; if (TR) stepTR(dt); update(dt); draw(); requestAnimationFrame(frame); }
   function resize() { vw = canvas.clientWidth; vh = canvas.clientHeight; dpr = Math.min(3, window.devicePixelRatio || 1); canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr); if (!terrain || terrainFor !== M.id) prerender(); }
   function init(cv, o) {
     canvas = cv; ctx = cv.getContext('2d'); opts = Object.assign({ random: () => Math.random() }, o);
@@ -790,10 +820,10 @@ const WORLD = (() => {
     requestAnimationFrame(frame);
   }
   return {
-    init, input, nearest, MAPS, ZONES, TS, collides, enter, nextHop, setFish: (f) => { fishAt = f; }, follower: () => FOL,
+    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, setFish: (f) => { fishAt = f; }, follower: () => FOL,
     addProp, PROPS, get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
     solidAt: (x, y) => solidAt(x, y),
-    setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; },
+    setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },
     get npcs() { return NPCS[M.id] || []; }, allNpcs: () => NPCS, facePlayer, inSight,
     pos: () => ({ x: P.x, y: P.y }), debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
   };
