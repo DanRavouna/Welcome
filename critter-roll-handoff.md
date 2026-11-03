@@ -146,5 +146,5 @@ Attach this file plus `critter-roll-growth-source.tar.gz` (latest source + tests
 
 ## Next step
 Endgame phase is complete (Tower, shinies, milestones/titles all live).
-Cities + route loop are live. Dan declined dailies and the rival for now. Next ideas: weather, critter abilities (big balance job), real-phone playtest + stats (the 3 newest share Mossbrook's street plan; routes share the zone builder's structure). Waiting on Dan's phone playtest + stats. Candidate features: weekly Tower twist, daily challenge battle, Tower leaderboard (only if friends play). Housekeeping: split the test run, split app.js, and keep balance checks per change. Real-phone check of Tower, shiny sparkle/vibration and titles still pending.
+Cities + route loop are live. Dan declined dailies and the rival for now. Next ideas: weather, critter abilities (big balance job), real-phone playtest + stats (the cities already have distinct layouts; only the four routes share the zone builder's structure). Waiting on Dan's phone playtest + stats. Candidate features: weekly Tower twist, daily challenge battle, Tower leaderboard (only if friends play). Housekeeping: split the test run, split app.js, and keep balance checks per change. Real-phone check of Tower, shiny sparkle/vibration and titles still pending.
 
