@@ -70,6 +70,7 @@ const APP = (() => {
       { id: 'species', label: 'Species', sub: (st.seen || []).length + '/48', icon: I.species },
       { id: 'trainer', label: 'Trainer', sub: 'Level ' + lv.level, icon: I.trainer },
       { id: 'quests', label: 'Quests', sub: done + '/3 today', icon: I.quests, badge: ready ? ready + ' ready' : '' },
+      { id: 'journal', label: 'Journal', sub: advOf().clues.length + '/' + ADV.CLUES.length + ' clues', icon: 'M6 3h10a2 2 0 0 1 2 2v16H8a2 2 0 0 1-2-2zM6 19a2 2 0 0 1 2-2h10M10 8h5M10 12h5' },
       { id: 'badges', label: 'Badges', sub: v.badgeCount + '/9', icon: I.badges },
       { id: 'settings', label: 'Settings', sub: 'Sound, motion', icon: I.settings },
       { id: 'map', label: 'Map', sub: 'Travel anywhere open', icon: 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14' },
@@ -85,7 +86,7 @@ const APP = (() => {
     $('m-sound').setAttribute('aria-pressed', st.settings && st.settings.sound ? 'true' : 'false');
     $('m-sound-off').setAttribute('display', st.settings && st.settings.sound ? 'none' : 'inline');
     const tiles = menuTiles(), byId = {}; tiles.forEach((t) => { byId[t.id] = t; });
-    const GROUPS = [['critters', 'My critters', ['dex', 'species', 'party', 'bag'], 'M12 3l3 6 6 1-4.5 4.5 1 6.5L12 17l-5.5 3 1-6.5L3 10l6-1z'], ['journey', 'Journey', ['map', 'quests', 'trainer', 'badges', 'seals'], 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14'], ['game', 'Game', ['settings', 'backup'], 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z']];
+    const GROUPS = [['critters', 'My critters', ['dex', 'species', 'party', 'bag'], 'M12 3l3 6 6 1-4.5 4.5 1 6.5L12 17l-5.5 3 1-6.5L3 10l6-1z'], ['journey', 'Journey', ['map', 'quests', 'journal', 'trainer', 'badges', 'seals'], 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14'], ['game', 'Game', ['settings', 'backup'], 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z']];
     const open = menuGroupsOpen();
     const tileHtml = (t) => '<button class="tile' + (t.wide ? ' wide' : '') + (t.locked ? ' locked' : '') + '" data-tile="' + t.id + '"' + (t.locked ? ' aria-disabled="true"' : '') + '>' +
       '<span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + t.icon + '"></path></svg></span>' +
@@ -120,6 +121,7 @@ const APP = (() => {
   function tile(id) {
     if (id === 'map') { openMap(); return; }
     if (id === 'backup') { openBackup(); return; }
+    if (id === 'journal') { closeMenu(); journal(); return; }
     if (id === 'bag' || id === 'party') { openPanel(id); return; }
     closeMenu(true);
     if (id === 'dex') openScreen('dex');
@@ -625,6 +627,41 @@ const APP = (() => {
     $('hud').hidden = false; WORLD.setPaused(false);
     if (cb) cb();
   }
+  // ---------- adventure: clues, objects, the Sealed Arch (content in adventure.js) ----------
+  const advOf = () => { const a = (game && game.state.adv) || {}; return { clues: a.clues || [], open: a.open || {}, flags: a.flags || {} }; };
+  function advSave(mut) { const a = advOf(), n = { clues: a.clues.slice(), open: Object.assign({}, a.open), flags: Object.assign({}, a.flags) }; mut(n); game.update({ adv: n }); try { setNear(WORLD.nearest()); } catch (e) {} }   // refresh the action label (e.g. Examine -> Enter)
+  function objState(o) { const a = advOf(); if (o.kind === 'plaque') return { open: !!a.open.arch, glow: a.clues.length }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; return {}; }
+  function gainClue(c) {
+    if (advOf().clues.indexOf(c.id) !== -1) return;
+    advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
+    const n = advOf().clues.length;
+    toast('New clue (' + n + '/' + ADV.CLUES.length + ') in your Journal.');
+    if (n === ADV.CLUES.length) setTimeout(() => { if (!advOf().open.arch && WORLD.map.id !== 'dg-arch') toast('That is all four clues. Go back to the old arch in Highland Pass.'); }, 4800);
+  }
+  function journal() {
+    const have = advOf().clues, lines = ['Clues about the Sealed Arch: ' + have.length + ' of ' + ADV.CLUES.length + '.'];
+    ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Not found yet. Try asking around ' + c.where + '.'));
+    if (advOf().open.arch) lines.push('The arch in Highland Pass is open.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
+    showDialog('Journal', lines);
+  }
+  function archUse() {
+    const a = advOf();
+    if (a.open.arch) { game.sfx('tap'); WORLD.go('dg-arch'); return; }
+    if (a.clues.length < ADV.CLUES.length) { showDialog('The old arch', ['Eight critters sit around one fire. A ninth seat is carved empty.', 'The stone stays cold and silent. Clues found: ' + a.clues.length + ' of ' + ADV.CLUES.length + '. Someone on the other roads may know more.']); return; }
+    showDialog('The old arch', ['Fire for the first. Lamp for the second. Hull for the third.', 'The carved flame between the pillars begins to glow...', 'A passage opens in the old arch.'], null, () => { advSave((x) => { x.open.arch = true; }); game.sfx('claim'); setTimeout(() => { game.sfx('claim'); WORLD.go('dg-arch'); }, 200); });
+  }
+  function chestUse(o) {
+    const key = 'chest:' + o.id; if (advOf().flags[key]) { toast('The chest is empty.'); return; }
+    const r = o.reward || {}, bag = Object.assign({}, game.state.bag), parts = [];
+    Object.keys(r).forEach((k) => { if (k === 'essence') parts.push(r[k] + ' essence'); else { bag[k] = (bag[k] | 0) + r[k]; parts.push(r[k] + ' ' + ({ potion: 'Potion', super: 'Super Potion', charm: 'Rare Charm', ticket: 'Roll Ticket' }[k] || k) + (r[k] > 1 ? 's' : '')); } });
+    advSave((a) => { a.flags[key] = true; }); game.update({ bag: bag, essence: (game.state.essence || 0) + (r.essence | 0) }); game.sfx('claim');
+    toast('You open the chest: ' + parts.join(' and ') + '!');
+  }
+  function objectUse(o) {
+    if (o.kind === 'plaque') { archUse(); return; }
+    if (o.kind === 'chest') { chestUse(o); return; }
+    toast(o.text || 'Nothing happens.');
+  }
   // weather / time-of-day remark for ordinary townsfolk (flavor.js); indoors the person hears the weather of the town outside
   function flavorLine(n) {
     const M = WORLD.map, outside = M.interior ? (M.parent || 'town') : M.id, st = game.state.settings || {};
@@ -641,7 +678,11 @@ const APP = (() => {
       if (Q.done) { game.claimCityQuest(qcity); game.sfx('claim'); showDialog(n.name, ['You did it! Thank you so much.', 'Here, take this: +' + CQ_REWARD + ' essence and some trainer experience.']); return; }
       showDialog(n.name, [n.lines[0], 'Could you do me a favor today? Please ' + Q.q.txt + '.', 'Progress: ' + Q.n + '/' + Q.q.n + '. Come back to me when it is done. I have a new favor every day.']); return;
     }
-    if (n.kind === 'talk') { const fl = n.id === 'pip' ? null : flavorLine(n); showDialog(n.name, n.id === 'pip' ? ['Need a pointer? Here is what I would do next.', wayHint()] : (fl ? [fl].concat(n.lines) : n.lines)); return; }
+    if (n.kind === 'talk') {
+      const fl = n.id === 'pip' ? null : flavorLine(n), lines = n.id === 'pip' ? ['Need a pointer? Here is what I would do next.', wayHint()] : (fl ? [fl].concat(n.lines) : n.lines), clue = ADV.CLUES.find((c) => c.npc === n.id);
+      if (clue && advOf().clues.indexOf(clue.id) === -1) { showDialog(n.name, lines.concat(clue.lines), null, () => gainClue(clue)); return; }   // the first talk also teaches a clue about the Sealed Arch
+      showDialog(n.name, lines); return;
+    }
     if (n.kind === 'shop') { showDialog(n.name, n.lines, null, () => openPanel('shop')); return; } // shops stay quick: no weather remark
     if (n.kind === 'request') {
       if (done.indexOf(n.id) !== -1) { showDialog(n.name, n.after); return; }
@@ -773,6 +814,7 @@ const APP = (() => {
       return;
     }
     if (n.kind === 'water') { fish(n); return; }
+    if (n.kind === 'object') { objectUse(n.obj); return; }
     if (n.kind === 'npc') { talk(n.npc); return; }
     if (n.place.enter && n.place.open !== 'house' && WORLD.MAPS[n.place.enter]) { game.sfx('tap'); WORLD.go(n.place.enter); return; }
     if (n.place.open === 'tower') { towerLobby(); return; }
@@ -785,7 +827,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? ({ chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -841,7 +883,7 @@ const APP = (() => {
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
     if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader) ? 'boss' : 'battle';
-    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
+    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide', 'dg-arch': 'peak' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
@@ -856,7 +898,7 @@ const APP = (() => {
     WORLD.init($('world'), {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
-      weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
+      objState: objState, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
       exitLocked: (e) => !game.props.testMode && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.testMode && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       follower: () => {

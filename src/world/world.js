@@ -1,7 +1,7 @@
 // ---- World: Sproutvale + four zones, rendering, movement, exits, encounters ----
 const WORLD = (() => {
   const TS = 32;
-  const SOLID = new Set(['T', 'X', '~', 'F', 'G', 'O', 'R', 'w', 'b', 's', 't', 'p', 'k', 'h', 'm']);
+  const SOLID = new Set(['T', 'X', '~', 'F', 'G', 'O', 'R', 'w', 'b', 's', 't', 'p', 'k', 'h', 'm', 'C']); // C = cave wall
   function rng(a) { return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
   const THEMES = {
@@ -15,6 +15,7 @@ const WORLD = (() => {
   THEMES.frosthold = { ground: '#E6EFF8', blade: 'rgba(120,150,190,0.35)', path: '#9AA3B5', water: '#BFE3F5', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#C9D9EA', flowers: ['#FFFFFF', '#BBD5FF'] };
   THEMES.cinderport = { lava: true, ground: '#C9925C', blade: 'rgba(110,60,20,0.35)', path: '#7A6A62', water: '#FF6A2B', tall: '#B9963A', tallBlade: '#8E6B1E', tree: 'dead', bg: '#5A3418', flowers: ['#FFD86B', '#FF8A3D'] };
   THEMES.coralbay = { ground: '#F2DFA8', blade: 'rgba(150,120,60,0.3)', path: '#C9A070', water: '#2F8FD8', tall: '#B9C46A', tallBlade: '#7E8A32', tree: 'palm', bg: '#1F6FB0', flowers: ['#FFFFFF', '#F59ACB'] };
+  THEMES['dg-arch'] = { ground: '#262B40', blade: 'rgba(10,12,24,0.35)', path: '#515A7C', water: '#1E3A5F', tall: '#2E4A4A', tallBlade: '#1E3434', tree: 'dead', bg: '#0A0C18', flowers: ['#7AA0FF'], cave: true };
   THEMES['route-mf'] = THEMES.peak; THEMES['route-cm'] = Object.assign({}, THEMES.moss, { dense: false }); THEMES['route-fc'] = THEMES.frost; THEMES['route-cc'] = THEMES.tide;
   THEMES.mossbrook = { ground: '#5FA34A', blade: 'rgba(30,80,30,0.4)', path: '#C9A878', water: '#4F9AD0', tall: '#44803A', tallBlade: '#2A6A2C', tree: 'round', bg: '#2A5A2C', flowers: ['#F5A3D0', '#FFFFFF', '#FFD86B'] };
   const ZONES = {
@@ -339,6 +340,25 @@ const WORLD = (() => {
     post(MAPS[cityB], edgeB, aB, dirWord[edgeB] + ': ' + R.name + ' (' + R.types.join(' and ') + ' critters), the road to ' + MAPS[cityA].name + '.');
     post(R, rEdgeB, mid, dirWord[rEdgeB] + ': ' + MAPS[cityB].name + '.');
   });
+  // ---------- dungeons (layouts live in adventure.js) ----------
+  // buildDungeon turns a layout into a map: cave walls 'C', objects on solid 'O' tiles, an exit gap, a darkness radius.
+  function buildDungeon(id) {
+    const d = ADV.DUNGEONS[id](), grid = d.rows.map((r) => r.split(''));
+    const objects = d.objects.map((o) => { grid[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });
+    const arrive = d.spawn;
+    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: [], rate: 0, cave: true, dark: d.dark || null, objects: objects,
+      exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive };
+  }
+  MAPS['dg-arch'] = buildDungeon('dg-arch');
+  // The Sealed Arch's door: the ruin's signpost tile becomes the "arch" object (a rune stone). With four clues the app opens it (see archUse in app.js).
+  (() => {
+    const Rm = MAPS['route-mf'], ruin = (Rm.props || []).find((p) => p.id === 'ruin'); if (!ruin) return;
+    const sx = ruin.x + 1, sy = ruin.y + ruin.h;
+    Rm.signs = Rm.signs.filter((s) => !(s.x === sx && s.y === sy)); Rm.grid[sy][sx] = 'O';
+    for (const [dx, dy] of [[0, 1], [-1, 1], [1, 1], [-1, 0], [1, 0]]) { const c = Rm.grid[sy + dy] && Rm.grid[sy + dy][sx + dx]; if (c && c !== '=') Rm.grid[sy + dy][sx + dx] = '.'; }   // keep the doorstep clear
+    (Rm.objects = Rm.objects || []).push({ id: 'arch', kind: 'plaque', x: sx, y: sy, reach: 1.9, portal: { x: ruin.x, y: ruin.y }, text: 'The Sealed Arch' });
+    Rm.arriveFrom = Object.assign({}, Rm.arriveFrom, { 'dg-arch': [sx + 0.5, sy + 1.6] });
+  })();
   // ---------- house interiors: every city house gets a room (door on the outside, exit through the bottom) ----------
   const ROOM_STYLE = { town: { floor: '#B07A46', wall: '#F4EAD6', rug: '#D8574A', bed: '#D8574A' }, lab: { floor: '#C9CFDA', wall: '#E8EEF8', rug: '#3C6FE0', bed: '#3C6FE0' }, mossbrook: { floor: '#B07A46', wall: '#E8D7B0', rug: '#4E8A3A', bed: '#4FB06D' }, frosthold: { floor: '#8E6B4A', wall: '#C9D3E6', rug: '#3E6E8E', bed: '#3E8EF7' }, cinderport: { floor: '#7A5A44', wall: '#D9C2A8', rug: '#A8382E', bed: '#D8574A' }, coralbay: { floor: '#C9A070', wall: '#F4EAD6', rug: '#2A8A9A', bed: '#4A9A8A' } };
   const ROOM_LAYOUTS = [
@@ -561,6 +581,7 @@ const WORLD = (() => {
     if (best) return best;
     M.places.forEach((p) => { const [dx, dy] = p.door; const d = Math.hypot(tx - (dx + 1), ty - (dy + 1.1)); if (d < bd) { bd = d; best = { kind: 'place', place: p }; } });
     M.signs.forEach((s) => { const d = Math.hypot(tx - (s.x + 0.5), ty - (s.y + 0.5)); if (d < Math.min(bd, 1.6)) { bd = d; best = { kind: 'sign', sign: s }; } });
+    (M.objects || []).forEach((o) => { const d = Math.hypot(tx - (o.x + 0.5), ty - (o.y + 0.5)); if (d < Math.min(bd, o.reach || 1.7)) { bd = d; best = { kind: 'object', obj: o }; } });
     if (!best && !(M.theme && M.theme.lava) && !M.interior) { // fishing: water next to you
       const fx = Math.floor(tx), fy = Math.floor(ty - 0.3), dirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }, f = dirs[P.dir] || [0, 1];
       const cand = [[fx + f[0], fy + f[1]], [fx, fy - 1], [fx, fy + 1], [fx - 1, fy], [fx + 1, fy]];
@@ -623,7 +644,7 @@ const WORLD = (() => {
         }
       } else if (!n.leader) { n.turnT -= dt; if (n.turnT <= 0) { n.turnT = 2.5 + Math.random() * 4; n.dir = ['down', 'left', 'right', 'down'][Math.floor(Math.random() * 4)]; } }
     });
-    const n = nearest(); const nk = n ? (n.place ? n.place.id : (n.npc ? 'npc' + n.npc.id : (n.sign ? 'sign' + n.sign.x + ',' + n.sign.y : n.kind + n.x + ',' + n.y))) : null;
+    const n = nearest(); const nk = n ? (n.place ? n.place.id : (n.obj ? 'obj' + n.obj.id : n.npc ? 'npc' + n.npc.id : (n.sign ? 'sign' + n.sign.x + ',' + n.sign.y : n.kind + n.x + ',' + n.y))) : null;
     if (nk !== lastNear) { lastNear = nk; if (opts.onNear) opts.onNear(n); }
   }
   let FR = null, lastPlayerScreen = null, lastCam = null, tintNow = 'day';
@@ -647,6 +668,19 @@ const WORLD = (() => {
     ctx.fillStyle = gold ? '#FFD86B' : '#1E2A4A'; ctx.fillRect(x + 2, y + 2, w - 4, 18);
     ctx.fillStyle = gold ? '#FFF1BF' : '#3A4A78'; ctx.fillRect(x + 2, y + 2, w - 4, 2);
     ctx.fillStyle = gold ? '#2A1B00' : '#FFFFFF'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, x + w / 2, y + 12);
+  }
+  // dark dungeons: a dark layer with stepped light circles around the player and around lit objects (braziers, fires)
+  let darkC = null;
+  function drawDark(cx, cy, pxs, pys) {
+    const W = canvas.width, H = canvas.height; if (!darkC) darkC = document.createElement('canvas');
+    if (darkC.width !== W || darkC.height !== H) { darkC.width = W; darkC.height = H; }
+    const g = darkC.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, vw, vh);
+    g.fillStyle = 'rgba(3,5,16,0.95)'; g.fillRect(0, 0, vw, vh); g.globalCompositeOperation = 'destination-out';
+    const still = opts.still ? opts.still() : false, flick = still ? 1 : 1 + 0.025 * Math.sin(tAnim * 7);
+    const light = (x, y, r) => { [[1, 0.42], [0.8, 0.42], [0.6, 0.42], [0.42, 0.5], [0.26, 0.9]].forEach(([f, a]) => { g.fillStyle = 'rgba(0,0,0,' + a + ')'; g.beginPath(); g.arc(x, y, r * f * flick, 0, 6.2832); g.fill(); }); };
+    light(pxs - cx, pys - cy - 14, M.dark.r * TS);
+    (M.objects || []).forEach((o) => { const r = ADV.LIGHT[o.kind] ? ADV.LIGHT[o.kind](o) : 0; if (r) light((o.x + 0.5) * TS - cx, (o.y + 0.5) * TS - cy, r * TS); });
+    ctx.drawImage(darkC, 0, 0, vw, vh);
   }
   const hash2 = (a, b, c) => { let h = Math.imul(a + 374761393, 668265263) ^ Math.imul(b + 1274126177, 2246822519) ^ Math.imul(c + 99, 3266489917); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
   // rain ripples / storm whitecaps on visible water tiles (pixel rings, 2 px steps)
@@ -729,9 +763,10 @@ const WORLD = (() => {
     if (wk === 'snow') snowCaps(cx, cy);
     const fol = opts.follower ? opts.follower() : null;
     if (!FOL) followerReset();
-    const list = (NPCS[M.id] || []).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
+    const list = (NPCS[M.id] || []).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat((M.objects || []).map((o) => ({ y: (o.y + 0.95) * TS, o: o }))).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
     list.forEach((it) => {
       if (it.p) { drawPlayer(pxs - cx, pys - cy); return; }
+      if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy); if (ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50) return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (art) art(ctx, ox, oy, st, tAnim, o); return; }
       if (it.f) {
         const x = snap(FOL.x - cx), y = snap(FOL.y - cy), hop = FOL.moving ? Math.abs(Math.sin(tAnim * 12)) * 3 : Math.abs(Math.sin(tAnim * 2)) * 1;
         const w = 30, h = Math.round(30 * fol.img.height / Math.max(1, fol.img.width));
@@ -775,10 +810,18 @@ const WORLD = (() => {
         ctx.restore();
       }
     }
+    // the Sealed Arch's open doorway: a swirling glow between the pillars
+    (M.objects || []).forEach((o) => { if (!o.portal || !(opts.objState && (opts.objState(o) || {}).open)) return;
+      const X = snap(o.portal.x * TS - cx), Y = snap(o.portal.y * TS - cy), k = 0.5 + 0.5 * Math.sin(tAnim * 2.4);
+      if (X < -140 || X > vw + 40 || Y < -120 || Y > vh + 40) return;
+      const gr = ctx.createLinearGradient(0, Y + 28, 0, Y + 92); gr.addColorStop(0, 'rgba(190,150,255,' + (0.55 + 0.3 * k).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(60,40,140,0.9)');
+      ctx.fillStyle = gr; ctx.fillRect(X + 34, Y + 28, 60, 64);
+      for (let i = 0; i < 9; i++) { const px2 = X + 40 + ((i * 17 + Math.floor(tAnim * 6) * 3) % 48), py2 = Y + 34 + ((i * 23 + Math.floor(tAnim * 12 + i * 5)) % 52); ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.9)' : 'rgba(255,216,107,0.9)'; ctx.fillRect(px2 & ~1, py2 & ~1, 2, 2); }
+    });
     // weather (outdoors only), under the time-of-day tint so night darkens it too
     if (typeof WEATHER !== 'undefined') WEATHER.draw(ctx, { kind: M.interior ? null : (opts.weather ? opts.weather() : null), mapId: M.id, vw: vw, vh: vh, cx: cx, cy: cy, t: tAnim, still: opts.still ? opts.still() : false });
     // time of day: tint the world (tags drawn later stay crisp)
-    const tod =M.interior ? 'day' : (opts.tint ? opts.tint() : 'day'); // lamplit rooms: no night tint indoors
+    const tod = (M.interior || M.cave) ? 'day' : (opts.tint ? opts.tint() : 'day'); // lamplit rooms and caves: no night tint
     tintNow = tod;
     if (tod !== 'day') {
       ctx.fillStyle = { night: 'rgba(14,24,70,0.42)', dusk: 'rgba(255,110,50,0.14)', dawn: 'rgba(255,190,140,0.12)' }[tod];
@@ -789,6 +832,7 @@ const WORLD = (() => {
           ctx.fillStyle = '#FFD86B'; ctx.fillRect(x, y, 28, 20); }); });
     }
     if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'glow', ambEnv); // lights (fireflies) shine over the night tint
+    if (M.dark) drawDark(cx, cy, pxs, pys);
     const near = nearest();
     M.places.forEach((p) => { const tx = (p.x + p.w / 2) * TS - cx, ty = p.y * TS - cy - (p.kind === 'board' ? 26 : 14); if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag(p.name, tx, ty, near && near.place === p); });
     if (M.rare) { const tx = (M.rare.x + 1.5) * TS - cx, ty = M.rare.y * TS - cy - 12; if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag('Rare grass', tx, ty, true); }
@@ -820,7 +864,7 @@ const WORLD = (() => {
     requestAnimationFrame(frame);
   }
   return {
-    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, setFish: (f) => { fishAt = f; }, follower: () => FOL,
+    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, get objects() { return M.objects || []; }, setFish: (f) => { fishAt = f; }, follower: () => FOL,
     addProp, PROPS, get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
     solidAt: (x, y) => solidAt(x, y),
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },

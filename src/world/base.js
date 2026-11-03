@@ -50,6 +50,7 @@ class Component extends Base {
       npc: d.npc && typeof d.npc === 'object' ? { done: Array.isArray(d.npc.done) ? d.npc.done : [], beaten: d.npc.beaten && typeof d.npc.beaten === 'object' ? d.npc.beaten : {}, cleared: Array.isArray(d.npc.cleared) ? d.npc.cleared : [], seals: Array.isArray(d.npc.seals) ? d.npc.seals : [] } : { done: [], beaten: {}, cleared: [], seals: [] },
       stats: d.stats && typeof d.stats === 'object' && d.stats.days && typeof d.stats.days === 'object' ? d.stats : { v: 1, days: {} },
       visited: Array.isArray(d.visited) ? d.visited.filter((x) => typeof x === 'string') : [],
+      adv: (() => { const a = d.adv && typeof d.adv === 'object' ? d.adv : {}; return { clues: Array.isArray(a.clues) ? a.clues.filter((x) => typeof x === 'string') : [], open: a.open && typeof a.open === 'object' ? a.open : {}, flags: a.flags && typeof a.flags === 'object' ? a.flags : {} }; })(), // adventure progress: clues found, opened doors, chests taken
       titles: Array.isArray(d.titles) ? d.titles.filter((x) => typeof x === 'string') : [],
       title: typeof d.title === 'string' ? d.title : '',
       shinies: Array.isArray(d.shinies) ? d.shinies.filter((n) => Number.isInteger(n)) : [],
@@ -86,7 +87,7 @@ class Component extends Base {
     this.badgeChecks(s).forEach((b) => { if (b.met && earned.indexOf(b.id) === -1) earned.push(b.id); });
     this.setState(Object.assign({}, patch, extra, { earned: earned }));
     try {
-      window.localStorage.setItem('critter-roll:v2', JSON.stringify({ caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited }));
+      window.localStorage.setItem('critter-roll:v2', JSON.stringify({ caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv }));
     } catch (e) {}
   }
 

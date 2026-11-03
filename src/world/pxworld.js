@@ -13,6 +13,7 @@ const PXW = (() => {
     mossbrook: { g: '#5FA34A', gd: '#74B85C', gt: '#44803A', p: '#C9A878', ps: '#B39064', pe: '#8A6A44', w: '#4F9AD0', wl: '#9CD0F2', we: '#2F70A0', t: '#3E8A3A', tb: '#2A6A2C', th: '#74B85C', tree: 'round', ol: '#1E3A1E', fl: ['#F5A3D0', '#FFFFFF', '#FFD86B', '#C9A8FF'] },
     tide: { g: '#F2DFA8', gd: '#FAECC4', gt: '#D9C38A', p: '#E2C98E', ps: '#CDB27A', pe: '#B09060', w: '#3C95DC', wl: '#A8D8FF', we: '#2A6FB0', t: '#B9C46A', tb: '#7E8A32', th: '#D8E08A', tree: 'palm', ol: '#5A4A20', fl: ['#FFFFFF', '#F5A3D0'] }
   };
+  PAL['dg-arch'] = { g: '#262B40', gd: '#2F3550', gt: '#1C2033', p: '#515A7C', ps: '#626C90', pe: '#383E5A', w: '#1E3A5F', wl: '#3A6A9A', we: '#122A48', t: '#2E4A4A', tb: '#1E3434', th: '#3E6A5A', tree: 'dead', ol: '#0A0C18', fl: ['#7AA0FF'], cw: '#171A2A', cwl: '#3A4160', cwd: '#0C0E1A' };
   PAL['route-mf'] = Object.assign({}, PAL.peak, { g: '#97B07E', gd: '#ABC492' }); PAL['route-fc'] = Object.assign({}, PAL.frost, { w: '#3C95DC', wl: '#A8D8FF', we: '#2A6FB0' }); PAL['route-cc'] = Object.assign({}, PAL.tide, { p: '#B08858', ps: '#9A7448', tree: 'palm' });
   PAL['route-cm'] = { g: '#8C9A5E', gd: '#A0AE70', gt: '#6E7A44', p: '#A08A6A', ps: '#8E7858', pe: '#6A5A40', w: '#4F9AD0', wl: '#9CD0F2', we: '#2F70A0', t: '#7E8A3A', tb: '#5E6A22', th: '#A0AE70', tree: 'dead', ol: '#2E2A1A', fl: ['#FF8A3D', '#FFD86B'] };
   function stamp(g, x0, y0, rows, colors) {
@@ -100,6 +101,13 @@ const PXW = (() => {
         const cl = t === 'Z' ? { h: '#FFF7D6', b: P.t, d: P.tb } : { h: P.th, b: P.t, d: P.tb };
         stamp(g, X, Y + 2, TUFT, cl); stamp(g, X + 8, Y + 2, TUFT, cl); stamp(g, X + 4, Y + 9, TUFT, cl); stamp(g, X + 12, Y + 9, TUFT, cl);
       }
+    }
+    // cave walls (dungeons): dark rock with a lit front face wherever the floor shows below
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] === 'C') {
+      const X = x * L, Y = y * L; g.fillStyle = P.cw; g.fillRect(X, Y, L, L);
+      g.fillStyle = P.cwl; for (let i = 0; i < 3; i++) g.fillRect(X + Math.floor(r() * 14), Y + Math.floor(r() * 10), 2, 1);
+      if (T(x, y + 1) !== 'C') { g.fillStyle = P.cwl; g.fillRect(X, Y + L - 6, L, 4); g.fillStyle = P.cwd; g.fillRect(X, Y + L - 2, L, 2); }
+      if (T(x, y - 1) !== 'C') { g.fillStyle = P.cwl; g.fillRect(X, Y, L, 2); }
     }
     // fences
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] === 'F') {

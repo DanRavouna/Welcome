@@ -1208,6 +1208,107 @@ const LAND = (() => {
   return { defs, foot, draw };
 })();
 
+// ---- ADV: adventure content: clues, dungeon layouts and the pixel art of dungeon objects ----
+// A dungeon is a function in DUNGEONS returning { name, W, H, rows, objects, spawn, exit, dark }. world.js turns it into a map (buildDungeon).
+//   rows    strings of tile chars: C = cave wall (solid), . = floor, = = flagstone
+//   objects [{ id, kind, x, y, text?, ... }] interactive things on a (solid) tile; art is in ART[kind], light in LIGHT
+//   dark    { r } how many tiles around the player stay lit (omit for a lit dungeon)
+// To add a dungeon: write a function here, register it in DUNGEONS, give it a PAL entry in pxworld.js and a THEMES entry in world.js.
+const ADV = (() => {
+  const TYPES = ['Ember', 'Tide', 'Moss', 'Volt', 'Frost', 'Dusk', 'Stone', 'Bloom'];
+  const TCOL = { Ember: '#FF7A45', Tide: '#3E8EF7', Moss: '#4FB06D', Volt: '#F5C518', Frost: '#8FD8EA', Dusk: '#8B6CF0', Stone: '#A79C90', Bloom: '#F27BB5' };
+  // The Sealed Arch: four clues, one from each person beside a route landmark
+  const CLUES = [
+    { id: 'ruin', npc: 'edda', where: 'Highland Pass', lines: ['Look at the carvings. Eight critters share one fire, and one seat is left empty.', 'I think this arch is a door, not a ruin.'], note: 'Edda: the arch shows eight critters around a fire and one empty seat. She thinks it is a door.' },
+    { id: 'camp', npc: 'dell', where: 'Ashwood Trail', lines: ['My granddad had a camp rhyme: "Fire for the first, lamp for the second, hull for the third, and the empty seat will answer."', 'I never knew what it meant.'], note: 'Dell: an old camp rhyme: "Fire for the first, lamp for the second, hull for the third, and the empty seat will answer."' },
+    { id: 'lighthouse', npc: 'joss', where: 'Glacier Coast', lines: ['Here is a secret: the lamp never pointed at the sea. It points inland, at the old arch in the pass.', 'Whoever built it wanted the door found.'], note: 'Joss: the lighthouse lamp points at the old arch in the pass, not at the sea.' },
+    { id: 'wreck', npc: 'neri', where: 'Reef Causeway', lines: ['I found a carved stone in the wreck. Eight critters at a fire, and a ninth seat with a dusty crown.', 'Same carving as the arch, I bet. Somebody wanted all four of us to find a piece.'], note: 'Neri: a stone in the wreck shows the same eight critters, and a ninth seat with a dusty crown.' }
+  ];
+  const STATUE_TEXT = {
+    Ember: 'A statue of a flame critter. Its stone chest is still warm.', Tide: 'A statue of a tide critter. A little water pools at its feet.', Moss: 'A statue of a moss critter. Real moss grows on its shoulders.',
+    Volt: 'A statue of a volt critter. Your hair stands up when you pass it.', Frost: 'A statue of a frost critter. The stone is cold as ice.', Dusk: 'A statue of a dusk critter. It seems to watch you from the corner of its eye.',
+    Stone: 'A statue of a stone critter. It was carved from the same rock as the cave.', Bloom: 'A statue of a bloom critter. A single pink petal rests in its hand.'
+  };
+  // ---- the Sealed Arch: a round hall, eight statues around a fire, one empty seat (north), rubble blocking the way on ----
+  function sealedArch() {
+    const W = 26, H = 20, rows = [], objects = [];
+    for (let y = 0; y < H; y++) { let r = ''; for (let x = 0; x < W; x++) { const dx = (x - 13) / 10.5, dy = (y - 9) / 7.5; r += dx * dx + dy * dy <= 1 ? '.' : 'C'; } rows.push(r.split('')); }
+    const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
+    for (let y = 0; y <= 3; y++) { set(12, y, '.'); set(13, y, '.'); }                 // the alcove behind the empty seat
+    for (let y = 16; y < H; y++) { set(12, y, '='); set(13, y, '='); }                 // the way in
+    for (let y = 11; y <= 16; y++) { set(12, y, '='); set(13, y, '='); }
+    for (let y = 5; y <= 11; y++) for (let x = 10; x <= 16; x++) if ((x - 13) * (x - 13) + (y - 8) * (y - 8) <= 7) set(x, y, '=');    // flagstones around the fire
+    objects.push({ id: 'fire', kind: 'fire', x: 13, y: 8, text: 'The fire burns without fuel or smoke. Eight stone shadows lean toward it.' });
+    for (let i = 0; i < 9; i++) {
+      const a = (-90 + i * 40) * Math.PI / 180, x = Math.round(13 + 3.5 * Math.cos(a)), y = Math.round(8 + 3.5 * Math.sin(a));
+      if (i === 0) objects.push({ id: 'seat', kind: 'seat', x: x, y: y, text: 'The ninth seat is empty. Dust lies thick on the stone, and a small crown is carved above it.' });
+      else { const t = TYPES[i - 1]; objects.push({ id: 'statue-' + t, kind: 'statue', type: t, x: x, y: y, text: STATUE_TEXT[t] }); }
+    }
+    objects.push({ id: 'chest1', kind: 'chest', x: 5, y: 10, reward: { potion: 2, essence: 5 }, text: 'A dusty chest.' });
+    objects.push({ id: 'br1', kind: 'brazier', x: 10, y: 14, text: 'A brazier. Somebody keeps it lit.' }, { id: 'br2', kind: 'brazier', x: 16, y: 14, text: 'A brazier. Somebody keeps it lit.' });
+    objects.push({ id: 'rb1', kind: 'rubble', x: 12, y: 3, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' }, { id: 'rb2', kind: 'rubble', x: 13, y: 3, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' });
+    objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
+    return { name: 'The Sealed Arch', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [12.9, H - 1.4], exit: { edge: 's', a: 12, b: 13 }, dark: { r: 3.4 } };
+  }
+  const DUNGEONS = { 'dg-arch': sealedArch };
+  // ---- pixel art (screen pixels, 32 px per tile, drawn on 2 px steps); x, y = the tile's top-left; st = object state from the app ----
+  const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, w, h); };
+  const OL = '#14101E';
+  const flame = (g, x, y, t, ph, big) => { // a flickering flame standing on (x, y)
+    const f = Math.sin(t * 9 + ph), h1 = (big ? 20 : 12) + Math.round(f * 3) * 2, w1 = big ? 14 : 8;
+    R(g, x - w1 / 2 - 2, y - h1 - 2, w1 + 4, h1 + 2, 'rgba(255,120,40,0.35)');
+    R(g, x - w1 / 2, y - h1, w1, h1, '#E8552A'); R(g, x - w1 / 2 + 2, y - h1 + 4, w1 - 4, h1 - 4, '#FFA03A'); R(g, x - 2, y - h1 / 2, 4, h1 / 2, '#FFE08A');
+    if (Math.sin(t * 5 + ph * 2) > 0.5) R(g, x + (big ? 8 : 5), y - h1 - 6, 2, 2, '#FFD86B');
+  };
+  const ART = {
+    chest(g, x, y, st) {
+      R(g, x + 3, y + 28, 26, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 4, y + 14, 24, 14, OL); R(g, x + 6, y + 16, 20, 10, '#9A6330'); R(g, x + 6, y + 16, 20, 3, '#B8793C'); R(g, x + 6, y + 24, 20, 2, '#6E4420');
+      if (st.open) { R(g, x + 4, y + 4, 24, 10, OL); R(g, x + 6, y + 6, 20, 6, '#7A4C24'); R(g, x + 8, y + 12, 16, 4, '#FFD86B'); R(g, x + 12, y + 12, 8, 2, '#FFF3B0'); }
+      else { R(g, x + 4, y + 8, 24, 10, OL); R(g, x + 6, y + 10, 20, 6, '#B8793C'); R(g, x + 6, y + 10, 20, 2, '#D79A5A'); R(g, x + 14, y + 16, 4, 4, '#FFD86B'); R(g, x + 14, y + 18, 4, 2, OL); }
+      R(g, x + 10, y + 10, 2, 16, '#5A5666'); R(g, x + 20, y + 10, 2, 16, '#5A5666');
+    },
+    brazier(g, x, y, st, t, o) {
+      R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 12, y + 20, 8, 10, OL); R(g, x + 14, y + 20, 4, 9, '#6A6478'); R(g, x + 6, y + 14, 20, 8, OL); R(g, x + 8, y + 16, 16, 5, '#8A8498'); R(g, x + 8, y + 16, 16, 2, '#B4AEC4');
+      flame(g, x + 16, y + 16, t, (o.x * 3 + o.y) % 7, false);
+    },
+    fire(g, x, y, st, t, o) {
+      R(g, x + 2, y + 26, 28, 5, 'rgba(0,0,0,0.25)');
+      R(g, x + 2, y + 16, 28, 12, OL); R(g, x + 4, y + 18, 24, 8, '#7A748A'); R(g, x + 4, y + 18, 24, 3, '#A49EB6'); R(g, x + 8, y + 22, 16, 3, '#3A3646');
+      flame(g, x + 16, y + 20, t, 1.3, true);
+    },
+    statue(g, x, y, st, t, o) {
+      const c = TCOL[o.type] || '#A79C90';
+      R(g, x + 4, y + 28, 24, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 6, y + 22, 20, 9, OL); R(g, x + 8, y + 23, 16, 7, '#8E8A9C'); R(g, x + 8, y + 23, 16, 2, '#B4B0C4');
+      R(g, x + 8, y + 8, 16, 16, OL); R(g, x + 10, y + 6, 12, 4, OL);
+      R(g, x + 10, y + 10, 12, 12, '#A8A4B8'); R(g, x + 12, y + 8, 8, 4, '#A8A4B8'); R(g, x + 10, y + 10, 4, 12, '#C4C0D4'); R(g, x + 20, y + 12, 2, 10, '#7A768A');
+      R(g, x + 12, y + 14, 2, 2, OL); R(g, x + 18, y + 14, 2, 2, OL); R(g, x + 14, y + 18, 4, 2, OL);
+      R(g, x + 14, y + 24, 4, 4, c); R(g, x + 15, y + 25, 2, 2, '#FFFFFF');   // a gem in the type's colour
+    },
+    seat(g, x, y, st, t) {
+      R(g, x + 4, y + 28, 24, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 6, y + 20, 20, 11, OL); R(g, x + 8, y + 21, 16, 9, '#7A768A'); R(g, x + 8, y + 21, 16, 2, '#A49EB6');
+      R(g, x + 12, y + 14, 8, 8, '#5A566A'); R(g, x + 10, y + 18, 12, 4, '#6A667A');
+      const k = 0.5 + 0.5 * Math.sin(t * 1.6);   // a faint gold shimmer where a ninth critter will sit
+      g.save(); g.globalAlpha = 0.25 + 0.4 * k; R(g, x + 12, y + 6, 8, 2, '#FFD86B'); R(g, x + 14, y + 4, 4, 2, '#FFF3B0'); R(g, x + 10, y + 8, 2, 2, '#FFD86B'); R(g, x + 20, y + 8, 2, 2, '#FFD86B'); g.restore();
+    },
+    rubble(g, x, y) {
+      R(g, x + 2, y + 26, 28, 4, 'rgba(0,0,0,0.25)');
+      [[2, 14, 14, 14], [14, 10, 14, 18], [8, 6, 12, 12], [18, 20, 12, 10]].forEach(([a, b, w, h], i) => { R(g, x + a, y + b, w, h, OL); R(g, x + a + 2, y + b + 2, w - 4, h - 4, i % 2 ? '#6C6880' : '#807C94'); R(g, x + a + 2, y + b + 2, w - 4, 2, '#A09CB4'); });
+    },
+    plaque(g, x, y, st, t) {   // the arch's rune stone: one gold rune per clue found
+      R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 6, y + 6, 20, 24, OL); R(g, x + 8, y + 8, 16, 20, '#6A6880'); R(g, x + 8, y + 8, 16, 2, '#9A98B0');
+      const n = st.glow | 0, k = 0.6 + 0.4 * Math.sin(t * 3);
+      for (let i = 0; i < 4; i++) { const on = i < n; g.save(); g.globalAlpha = on ? (st.open ? 1 : 0.6 + 0.4 * k) : 1; R(g, x + 12, y + 11 + i * 4, 8, 2, on ? '#FFD86B' : '#4A4860'); g.restore(); }
+    }
+  };
+  const LIGHT = { fire: () => 3.8, brazier: () => 2.4 };   // radius in tiles lit around an object
+  return { CLUES, DUNGEONS, ART, LIGHT, TCOL, TYPES };
+})();
+
 // ---- PXW: pixel-art tiles, buildings and the player sprite (drawn at 16px per tile, shown at 2x) ----
 const PXW = (() => {
   const L = 16;
@@ -1223,6 +1324,7 @@ const PXW = (() => {
     mossbrook: { g: '#5FA34A', gd: '#74B85C', gt: '#44803A', p: '#C9A878', ps: '#B39064', pe: '#8A6A44', w: '#4F9AD0', wl: '#9CD0F2', we: '#2F70A0', t: '#3E8A3A', tb: '#2A6A2C', th: '#74B85C', tree: 'round', ol: '#1E3A1E', fl: ['#F5A3D0', '#FFFFFF', '#FFD86B', '#C9A8FF'] },
     tide: { g: '#F2DFA8', gd: '#FAECC4', gt: '#D9C38A', p: '#E2C98E', ps: '#CDB27A', pe: '#B09060', w: '#3C95DC', wl: '#A8D8FF', we: '#2A6FB0', t: '#B9C46A', tb: '#7E8A32', th: '#D8E08A', tree: 'palm', ol: '#5A4A20', fl: ['#FFFFFF', '#F5A3D0'] }
   };
+  PAL['dg-arch'] = { g: '#262B40', gd: '#2F3550', gt: '#1C2033', p: '#515A7C', ps: '#626C90', pe: '#383E5A', w: '#1E3A5F', wl: '#3A6A9A', we: '#122A48', t: '#2E4A4A', tb: '#1E3434', th: '#3E6A5A', tree: 'dead', ol: '#0A0C18', fl: ['#7AA0FF'], cw: '#171A2A', cwl: '#3A4160', cwd: '#0C0E1A' };
   PAL['route-mf'] = Object.assign({}, PAL.peak, { g: '#97B07E', gd: '#ABC492' }); PAL['route-fc'] = Object.assign({}, PAL.frost, { w: '#3C95DC', wl: '#A8D8FF', we: '#2A6FB0' }); PAL['route-cc'] = Object.assign({}, PAL.tide, { p: '#B08858', ps: '#9A7448', tree: 'palm' });
   PAL['route-cm'] = { g: '#8C9A5E', gd: '#A0AE70', gt: '#6E7A44', p: '#A08A6A', ps: '#8E7858', pe: '#6A5A40', w: '#4F9AD0', wl: '#9CD0F2', we: '#2F70A0', t: '#7E8A3A', tb: '#5E6A22', th: '#A0AE70', tree: 'dead', ol: '#2E2A1A', fl: ['#FF8A3D', '#FFD86B'] };
   function stamp(g, x0, y0, rows, colors) {
@@ -1310,6 +1412,13 @@ const PXW = (() => {
         const cl = t === 'Z' ? { h: '#FFF7D6', b: P.t, d: P.tb } : { h: P.th, b: P.t, d: P.tb };
         stamp(g, X, Y + 2, TUFT, cl); stamp(g, X + 8, Y + 2, TUFT, cl); stamp(g, X + 4, Y + 9, TUFT, cl); stamp(g, X + 12, Y + 9, TUFT, cl);
       }
+    }
+    // cave walls (dungeons): dark rock with a lit front face wherever the floor shows below
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] === 'C') {
+      const X = x * L, Y = y * L; g.fillStyle = P.cw; g.fillRect(X, Y, L, L);
+      g.fillStyle = P.cwl; for (let i = 0; i < 3; i++) g.fillRect(X + Math.floor(r() * 14), Y + Math.floor(r() * 10), 2, 1);
+      if (T(x, y + 1) !== 'C') { g.fillStyle = P.cwl; g.fillRect(X, Y + L - 6, L, 4); g.fillStyle = P.cwd; g.fillRect(X, Y + L - 2, L, 2); }
+      if (T(x, y - 1) !== 'C') { g.fillStyle = P.cwl; g.fillRect(X, Y, L, 2); }
     }
     // fences
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] === 'F') {
@@ -1665,7 +1774,7 @@ const AMBIENT = (() => {
 // ---- World: Sproutvale + four zones, rendering, movement, exits, encounters ----
 const WORLD = (() => {
   const TS = 32;
-  const SOLID = new Set(['T', 'X', '~', 'F', 'G', 'O', 'R', 'w', 'b', 's', 't', 'p', 'k', 'h', 'm']);
+  const SOLID = new Set(['T', 'X', '~', 'F', 'G', 'O', 'R', 'w', 'b', 's', 't', 'p', 'k', 'h', 'm', 'C']); // C = cave wall
   function rng(a) { return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
   const THEMES = {
@@ -1679,6 +1788,7 @@ const WORLD = (() => {
   THEMES.frosthold = { ground: '#E6EFF8', blade: 'rgba(120,150,190,0.35)', path: '#9AA3B5', water: '#BFE3F5', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#C9D9EA', flowers: ['#FFFFFF', '#BBD5FF'] };
   THEMES.cinderport = { lava: true, ground: '#C9925C', blade: 'rgba(110,60,20,0.35)', path: '#7A6A62', water: '#FF6A2B', tall: '#B9963A', tallBlade: '#8E6B1E', tree: 'dead', bg: '#5A3418', flowers: ['#FFD86B', '#FF8A3D'] };
   THEMES.coralbay = { ground: '#F2DFA8', blade: 'rgba(150,120,60,0.3)', path: '#C9A070', water: '#2F8FD8', tall: '#B9C46A', tallBlade: '#7E8A32', tree: 'palm', bg: '#1F6FB0', flowers: ['#FFFFFF', '#F59ACB'] };
+  THEMES['dg-arch'] = { ground: '#262B40', blade: 'rgba(10,12,24,0.35)', path: '#515A7C', water: '#1E3A5F', tall: '#2E4A4A', tallBlade: '#1E3434', tree: 'dead', bg: '#0A0C18', flowers: ['#7AA0FF'], cave: true };
   THEMES['route-mf'] = THEMES.peak; THEMES['route-cm'] = Object.assign({}, THEMES.moss, { dense: false }); THEMES['route-fc'] = THEMES.frost; THEMES['route-cc'] = THEMES.tide;
   THEMES.mossbrook = { ground: '#5FA34A', blade: 'rgba(30,80,30,0.4)', path: '#C9A878', water: '#4F9AD0', tall: '#44803A', tallBlade: '#2A6A2C', tree: 'round', bg: '#2A5A2C', flowers: ['#F5A3D0', '#FFFFFF', '#FFD86B'] };
   const ZONES = {
@@ -2003,6 +2113,25 @@ const WORLD = (() => {
     post(MAPS[cityB], edgeB, aB, dirWord[edgeB] + ': ' + R.name + ' (' + R.types.join(' and ') + ' critters), the road to ' + MAPS[cityA].name + '.');
     post(R, rEdgeB, mid, dirWord[rEdgeB] + ': ' + MAPS[cityB].name + '.');
   });
+  // ---------- dungeons (layouts live in adventure.js) ----------
+  // buildDungeon turns a layout into a map: cave walls 'C', objects on solid 'O' tiles, an exit gap, a darkness radius.
+  function buildDungeon(id) {
+    const d = ADV.DUNGEONS[id](), grid = d.rows.map((r) => r.split(''));
+    const objects = d.objects.map((o) => { grid[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });
+    const arrive = d.spawn;
+    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: [], rate: 0, cave: true, dark: d.dark || null, objects: objects,
+      exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive };
+  }
+  MAPS['dg-arch'] = buildDungeon('dg-arch');
+  // The Sealed Arch's door: the ruin's signpost tile becomes the "arch" object (a rune stone). With four clues the app opens it (see archUse in app.js).
+  (() => {
+    const Rm = MAPS['route-mf'], ruin = (Rm.props || []).find((p) => p.id === 'ruin'); if (!ruin) return;
+    const sx = ruin.x + 1, sy = ruin.y + ruin.h;
+    Rm.signs = Rm.signs.filter((s) => !(s.x === sx && s.y === sy)); Rm.grid[sy][sx] = 'O';
+    for (const [dx, dy] of [[0, 1], [-1, 1], [1, 1], [-1, 0], [1, 0]]) { const c = Rm.grid[sy + dy] && Rm.grid[sy + dy][sx + dx]; if (c && c !== '=') Rm.grid[sy + dy][sx + dx] = '.'; }   // keep the doorstep clear
+    (Rm.objects = Rm.objects || []).push({ id: 'arch', kind: 'plaque', x: sx, y: sy, reach: 1.9, portal: { x: ruin.x, y: ruin.y }, text: 'The Sealed Arch' });
+    Rm.arriveFrom = Object.assign({}, Rm.arriveFrom, { 'dg-arch': [sx + 0.5, sy + 1.6] });
+  })();
   // ---------- house interiors: every city house gets a room (door on the outside, exit through the bottom) ----------
   const ROOM_STYLE = { town: { floor: '#B07A46', wall: '#F4EAD6', rug: '#D8574A', bed: '#D8574A' }, lab: { floor: '#C9CFDA', wall: '#E8EEF8', rug: '#3C6FE0', bed: '#3C6FE0' }, mossbrook: { floor: '#B07A46', wall: '#E8D7B0', rug: '#4E8A3A', bed: '#4FB06D' }, frosthold: { floor: '#8E6B4A', wall: '#C9D3E6', rug: '#3E6E8E', bed: '#3E8EF7' }, cinderport: { floor: '#7A5A44', wall: '#D9C2A8', rug: '#A8382E', bed: '#D8574A' }, coralbay: { floor: '#C9A070', wall: '#F4EAD6', rug: '#2A8A9A', bed: '#4A9A8A' } };
   const ROOM_LAYOUTS = [
@@ -2225,6 +2354,7 @@ const WORLD = (() => {
     if (best) return best;
     M.places.forEach((p) => { const [dx, dy] = p.door; const d = Math.hypot(tx - (dx + 1), ty - (dy + 1.1)); if (d < bd) { bd = d; best = { kind: 'place', place: p }; } });
     M.signs.forEach((s) => { const d = Math.hypot(tx - (s.x + 0.5), ty - (s.y + 0.5)); if (d < Math.min(bd, 1.6)) { bd = d; best = { kind: 'sign', sign: s }; } });
+    (M.objects || []).forEach((o) => { const d = Math.hypot(tx - (o.x + 0.5), ty - (o.y + 0.5)); if (d < Math.min(bd, o.reach || 1.7)) { bd = d; best = { kind: 'object', obj: o }; } });
     if (!best && !(M.theme && M.theme.lava) && !M.interior) { // fishing: water next to you
       const fx = Math.floor(tx), fy = Math.floor(ty - 0.3), dirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }, f = dirs[P.dir] || [0, 1];
       const cand = [[fx + f[0], fy + f[1]], [fx, fy - 1], [fx, fy + 1], [fx - 1, fy], [fx + 1, fy]];
@@ -2287,7 +2417,7 @@ const WORLD = (() => {
         }
       } else if (!n.leader) { n.turnT -= dt; if (n.turnT <= 0) { n.turnT = 2.5 + Math.random() * 4; n.dir = ['down', 'left', 'right', 'down'][Math.floor(Math.random() * 4)]; } }
     });
-    const n = nearest(); const nk = n ? (n.place ? n.place.id : (n.npc ? 'npc' + n.npc.id : (n.sign ? 'sign' + n.sign.x + ',' + n.sign.y : n.kind + n.x + ',' + n.y))) : null;
+    const n = nearest(); const nk = n ? (n.place ? n.place.id : (n.obj ? 'obj' + n.obj.id : n.npc ? 'npc' + n.npc.id : (n.sign ? 'sign' + n.sign.x + ',' + n.sign.y : n.kind + n.x + ',' + n.y))) : null;
     if (nk !== lastNear) { lastNear = nk; if (opts.onNear) opts.onNear(n); }
   }
   let FR = null, lastPlayerScreen = null, lastCam = null, tintNow = 'day';
@@ -2311,6 +2441,19 @@ const WORLD = (() => {
     ctx.fillStyle = gold ? '#FFD86B' : '#1E2A4A'; ctx.fillRect(x + 2, y + 2, w - 4, 18);
     ctx.fillStyle = gold ? '#FFF1BF' : '#3A4A78'; ctx.fillRect(x + 2, y + 2, w - 4, 2);
     ctx.fillStyle = gold ? '#2A1B00' : '#FFFFFF'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, x + w / 2, y + 12);
+  }
+  // dark dungeons: a dark layer with stepped light circles around the player and around lit objects (braziers, fires)
+  let darkC = null;
+  function drawDark(cx, cy, pxs, pys) {
+    const W = canvas.width, H = canvas.height; if (!darkC) darkC = document.createElement('canvas');
+    if (darkC.width !== W || darkC.height !== H) { darkC.width = W; darkC.height = H; }
+    const g = darkC.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, vw, vh);
+    g.fillStyle = 'rgba(3,5,16,0.95)'; g.fillRect(0, 0, vw, vh); g.globalCompositeOperation = 'destination-out';
+    const still = opts.still ? opts.still() : false, flick = still ? 1 : 1 + 0.025 * Math.sin(tAnim * 7);
+    const light = (x, y, r) => { [[1, 0.42], [0.8, 0.42], [0.6, 0.42], [0.42, 0.5], [0.26, 0.9]].forEach(([f, a]) => { g.fillStyle = 'rgba(0,0,0,' + a + ')'; g.beginPath(); g.arc(x, y, r * f * flick, 0, 6.2832); g.fill(); }); };
+    light(pxs - cx, pys - cy - 14, M.dark.r * TS);
+    (M.objects || []).forEach((o) => { const r = ADV.LIGHT[o.kind] ? ADV.LIGHT[o.kind](o) : 0; if (r) light((o.x + 0.5) * TS - cx, (o.y + 0.5) * TS - cy, r * TS); });
+    ctx.drawImage(darkC, 0, 0, vw, vh);
   }
   const hash2 = (a, b, c) => { let h = Math.imul(a + 374761393, 668265263) ^ Math.imul(b + 1274126177, 2246822519) ^ Math.imul(c + 99, 3266489917); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
   // rain ripples / storm whitecaps on visible water tiles (pixel rings, 2 px steps)
@@ -2393,9 +2536,10 @@ const WORLD = (() => {
     if (wk === 'snow') snowCaps(cx, cy);
     const fol = opts.follower ? opts.follower() : null;
     if (!FOL) followerReset();
-    const list = (NPCS[M.id] || []).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
+    const list = (NPCS[M.id] || []).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat((M.objects || []).map((o) => ({ y: (o.y + 0.95) * TS, o: o }))).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
     list.forEach((it) => {
       if (it.p) { drawPlayer(pxs - cx, pys - cy); return; }
+      if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy); if (ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50) return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (art) art(ctx, ox, oy, st, tAnim, o); return; }
       if (it.f) {
         const x = snap(FOL.x - cx), y = snap(FOL.y - cy), hop = FOL.moving ? Math.abs(Math.sin(tAnim * 12)) * 3 : Math.abs(Math.sin(tAnim * 2)) * 1;
         const w = 30, h = Math.round(30 * fol.img.height / Math.max(1, fol.img.width));
@@ -2439,10 +2583,18 @@ const WORLD = (() => {
         ctx.restore();
       }
     }
+    // the Sealed Arch's open doorway: a swirling glow between the pillars
+    (M.objects || []).forEach((o) => { if (!o.portal || !(opts.objState && (opts.objState(o) || {}).open)) return;
+      const X = snap(o.portal.x * TS - cx), Y = snap(o.portal.y * TS - cy), k = 0.5 + 0.5 * Math.sin(tAnim * 2.4);
+      if (X < -140 || X > vw + 40 || Y < -120 || Y > vh + 40) return;
+      const gr = ctx.createLinearGradient(0, Y + 28, 0, Y + 92); gr.addColorStop(0, 'rgba(190,150,255,' + (0.55 + 0.3 * k).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(60,40,140,0.9)');
+      ctx.fillStyle = gr; ctx.fillRect(X + 34, Y + 28, 60, 64);
+      for (let i = 0; i < 9; i++) { const px2 = X + 40 + ((i * 17 + Math.floor(tAnim * 6) * 3) % 48), py2 = Y + 34 + ((i * 23 + Math.floor(tAnim * 12 + i * 5)) % 52); ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.9)' : 'rgba(255,216,107,0.9)'; ctx.fillRect(px2 & ~1, py2 & ~1, 2, 2); }
+    });
     // weather (outdoors only), under the time-of-day tint so night darkens it too
     if (typeof WEATHER !== 'undefined') WEATHER.draw(ctx, { kind: M.interior ? null : (opts.weather ? opts.weather() : null), mapId: M.id, vw: vw, vh: vh, cx: cx, cy: cy, t: tAnim, still: opts.still ? opts.still() : false });
     // time of day: tint the world (tags drawn later stay crisp)
-    const tod =M.interior ? 'day' : (opts.tint ? opts.tint() : 'day'); // lamplit rooms: no night tint indoors
+    const tod = (M.interior || M.cave) ? 'day' : (opts.tint ? opts.tint() : 'day'); // lamplit rooms and caves: no night tint
     tintNow = tod;
     if (tod !== 'day') {
       ctx.fillStyle = { night: 'rgba(14,24,70,0.42)', dusk: 'rgba(255,110,50,0.14)', dawn: 'rgba(255,190,140,0.12)' }[tod];
@@ -2453,6 +2605,7 @@ const WORLD = (() => {
           ctx.fillStyle = '#FFD86B'; ctx.fillRect(x, y, 28, 20); }); });
     }
     if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'glow', ambEnv); // lights (fireflies) shine over the night tint
+    if (M.dark) drawDark(cx, cy, pxs, pys);
     const near = nearest();
     M.places.forEach((p) => { const tx = (p.x + p.w / 2) * TS - cx, ty = p.y * TS - cy - (p.kind === 'board' ? 26 : 14); if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag(p.name, tx, ty, near && near.place === p); });
     if (M.rare) { const tx = (M.rare.x + 1.5) * TS - cx, ty = M.rare.y * TS - cy - 12; if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag('Rare grass', tx, ty, true); }
@@ -2484,7 +2637,7 @@ const WORLD = (() => {
     requestAnimationFrame(frame);
   }
   return {
-    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, setFish: (f) => { fishAt = f; }, follower: () => FOL,
+    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, get objects() { return M.objects || []; }, setFish: (f) => { fishAt = f; }, follower: () => FOL,
     addProp, PROPS, get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
     solidAt: (x, y) => solidAt(x, y),
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },
@@ -2975,6 +3128,7 @@ class Component extends Base {
       npc: d.npc && typeof d.npc === 'object' ? { done: Array.isArray(d.npc.done) ? d.npc.done : [], beaten: d.npc.beaten && typeof d.npc.beaten === 'object' ? d.npc.beaten : {}, cleared: Array.isArray(d.npc.cleared) ? d.npc.cleared : [], seals: Array.isArray(d.npc.seals) ? d.npc.seals : [] } : { done: [], beaten: {}, cleared: [], seals: [] },
       stats: d.stats && typeof d.stats === 'object' && d.stats.days && typeof d.stats.days === 'object' ? d.stats : { v: 1, days: {} },
       visited: Array.isArray(d.visited) ? d.visited.filter((x) => typeof x === 'string') : [],
+      adv: (() => { const a = d.adv && typeof d.adv === 'object' ? d.adv : {}; return { clues: Array.isArray(a.clues) ? a.clues.filter((x) => typeof x === 'string') : [], open: a.open && typeof a.open === 'object' ? a.open : {}, flags: a.flags && typeof a.flags === 'object' ? a.flags : {} }; })(), // adventure progress: clues found, opened doors, chests taken
       titles: Array.isArray(d.titles) ? d.titles.filter((x) => typeof x === 'string') : [],
       title: typeof d.title === 'string' ? d.title : '',
       shinies: Array.isArray(d.shinies) ? d.shinies.filter((n) => Number.isInteger(n)) : [],
@@ -3011,7 +3165,7 @@ class Component extends Base {
     this.badgeChecks(s).forEach((b) => { if (b.met && earned.indexOf(b.id) === -1) earned.push(b.id); });
     this.setState(Object.assign({}, patch, extra, { earned: earned }));
     try {
-      window.localStorage.setItem('critter-roll:v2', JSON.stringify({ caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited }));
+      window.localStorage.setItem('critter-roll:v2', JSON.stringify({ caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv }));
     } catch (e) {}
   }
 
@@ -4719,6 +4873,7 @@ const APP = (() => {
       { id: 'species', label: 'Species', sub: (st.seen || []).length + '/48', icon: I.species },
       { id: 'trainer', label: 'Trainer', sub: 'Level ' + lv.level, icon: I.trainer },
       { id: 'quests', label: 'Quests', sub: done + '/3 today', icon: I.quests, badge: ready ? ready + ' ready' : '' },
+      { id: 'journal', label: 'Journal', sub: advOf().clues.length + '/' + ADV.CLUES.length + ' clues', icon: 'M6 3h10a2 2 0 0 1 2 2v16H8a2 2 0 0 1-2-2zM6 19a2 2 0 0 1 2-2h10M10 8h5M10 12h5' },
       { id: 'badges', label: 'Badges', sub: v.badgeCount + '/9', icon: I.badges },
       { id: 'settings', label: 'Settings', sub: 'Sound, motion', icon: I.settings },
       { id: 'map', label: 'Map', sub: 'Travel anywhere open', icon: 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14' },
@@ -4734,7 +4889,7 @@ const APP = (() => {
     $('m-sound').setAttribute('aria-pressed', st.settings && st.settings.sound ? 'true' : 'false');
     $('m-sound-off').setAttribute('display', st.settings && st.settings.sound ? 'none' : 'inline');
     const tiles = menuTiles(), byId = {}; tiles.forEach((t) => { byId[t.id] = t; });
-    const GROUPS = [['critters', 'My critters', ['dex', 'species', 'party', 'bag'], 'M12 3l3 6 6 1-4.5 4.5 1 6.5L12 17l-5.5 3 1-6.5L3 10l6-1z'], ['journey', 'Journey', ['map', 'quests', 'trainer', 'badges', 'seals'], 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14'], ['game', 'Game', ['settings', 'backup'], 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z']];
+    const GROUPS = [['critters', 'My critters', ['dex', 'species', 'party', 'bag'], 'M12 3l3 6 6 1-4.5 4.5 1 6.5L12 17l-5.5 3 1-6.5L3 10l6-1z'], ['journey', 'Journey', ['map', 'quests', 'journal', 'trainer', 'badges', 'seals'], 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14'], ['game', 'Game', ['settings', 'backup'], 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z']];
     const open = menuGroupsOpen();
     const tileHtml = (t) => '<button class="tile' + (t.wide ? ' wide' : '') + (t.locked ? ' locked' : '') + '" data-tile="' + t.id + '"' + (t.locked ? ' aria-disabled="true"' : '') + '>' +
       '<span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + t.icon + '"></path></svg></span>' +
@@ -4769,6 +4924,7 @@ const APP = (() => {
   function tile(id) {
     if (id === 'map') { openMap(); return; }
     if (id === 'backup') { openBackup(); return; }
+    if (id === 'journal') { closeMenu(); journal(); return; }
     if (id === 'bag' || id === 'party') { openPanel(id); return; }
     closeMenu(true);
     if (id === 'dex') openScreen('dex');
@@ -5274,6 +5430,41 @@ const APP = (() => {
     $('hud').hidden = false; WORLD.setPaused(false);
     if (cb) cb();
   }
+  // ---------- adventure: clues, objects, the Sealed Arch (content in adventure.js) ----------
+  const advOf = () => { const a = (game && game.state.adv) || {}; return { clues: a.clues || [], open: a.open || {}, flags: a.flags || {} }; };
+  function advSave(mut) { const a = advOf(), n = { clues: a.clues.slice(), open: Object.assign({}, a.open), flags: Object.assign({}, a.flags) }; mut(n); game.update({ adv: n }); try { setNear(WORLD.nearest()); } catch (e) {} }   // refresh the action label (e.g. Examine -> Enter)
+  function objState(o) { const a = advOf(); if (o.kind === 'plaque') return { open: !!a.open.arch, glow: a.clues.length }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; return {}; }
+  function gainClue(c) {
+    if (advOf().clues.indexOf(c.id) !== -1) return;
+    advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
+    const n = advOf().clues.length;
+    toast('New clue (' + n + '/' + ADV.CLUES.length + ') in your Journal.');
+    if (n === ADV.CLUES.length) setTimeout(() => { if (!advOf().open.arch && WORLD.map.id !== 'dg-arch') toast('That is all four clues. Go back to the old arch in Highland Pass.'); }, 4800);
+  }
+  function journal() {
+    const have = advOf().clues, lines = ['Clues about the Sealed Arch: ' + have.length + ' of ' + ADV.CLUES.length + '.'];
+    ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Not found yet. Try asking around ' + c.where + '.'));
+    if (advOf().open.arch) lines.push('The arch in Highland Pass is open.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
+    showDialog('Journal', lines);
+  }
+  function archUse() {
+    const a = advOf();
+    if (a.open.arch) { game.sfx('tap'); WORLD.go('dg-arch'); return; }
+    if (a.clues.length < ADV.CLUES.length) { showDialog('The old arch', ['Eight critters sit around one fire. A ninth seat is carved empty.', 'The stone stays cold and silent. Clues found: ' + a.clues.length + ' of ' + ADV.CLUES.length + '. Someone on the other roads may know more.']); return; }
+    showDialog('The old arch', ['Fire for the first. Lamp for the second. Hull for the third.', 'The carved flame between the pillars begins to glow...', 'A passage opens in the old arch.'], null, () => { advSave((x) => { x.open.arch = true; }); game.sfx('claim'); setTimeout(() => { game.sfx('claim'); WORLD.go('dg-arch'); }, 200); });
+  }
+  function chestUse(o) {
+    const key = 'chest:' + o.id; if (advOf().flags[key]) { toast('The chest is empty.'); return; }
+    const r = o.reward || {}, bag = Object.assign({}, game.state.bag), parts = [];
+    Object.keys(r).forEach((k) => { if (k === 'essence') parts.push(r[k] + ' essence'); else { bag[k] = (bag[k] | 0) + r[k]; parts.push(r[k] + ' ' + ({ potion: 'Potion', super: 'Super Potion', charm: 'Rare Charm', ticket: 'Roll Ticket' }[k] || k) + (r[k] > 1 ? 's' : '')); } });
+    advSave((a) => { a.flags[key] = true; }); game.update({ bag: bag, essence: (game.state.essence || 0) + (r.essence | 0) }); game.sfx('claim');
+    toast('You open the chest: ' + parts.join(' and ') + '!');
+  }
+  function objectUse(o) {
+    if (o.kind === 'plaque') { archUse(); return; }
+    if (o.kind === 'chest') { chestUse(o); return; }
+    toast(o.text || 'Nothing happens.');
+  }
   // weather / time-of-day remark for ordinary townsfolk (flavor.js); indoors the person hears the weather of the town outside
   function flavorLine(n) {
     const M = WORLD.map, outside = M.interior ? (M.parent || 'town') : M.id, st = game.state.settings || {};
@@ -5290,7 +5481,11 @@ const APP = (() => {
       if (Q.done) { game.claimCityQuest(qcity); game.sfx('claim'); showDialog(n.name, ['You did it! Thank you so much.', 'Here, take this: +' + CQ_REWARD + ' essence and some trainer experience.']); return; }
       showDialog(n.name, [n.lines[0], 'Could you do me a favor today? Please ' + Q.q.txt + '.', 'Progress: ' + Q.n + '/' + Q.q.n + '. Come back to me when it is done. I have a new favor every day.']); return;
     }
-    if (n.kind === 'talk') { const fl = n.id === 'pip' ? null : flavorLine(n); showDialog(n.name, n.id === 'pip' ? ['Need a pointer? Here is what I would do next.', wayHint()] : (fl ? [fl].concat(n.lines) : n.lines)); return; }
+    if (n.kind === 'talk') {
+      const fl = n.id === 'pip' ? null : flavorLine(n), lines = n.id === 'pip' ? ['Need a pointer? Here is what I would do next.', wayHint()] : (fl ? [fl].concat(n.lines) : n.lines), clue = ADV.CLUES.find((c) => c.npc === n.id);
+      if (clue && advOf().clues.indexOf(clue.id) === -1) { showDialog(n.name, lines.concat(clue.lines), null, () => gainClue(clue)); return; }   // the first talk also teaches a clue about the Sealed Arch
+      showDialog(n.name, lines); return;
+    }
     if (n.kind === 'shop') { showDialog(n.name, n.lines, null, () => openPanel('shop')); return; } // shops stay quick: no weather remark
     if (n.kind === 'request') {
       if (done.indexOf(n.id) !== -1) { showDialog(n.name, n.after); return; }
@@ -5422,6 +5617,7 @@ const APP = (() => {
       return;
     }
     if (n.kind === 'water') { fish(n); return; }
+    if (n.kind === 'object') { objectUse(n.obj); return; }
     if (n.kind === 'npc') { talk(n.npc); return; }
     if (n.place.enter && n.place.open !== 'house' && WORLD.MAPS[n.place.enter]) { game.sfx('tap'); WORLD.go(n.place.enter); return; }
     if (n.place.open === 'tower') { towerLobby(); return; }
@@ -5434,7 +5630,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? ({ chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -5490,7 +5686,7 @@ const APP = (() => {
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
     if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader) ? 'boss' : 'battle';
-    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
+    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide', 'dg-arch': 'peak' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
@@ -5505,7 +5701,7 @@ const APP = (() => {
     WORLD.init($('world'), {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
-      weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
+      objState: objState, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
       exitLocked: (e) => !game.props.testMode && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.testMode && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       follower: () => {
