@@ -530,6 +530,20 @@ const APP = (() => {
     out['route-cm'] = [rt('elm', 'Woodcutter Elm', 16, 7, 'up', ['Ember', 'Moss'], 4, 2, 11, 0.5, ['Careful, the Ashwood still smoulders.', 'My critters grew up between the embers and the moss. Battle!'], 'You chopped right through my team. Here is your reward.', { cap: true, c: '#8A4A2A', y: '#C9A26A', Y: '#8A6A44' })];
     out['route-fc'] = [rt('signe', 'Ice Fisher Signe', 16, 7, 'up', ['Frost', 'Tide'], 4, 3, 18, 0.5, ['Shh, you will scare the fish. Unless you want a battle?', 'Of course you do. Everyone on this coast does.'], 'Hooked and landed. You win this one. Here is your reward.', { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' })];
     out['route-cc'] = [rt('mako', 'Diver Mako', 16, 7, 'up', ['Tide', 'Ember'], 4, 3, 18, 0.5, ['I just surfaced from the reef. My critters are warmed up!', 'Steam and spray. Let us battle.'], 'You out-swam me! Here is your reward.', { cap: true, c: '#2A6A6A', y: '#FF7A45', Y: '#B83A10' })];
+    // new people beside the route landmarks and in town (positions are found at load: the free walkable tile nearest the hint)
+    const spot = (mapId, hx, hy, taken) => {
+      const Mp = M[mapId], at = (x, y) => Mp.grid[y] && ['.', ','].indexOf(Mp.grid[y][x]) !== -1, busy = (x, y) => (out[mapId] || []).some((o) => o.x === x && o.y === y) || (taken || []).some((t) => t[0] === x && t[1] === y);
+      const reserved = (x, y) => mapId.indexOf('route-') === 0 && x >= 13 && x <= 19 && y >= 3 && y <= 11;
+      for (let r = 0; r < 10; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const x = hx + dx, y = hy + dy; if (x > 3 && y > 3 && x < Mp.W - 4 && y < Mp.H - 4 && at(x, y) && !busy(x, y) && !reserved(x, y)) return [x, y]; }
+      return [hx, hy];
+    };
+    const near = (mapId, propId, dx, dy) => { const p = (M[mapId].props || []).find((q) => q.id === propId); return p ? spot(mapId, p.x + dx, p.y + dy) : spot(mapId, 10, 10); };
+    const pers = (id, name, mapId, pos, pal, lines) => { (out[mapId] = out[mapId] || []).push({ id, name, x: pos[0], y: pos[1], dir: 'down', kind: 'talk', pal, lines }); };
+    pers('edda', 'Scholar Edda', 'route-mf', near('route-mf', 'ruin', 5, 1), { h: '#3A2A1A', y: '#8E5BC8', Y: '#6B3FA0' }, ['These carvings show a critter of each type around one fire. I count eight.', 'Highland Pass joins Mossbrook and Frosthold. The arch is older than both.']);
+    pers('dell', 'Camper Dell', 'route-cm', near('route-cm', 'camp', 4, 1), { h: '#8A5A34', y: '#4FB06D', Y: '#2E6A2C' }, ['Ha, that is my camp! I only left to fill my flask at the well.', 'Ashwood Trail links Cinderport and Mossbrook. Ember and Moss critters roam here.']);
+    pers('joss', 'Lamplighter Joss', 'route-fc', near('route-fc', 'lighthouse', 3, 3), { h: '#BDBDBD', y: '#C0503A', Y: '#8A3A28' }, ['I still trim the lamp every dusk. It guides nobody now, but it feels right.', 'Glacier Coast runs between Frosthold and Coralbay. Frost and Tide critters live along it.']);
+    pers('neri', 'Beachcomber Neri', 'route-cc', near('route-cc', 'wreck', 5, 2), { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, ['Tide critters nest in the wreck. Do not poke them, they bite!', 'Reef Causeway links Coralbay and Cinderport. Tide and Ember critters share it.']);
+    pers('mae', 'Gardener Mae', 'town', spot('town', 24, 18), { h: '#F4EAD6', y: '#E0A0B8', Y: '#C07898' }, ['Mind the flowers! Sproutvale is nicest in the morning.', 'If you find a sparkling grass patch, take your time. Rare critters hide there.']);
     // residents of the house interiors
     const RES = {
       'house-fennel': ['Grandma Clover', ['Oh, a visitor! Fennel is out by the green again.', 'Take your time. Critters like a calm trainer.']],
@@ -596,6 +610,12 @@ const APP = (() => {
     $('hud').hidden = false; WORLD.setPaused(false);
     if (cb) cb();
   }
+  // weather / time-of-day remark for ordinary townsfolk (flavor.js); indoors the person hears the weather of the town outside
+  function flavorLine(n) {
+    const M = WORLD.map, outside = M.interior ? (M.parent || 'town') : M.id, st = game.state.settings || {};
+    const tod = st.daynight === false ? 'day' : timeOfDay(), d = new Date();
+    return FLAVOR.pick({ id: n.id.replace(/^res-/, ''), region: (WEATHER.region(outside) || ''), indoor: !!M.interior, weather: weatherAt(outside), tod: tod, salt: d.toDateString() + '#' + Math.floor(d.getHours() / WEATHER.BLOCK_H) + (tod === 'night' ? 'n' : '') });
+  }
   function talk(n) {
     WORLD.facePlayer(n);
     const g = game, done = (g.state.npc && g.state.npc.done) || [];
@@ -606,8 +626,8 @@ const APP = (() => {
       if (Q.done) { game.claimCityQuest(qcity); game.sfx('claim'); showDialog(n.name, ['You did it! Thank you so much.', 'Here, take this: +' + CQ_REWARD + ' essence and some trainer experience.']); return; }
       showDialog(n.name, [n.lines[0], 'Could you do me a favor today? Please ' + Q.q.txt + '.', 'Progress: ' + Q.n + '/' + Q.q.n + '. Come back to me when it is done. I have a new favor every day.']); return;
     }
-    if (n.kind === 'talk') { showDialog(n.name, n.id === 'pip' ? ['Need a pointer? Here is what I would do next.', wayHint()] : n.lines); return; }
-    if (n.kind === 'shop') { showDialog(n.name, n.lines, null, () => openPanel('shop')); return; }
+    if (n.kind === 'talk') { const fl = n.id === 'pip' ? null : flavorLine(n); showDialog(n.name, n.id === 'pip' ? ['Need a pointer? Here is what I would do next.', wayHint()] : (fl ? [fl].concat(n.lines) : n.lines)); return; }
+    if (n.kind === 'shop') { showDialog(n.name, n.lines, null, () => openPanel('shop')); return; } // shops stay quick: no weather remark
     if (n.kind === 'request') {
       if (done.indexOf(n.id) !== -1) { showDialog(n.name, n.after); return; }
       if (NEEDS[n.need](g)) {

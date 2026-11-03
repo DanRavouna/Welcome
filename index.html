@@ -2814,6 +2814,63 @@ const MUSIC = (() => {
   };
 })();
 
+// ---- FLAVOR: weather and time-of-day remarks for townsfolk (text only: no rewards, no state) ----
+// FLAVOR.pick({ id, region, indoor, weather, tod, salt }) returns one extra line (or null) that app.js shows before an NPC's normal lines.
+// Conditions: weather kinds (rain, storm, snow, fog, sun, ash) and times of day (dawn, dusk, night). Clear daytime says nothing extra.
+// Lookup order per condition: NPC-specific line (NPC[id][cond]) > regional lines (OUT/IN[cond][region]) > generic (OUT/IN[cond]._).
+// Regions are WEATHER.region keys: town, moss, frost, ember, tide, peak and the four routes. Add a person = add a row to NPC; add a region = add keys.
+const FLAVOR = (() => {
+  const OUT = { // said outdoors
+    rain: { _: ['Rain again! Critters do not mind a soaking, and neither do I.', 'Mind the puddles. They hide more than you would think.'],
+      moss: ['The forest drinks it all up. Tide critters wander in when it rains like this.'], tide: ['Good rain for Tide critters. They are everywhere today.'], town: ['The fountain is overflowing. It happens every time it rains.'] },
+    storm: { _: ['Did you hear that thunder? Volt critters love this weather.', 'Stay close to the trees. Or do not. Volt critters are about.'],
+      tide: ['The waves are wild today. Nobody is taking a boat out.'], ember: ['Even the embers are hissing in this storm.'] },
+    snow: { _: ['Snow! Frost critters are out and about in it.', 'Every footprint shows in this. I like that.'],
+      frost: ['Fresh snow on the peaks. My favourite kind of morning.'], peak: ['The wind up here bites. Dress warmly if you plan to climb.'] },
+    fog: { _: ['I can barely see my own critter in this fog. Dusk critters love it, though.', 'Quiet fog today. Perfect for sneaking up on a wild critter.'], moss: ['The fog hangs between the trees like a curtain.'] },
+    sun: { _: ['What a bright day! Bloom critters bask in weather like this.', 'The sun is out. Perfect for a long walk.'], ember: ['Sunny and warm. Not that it is ever cold here.'] },
+    ash: { _: ['Ashfall again. Stone critters crawl out of it every time.', 'Keep your sleeve over your nose when the ash blows.'], ember: ['The forge winds carry ash this far today.'] },
+    night: { _: ['It is late. Dusk critters roam everywhere after dark.', 'Careful out there. The grass looks different at night.'], tide: ['The harbor lights look lovely after dark.'] },
+    dawn: { _: ['Up with the sun? Early trainers meet the quietest critters.', 'First light. The best time of day, if you ask me.'] },
+    dusk: { _: ['The day is winding down. Dusk is when the shy critters come out.', 'Almost evening. Time to think about camp.'] }
+  };
+  const IN = { // said indoors (hearing it through the walls)
+    rain: { _: ['Listen to the rain on the roof. I could stay in all day.', 'Rainy day. Good for staying in and polishing your Dex.'] },
+    storm: { _: ['That thunder rattled the windows! Glad we are inside.', 'A proper storm. Stay in until it passes, dear.'] },
+    snow: { _: ['It is snowing out there. The window is all frosted at the edges.', 'Snow on the roof. We will be cozy tonight.'] },
+    fog: { _: ['The fog is so thick I cannot see across the street.'] },
+    sun: { _: ['Such a bright day. The sun is coming right through the window.'] },
+    ash: { _: ['Ash on the windowsill again. I just cleaned it!'] },
+    night: { _: ['It is getting late. I was about to turn in.', 'Quiet at night. I can hear the whole house breathe.'] },
+    dawn: { _: ['Up early today! The kettle is just warming.'] },
+    dusk: { _: ['The lamps are coming on outside. Evening already.'] }
+  };
+  const NPC = { // person-specific remarks: { condition: 'line' }
+    mom: { rain: 'Take your coat if you go out, sweetie. It is pouring!', snow: 'Snow! Do not forget your scarf, sweetie.', night: 'Do not stay out too late, sweetie. Dusk critters roam at night.' },
+    remy: { rain: 'The Lab roof drums in the rain. I like it for reading.', storm: 'Thunder always makes the lab instruments hum.', night: 'I stay late at the Lab sometimes. Night is quiet for research.' },
+    dell: { rain: 'Good thing the tent is waterproof. The soup less so.', night: 'The fire keeps the dark away. Mostly.', fog: 'Fog on the trail. I will wait it out by the fire.' },
+    edda: { fog: 'Fog suits ruins. It makes the carvings look like they are moving.', night: 'I came to sketch the arch, but the dark is no good for drawing.', rain: 'Rain washes the moss off the carvings. I am torn.' },
+    joss: { night: 'Dusk is my hour. I trim the lamp, and the old light turns once more.', fog: 'Fog like this is why the lighthouse was built.', storm: 'A storm! The lamp would have mattered tonight, once.' },
+    neri: { storm: 'Storms wash up the best finds. I will be out as soon as it clears.', sun: 'Sun on the sand. Best beachcombing weather there is.', rain: 'The Tide critters love the rain, even in a wreck.' },
+    mae: { rain: 'My flowers are loving this. Look at them perk up!', sun: 'The garden is glowing in this sun.', snow: 'Snow on the flowers. They sleep now, and wake up in spring.', night: 'I water by lamplight when it is warm. Not tonight.' }
+  };
+  function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13; return (h >>> 0); }
+  function conds(weather, tod) { const c = []; if (weather && weather !== 'clear') c.push(weather); if (tod && tod !== 'day') c.push(tod); return c; }
+  // one line for this person right now (stable while the weather block lasts: the same salt gives the same line)
+  function pick(o) {
+    const cs = conds(o.weather, o.tod); if (!cs.length) return null;
+    const salt = String(o.salt || ''), set = o.indoor ? IN : OUT, pool = [];
+    cs.forEach((c) => {
+      const mine = NPC[o.id] && NPC[o.id][c]; if (mine) { pool.push(mine); return; }
+      const reg = (set[c] && set[c][o.region]) || [], gen = (set[c] && set[c]._) || [];
+      const w = reg.concat(reg, gen); // regional lines weigh in twice
+      if (w.length) pool.push(w[hash(o.id + '|' + c + '|' + salt) % w.length]);
+    });
+    return pool.length ? pool[hash(o.id + '|' + salt) % pool.length] : null;
+  }
+  return { pick, conds, OUT, IN, NPC };
+})();
+
 // ---- Glue part 1: Base and Component (game logic ported from the original canvas) ----
 // ---- Glue: game state, screens over the world, HUD ----
 class Base {
@@ -4980,6 +5037,20 @@ const APP = (() => {
     out['route-cm'] = [rt('elm', 'Woodcutter Elm', 16, 7, 'up', ['Ember', 'Moss'], 4, 2, 11, 0.5, ['Careful, the Ashwood still smoulders.', 'My critters grew up between the embers and the moss. Battle!'], 'You chopped right through my team. Here is your reward.', { cap: true, c: '#8A4A2A', y: '#C9A26A', Y: '#8A6A44' })];
     out['route-fc'] = [rt('signe', 'Ice Fisher Signe', 16, 7, 'up', ['Frost', 'Tide'], 4, 3, 18, 0.5, ['Shh, you will scare the fish. Unless you want a battle?', 'Of course you do. Everyone on this coast does.'], 'Hooked and landed. You win this one. Here is your reward.', { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' })];
     out['route-cc'] = [rt('mako', 'Diver Mako', 16, 7, 'up', ['Tide', 'Ember'], 4, 3, 18, 0.5, ['I just surfaced from the reef. My critters are warmed up!', 'Steam and spray. Let us battle.'], 'You out-swam me! Here is your reward.', { cap: true, c: '#2A6A6A', y: '#FF7A45', Y: '#B83A10' })];
+    // new people beside the route landmarks and in town (positions are found at load: the free walkable tile nearest the hint)
+    const spot = (mapId, hx, hy, taken) => {
+      const Mp = M[mapId], at = (x, y) => Mp.grid[y] && ['.', ','].indexOf(Mp.grid[y][x]) !== -1, busy = (x, y) => (out[mapId] || []).some((o) => o.x === x && o.y === y) || (taken || []).some((t) => t[0] === x && t[1] === y);
+      const reserved = (x, y) => mapId.indexOf('route-') === 0 && x >= 13 && x <= 19 && y >= 3 && y <= 11;
+      for (let r = 0; r < 10; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const x = hx + dx, y = hy + dy; if (x > 3 && y > 3 && x < Mp.W - 4 && y < Mp.H - 4 && at(x, y) && !busy(x, y) && !reserved(x, y)) return [x, y]; }
+      return [hx, hy];
+    };
+    const near = (mapId, propId, dx, dy) => { const p = (M[mapId].props || []).find((q) => q.id === propId); return p ? spot(mapId, p.x + dx, p.y + dy) : spot(mapId, 10, 10); };
+    const pers = (id, name, mapId, pos, pal, lines) => { (out[mapId] = out[mapId] || []).push({ id, name, x: pos[0], y: pos[1], dir: 'down', kind: 'talk', pal, lines }); };
+    pers('edda', 'Scholar Edda', 'route-mf', near('route-mf', 'ruin', 5, 1), { h: '#3A2A1A', y: '#8E5BC8', Y: '#6B3FA0' }, ['These carvings show a critter of each type around one fire. I count eight.', 'Highland Pass joins Mossbrook and Frosthold. The arch is older than both.']);
+    pers('dell', 'Camper Dell', 'route-cm', near('route-cm', 'camp', 4, 1), { h: '#8A5A34', y: '#4FB06D', Y: '#2E6A2C' }, ['Ha, that is my camp! I only left to fill my flask at the well.', 'Ashwood Trail links Cinderport and Mossbrook. Ember and Moss critters roam here.']);
+    pers('joss', 'Lamplighter Joss', 'route-fc', near('route-fc', 'lighthouse', 3, 3), { h: '#BDBDBD', y: '#C0503A', Y: '#8A3A28' }, ['I still trim the lamp every dusk. It guides nobody now, but it feels right.', 'Glacier Coast runs between Frosthold and Coralbay. Frost and Tide critters live along it.']);
+    pers('neri', 'Beachcomber Neri', 'route-cc', near('route-cc', 'wreck', 5, 2), { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, ['Tide critters nest in the wreck. Do not poke them, they bite!', 'Reef Causeway links Coralbay and Cinderport. Tide and Ember critters share it.']);
+    pers('mae', 'Gardener Mae', 'town', spot('town', 24, 18), { h: '#F4EAD6', y: '#E0A0B8', Y: '#C07898' }, ['Mind the flowers! Sproutvale is nicest in the morning.', 'If you find a sparkling grass patch, take your time. Rare critters hide there.']);
     // residents of the house interiors
     const RES = {
       'house-fennel': ['Grandma Clover', ['Oh, a visitor! Fennel is out by the green again.', 'Take your time. Critters like a calm trainer.']],
@@ -5046,6 +5117,12 @@ const APP = (() => {
     $('hud').hidden = false; WORLD.setPaused(false);
     if (cb) cb();
   }
+  // weather / time-of-day remark for ordinary townsfolk (flavor.js); indoors the person hears the weather of the town outside
+  function flavorLine(n) {
+    const M = WORLD.map, outside = M.interior ? (M.parent || 'town') : M.id, st = game.state.settings || {};
+    const tod = st.daynight === false ? 'day' : timeOfDay(), d = new Date();
+    return FLAVOR.pick({ id: n.id.replace(/^res-/, ''), region: (WEATHER.region(outside) || ''), indoor: !!M.interior, weather: weatherAt(outside), tod: tod, salt: d.toDateString() + '#' + Math.floor(d.getHours() / WEATHER.BLOCK_H) + (tod === 'night' ? 'n' : '') });
+  }
   function talk(n) {
     WORLD.facePlayer(n);
     const g = game, done = (g.state.npc && g.state.npc.done) || [];
@@ -5056,8 +5133,8 @@ const APP = (() => {
       if (Q.done) { game.claimCityQuest(qcity); game.sfx('claim'); showDialog(n.name, ['You did it! Thank you so much.', 'Here, take this: +' + CQ_REWARD + ' essence and some trainer experience.']); return; }
       showDialog(n.name, [n.lines[0], 'Could you do me a favor today? Please ' + Q.q.txt + '.', 'Progress: ' + Q.n + '/' + Q.q.n + '. Come back to me when it is done. I have a new favor every day.']); return;
     }
-    if (n.kind === 'talk') { showDialog(n.name, n.id === 'pip' ? ['Need a pointer? Here is what I would do next.', wayHint()] : n.lines); return; }
-    if (n.kind === 'shop') { showDialog(n.name, n.lines, null, () => openPanel('shop')); return; }
+    if (n.kind === 'talk') { const fl = n.id === 'pip' ? null : flavorLine(n); showDialog(n.name, n.id === 'pip' ? ['Need a pointer? Here is what I would do next.', wayHint()] : (fl ? [fl].concat(n.lines) : n.lines)); return; }
+    if (n.kind === 'shop') { showDialog(n.name, n.lines, null, () => openPanel('shop')); return; } // shops stay quick: no weather remark
     if (n.kind === 'request') {
       if (done.indexOf(n.id) !== -1) { showDialog(n.name, n.after); return; }
       if (NEEDS[n.need](g)) {
