@@ -6,6 +6,7 @@
 <title>Critter Roll</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&amp;display=swap">
 
+<script src="vendor/supabase-2.118.0.js" async onerror="window.__supaFailed=true"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&amp;display=swap">
 <style>
 a{color:#FFD86B}a:hover{color:#FFE69A}
@@ -139,6 +140,11 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .bk-l{display:block;margin:10px 0 4px;font-size:14px;font-weight:900}
 #bk textarea{width:100%;box-sizing:border-box;border:2px solid #1E2A4A;border-radius:12px;padding:8px;font:12px ui-monospace,monospace;color:#1E2A4A;background:#fff;resize:none;word-break:break-all}
 .bk-btn{width:100%;height:46px;margin-top:6px;border:0;border-radius:999px;background:#1E2A4A;color:#fff;font:inherit;font-size:15px;font-weight:900;cursor:pointer}
+#bk input[type=email],#bk input[type=password]{display:block;width:100%;box-sizing:border-box;height:46px;border:2px solid #1E2A4A;border-radius:12px;padding:0 12px;font:inherit;font-size:16px;font-weight:700;color:#1E2A4A;background:#fff}
+.acct{margin:4px 0 10px;padding-bottom:10px;border-bottom:2px dashed #C9D6F2}
+.acct-link{display:block;margin:8px auto 0;min-height:44px;padding:0 12px;border:0;background:none;color:#2B5BB8;font:inherit;font-size:14px;font-weight:800;text-decoration:underline;cursor:pointer}
+.acct-small{font-size:12px;color:#5A6888}
+.bk-btn:disabled{opacity:.55;cursor:default}
 .bk-btn.gold{background:linear-gradient(180deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,0) 60%),#FFC94D;color:#2A1B00}
 .plist{display:flex;flex-direction:column;gap:6px;margin-top:6px}
 .prow{display:flex;align-items:center;gap:10px;padding:8px;border-radius:14px;background:#fff;border:1.5px solid #D5DEEE}
@@ -240,8 +246,31 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
   </div>
   <div id="bk" role="dialog" aria-modal="true" aria-labelledby="bk-title" hidden>
     <div class="wm-panel">
-      <div class="wm-head"><h2 id="bk-title">Save backup</h2><button id="bk-close" aria-label="Close backup"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+      <div class="wm-head"><h2 id="bk-title">Your save</h2><button id="bk-close" aria-label="Close backup"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
       <div class="sync"><span class="sync-dot" aria-hidden="true"></span><span id="bk-sync" role="status" aria-live="polite"></span><button id="bk-sync-now" class="pbtn" hidden>Sync now</button></div>
+      <div id="acct" class="acct" hidden>
+        <form id="acct-out" autocomplete="on" novalidate>
+          <p class="bk-p">Sign in to save online. Your progress then follows you to any phone or computer.</p>
+          <label class="bk-l" for="acct-email">Email</label>
+          <input id="acct-email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false">
+          <label class="bk-l" for="acct-pw">Password (6+ characters)</label>
+          <input id="acct-pw" type="password" autocomplete="current-password" minlength="6">
+          <button id="acct-in" type="submit" class="bk-btn gold">Sign in</button>
+          <button id="acct-new" type="button" class="bk-btn">Create account</button>
+          <button id="acct-forgot" type="button" class="acct-link">Forgot password?</button>
+        </form>
+        <div id="acct-on" hidden>
+          <p class="bk-p">Signed in as <b id="acct-who"></b>. The game saves online by itself while you play.</p>
+          <button id="acct-off" type="button" class="bk-btn">Sign out</button>
+          <p class="bk-p acct-small">Signing out removes the save from this device only. It stays in your account.</p>
+        </div>
+        <form id="acct-rec" hidden novalidate>
+          <label class="bk-l" for="acct-newpw">Choose a new password</label>
+          <input id="acct-newpw" type="password" autocomplete="new-password" minlength="6">
+          <button id="acct-setpw" type="submit" class="bk-btn gold">Save new password</button>
+        </form>
+        <p id="acct-msg" class="bk-p" role="status" aria-live="polite"></p>
+      </div>
       <p class="bk-p">Extra safety: copy this code or download it as a file, and keep it somewhere safe.</p>
       <label class="bk-l" for="bk-out">Your save code</label>
       <textarea id="bk-out" readonly rows="3"></textarea>
@@ -2006,10 +2035,13 @@ const WORLD = (() => {
   };
 })();
 
-// ---- CLOUD: saves your game to your Claude account (private), local save stays the fast path ----
+// ---- CLOUD: saves your game online (Claude account on claude.ai, Supabase account elsewhere), local save stays the fast path ----
 const CLOUD = (() => {
   const KEYS = ['critter-roll:v2', 'critter-roll:world', 'critter-roll:id', 'critter-roll:tip'];
   const META = 'critter-roll:meta';
+  // Supabase: public Project URL + publishable key only (safe in client code; access is limited by row level security)
+  const SUPA = { url: 'https://xuawpknnmozcfzgnflel.supabase.co', key: 'sb_publishable_iLcZK_HKfm1inXYG5MPxnQ_3ut-Hq7Z' };
+  let mode = 'none', sb = null, account = null, recovering = false, watching = false;
   let ref = null, status = 'connecting', lastSync = 0, pushing = false, again = false, timer = null, hooks = {}, conflictData = null, started = false;
   const ls = { get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
   const hash = (s) => { let h = 2166136261; s = s || ''; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); };
@@ -2023,14 +2055,113 @@ const CLOUD = (() => {
   async function init(h) { try { await init2(h); } finally { readyResolve(); } }
   async function init2(h) {
     hooks = h || {}; started = true;
-    if (!window.claude || typeof window.claude.use !== 'function') { set('local'); return; }
+    if (!window.claude || typeof window.claude.use !== 'function') { await initSupa(); return; }
+    mode = 'claude';
     let db = null, user = null;
     try { [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]); } catch (e) { set('local'); return; }
     const uid = user ? await user.id() : null;
     if (!db || !uid) { set('signedout'); return; }
     ref = db.doc('data/users/' + uid + '/save');
     await reconcile();
-    document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); else reconcile(); });
+    watch();
+  }
+  function watch() { if (watching) return; watching = true; document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); else reconcile(); }); }
+  // ---- Supabase accounts (email + password). The game stays fully playable signed out (local save). ----
+  function supaLib(ms) {
+    return new Promise((res) => { const t0 = Date.now(); (function poll() { const L = window.supabase; if (L && typeof L.createClient === 'function') return res(L); if (window.__supaFailed || Date.now() - t0 > ms) return res(null); setTimeout(poll, 100); })(); });
+  }
+  function supaErr(e, st) {
+    const msg = String((e && e.message) || e || ''), s = st || (e && e.status) || 0;
+    if (s === 401 || (e && e.code === 'PGRST301') || /jwt/i.test(msg)) return { code: 'revoked', message: msg };
+    if (e && e.code === '23514') return { code: 'quota_exceeded', message: msg };
+    if (!s || s >= 500 || /fetch|network|load failed/i.test(msg)) return { code: 'unavailable', message: msg };
+    return { code: (e && e.code) || 'error', message: msg };
+  }
+  function supaRef(uid) {
+    return {
+      get: async () => { const r = await sb.from('saves').select('body').eq('user_id', uid).maybeSingle(); if (r.error) throw supaErr(r.error, r.status); return { exists: !!r.data, data: () => (r.data ? r.data.body : null) }; },
+      set: async (body) => { const r = await sb.from('saves').upsert({ user_id: uid, body: body, updated_at: new Date().toISOString() }); if (r.error) throw supaErr(r.error, r.status); },
+      acquire: async (o) => { const r = await sb.rpc('acquire_save_lease', { holder: o.holder, ttl_ms: o.ttlMs }); if (r.error) throw supaErr(r.error, r.status); return { acquired: r.data === true }; }
+    };
+  }
+  const notify = () => { if (hooks.onAccount) hooks.onAccount(); };
+  async function initSupa() {
+    mode = 'supa';
+    const L = await supaLib(8000);
+    if (!L) { mode = 'none'; set('local'); notify(); return; }
+    try { sb = L.createClient(SUPA.url, SUPA.key, { auth: { storageKey: 'critter-roll:auth', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }); }
+    catch (e) { sb = null; mode = 'none'; set('local'); notify(); return; }
+    // Supabase warns against awaiting its calls inside this callback, so hand off to the next tick
+    sb.auth.onAuthStateChange((ev, session) => { setTimeout(() => onAuth(ev, session), 0); });
+    let session = null;
+    try { const r = await withTimeout(sb.auth.getSession(), 10000); session = r && r.data ? r.data.session : null; } catch (e) {}
+    await connect(session);
+  }
+  function onAuth(ev, session) {
+    if (ev === 'PASSWORD_RECOVERY') { recovering = true; notify(); }
+    if (ev === 'SIGNED_OUT') { account = null; ref = null; set('signin'); notify(); return; }
+    if (session && session.user && (!account || account.id !== session.user.id)) connect(session);
+  }
+  async function connect(session) {
+    if (!session || !session.user) { account = null; ref = null; set('signin'); notify(); return; }
+    if (account && account.id === session.user.id && ref) return;
+    account = { id: session.user.id, email: session.user.email || '' };
+    ref = supaRef(account.id);
+    notify();
+    await reconcile();
+    watch();
+  }
+  const stampUid = (m) => { if (mode === 'supa' && account) m.uid = account.id; return m; };
+  function friendly(e) {
+    const msg = String((e && e.message) || ''), s = (e && e.status) || 0;
+    if (/invalid login credentials/i.test(msg)) return 'Wrong email or password.';
+    if (/already registered|already exists/i.test(msg)) return 'That email already has an account. Sign in instead.';
+    if (/email not confirmed/i.test(msg)) return 'Confirm your email first: open the link we sent you, then sign in.';
+    if (/password/i.test(msg) && /(6|characters|short|weak)/i.test(msg)) return 'The password needs at least 6 characters.';
+    if (/email/i.test(msg) && /invalid|valid/i.test(msg)) return 'That email address does not look right.';
+    if (s === 429 || /rate limit|too many/i.test(msg)) return 'Too many tries. Wait a few minutes and try again.';
+    if (!s || /fetch|network|load failed/i.test(msg)) return 'Could not reach the server. Check your connection.';
+    return msg || 'Something went wrong. Try again.';
+  }
+  const here = () => location.origin + location.pathname;
+  async function signIn(email, pw) {
+    if (!sb) return 'Online saves are not available right now.';
+    try { const r = await sb.auth.signInWithPassword({ email: String(email).trim(), password: pw }); if (r.error) return friendly(r.error); await connect(r.data.session); return null; }
+    catch (e) { return friendly(e); }
+  }
+  async function signUp(email, pw) {
+    if (!sb) return 'Online saves are not available right now.';
+    try {
+      const r = await sb.auth.signUp({ email: String(email).trim(), password: pw, options: { emailRedirectTo: here() } });
+      if (r.error) return friendly(r.error);
+      if (!r.data.session) return { check: true };
+      await connect(r.data.session); return null;
+    } catch (e) { return friendly(e); }
+  }
+  async function resetPassword(email) {
+    if (!sb) return 'Online saves are not available right now.';
+    try { const r = await sb.auth.resetPasswordForEmail(String(email).trim(), { redirectTo: here() }); return r.error ? friendly(r.error) : null; }
+    catch (e) { return friendly(e); }
+  }
+  async function setPassword(pw) {
+    if (!sb) return 'Online saves are not available right now.';
+    try { const r = await sb.auth.updateUser({ password: pw }); if (r.error) return friendly(r.error); recovering = false; notify(); return null; }
+    catch (e) { return friendly(e); }
+  }
+  // Sign out only once this device's progress is safely online; then this device starts fresh (the account keeps everything).
+  async function signOut() {
+    if (!sb || !account) return null;
+    if (timer) { clearTimeout(timer); timer = null; }
+    const m0 = meta();
+    if (!(m0.syncedAt && m0.savedAt <= m0.syncedAt && m0.uid === account.id)) { await push(); }
+    const m = meta();
+    if (status === 'conflict') return 'Choose which save to keep first.';
+    if (!(m.syncedAt && m.savedAt <= m.syncedAt)) return 'Your latest progress is not online yet. Check your connection and try again.';
+    try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
+    window.__saveFrozen = true;
+    KEYS.concat([META]).forEach((k) => { try { localStorage.removeItem(k); } catch (e) {} });
+    account = null; ref = null;
+    return null;
   }
   async function reconcile() {
     if (!ref || pushing) return;
@@ -2045,10 +2176,12 @@ const CLOUD = (() => {
   }
   async function decide(C) {
     const m = meta(), local = readLocal(), lh = hash(local['critter-roll:v2']);
-    if (C.hash === lh) { m.syncedAt = C.savedAt; setMeta(m); lastSync = Date.now(); set('synced'); return; }
+    if (C.hash === lh) { m.syncedAt = C.savedAt; setMeta(stampUid(m)); lastSync = Date.now(); set('synced'); return; }
     const localChanged = !(m.syncedAt && m.savedAt <= m.syncedAt);
     const cloudChanged = !(m.syncedAt && C.savedAt <= m.syncedAt);
-    if (!progress(local['critter-roll:v2']) || (!localChanged && cloudChanged)) { adopt(C); return; }
+    const other = mode === 'supa' && account && m.uid && m.uid !== account.id && progress(local['critter-roll:v2']);
+    if (!other && (!progress(local['critter-roll:v2']) || (!localChanged && cloudChanged))) { adopt(C); return; }
+    if (other) { conflictData = { local: { data: local, savedAt: m.savedAt }, cloud: { data: C.data || {}, savedAt: C.savedAt } }; set('conflict'); if (hooks.onConflict) hooks.onConflict(conflictData); return; }
     if (localChanged && !cloudChanged) { await push(true); return; }
     conflictData = { local: { data: local, savedAt: m.savedAt }, cloud: { data: C.data || {}, savedAt: C.savedAt } };
     set('conflict');
@@ -2057,7 +2190,8 @@ const CLOUD = (() => {
   function adopt(C) {
     const d = C.data || {};
     KEYS.forEach((k) => { if (typeof d[k] === 'string') ls.set(k, d[k]); });
-    setMeta({ savedAt: C.savedAt, syncedAt: C.savedAt });
+    // keep the save's fingerprint, or the reload's identical re-save would look like new local progress
+    setMeta(stampUid({ savedAt: C.savedAt, syncedAt: C.savedAt, hash: hash(typeof d['critter-roll:v2'] === 'string' ? d['critter-roll:v2'] : ls.get('critter-roll:v2')) }));
     set('synced');
     if (hooks.onAdopt) hooks.onAdopt();
   }
@@ -2085,7 +2219,7 @@ const CLOUD = (() => {
         try { await withTimeout(ref.set(body), 15000); ok = true; }
         catch (e) { if (e && e.code === 'unavailable' && attempt === 0) { await new Promise((r) => setTimeout(r, 1200 + Math.random() * 1500)); continue; } throw e; }
       }
-      const m2 = meta(); m2.syncedAt = body.savedAt; setMeta(m2); lastSync = Date.now(); set('synced');
+      const m2 = meta(); m2.syncedAt = body.savedAt; setMeta(stampUid(m2)); lastSync = Date.now(); set('synced');
     } catch (e) {
       set(e && e.code === 'revoked' ? 'signedout' : (e && e.code === 'quota_exceeded' ? 'full' : 'offline'));
     }
@@ -2109,6 +2243,16 @@ const CLOUD = (() => {
   }
   function text() {
     const ago = lastSync ? Math.round((Date.now() - lastSync) / 60000) : null;
+    if (mode === 'supa') return {
+      signin: 'Not signed in. Saved on this device only.',
+      signedout: 'Signed out. Sign in again to keep saving online.',
+      connecting: 'Connecting…',
+      saving: 'Saving online…',
+      synced: 'Saved online' + (ago === null ? '' : (ago < 1 ? ', just now' : ', ' + ago + ' min ago')),
+      offline: 'Could not reach the server. Saved on this device; it will try again.',
+      full: 'Online save is too big. Saved on this device.',
+      conflict: 'Two different saves found. Choose which one to keep.'
+    }[status] || '';
     return {
       local: 'Saved on this device only',
       signedout: 'Sign in to Claude to save to your account. Saved on this device for now.',
@@ -2120,7 +2264,9 @@ const CLOUD = (() => {
       conflict: 'Two different saves found. Choose which one to keep.'
     }[status] || '';
   }
-  return { ready, init, changed, flush, resolve, reconcile, text, get status() { return status; }, get conflict() { return conflictData; }, get connected() { return !!ref; } };
+  return { ready, init, changed, flush, resolve, reconcile, text, signIn, signUp, signOut, resetPassword, setPassword,
+    get status() { return status; }, get conflict() { return conflictData; }, get connected() { return !!ref; },
+    get account() { return { mode: mode, available: !!sb, email: account ? account.email : null, recovering: recovering }; } };
 })();
 
 // ---- MUSIC: original chiptune loops, synthesized live (no audio files) ----
@@ -3927,7 +4073,7 @@ const APP = (() => {
       { id: 'badges', label: 'Badges', sub: v.badgeCount + '/9', icon: I.badges },
       { id: 'settings', label: 'Settings', sub: 'Sound, motion', icon: I.settings },
       { id: 'map', label: 'Map', sub: 'Travel anywhere open', icon: 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14' },
-      { id: 'backup', label: 'Backup', sub: 'Save code', icon: 'M12 3v12M7 10l5 5 5-5M5 21h14' },
+      { id: 'backup', label: 'Save', sub: 'Online, backup', icon: 'M12 3v12M7 10l5 5 5-5M5 21h14' },
       { id: 'seals', label: 'Seals', sub: ((st.npc && st.npc.seals) || []).length + '/4 leaders', icon: 'M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 16.6 6.5 19.5l1-6.3L3 8.9 9 8z' },
       { id: 'bag', label: 'Bag', sub: (Object.values(bagOf()).reduce((x, y) => x + y, 0)) + ' items', icon: 'M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2' },
       { id: 'party', label: 'Party', sub: game.partySeeds().length + '/3 critters', icon: 'M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3 3-5 6-5s6 2 6 5M12 20c0-3 3-5 6-5s4 1 4 3' }
@@ -4039,6 +4185,64 @@ const APP = (() => {
     if ($('m-sync')) $('m-sync').textContent = t;
     if ($('bk-sync')) $('bk-sync').textContent = t;
     if ($('bk-sync-now')) $('bk-sync-now').hidden = !CLOUD.connected;
+    renderAccount();
+  }
+  // ---------- online account (Supabase sign-in; hidden on claude.ai, which uses the Claude account) ----------
+  function renderAccount() {
+    const box = $('acct'); if (!box) return;
+    const a = CLOUD.account;
+    box.hidden = a.mode !== 'supa';
+    if (box.hidden) return;
+    $('acct-rec').hidden = !a.recovering;
+    $('acct-out').hidden = !!a.email || a.recovering;
+    $('acct-on').hidden = !a.email || a.recovering;
+    $('acct-who').textContent = a.email || '';
+    if (a.recovering && $('bk').hidden) openBackup();
+  }
+  let acctBusy = false;
+  async function acctRun(btn, fn) {
+    if (acctBusy) return; acctBusy = true;
+    const msg = $('acct-msg'), btns = ['acct-in', 'acct-new', 'acct-forgot', 'acct-off', 'acct-setpw'].map($);
+    btns.forEach((b) => { if (b) b.disabled = true; }); msg.textContent = 'One moment…';
+    let out = null; try { out = await fn(); } catch (e) { out = 'Something went wrong. Try again.'; }
+    btns.forEach((b) => { if (b) b.disabled = false; }); acctBusy = false;
+    msg.textContent = typeof out === 'string' ? out : '';
+    cloudStatus();
+    return out;
+  }
+  function acctFields() {
+    const email = $('acct-email').value.trim(), pw = $('acct-pw').value;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { err: 'Type your email address.' };
+    if (pw.length < 6) return { err: 'The password needs at least 6 characters.' };
+    return { email, pw };
+  }
+  function wireAccount() {
+    $('acct-out').addEventListener('submit', (e) => {
+      e.preventDefault(); const f = acctFields(); if (f.err) { $('acct-msg').textContent = f.err; return; }
+      acctRun($('acct-in'), async () => { const r = await CLOUD.signIn(f.email, f.pw); if (!r) { $('acct-pw').value = ''; return 'Signed in. Your progress now saves online.'; } return r; });
+    });
+    $('acct-new').addEventListener('click', () => {
+      const f = acctFields(); if (f.err) { $('acct-msg').textContent = f.err; return; }
+      acctRun($('acct-new'), async () => {
+        const r = await CLOUD.signUp(f.email, f.pw);
+        if (r && r.check) return 'Almost done: open the link we just emailed to ' + f.email + ', then sign in here.';
+        if (!r) { $('acct-pw').value = ''; return 'Account created. Your progress now saves online.'; }
+        return r;
+      });
+    });
+    $('acct-forgot').addEventListener('click', () => {
+      const email = $('acct-email').value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $('acct-msg').textContent = 'Type your email above first, then tap Forgot password.'; return; }
+      acctRun($('acct-forgot'), async () => { const r = await CLOUD.resetPassword(email); return r || 'If that email has an account, a reset link is on its way. Open it on this device.'; });
+    });
+    $('acct-off').addEventListener('click', () => {
+      acctRun($('acct-off'), async () => { const r = await CLOUD.signOut(); if (!r) { location.reload(); return 'Signed out.'; } return r; });
+    });
+    $('acct-rec').addEventListener('submit', (e) => {
+      e.preventDefault(); const pw = $('acct-newpw').value;
+      if (pw.length < 6) { $('acct-msg').textContent = 'The password needs at least 6 characters.'; return; }
+      acctRun($('acct-setpw'), async () => { const r = await CLOUD.setPassword(pw); if (!r) { $('acct-newpw').value = ''; return 'Password saved. You are signed in.'; } return r; });
+    });
   }
   let pendingImport = null;
   function openBackup() { cloudStatus(); closeMenu(true); $('bk').hidden = false; $('hud').hidden = true; WORLD.setPaused(true); $('bk-out').value = exportCode(); $('bk-in').value = ''; $('bk-msg').textContent = ''; $('bk-restore').textContent = 'Check code'; pendingImport = null; $('bk-close').focus(); }
@@ -4091,6 +4295,8 @@ const APP = (() => {
     if (!st.intro) return;
     if (st.caught.length >= 2) hint('party', 'You have more than one critter now. Put them in your party (Menu, then Party) so they can step in during battles.');
     if ((st.essence || 0) >= 3 && st.caught.length) hint('shop', 'Mira near your home sells potions and charms for essence.');
+    const ac = CLOUD.account;
+    if (ac.mode === 'supa' && ac.available && !ac.email && st.caught.length >= 3) hint('online', 'Tip: sign in (Menu, then Save) so your progress is saved online and follows you to other devices.');
     if ((st.essence || 0) >= 15 && st.caught.length) hint('evolve', 'You have enough essence to evolve a critter. Open it in the Dex.');
   }
   async function intro() {
@@ -4628,6 +4834,7 @@ const APP = (() => {
     $('wm-grid').addEventListener('click', (e) => { const t = e.target.closest('[data-travel]'); if (t) travel(t.dataset.travel); });
     $('bk-close').addEventListener('click', closeBackup);
     $('bk-sync-now').addEventListener('click', () => { CLOUD.reconcile(); });
+    wireAccount();
     $('cf-keep-cloud').addEventListener('click', () => { $('cf').hidden = true; CLOUD.resolve('cloud'); });
     $('cf-keep-local').addEventListener('click', () => { $('cf').hidden = true; WORLD.setPaused(false); CLOUD.resolve('local'); });
     $('bk-file').addEventListener('change', (e) => {
@@ -4702,7 +4909,7 @@ const APP = (() => {
     paint();
     window.addEventListener('pagehide', () => CLOUD.flush());
     intro();
-    CLOUD.init({ onStatus: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
+    CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
   return { start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();

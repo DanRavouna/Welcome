@@ -1663,7 +1663,7 @@ const APP = (() => {
       { id: 'badges', label: 'Badges', sub: v.badgeCount + '/9', icon: I.badges },
       { id: 'settings', label: 'Settings', sub: 'Sound, motion', icon: I.settings },
       { id: 'map', label: 'Map', sub: 'Travel anywhere open', icon: 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14' },
-      { id: 'backup', label: 'Backup', sub: 'Save code', icon: 'M12 3v12M7 10l5 5 5-5M5 21h14' },
+      { id: 'backup', label: 'Save', sub: 'Online, backup', icon: 'M12 3v12M7 10l5 5 5-5M5 21h14' },
       { id: 'seals', label: 'Seals', sub: ((st.npc && st.npc.seals) || []).length + '/4 leaders', icon: 'M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 16.6 6.5 19.5l1-6.3L3 8.9 9 8z' },
       { id: 'bag', label: 'Bag', sub: (Object.values(bagOf()).reduce((x, y) => x + y, 0)) + ' items', icon: 'M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2' },
       { id: 'party', label: 'Party', sub: game.partySeeds().length + '/3 critters', icon: 'M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3 3-5 6-5s6 2 6 5M12 20c0-3 3-5 6-5s4 1 4 3' }
@@ -1775,6 +1775,64 @@ const APP = (() => {
     if ($('m-sync')) $('m-sync').textContent = t;
     if ($('bk-sync')) $('bk-sync').textContent = t;
     if ($('bk-sync-now')) $('bk-sync-now').hidden = !CLOUD.connected;
+    renderAccount();
+  }
+  // ---------- online account (Supabase sign-in; hidden on claude.ai, which uses the Claude account) ----------
+  function renderAccount() {
+    const box = $('acct'); if (!box) return;
+    const a = CLOUD.account;
+    box.hidden = a.mode !== 'supa';
+    if (box.hidden) return;
+    $('acct-rec').hidden = !a.recovering;
+    $('acct-out').hidden = !!a.email || a.recovering;
+    $('acct-on').hidden = !a.email || a.recovering;
+    $('acct-who').textContent = a.email || '';
+    if (a.recovering && $('bk').hidden) openBackup();
+  }
+  let acctBusy = false;
+  async function acctRun(btn, fn) {
+    if (acctBusy) return; acctBusy = true;
+    const msg = $('acct-msg'), btns = ['acct-in', 'acct-new', 'acct-forgot', 'acct-off', 'acct-setpw'].map($);
+    btns.forEach((b) => { if (b) b.disabled = true; }); msg.textContent = 'One moment…';
+    let out = null; try { out = await fn(); } catch (e) { out = 'Something went wrong. Try again.'; }
+    btns.forEach((b) => { if (b) b.disabled = false; }); acctBusy = false;
+    msg.textContent = typeof out === 'string' ? out : '';
+    cloudStatus();
+    return out;
+  }
+  function acctFields() {
+    const email = $('acct-email').value.trim(), pw = $('acct-pw').value;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { err: 'Type your email address.' };
+    if (pw.length < 6) return { err: 'The password needs at least 6 characters.' };
+    return { email, pw };
+  }
+  function wireAccount() {
+    $('acct-out').addEventListener('submit', (e) => {
+      e.preventDefault(); const f = acctFields(); if (f.err) { $('acct-msg').textContent = f.err; return; }
+      acctRun($('acct-in'), async () => { const r = await CLOUD.signIn(f.email, f.pw); if (!r) { $('acct-pw').value = ''; return 'Signed in. Your progress now saves online.'; } return r; });
+    });
+    $('acct-new').addEventListener('click', () => {
+      const f = acctFields(); if (f.err) { $('acct-msg').textContent = f.err; return; }
+      acctRun($('acct-new'), async () => {
+        const r = await CLOUD.signUp(f.email, f.pw);
+        if (r && r.check) return 'Almost done: open the link we just emailed to ' + f.email + ', then sign in here.';
+        if (!r) { $('acct-pw').value = ''; return 'Account created. Your progress now saves online.'; }
+        return r;
+      });
+    });
+    $('acct-forgot').addEventListener('click', () => {
+      const email = $('acct-email').value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $('acct-msg').textContent = 'Type your email above first, then tap Forgot password.'; return; }
+      acctRun($('acct-forgot'), async () => { const r = await CLOUD.resetPassword(email); return r || 'If that email has an account, a reset link is on its way. Open it on this device.'; });
+    });
+    $('acct-off').addEventListener('click', () => {
+      acctRun($('acct-off'), async () => { const r = await CLOUD.signOut(); if (!r) { location.reload(); return 'Signed out.'; } return r; });
+    });
+    $('acct-rec').addEventListener('submit', (e) => {
+      e.preventDefault(); const pw = $('acct-newpw').value;
+      if (pw.length < 6) { $('acct-msg').textContent = 'The password needs at least 6 characters.'; return; }
+      acctRun($('acct-setpw'), async () => { const r = await CLOUD.setPassword(pw); if (!r) { $('acct-newpw').value = ''; return 'Password saved. You are signed in.'; } return r; });
+    });
   }
   let pendingImport = null;
   function openBackup() { cloudStatus(); closeMenu(true); $('bk').hidden = false; $('hud').hidden = true; WORLD.setPaused(true); $('bk-out').value = exportCode(); $('bk-in').value = ''; $('bk-msg').textContent = ''; $('bk-restore').textContent = 'Check code'; pendingImport = null; $('bk-close').focus(); }
@@ -1827,6 +1885,8 @@ const APP = (() => {
     if (!st.intro) return;
     if (st.caught.length >= 2) hint('party', 'You have more than one critter now. Put them in your party (Menu, then Party) so they can step in during battles.');
     if ((st.essence || 0) >= 3 && st.caught.length) hint('shop', 'Mira near your home sells potions and charms for essence.');
+    const ac = CLOUD.account;
+    if (ac.mode === 'supa' && ac.available && !ac.email && st.caught.length >= 3) hint('online', 'Tip: sign in (Menu, then Save) so your progress is saved online and follows you to other devices.');
     if ((st.essence || 0) >= 15 && st.caught.length) hint('evolve', 'You have enough essence to evolve a critter. Open it in the Dex.');
   }
   async function intro() {
@@ -2364,6 +2424,7 @@ const APP = (() => {
     $('wm-grid').addEventListener('click', (e) => { const t = e.target.closest('[data-travel]'); if (t) travel(t.dataset.travel); });
     $('bk-close').addEventListener('click', closeBackup);
     $('bk-sync-now').addEventListener('click', () => { CLOUD.reconcile(); });
+    wireAccount();
     $('cf-keep-cloud').addEventListener('click', () => { $('cf').hidden = true; CLOUD.resolve('cloud'); });
     $('cf-keep-local').addEventListener('click', () => { $('cf').hidden = true; WORLD.setPaused(false); CLOUD.resolve('local'); });
     $('bk-file').addEventListener('change', (e) => {
@@ -2438,7 +2499,7 @@ const APP = (() => {
     paint();
     window.addEventListener('pagehide', () => CLOUD.flush());
     intro();
-    CLOUD.init({ onStatus: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
+    CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
   return { start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();

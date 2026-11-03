@@ -134,6 +134,13 @@ Attach this file plus `critter-roll-growth-source.tar.gz` (latest source + tests
 - Not yet verified on a real phone: touch feel, sound, vibration, Pixelify Sans font, real cloud sync.
 - Early essence may feel slow after the roll rework. Leveling pace assumptions (≈Lv5 at Wren, ≈Lv13 at Coral) are estimates.
 
+## GitHub Pages + online saves (done, Nov 2026)
+- Repo `DanRavouna/critter-roll`; GitHub Pages serves `index.html` from `main` at https://danravouna.github.io/critter-roll/. Source lives in `src/` (this archive's contents); `python3 src/build2.py` writes `index.html`. Standing rules in `CLAUDE.md`.
+- Online saves via Supabase (project `xuawpknnmozcfzgnflel`): email + password accounts, Menu → Save (the old Backup tile, renamed). `cloud.js` keeps the claude.ai path unchanged and adds a Supabase path behind the same `ref` interface (`get` / `set` / `acquire`), so all the sync/conflict logic is shared. Schema in `supabase/001_saves.sql`.
+- Bug fixed in the shared sync logic (affected claude.ai too): after a device downloaded the account save, its meta lost the save hash, so the reload's identical re-save looked like local progress and the next change elsewhere raised a false conflict. `adopt()` now keeps the hash.
+- One-time hint `online` for signed-out players with 3+ critters.
+- Test: `supatest.py` (real project; see `CLAUDE.md`). Note: its seed uses a localStorage marker; a sessionStorage-based seed re-seeded mid-test under file:// and looked like data loss.
+
 ## Next step
 Endgame phase is complete (Tower, shinies, milestones/titles all live).
 Cities + route loop are live. Dan declined dailies and the rival for now. Next ideas: weather, critter abilities (big balance job), real-phone playtest + stats (the 3 newest share Mossbrook's street plan; routes share the zone builder's structure). Waiting on Dan's phone playtest + stats. Candidate features: weekly Tower twist, daily challenge battle, Tower leaderboard (only if friends play). Housekeeping: split the test run, split app.js, and keep balance checks per change. Real-phone check of Tower, shiny sparkle/vibration and titles still pending.

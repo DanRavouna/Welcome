@@ -6,6 +6,7 @@
 <title>Critter Roll</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&amp;display=swap">
 
+<script src="vendor/supabase-2.118.0.js" async onerror="window.__supaFailed=true"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&amp;display=swap">
 <style>
 a{color:#FFD86B}a:hover{color:#FFE69A}
@@ -139,6 +140,11 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .bk-l{display:block;margin:10px 0 4px;font-size:14px;font-weight:900}
 #bk textarea{width:100%;box-sizing:border-box;border:2px solid #1E2A4A;border-radius:12px;padding:8px;font:12px ui-monospace,monospace;color:#1E2A4A;background:#fff;resize:none;word-break:break-all}
 .bk-btn{width:100%;height:46px;margin-top:6px;border:0;border-radius:999px;background:#1E2A4A;color:#fff;font:inherit;font-size:15px;font-weight:900;cursor:pointer}
+#bk input[type=email],#bk input[type=password]{display:block;width:100%;box-sizing:border-box;height:46px;border:2px solid #1E2A4A;border-radius:12px;padding:0 12px;font:inherit;font-size:16px;font-weight:700;color:#1E2A4A;background:#fff}
+.acct{margin:4px 0 10px;padding-bottom:10px;border-bottom:2px dashed #C9D6F2}
+.acct-link{display:block;margin:8px auto 0;min-height:44px;padding:0 12px;border:0;background:none;color:#2B5BB8;font:inherit;font-size:14px;font-weight:800;text-decoration:underline;cursor:pointer}
+.acct-small{font-size:12px;color:#5A6888}
+.bk-btn:disabled{opacity:.55;cursor:default}
 .bk-btn.gold{background:linear-gradient(180deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,0) 60%),#FFC94D;color:#2A1B00}
 .plist{display:flex;flex-direction:column;gap:6px;margin-top:6px}
 .prow{display:flex;align-items:center;gap:10px;padding:8px;border-radius:14px;background:#fff;border:1.5px solid #D5DEEE}
@@ -240,8 +246,31 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
   </div>
   <div id="bk" role="dialog" aria-modal="true" aria-labelledby="bk-title" hidden>
     <div class="wm-panel">
-      <div class="wm-head"><h2 id="bk-title">Save backup</h2><button id="bk-close" aria-label="Close backup"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+      <div class="wm-head"><h2 id="bk-title">Your save</h2><button id="bk-close" aria-label="Close backup"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
       <div class="sync"><span class="sync-dot" aria-hidden="true"></span><span id="bk-sync" role="status" aria-live="polite"></span><button id="bk-sync-now" class="pbtn" hidden>Sync now</button></div>
+      <div id="acct" class="acct" hidden>
+        <form id="acct-out" autocomplete="on" novalidate>
+          <p class="bk-p">Sign in to save online. Your progress then follows you to any phone or computer.</p>
+          <label class="bk-l" for="acct-email">Email</label>
+          <input id="acct-email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false">
+          <label class="bk-l" for="acct-pw">Password (6+ characters)</label>
+          <input id="acct-pw" type="password" autocomplete="current-password" minlength="6">
+          <button id="acct-in" type="submit" class="bk-btn gold">Sign in</button>
+          <button id="acct-new" type="button" class="bk-btn">Create account</button>
+          <button id="acct-forgot" type="button" class="acct-link">Forgot password?</button>
+        </form>
+        <div id="acct-on" hidden>
+          <p class="bk-p">Signed in as <b id="acct-who"></b>. The game saves online by itself while you play.</p>
+          <button id="acct-off" type="button" class="bk-btn">Sign out</button>
+          <p class="bk-p acct-small">Signing out removes the save from this device only. It stays in your account.</p>
+        </div>
+        <form id="acct-rec" hidden novalidate>
+          <label class="bk-l" for="acct-newpw">Choose a new password</label>
+          <input id="acct-newpw" type="password" autocomplete="new-password" minlength="6">
+          <button id="acct-setpw" type="submit" class="bk-btn gold">Save new password</button>
+        </form>
+        <p id="acct-msg" class="bk-p" role="status" aria-live="polite"></p>
+      </div>
       <p class="bk-p">Extra safety: copy this code or download it as a file, and keep it somewhere safe.</p>
       <label class="bk-l" for="bk-out">Your save code</label>
       <textarea id="bk-out" readonly rows="3"></textarea>
