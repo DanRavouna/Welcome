@@ -141,10 +141,15 @@ Attach this file plus `critter-roll-growth-source.tar.gz` (latest source + tests
 - One-time hint `online` for signed-out players with 3+ critters.
 - Test: `supatest.py` (real project; see `CLAUDE.md`). Note: its seed uses a localStorage marker; a sessionStorage-based seed re-seeded mid-test under file:// and looked like data loss.
 
+## Weather + abilities (done, Nov 2026)
+- Weather (`weather.js`, `WEATHER`): kind per area from local date + 6-hour block (nothing saved). Rain/storm/snow/fog/sun/ash drawn in `world.js` `draw()` under the day/night tint; HUD icon (`#loc-wx`), forecast on the world map, Settings toggle `settings.weather` (default on), reduced motion = colour wash only. Encounter tilt: 20% chance of the weather's type (`WEATHER.tilt`, applied after the night Dusk rule). Climate weights are first guesses. Test: `weathertest.py`.
+- Abilities (one passive per type, both sides; code in `Component.hit` / `resolve` in `base.js`, text in `ABILITIES` in `data.js`, shown on Dex card, battle card and species detail): Ember Blaze +15% dmg below half HP, Tide Drizzle +2% max HP per round, Moss Thick Bark first hit -30%, Volt Static 20% daze on the attacker, Frost Numb -8% damage taken, Dusk Veil 5% dodge, Stone Sturdy survive one KO at 1 HP (needs >=60% HP), Bloom Regrow +15% once below 30%. `window.__noAb = true` switches them off (test hook). First versions of Drizzle (4%) and Veil (10%) made Tide/Dusk trainers 10-19 points harder and were halved.
+- Balance check (`lbalab.py`, `towersimab.py`, same models as lbal5 / towersim; abilities off vs on, n=800 / 400): trainer win rate mean -1.6 points (worst Pike -7, Mako -6, most within noise of +-4); Tower median floors Lv14 6->6, Lv17 8->9, Lv20 12->13 (slightly easier). Not tuned against real play. Test: `abilitytest.py`.
+
 ## Housekeeping (done)
 - `app.js` is now four files in build order: `base.js` (Base + Component), `data.js` (constants), `game.js` (Game), `app.js` (APP). Pure split: built output is identical apart from one comment. `weather.js` was added (see weather section below in git history). Tests run by group: `bash src/run-tests.sh @world|@battle|@saves|@ui`.
 
 ## Next step
 Endgame phase is complete (Tower, shinies, milestones/titles all live).
-Cities + route loop are live. Dan declined dailies and the rival for now. Next ideas: weather, critter abilities (big balance job), real-phone playtest + stats (the cities already have distinct layouts; only the four routes share the zone builder's structure). Waiting on Dan's phone playtest + stats. Candidate features: weekly Tower twist, daily challenge battle, Tower leaderboard (only if friends play). Housekeeping: split the test run, split app.js, and keep balance checks per change. Real-phone check of Tower, shiny sparkle/vibration and titles still pending.
+Cities + route loop are live. Dan declined dailies and the rival for now. Next ideas: real-phone playtest + stats (the cities already have distinct layouts; only the four routes share the zone builder's structure). Waiting on Dan's phone playtest + stats. Candidate features: weekly Tower twist, daily challenge battle, Tower leaderboard (only if friends play). Housekeeping: split the test run, split app.js, and keep balance checks per change. Real-phone check of Tower, shiny sparkle/vibration and titles still pending.
 

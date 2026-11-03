@@ -1,3 +1,13 @@
+const ABILITIES = { // passive, one per type, both sides (numbers live in Component.hit/resolve)
+  Ember: { name: 'Blaze', text: 'Deals 15% more damage while below half HP.' },
+  Tide: { name: 'Drizzle', text: 'Heals 2% of its max HP at the end of every round.' },
+  Moss: { name: 'Thick Bark', text: 'The first hit it takes each battle does 30% less.' },
+  Volt: { name: 'Static', text: '20% chance to daze whoever hits it.' },
+  Frost: { name: 'Numb', text: 'Takes 8% less damage from every hit.' },
+  Dusk: { name: 'Veil', text: '5% chance to dodge a hit.' },
+  Stone: { name: 'Sturdy', text: 'Once per battle, survives a knock-out with 1 HP if it started the hit above 60% HP.' },
+  Bloom: { name: 'Regrow', text: 'Once per battle, heals 15% when it drops below 30% HP.' }
+};
 const FREE_SIGHTINGS = 40;
 const KEEP_COST = { Common: 1, Uncommon: 2, Rare: 4, Mythic: 8 };
 const GATES = { moss: 1, frost: 3, ember: 6, tide: 9 };

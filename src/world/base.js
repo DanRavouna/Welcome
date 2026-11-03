@@ -309,7 +309,7 @@ class Component extends Base {
       name: name,
       alt: name + ', a ' + rarity.toLowerCase() + ' ' + element.name + '-type critter, stage ' + stage,
       element: { name: element.name, color: element.color, tint: element.tint },
-      strongVs: this.beats()[element.name].join(' + ').toUpperCase(),
+      strongVs: this.beats()[element.name].join(' + ').toUpperCase(), ability: ABILITIES[element.name],
       rarity: rarity,
       rarityBg: rarityStyle.bg,
       rarityFg: rarityStyle.fg,
@@ -498,7 +498,7 @@ class Component extends Base {
   newBattle(me, foe, reward) {
     const side = (k, label) => ({
       k: k, label: label, hp: Math.round(k.stats[0].value * 1.5 + 60), max: Math.round(k.stats[0].value * 1.5 + 60),
-      burn: 0, weak: 0, daze: 0, sap: 0, fort: 0, guard: false, lastGuard: false, uses: 2
+      burn: 0, weak: 0, daze: 0, sap: 0, fort: 0, guard: false, lastGuard: false, uses: 2, abUsed: false
     });
     return { s: [side(me, me.name), side(foe, 'Wild ' + foe.name)], round: 1, log: [{ text: 'A wild ' + foe.name + ' appeared!' }], over: false, win: false, draw: false, fled: false, reward: reward };
   }
@@ -521,11 +521,23 @@ class Component extends Base {
     const atk = A.k.stats[1].value * (A.weak > 0 ? 0.6 : 1);
     const def = D.k.stats[2].value * (D.fort > 0 ? 2 : 1);
     const fx = (typeof window !== 'undefined' && window.__itemFx) || ITEM_FX, warded = D.ward > 0;
-    const dmg = Math.max(1, Math.round(power * (atk / (def + 40)) * mult * (0.85 + rand() * 0.3) * 0.6 * (D.guard ? 0.4 : 1) * (A.boost || 1) * (warded ? fx.ward.mult : 1) * (this._surge && A.k.element.name === this._surge ? 1.3 : 1)));
+    // abilities (one per type, both sides); window.__noAb switches them off for balance comparisons
+    const ab = !(typeof window !== 'undefined' && window.__noAb), an = A.k.element.name, dn = D.k.element.name; let abMult = 1, abNote = '';
+    if (ab) {
+      if (dn === 'Dusk' && rand() < 0.05) { D.fxHits = (D.fxHits || []).concat([{ m: 1, g: true, c: A.k.element.color }]); return 'dodged (Veil)'; }
+      if (an === 'Ember' && A.hp < A.max * 0.5) abMult *= 1.15;
+      if (dn === 'Frost') abMult *= 0.92;
+      if (dn === 'Moss' && !D.abUsed) { abMult *= 0.7; D.abUsed = true; abNote = ' (Thick Bark)'; }
+    }
+    const dmg0 = Math.max(1, Math.round(power * (atk / (def + 40)) * mult * (0.85 + rand() * 0.3) * 0.6 * (D.guard ? 0.4 : 1) * (A.boost || 1) * (warded ? fx.ward.mult : 1) * (this._surge && A.k.element.name === this._surge ? 1.3 : 1) * abMult));
+    let dmg = dmg0;
+    if (ab && dn === 'Stone' && !D.abUsed && D.hp >= D.max * 0.6 && dmg >= D.hp) { dmg = D.hp - 1; D.abUsed = true; abNote = ' (Sturdy: held on)'; }
     if (warded) D.ward -= 1;
     D.hp = Math.max(0, D.hp - dmg);
+    if (ab && dn === 'Bloom' && !D.abUsed && D.hp > 0 && D.hp < D.max * 0.3) { D.hp = Math.min(D.max, D.hp + Math.round(D.max * 0.15)); D.abUsed = true; abNote = ' (Regrow)'; }
+    if (ab && dn === 'Volt' && D.hp > 0 && A.daze === 0 && rand() < 0.2) { A.daze = 2; abNote = ' (Static dazed ' + A.label + ')'; }
     D.fxHits = (D.fxHits || []).concat([{ m: mult, g: !!D.guard, c: A.k.element.color }]);
-    return dmg + ' dmg' + (mult > 1 ? ' (strong)' : (mult < 1 ? ' (weak)' : '')) + (D.guard ? ' (blocked)' : '');
+    return dmg + ' dmg' + (mult > 1 ? ' (strong)' : (mult < 1 ? ' (weak)' : '')) + (D.guard ? ' (blocked)' : '') + abNote;
   }
 
   act(b, i, mi, rand) {
@@ -580,6 +592,7 @@ class Component extends Base {
       const A = b.s[i], D = b.s[1 - i];
       if (A.burn > 0) { const d = Math.max(1, Math.round(A.max * 0.05)); A.hp = Math.max(0, A.hp - d); b.log.push({ text: A.label + ' took ' + d + ' burn damage.' }); }
       if (A.sap > 0 && D.hp > 0) { const d = Math.max(1, Math.round(A.max * 0.03)); A.hp = Math.max(0, A.hp - d); D.hp = Math.min(D.max, D.hp + d); b.log.push({ text: D.label + ' drained ' + d + ' HP.' }); }
+      if (A.hp > 0 && A.k.element.name === 'Tide' && !(typeof window !== 'undefined' && window.__noAb)) { const h = Math.max(1, Math.round(A.max * 0.02)); A.hp = Math.min(A.max, A.hp + h); }
       ['burn', 'weak', 'daze', 'sap', 'fort'].forEach((key) => { if (A[key] > 0) A[key] -= 1; });
     }
     this.finish(b);
