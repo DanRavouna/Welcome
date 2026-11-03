@@ -296,6 +296,33 @@ const WORLD = (() => {
     ['route-fc', 'frosthold', 'e', 13, [34.6, 14.2], 's', 'coralbay', 'n', 28, [28.9, 1.4]],
     ['route-cc', 'coralbay', 's', 28, [28.9, 26.6], 'w', 'cinderport', 'e', 13, [34.6, 14.2]]
   ];
+  // ---------- props: reusable landmarks (defs in landmarks.js) ----------
+  // addProp(map, id, [x, y], text?) puts a landmark near the hint spot: the nearest legal place (clear ground, off paths, grass and water,
+  // away from the borders and the reserved rectangle) gets the solid footprint, plus a signpost with the lore line just below it.
+  function addProp(Mp, id, hint, text, reserved) {
+    const d = LAND.defs[id]; if (!d) return null;
+    const fp = LAND.foot(d), okTile = (x, y) => x >= 4 && y >= 4 && x < Mp.W - 4 && y < Mp.H - 4 && ['.', ',', 'T', 'R'].indexOf(Mp.grid[y][x]) !== -1;
+    const blocked = (x, y) => (reserved || []).some(([a, b, c, e]) => x >= a && x <= c && y >= b && y <= e);
+    const hasSign = !!(text || d.text), need = (px, py) => { for (let y = py - 1; y <= py + d.h + (hasSign ? 1 : 0); y++) for (let x = px - 1; x <= px + d.w; x++) { if (blocked(x, y)) return false; const inside = x >= px && x < px + d.w && y >= py && y < py + d.h; if (inside || (y === py + d.h && x === px + Math.floor((d.w - 1) / 2)) ? !okTile(x, y) : ['=', 'Z', '~', 'G', 'X', 'W'].indexOf(Mp.grid[y] ? Mp.grid[y][x] : 'T') !== -1) return false; } return true; };
+    for (let rad = 0; rad < 14; rad++) for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== rad) continue;
+      const px = hint[0] + dx, py = hint[1] + dy; if (!need(px, py)) continue;
+      for (let y = 0; y < d.h; y++) for (let x = 0; x < d.w; x++) Mp.grid[py + y][px + x] = fp[y][x] === 'X' ? 'X' : '.';
+      (Mp.props = Mp.props || []).push({ id: id, x: px, y: py, w: d.w, h: d.h });
+      if (hasSign) { const sx = px + Math.floor((d.w - 1) / 2), sy = py + d.h; Mp.grid[sy][sx] = 'G'; (Mp.signs = Mp.signs || []).push({ x: sx, y: sy, text: text || d.text }); }
+      return { x: px, y: py };
+    }
+    return null;
+  }
+  // which landmarks stand on which map (hint spot, optional lore override). Future routes and cities: just add rows.
+  const PROPS = {
+    'route-mf': [['ruin', [9, 17]], ['cairn', [26, 9]], ['cairn', [7, 11], '']],
+    'route-cm': [['camp', [25, 18]], ['well', [8, 9]], ['cairn', [27, 7]]],
+    'route-fc': [['lighthouse', [27, 8]], ['cairn', [8, 18]]],
+    'route-cc': [['wreck', [8, 17]], ['cairn', [24, 6]]]
+  };
+  const PROP_RESERVED = [[13, 3, 19, 11]]; // the route trainer's stand and sight line
+  Object.keys(PROPS).forEach((mid) => PROPS[mid].forEach(([id, hint, text]) => addProp(MAPS[mid], id, hint, text === '' ? null : text, PROP_RESERVED)));
   ROUTE_LINKS.forEach(([rid, cityA, edgeA, aA, arrA, rEdgeB, cityB, edgeB, aB, arrB]) => {
     const R = MAPS[rid], back = R.exits[0];
     back.to = cityA; R.arriveFrom = { [cityA]: R.arrive[back.edge] };
@@ -727,7 +754,7 @@ const WORLD = (() => {
   }
   return {
     init, input, nearest, MAPS, ZONES, TS, collides, enter, nextHop, setFish: (f) => { fishAt = f; }, follower: () => FOL,
-    get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
+    addProp, PROPS, get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
     solidAt: (x, y) => solidAt(x, y),
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; },
     get npcs() { return NPCS[M.id] || []; }, allNpcs: () => NPCS, facePlayer, inSight,

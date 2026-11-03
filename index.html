@@ -1082,6 +1082,84 @@ const PIX = (() => {
   return { sprite, radii, parseColor };
 })();
 
+// ---- LAND: reusable landmarks (props) any map can use. Add a def here, then list it in a map's props (see PROPS in world.js) ----
+// A def: { w, h, foot, draw(g, X, Y, P, k), text }
+//   w, h   size in tiles
+//   foot   rows of w chars: 'X' = solid tile, '.' = walkable (left as ground). Default: every tile solid.
+//   draw   pixel art at 16 px per tile; (X, Y) is the top-left pixel; P = the map palette (P.g ground, P.gt grass shade, ...); k = 0..1 per-prop variation
+//   text   optional lore line shown on a signpost placed next to the prop (override per use)
+// Props never take part in M.places (no door, no name tag): they are scenery plus an optional signpost.
+const LAND = (() => {
+  const OL = '#2B2235';
+  const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+  const shadow = (g, X, Y, w, h) => R(g, X + 2, Y + h - 3, w - 4, 3, 'rgba(0,0,0,0.2)');
+  const moss = (g, P, x, y, w) => R(g, x, y, w, 2, P.gt || '#4E9A3E');
+  const defs = {
+    // a crumbled stone arch with rubble (any wild route or city outskirts)
+    ruin: { w: 4, h: 3, text: 'Worn carvings on the old arch show critters of every type sharing one fire. Nobody remembers who built it.',
+      draw(g, X, Y, P, k) {
+        shadow(g, X, Y, 64, 48);
+        R(g, X + 4, Y + 10, 12, 36, OL); R(g, X + 5, Y + 11, 10, 34, '#B7BFCF'); R(g, X + 5, Y + 11, 3, 34, '#DCE2EE'); R(g, X + 12, Y + 11, 3, 34, '#8E98AD');
+        R(g, X + 48, Y + 20, 12, 26, OL); R(g, X + 49, Y + 21, 10, 24, '#B7BFCF'); R(g, X + 49, Y + 21, 3, 24, '#DCE2EE'); R(g, X + 56, Y + 21, 3, 24, '#8E98AD');
+        R(g, X + 4, Y + 4, 30, 9, OL); R(g, X + 5, Y + 5, 28, 7, '#C9D0DE'); R(g, X + 5, Y + 5, 28, 2, '#E8EDF6'); R(g, X + 5, Y + 10, 28, 2, '#8E98AD'); // broken lintel
+        R(g, X + 33, Y + 8, 4, 5, OL); R(g, X + 36, Y + 12, 4, 4, OL);
+        for (let i = 0; i < 6; i++) { const rx = X + 20 + i * 5 + (i % 2) * 2, ry = Y + 38 + (i % 3) * 3; R(g, rx, ry, 6, 5, OL); R(g, rx + 1, ry + 1, 4, 3, i % 2 ? '#A8B2C6' : '#C9D0DE'); }
+        moss(g, P, X + 5, Y + 24, 10); moss(g, P, X + 49, Y + 32, 10); moss(g, P, X + 8, Y + 5, 14);
+        R(g, X + 8, Y + 30 + Math.round(k * 4), 2, 8, P.gt || '#4E9A3E'); // a hanging vine
+      } },
+    // a traveller's camp: tent and a low fire (stays lit forever)
+    camp: { w: 3, h: 2, text: 'A traveller’s camp. The stew is still warm, but nobody is here. A note says: "Gone to look at the Peak."',
+      draw(g, X, Y, P) {
+        shadow(g, X, Y, 48, 32);
+        const tent = ['.......oo.......', '......occo......', '.....occcco.....', '....occcccco....', '...occcccdcco...', '..occcccddcco...', '.occcccdddccco..', 'occccccdddcccco.', 'oooooooodddooooo'], col = { o: OL, c: '#D8574A', d: '#5A2420' };
+        tent.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const c = col[row[x]]; if (c) R(g, X + 2 + x * 2, Y + 4 + y * 3, 2, 3, c); } });
+        R(g, X + 2 + 16, Y + 4 + 6 * 3, 8, 12, '#2A1B14'); R(g, X + 2 + 18, Y + 4 + 6 * 3 + 2, 4, 10, '#0E0A10'); // door
+        R(g, X + 34, Y + 22, 12, 4, OL); R(g, X + 35, Y + 23, 10, 2, '#7A4A2A'); R(g, X + 36, Y + 14, 8, 9, OL); R(g, X + 37, Y + 16, 6, 6, '#FF9A3A'); R(g, X + 38, Y + 18, 4, 4, '#FFD86B'); R(g, X + 39, Y + 12, 2, 4, '#FF9A3A'); // fire
+      } },
+    // a lighthouse on a rocky foot (coasts, harbors)
+    lighthouse: { w: 2, h: 4, text: 'The lamp still turns every night. Ships once steered by it between the northern fort and the harbor.',
+      draw(g, X, Y, P) {
+        shadow(g, X, Y, 32, 64);
+        R(g, X + 2, Y + 50, 28, 12, OL); R(g, X + 3, Y + 51, 26, 10, '#8E98AD'); R(g, X + 3, Y + 51, 26, 2, '#C9D0DE');
+        R(g, X + 8, Y + 14, 16, 38, OL);
+        for (let i = 0; i < 4; i++) { R(g, X + 9, Y + 15 + i * 9, 14, 9, i % 2 ? '#D8574A' : '#F4F6FA'); }
+        R(g, X + 9, Y + 15, 3, 36, 'rgba(255,255,255,0.35)'); R(g, X + 20, Y + 15, 3, 36, 'rgba(0,0,0,0.18)');
+        R(g, X + 6, Y + 10, 20, 5, OL); R(g, X + 7, Y + 11, 18, 3, '#4A5878');
+        R(g, X + 9, Y + 2, 14, 9, OL); R(g, X + 10, Y + 3, 12, 7, '#FFE9A0'); R(g, X + 13, Y + 4, 6, 5, '#FFFFFF');
+        R(g, X + 11, Y - 1, 10, 4, OL); R(g, X + 12, Y, 8, 2, '#D8574A');
+        R(g, X + 13, Y + 34, 6, 8, OL); R(g, X + 14, Y + 35, 4, 6, '#1E2A4A');
+      } },
+    // a wrecked boat on the sand
+    wreck: { w: 4, h: 2, text: 'A boat that never reached the forge town. Tide critters nest in the hull now.',
+      draw(g, X, Y, P) {
+        shadow(g, X, Y, 64, 32);
+        const hull = ['..........ooooooooooo.....', '.....oooooobbbbbbbbbbbo...', '..oooobbbbbbbbbbbbbbbbbbo.', '.obbbbbbbbbbbbbbddbbbbbbbo', 'obbbbbbbbbbbddbbbbbbbbbbo.', '.oobbbbbbbbbbbbbbbbbbboo..', '...ooooooooooooooooooo...'], col = { o: OL, b: '#8A5A32', d: '#5E3C22' };
+        hull.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const c = col[row[x]]; if (c) R(g, X + 1 + x * 2, Y + 14 + y * 2, 2, 2, c); } });
+        for (let i = 0; i < 5; i++) R(g, X + 12 + i * 8, Y + 17, 2, 10, 'rgba(0,0,0,0.25)');
+        R(g, X + 30, Y + 2, 4, 20, OL); R(g, X + 31, Y + 3, 2, 18, '#B07A46'); R(g, X + 31, Y + 3, 12, 6, OL); R(g, X + 32, Y + 4, 10, 4, '#E8E2D0'); // mast and torn sail
+        R(g, X + 8, Y + 8, 4, 8, OL); R(g, X + 9, Y + 9, 2, 6, '#B07A46');
+      } },
+    // a single stack of stones (1 tile): cheap trail marker
+    cairn: { w: 1, h: 1,
+      draw(g, X, Y) {
+        shadow(g, X, Y, 16, 16);
+        R(g, X + 2, Y + 9, 12, 5, OL); R(g, X + 3, Y + 10, 10, 3, '#A8B2C6'); R(g, X + 4, Y + 5, 8, 5, OL); R(g, X + 5, Y + 6, 6, 3, '#C9D0DE'); R(g, X + 6, Y + 2, 5, 4, OL); R(g, X + 7, Y + 3, 3, 2, '#DCE2EE');
+      } },
+    // a stone well with a little roof (villages, camps)
+    well: { w: 2, h: 2, text: 'An old well. The water is cold and clear.',
+      draw(g, X, Y) {
+        shadow(g, X, Y, 32, 32);
+        R(g, X + 2, Y + 14, 28, 16, OL); R(g, X + 3, Y + 15, 26, 14, '#A8B2C6'); R(g, X + 3, Y + 15, 26, 3, '#DCE2EE'); R(g, X + 7, Y + 18, 18, 7, '#2A6FB0'); R(g, X + 9, Y + 19, 6, 2, '#A8D8FF');
+        R(g, X + 4, Y + 6, 3, 14, OL); R(g, X + 25, Y + 6, 3, 14, OL); R(g, X + 5, Y + 7, 1, 12, '#B07A46'); R(g, X + 26, Y + 7, 1, 12, '#B07A46');
+        R(g, X + 2, Y + 2, 28, 6, OL); R(g, X + 3, Y + 3, 26, 4, '#C9604A'); R(g, X + 3, Y + 3, 26, 1, '#E8806A');
+      } }
+  };
+  function foot(def) { const rows = []; for (let y = 0; y < def.h; y++) rows.push(def.foot ? def.foot[y] : 'X'.repeat(def.w)); return rows; }
+  // draw one placed prop {id, x, y} onto a terrain canvas context (16 px per tile)
+  function draw(g, p, P) { const d = defs[p.id]; if (d) d.draw(g, p.x * 16, p.y * 16, P || {}, ((p.x * 7 + p.y * 13) % 10) / 10); }
+  return { defs, foot, draw };
+})();
+
 // ---- PXW: pixel-art tiles, buildings and the player sprite (drawn at 16px per tile, shown at 2x) ----
 const PXW = (() => {
   const L = 16;
@@ -1190,6 +1268,7 @@ const PXW = (() => {
       const X = x * L, Y = y * L; g.fillStyle = '#5E3C22'; g.fillRect(X + 2, Y + 4, 3, 11); g.fillRect(X + 11, Y + 4, 3, 11); g.fillStyle = '#B07A46'; g.fillRect(X, Y + 6, L, 2); g.fillRect(X, Y + 10, L, 2); g.fillStyle = '#C8955A'; g.fillRect(X + 3, Y + 4, 1, 10); g.fillRect(X + 12, Y + 4, 1, 10);
     }
     M.places.forEach((p) => place(g, p, P));
+    (M.props || []).forEach((p) => LAND.draw(g, p, P)); // reusable landmarks (landmarks.js)
     if (M.id === 'town') { // fountain
       const fx = 21 * L, fy = 19 * L;
       g.fillStyle = '#4A5878'; g.fillRect(fx + 1, fy, 30, 32); g.fillRect(fx, fy + 1, 32, 30);
@@ -1739,6 +1818,33 @@ const WORLD = (() => {
     ['route-fc', 'frosthold', 'e', 13, [34.6, 14.2], 's', 'coralbay', 'n', 28, [28.9, 1.4]],
     ['route-cc', 'coralbay', 's', 28, [28.9, 26.6], 'w', 'cinderport', 'e', 13, [34.6, 14.2]]
   ];
+  // ---------- props: reusable landmarks (defs in landmarks.js) ----------
+  // addProp(map, id, [x, y], text?) puts a landmark near the hint spot: the nearest legal place (clear ground, off paths, grass and water,
+  // away from the borders and the reserved rectangle) gets the solid footprint, plus a signpost with the lore line just below it.
+  function addProp(Mp, id, hint, text, reserved) {
+    const d = LAND.defs[id]; if (!d) return null;
+    const fp = LAND.foot(d), okTile = (x, y) => x >= 4 && y >= 4 && x < Mp.W - 4 && y < Mp.H - 4 && ['.', ',', 'T', 'R'].indexOf(Mp.grid[y][x]) !== -1;
+    const blocked = (x, y) => (reserved || []).some(([a, b, c, e]) => x >= a && x <= c && y >= b && y <= e);
+    const hasSign = !!(text || d.text), need = (px, py) => { for (let y = py - 1; y <= py + d.h + (hasSign ? 1 : 0); y++) for (let x = px - 1; x <= px + d.w; x++) { if (blocked(x, y)) return false; const inside = x >= px && x < px + d.w && y >= py && y < py + d.h; if (inside || (y === py + d.h && x === px + Math.floor((d.w - 1) / 2)) ? !okTile(x, y) : ['=', 'Z', '~', 'G', 'X', 'W'].indexOf(Mp.grid[y] ? Mp.grid[y][x] : 'T') !== -1) return false; } return true; };
+    for (let rad = 0; rad < 14; rad++) for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== rad) continue;
+      const px = hint[0] + dx, py = hint[1] + dy; if (!need(px, py)) continue;
+      for (let y = 0; y < d.h; y++) for (let x = 0; x < d.w; x++) Mp.grid[py + y][px + x] = fp[y][x] === 'X' ? 'X' : '.';
+      (Mp.props = Mp.props || []).push({ id: id, x: px, y: py, w: d.w, h: d.h });
+      if (hasSign) { const sx = px + Math.floor((d.w - 1) / 2), sy = py + d.h; Mp.grid[sy][sx] = 'G'; (Mp.signs = Mp.signs || []).push({ x: sx, y: sy, text: text || d.text }); }
+      return { x: px, y: py };
+    }
+    return null;
+  }
+  // which landmarks stand on which map (hint spot, optional lore override). Future routes and cities: just add rows.
+  const PROPS = {
+    'route-mf': [['ruin', [9, 17]], ['cairn', [26, 9]], ['cairn', [7, 11], '']],
+    'route-cm': [['camp', [25, 18]], ['well', [8, 9]], ['cairn', [27, 7]]],
+    'route-fc': [['lighthouse', [27, 8]], ['cairn', [8, 18]]],
+    'route-cc': [['wreck', [8, 17]], ['cairn', [24, 6]]]
+  };
+  const PROP_RESERVED = [[13, 3, 19, 11]]; // the route trainer's stand and sight line
+  Object.keys(PROPS).forEach((mid) => PROPS[mid].forEach(([id, hint, text]) => addProp(MAPS[mid], id, hint, text === '' ? null : text, PROP_RESERVED)));
   ROUTE_LINKS.forEach(([rid, cityA, edgeA, aA, arrA, rEdgeB, cityB, edgeB, aB, arrB]) => {
     const R = MAPS[rid], back = R.exits[0];
     back.to = cityA; R.arriveFrom = { [cityA]: R.arrive[back.edge] };
@@ -2170,7 +2276,7 @@ const WORLD = (() => {
   }
   return {
     init, input, nearest, MAPS, ZONES, TS, collides, enter, nextHop, setFish: (f) => { fishAt = f; }, follower: () => FOL,
-    get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
+    addProp, PROPS, get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
     solidAt: (x, y) => solidAt(x, y),
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; },
     get npcs() { return NPCS[M.id] || []; }, allNpcs: () => NPCS, facePlayer, inSight,

@@ -106,6 +106,7 @@ const PXW = (() => {
       const X = x * L, Y = y * L; g.fillStyle = '#5E3C22'; g.fillRect(X + 2, Y + 4, 3, 11); g.fillRect(X + 11, Y + 4, 3, 11); g.fillStyle = '#B07A46'; g.fillRect(X, Y + 6, L, 2); g.fillRect(X, Y + 10, L, 2); g.fillStyle = '#C8955A'; g.fillRect(X + 3, Y + 4, 1, 10); g.fillRect(X + 12, Y + 4, 1, 10);
     }
     M.places.forEach((p) => place(g, p, P));
+    (M.props || []).forEach((p) => LAND.draw(g, p, P)); // reusable landmarks (landmarks.js)
     if (M.id === 'town') { // fountain
       const fx = 21 * L, fy = 19 * L;
       g.fillStyle = '#4A5878'; g.fillRect(fx + 1, fy, 30, 32); g.fillRect(fx, fy + 1, 32, 30);
