@@ -57,6 +57,15 @@ const EVO_PLAN = [ // by body shape: arm length / width / tilt / height on the b
   { arm: 42, aw: 22, tilt: 24, at: 0.40, leg: 30 }, { arm: 30, aw: 24, tilt: 38, at: 0.50, leg: 36 }, { arm: 56, aw: 20, tilt: 14, at: 0.34, leg: 26 },
   { arm: 34, aw: 24, tilt: 50, at: 0.56, leg: 40 }, { arm: 46, aw: 22, tilt: 28, at: 0.46, leg: 32 }, { arm: 0, aw: 0, tilt: 0, at: 0.3, leg: 34, pads: true }
 ];
+// ---- the secret critter of the Sealed Arch: a hand-designed single-form species (#49, outside the 48), reached only through the reserved seed ----
+const SECRET_SEED = 1000001;   // normal seeds stop at 999999 (rolls, wild encounters, typed seeds), so this can never come up by chance
+const SECRET = {
+  name: 'Veilcrown', speciesNo: 49,
+  ability: { name: 'Last Light', text: 'Once per battle, survives a knock-out with 1 HP, and its next hit lands 30% harder.' },
+  flavor: 'Kept beneath the old arch since before the eight statues were carved. It wears the crown that nobody ever claimed.',
+  stats: [['HP', 120], ['ATK', 110], ['DEF', 106], ['SPD', 100]],   // level 1 values (total 436, about what the best of ten kept stage-3 critters reaches); the usual +3% per level applies (160 / 146 / 141 / 133 at level 12)
+  moves: [{ name: 'Crown Strike', power: 66 }, { name: 'Eclipse Wave', power: 92 }]
+};
 const FREE_SIGHTINGS = 40;
 const KEEP_COST = { Common: 1, Uncommon: 2, Rare: 4, Mythic: 8 };
 const GATES = { moss: 1, frost: 3, ember: 6, tide: 9 };
@@ -94,6 +103,7 @@ const TITLES = [
   { id: 'champion', name: 'Champion', desc: 'Earn all 4 Leader Seals', essence: 0, goal: 4, of: (s) => ((s.npc && s.npc.seals) || []).length },
   { id: 'climber', name: 'Tower Climber', desc: 'Clear floor 10 of the Tower', essence: 0, goal: 10, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'summit', name: 'Summit Champion', desc: 'Clear all 20 Tower floors', essence: 0, goal: 20, of: (s) => (s.tower && s.tower.best) || 0 },
+  { id: 'secret', name: 'The Ninth Seat', desc: 'Uncover a secret', essence: 20, goal: 1, of: (s) => ((s.caught || []).some((e) => e.seed === SECRET_SEED) ? 1 : 0) },
   { id: 'shiny', name: 'Shiny Hunter', desc: 'Keep 3 shiny critters', essence: 0, goal: 3, of: (s) => (s.shinies || []).length }
 ];
 const TOWER = { floors: 20, runsPerDay: 2, heal: 0.3 };

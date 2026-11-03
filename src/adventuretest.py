@@ -101,6 +101,8 @@ with sync_playwright() as p:
   pg.click('#act'); pg.wait_for_timeout(250); print('crown before the Keeper falls:', pg.inner_text('#toast')[:60])
   pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{cleared:(APP.game.state.npc.cleared||[]).concat(['keeper'])})})")
   pg.click('#act'); pg.wait_for_timeout(300); print('crown after:', pg.evaluate("APP.dialog&&APP.dialog.lines[0].slice(0,50)")); finish()
+  pg.wait_for_timeout(1400); pg.evaluate("APP.close()")   # the ninth seat answered: the Dex opened on the new critter; close it (details: secrettest.py)
+  print('secret critter obtained:', pg.evaluate("APP.game.state.caught.some(e=>e.seed===SECRET_SEED)"))
   # chest 2 and Journal
   print('chest2:', use('chest2'), '| bag charm:', pg.evaluate("APP.game.state.bag.charm"))
   pg.evaluate("APP.openMenu()"); pg.wait_for_timeout(200); pg.evaluate("document.querySelector('[data-tile=journal]').click()"); pg.wait_for_timeout(200)

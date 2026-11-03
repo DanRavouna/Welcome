@@ -6,7 +6,8 @@ class Game extends Component {
     const m = 1 + 0.03 * (lv - 1);
     k.stats.forEach((q) => { q.value = Math.min(250, Math.round(q.value * m)); q.pct = Math.min(100, Math.round(q.value / 200 * 100)); });
     k.lv = lv;
-    const sh = this.shinyHash(seed);
+    k.seedLabel = seed === SECRET_SEED ? 'secret' : String(seed);
+    const sh = seed === SECRET_SEED ? 0 : this.shinyHash(seed);   // the secret critter is never shiny
     if (sh) this.shinify(k, sh);
     return k;
   }
@@ -53,7 +54,7 @@ class Game extends Component {
     s.caught.forEach((e) => { if (this.isShiny(e.seed) && sh.indexOf(e.seed) === -1) sh.push(e.seed); });
     if (sh.length !== (s.shinies || []).length) { patch.shinies = sh; s.shinies = sh; }
     // species count as the base update will compute it, so milestones fire on the same keep
-    const seen = (s.seen || []).slice(); s.caught.forEach((e) => { const no = this.make(e.seed, 1).speciesNo; if (seen.indexOf(no) === -1) seen.push(no); }); s.seen = seen;
+    const seen = (s.seen || []).slice(); s.caught.forEach((e) => { const no = this.make(e.seed, 1).speciesNo; if (no <= 48 && seen.indexOf(no) === -1) seen.push(no); }); s.seen = seen;   // the bonus species (#49) never counts toward the 48
     const have = s.titles || [], got = TITLES.filter((t) => have.indexOf(t.id) === -1 && t.of(s) >= t.goal);
     if (!got.length) return [];
     patch.titles = have.concat(got.map((t) => t.id));

@@ -648,7 +648,7 @@ const APP = (() => {
   function journal() {
     const have = advOf().clues, lines = ['Clues about the Sealed Arch: ' + have.length + ' of ' + ADV.CLUES.length + '.'];
     ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Not found yet. Try asking around ' + c.where + '.'));
-    if (advOf().open.arch) { const f = advOf().flags; lines.push('The Sealed Arch: ' + (f.rubble ? 'the way north is clear.' : 'rubble blocks the way north. The empty seat, a fire bowl, a lamp and a hull lantern must mean something.') + (((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 ? ' You have beaten the Keeper.' : '')); } else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
+    if (advOf().open.arch) { const f = advOf().flags; lines.push('The Sealed Arch: ' + (f.rubble ? 'the way north is clear.' : 'rubble blocks the way north. The empty seat, a fire bowl, a lamp and a hull lantern must mean something.') + (((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 ? ' You have beaten the Keeper.' : '') + (advOf().flags.secret ? ' The ninth seat has answered.' : '')); } else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
     showDialog('Journal', lines);
   }
   function archUse() {
@@ -680,6 +680,15 @@ const APP = (() => {
   }
   // clear the rubble once the rite is done (also on load)
   function applyDungeon() { const m = WORLD.MAPS['dg-arch']; if (!m || !advOf().flags.rubble) return; const rb = (m.objects || []).filter((x) => x.rubble); if (rb.length) WORLD.openTiles('dg-arch', m.rubble, rb.map((x) => x.id)); }
+  // the ninth seat answers: Veilcrown joins you (level 12, one form); the Dex opens on it
+  function grantSecret() {
+    if (game.state.caught.some((e) => e.seed === SECRET_SEED)) return;
+    advSave((a) => { a.flags.secret = true; });
+    game.update({ caught: game.state.caught.concat([{ seed: SECRET_SEED, stage: 3, lv: 12 }]) });
+    game.sfx('mythic'); game.buzz([30, 40, 30, 40, 30, 40, 160]);
+    toast('Veilcrown joined you!');
+    setTimeout(() => { openScreen('dex'); game.setState({ selected: SECRET_SEED, dexView: 'mine', armed: false }); }, 900);   // openScreen clears the selection, so select after opening
+  }
   function objectUse(o) {
     if (o.kind === 'plaque') { archUse(); return; }
     if (o.kind === 'chest') { chestUse(o); return; }
@@ -687,7 +696,9 @@ const APP = (() => {
     if (o.kind === 'crown') {
       const beaten = ((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1;
       if (!beaten) { toast('The Keeper stands between you and the crown.'); return; }
-      showDialog('The crown', ['A small gold crown rests on the ninth seat. It hums softly, as if it were waiting for something.', 'Whatever it is waiting for will answer. But not yet.']); return;
+      const got = game.state.caught.some((e) => e.seed === SECRET_SEED) || advOf().flags.secret;
+      if (got) { showDialog('The ninth seat', ['The seat is warm. Whatever was kept here is with you now.']); return; }
+      showDialog('The ninth seat', ['The crown lifts from the stone and the dust settles around it.', 'Something that has been kept here a very long time opens its eyes.', 'It looks at you. Then it looks at the empty seat, and it chooses you instead.'], null, grantSecret); return;
     }
     toast(o.text || 'Nothing happens.');
   }
