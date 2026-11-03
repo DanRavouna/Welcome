@@ -346,7 +346,7 @@ const WORLD = (() => {
     const d = ADV.DUNGEONS[id](), grid = d.rows.map((r) => r.split(''));
     const objects = d.objects.map((o) => { grid[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });
     const arrive = d.spawn;
-    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: [], rate: 0, cave: true, dark: d.dark || null, objects: objects,
+    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
       exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive };
   }
   MAPS['dg-arch'] = buildDungeon('dg-arch');
@@ -671,16 +671,28 @@ const WORLD = (() => {
   }
   // dark dungeons: a dark layer with stepped light circles around the player and around lit objects (braziers, fires)
   let darkC = null;
+  // dark dungeons: the screen is covered in 8 px dark blocks whose darkness steps up with the distance to the nearest light (the player, lit braziers, fires).
+  // Runs of equal darkness are batched into one fill per level, so there is no offscreen canvas and no full-screen blending.
+  const DARK_A = [0.04, 0.12, 0.26, 0.45, 0.68, 0.95], DARK_D = [0.26, 0.42, 0.6, 0.8, 1.0];   // darkness per ring, ring edges as a fraction of the light radius
   function drawDark(cx, cy, pxs, pys) {
-    const W = canvas.width, H = canvas.height; if (!darkC) darkC = document.createElement('canvas');
-    if (darkC.width !== W || darkC.height !== H) { darkC.width = W; darkC.height = H; }
-    const g = darkC.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, vw, vh);
-    g.fillStyle = 'rgba(3,5,16,0.95)'; g.fillRect(0, 0, vw, vh); g.globalCompositeOperation = 'destination-out';
-    const still = opts.still ? opts.still() : false, flick = still ? 1 : 1 + 0.025 * Math.sin(tAnim * 7);
-    const light = (x, y, r) => { [[1, 0.42], [0.8, 0.42], [0.6, 0.42], [0.42, 0.5], [0.26, 0.9]].forEach(([f, a]) => { g.fillStyle = 'rgba(0,0,0,' + a + ')'; g.beginPath(); g.arc(x, y, r * f * flick, 0, 6.2832); g.fill(); }); };
-    light(pxs - cx, pys - cy - 14, M.dark.r * TS);
-    (M.objects || []).forEach((o) => { const r = ADV.LIGHT[o.kind] ? ADV.LIGHT[o.kind](o) : 0; if (r) light((o.x + 0.5) * TS - cx, (o.y + 0.5) * TS - cy, r * TS); });
-    ctx.drawImage(darkC, 0, 0, vw, vh);
+    const still = opts.still ? opts.still() : false, flick = still ? 1 : 1 + 0.025 * Math.sin(tAnim * 7), lights = [];
+    const add = (x, y, r) => { r *= flick; if (x + r < 0 || x - r > vw || y + r < 0 || y - r > vh) return; lights.push([x, y, r * r]); };
+    add(pxs - cx, pys - cy - 14, M.dark.r * TS);
+    (M.objects || []).forEach((o) => { const r = ADV.LIGHT[o.kind] ? ADV.LIGHT[o.kind](o, opts.objState ? opts.objState(o) : null) : 0; if (r) add((o.x + 0.5) * TS - cx, (o.y + 0.5) * TS - cy, r * TS); });
+    const C = 8, cols = Math.ceil(vw / C), rows = Math.ceil(vh / C), paths = DARK_A.map(() => new Path2D());
+    for (let ry = 0; ry < rows; ry++) {
+      const py = ry * C + C / 2; let run = -1, lvl = -1;
+      for (let rx = 0; rx <= cols; rx++) {
+        let l = -2;
+        if (rx < cols) {
+          const px = rx * C + C / 2; let best = 9;   // smallest (distance / radius)^2 over all lights
+          for (let k = 0; k < lights.length; k++) { const L = lights[k], dx = px - L[0], dy = py - L[1], q = (dx * dx + dy * dy) / L[2]; if (q < best) best = q; }
+          l = 5; for (let d = 0; d < 5; d++) if (best < DARK_D[d] * DARK_D[d]) { l = d; break; }
+        }
+        if (l !== lvl) { if (lvl >= 0) paths[lvl].rect(run * C, ry * C, (rx - run) * C, C); run = rx; lvl = l; }
+      }
+    }
+    DARK_A.forEach((a, k) => { ctx.fillStyle = 'rgba(3,5,16,' + a + ')'; ctx.fill(paths[k]); });
   }
   const hash2 = (a, b, c) => { let h = Math.imul(a + 374761393, 668265263) ^ Math.imul(b + 1274126177, 2246822519) ^ Math.imul(c + 99, 3266489917); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
   // rain ripples / storm whitecaps on visible water tiles (pixel rings, 2 px steps)
@@ -864,7 +876,9 @@ const WORLD = (() => {
     requestAnimationFrame(frame);
   }
   return {
-    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, get objects() { return M.objects || []; }, setFish: (f) => { fishAt = f; }, follower: () => FOL,
+    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, get objects() { return M.objects || []; },
+    // clear tiles (and the objects standing on them) of a map, e.g. rubble after the rite; redraws the ground if it is the current map
+    openTiles: (mapId, cells, objIds) => { const m = MAPS[mapId]; if (!m) return; cells.forEach(([x, y]) => { if (m.grid[y]) m.grid[y][x] = '.'; }); m.objects = (m.objects || []).filter((o) => objIds.indexOf(o.id) === -1); if (M === m && canvas) prerender(); }, setFish: (f) => { fishAt = f; }, follower: () => FOL,
     addProp, PROPS, get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
     solidAt: (x, y) => solidAt(x, y),
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },

@@ -1229,26 +1229,35 @@ const ADV = (() => {
     Volt: 'A statue of a volt critter. Your hair stands up when you pass it.', Frost: 'A statue of a frost critter. The stone is cold as ice.', Dusk: 'A statue of a dusk critter. It seems to watch you from the corner of its eye.',
     Stone: 'A statue of a stone critter. It was carved from the same rock as the cave.', Bloom: 'A statue of a bloom critter. A single pink petal rests in its hand.'
   };
-  // ---- the Sealed Arch: a round hall, eight statues around a fire, one empty seat (north), rubble blocking the way on ----
+  // ---- the Sealed Arch ----
+  // South: a round hall (eight statues around a fire, an empty ninth seat, three unlit lights to light in the order of the camp rhyme).
+  // North, behind rubble that the rite clears: a moss gallery (wild Dusk/Stone critters, a guard), a lamp hall (a guard) and the Keeper's chamber (boss, chest, crown).
   function sealedArch() {
-    const W = 26, H = 20, rows = [], objects = [];
-    for (let y = 0; y < H; y++) { let r = ''; for (let x = 0; x < W; x++) { const dx = (x - 13) / 10.5, dy = (y - 9) / 7.5; r += dx * dx + dy * dy <= 1 ? '.' : 'C'; } rows.push(r.split('')); }
+    const W = 26, H = 60, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
     const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
-    for (let y = 0; y <= 3; y++) { set(12, y, '.'); set(13, y, '.'); }                 // the alcove behind the empty seat
-    for (let y = 16; y < H; y++) { set(12, y, '='); set(13, y, '='); }                 // the way in
-    for (let y = 11; y <= 16; y++) { set(12, y, '='); set(13, y, '='); }
-    for (let y = 5; y <= 11; y++) for (let x = 10; x <= 16; x++) if ((x - 13) * (x - 13) + (y - 8) * (y - 8) <= 7) set(x, y, '=');    // flagstones around the fire
-    objects.push({ id: 'fire', kind: 'fire', x: 13, y: 8, text: 'The fire burns without fuel or smoke. Eight stone shadows lean toward it.' });
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const dx = (x - 13) / 10.5, dy = (y - 49) / 7.5; if (dx * dx + dy * dy <= 1) set(x, y, '.'); }   // the hall
+    rect(12, 30, 13, 41); rect(12, 18, 13, 21); rect(12, 6, 13, 8);                      // corridors north (the first one is blocked by rubble at y 41)
+    rect(5, 22, 20, 29); rect(5, 9, 20, 17); rect(6, 1, 19, 5);                             // gallery, lamp hall, the Keeper's chamber
+    rect(12, 51, 13, 59, '=');                                                              // the way in
+    for (let y = 45; y <= 51; y++) for (let x = 10; x <= 16; x++) if ((x - 13) * (x - 13) + (y - 48) * (y - 48) <= 7) set(x, y, '=');   // flagstones around the fire
+    [[8, 23], [17, 23], [8, 28], [17, 28], [8, 11], [17, 11], [8, 15], [17, 15]].forEach(([x, y]) => set(x, y, 'C'));              // pillars
+    rect(6, 24, 9, 27, 'W'); rect(16, 24, 19, 27, 'W'); rect(11, 22, 14, 23, 'W');     // glowing moss: wild critters live here
+    objects.push({ id: 'fire', kind: 'fire', x: 13, y: 48, text: 'The fire burns without fuel or smoke. Eight stone shadows lean toward it.' });
     for (let i = 0; i < 9; i++) {
-      const a = (-90 + i * 40) * Math.PI / 180, x = Math.round(13 + 3.5 * Math.cos(a)), y = Math.round(8 + 3.5 * Math.sin(a));
+      const a = (-90 + i * 40) * Math.PI / 180, x = Math.round(13 + 3.5 * Math.cos(a)), y = Math.round(48 + 3.5 * Math.sin(a));
       if (i === 0) objects.push({ id: 'seat', kind: 'seat', x: x, y: y, text: 'The ninth seat is empty. Dust lies thick on the stone, and a small crown is carved above it.' });
       else { const t = TYPES[i - 1]; objects.push({ id: 'statue-' + t, kind: 'statue', type: t, x: x, y: y, text: STATUE_TEXT[t] }); }
     }
-    objects.push({ id: 'chest1', kind: 'chest', x: 5, y: 10, reward: { potion: 2, essence: 5 }, text: 'A dusty chest.' });
-    objects.push({ id: 'br1', kind: 'brazier', x: 10, y: 14, text: 'A brazier. Somebody keeps it lit.' }, { id: 'br2', kind: 'brazier', x: 16, y: 14, text: 'A brazier. Somebody keeps it lit.' });
-    objects.push({ id: 'rb1', kind: 'rubble', x: 12, y: 3, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' }, { id: 'rb2', kind: 'rubble', x: 13, y: 3, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' });
+    objects.push({ id: 'rite0', kind: 'pyre', order: 0, x: 5, y: 48, text: 'A cold stone fire bowl.' }, { id: 'rite1', kind: 'lamp', order: 1, x: 21, y: 48, text: 'A lamp on a post, long unlit.' }, { id: 'rite2', kind: 'hull', order: 2, x: 19, y: 54, text: 'The prow of an old boat, set into the stone. A lantern hangs from it.' });
+    objects.push({ id: 'chest1', kind: 'chest', x: 5, y: 51, reward: { potion: 2, essence: 5 }, text: 'A dusty chest.' });
+    [[10, 54], [16, 54], [5, 22], [20, 22], [5, 9], [20, 9], [7, 1], [18, 1]].forEach(([x, y], i) => objects.push({ id: 'br' + (i + 1), kind: 'brazier', x: x, y: y, text: 'A brazier. Somebody keeps it lit.' }));
+    objects.push({ id: 'rb1', kind: 'rubble', x: 12, y: 41, rubble: true, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' }, { id: 'rb2', kind: 'rubble', x: 13, y: 41, rubble: true, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' });
+    objects.push({ id: 'chest2', kind: 'chest', x: 17, y: 2, reward: { charm: 1, essence: 12 }, text: 'The Keeper’s chest.' }, { id: 'crown', kind: 'crown', x: 13, y: 1, text: 'A small gold crown.' });
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
-    return { name: 'The Sealed Arch', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [12.9, H - 1.4], exit: { edge: 's', a: 12, b: 13 }, dark: { r: 3.4 } };
+    return { name: 'The Sealed Arch', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [12.9, H - 1.4], exit: { edge: 's', a: 12, b: 13 }, dark: { r: 3.4 }, types: ['Dusk', 'Stone'], rate: 0.12,
+      spots: { guard1: [13, 25], guard2: [13, 12], keeper: [13, 3] }, rubble: [[12, 41], [13, 41]] };
   }
   const DUNGEONS = { 'dg-arch': sealedArch };
   // ---- pixel art (screen pixels, 32 px per tile, drawn on 2 px steps); x, y = the tile's top-left; st = object state from the app ----
@@ -1298,6 +1307,35 @@ const ADV = (() => {
       R(g, x + 2, y + 26, 28, 4, 'rgba(0,0,0,0.25)');
       [[2, 14, 14, 14], [14, 10, 14, 18], [8, 6, 12, 12], [18, 20, 12, 10]].forEach(([a, b, w, h], i) => { R(g, x + a, y + b, w, h, OL); R(g, x + a + 2, y + b + 2, w - 4, h - 4, i % 2 ? '#6C6880' : '#807C94'); R(g, x + a + 2, y + b + 2, w - 4, 2, '#A09CB4'); });
     },
+    pyre(g, x, y, st, t, o) {
+      R(g, x + 3, y + 28, 26, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 4, y + 16, 24, 12, OL); R(g, x + 6, y + 18, 20, 8, '#7A748A'); R(g, x + 6, y + 18, 20, 2, '#A49EB6'); R(g, x + 8, y + 22, 16, 3, '#3A3646');
+      if (st.lit) flame(g, x + 16, y + 20, t, 0.4, true); else { R(g, x + 10, y + 14, 12, 4, '#4A3A2A'); R(g, x + 12, y + 12, 8, 3, '#3A2C20'); R(g, x + 14, y + 10, 4, 2, '#555064'); }
+    },
+    lamp(g, x, y, st, t) {
+      R(g, x + 8, y + 29, 16, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 13, y + 12, 6, 18, OL); R(g, x + 14, y + 12, 4, 17, '#6A6478'); R(g, x + 9, y + 26, 14, 5, OL); R(g, x + 11, y + 27, 10, 3, '#8A8498');
+      R(g, x + 8, y + 2, 16, 14, OL);
+      if (st.lit) { const k = 0.75 + 0.25 * Math.sin(t * 8); R(g, x + 10, y + 4, 12, 10, '#FFD86B'); R(g, x + 12, y + 6, 8, 6, '#FFF3B0'); g.save(); g.globalAlpha = 0.25 * k; R(g, x + 2, y - 4, 28, 26, '#FFD86B'); g.restore(); }
+      else { R(g, x + 10, y + 4, 12, 10, '#4A4860'); R(g, x + 10, y + 4, 12, 2, '#6A6882'); }
+      R(g, x + 11, y, 10, 3, OL);
+    },
+    hull(g, x, y, st, t) {
+      R(g, x + 1, y + 28, 30, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 2, y + 18, 28, 11, OL); R(g, x + 4, y + 20, 24, 7, '#8A5A32'); R(g, x + 4, y + 20, 24, 2, '#A8723E'); R(g, x + 6, y + 24, 20, 2, '#5E3C22');
+      R(g, x + 22, y + 8, 8, 12, OL); R(g, x + 24, y + 10, 4, 9, '#8A5A32');
+      R(g, x + 12, y + 2, 4, 18, OL); R(g, x + 13, y + 3, 2, 16, '#A8723E');
+      R(g, x + 16, y + 6, 2, 6, OL);
+      if (st.lit) { const k = 0.75 + 0.25 * Math.sin(t * 7 + 2); R(g, x + 15, y + 10, 6, 6, OL); R(g, x + 16, y + 11, 4, 4, '#FFD86B'); g.save(); g.globalAlpha = 0.25 * k; R(g, x + 6, y + 2, 24, 24, '#FFD86B'); g.restore(); }
+      else { R(g, x + 15, y + 10, 6, 6, OL); R(g, x + 16, y + 11, 4, 4, '#4A4860'); }
+    },
+    crown(g, x, y, st, t) {
+      R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 6, y + 20, 20, 11, OL); R(g, x + 8, y + 21, 16, 9, '#7A768A'); R(g, x + 8, y + 21, 16, 2, '#A49EB6');
+      const k = 0.5 + 0.5 * Math.sin(t * 2);
+      R(g, x + 9, y + 12, 14, 9, OL); R(g, x + 10, y + 16, 12, 4, '#FFD86B'); R(g, x + 10, y + 12, 4, 6, '#FFD86B'); R(g, x + 15, y + 10, 4, 8, '#FFD86B'); R(g, x + 20, y + 12, 3, 6, '#FFD86B'); R(g, x + 11, y + 17, 10, 2, '#FFF3B0');
+      g.save(); g.globalAlpha = 0.2 + 0.3 * k; R(g, x + 6, y + 6, 20, 2, '#FFF3B0'); R(g, x + 14, y + 2, 4, 4, '#FFF3B0'); g.restore();
+    },
     plaque(g, x, y, st, t) {   // the arch's rune stone: one gold rune per clue found
       R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)');
       R(g, x + 6, y + 6, 20, 24, OL); R(g, x + 8, y + 8, 16, 20, '#6A6880'); R(g, x + 8, y + 8, 16, 2, '#9A98B0');
@@ -1305,7 +1343,7 @@ const ADV = (() => {
       for (let i = 0; i < 4; i++) { const on = i < n; g.save(); g.globalAlpha = on ? (st.open ? 1 : 0.6 + 0.4 * k) : 1; R(g, x + 12, y + 11 + i * 4, 8, 2, on ? '#FFD86B' : '#4A4860'); g.restore(); }
     }
   };
-  const LIGHT = { fire: () => 3.8, brazier: () => 2.4 };   // radius in tiles lit around an object
+  const LIGHT = { fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
   return { CLUES, DUNGEONS, ART, LIGHT, TCOL, TYPES };
 })();
 
@@ -2119,7 +2157,7 @@ const WORLD = (() => {
     const d = ADV.DUNGEONS[id](), grid = d.rows.map((r) => r.split(''));
     const objects = d.objects.map((o) => { grid[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });
     const arrive = d.spawn;
-    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: [], rate: 0, cave: true, dark: d.dark || null, objects: objects,
+    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
       exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive };
   }
   MAPS['dg-arch'] = buildDungeon('dg-arch');
@@ -2444,16 +2482,28 @@ const WORLD = (() => {
   }
   // dark dungeons: a dark layer with stepped light circles around the player and around lit objects (braziers, fires)
   let darkC = null;
+  // dark dungeons: the screen is covered in 8 px dark blocks whose darkness steps up with the distance to the nearest light (the player, lit braziers, fires).
+  // Runs of equal darkness are batched into one fill per level, so there is no offscreen canvas and no full-screen blending.
+  const DARK_A = [0.04, 0.12, 0.26, 0.45, 0.68, 0.95], DARK_D = [0.26, 0.42, 0.6, 0.8, 1.0];   // darkness per ring, ring edges as a fraction of the light radius
   function drawDark(cx, cy, pxs, pys) {
-    const W = canvas.width, H = canvas.height; if (!darkC) darkC = document.createElement('canvas');
-    if (darkC.width !== W || darkC.height !== H) { darkC.width = W; darkC.height = H; }
-    const g = darkC.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, vw, vh);
-    g.fillStyle = 'rgba(3,5,16,0.95)'; g.fillRect(0, 0, vw, vh); g.globalCompositeOperation = 'destination-out';
-    const still = opts.still ? opts.still() : false, flick = still ? 1 : 1 + 0.025 * Math.sin(tAnim * 7);
-    const light = (x, y, r) => { [[1, 0.42], [0.8, 0.42], [0.6, 0.42], [0.42, 0.5], [0.26, 0.9]].forEach(([f, a]) => { g.fillStyle = 'rgba(0,0,0,' + a + ')'; g.beginPath(); g.arc(x, y, r * f * flick, 0, 6.2832); g.fill(); }); };
-    light(pxs - cx, pys - cy - 14, M.dark.r * TS);
-    (M.objects || []).forEach((o) => { const r = ADV.LIGHT[o.kind] ? ADV.LIGHT[o.kind](o) : 0; if (r) light((o.x + 0.5) * TS - cx, (o.y + 0.5) * TS - cy, r * TS); });
-    ctx.drawImage(darkC, 0, 0, vw, vh);
+    const still = opts.still ? opts.still() : false, flick = still ? 1 : 1 + 0.025 * Math.sin(tAnim * 7), lights = [];
+    const add = (x, y, r) => { r *= flick; if (x + r < 0 || x - r > vw || y + r < 0 || y - r > vh) return; lights.push([x, y, r * r]); };
+    add(pxs - cx, pys - cy - 14, M.dark.r * TS);
+    (M.objects || []).forEach((o) => { const r = ADV.LIGHT[o.kind] ? ADV.LIGHT[o.kind](o, opts.objState ? opts.objState(o) : null) : 0; if (r) add((o.x + 0.5) * TS - cx, (o.y + 0.5) * TS - cy, r * TS); });
+    const C = 8, cols = Math.ceil(vw / C), rows = Math.ceil(vh / C), paths = DARK_A.map(() => new Path2D());
+    for (let ry = 0; ry < rows; ry++) {
+      const py = ry * C + C / 2; let run = -1, lvl = -1;
+      for (let rx = 0; rx <= cols; rx++) {
+        let l = -2;
+        if (rx < cols) {
+          const px = rx * C + C / 2; let best = 9;   // smallest (distance / radius)^2 over all lights
+          for (let k = 0; k < lights.length; k++) { const L = lights[k], dx = px - L[0], dy = py - L[1], q = (dx * dx + dy * dy) / L[2]; if (q < best) best = q; }
+          l = 5; for (let d = 0; d < 5; d++) if (best < DARK_D[d] * DARK_D[d]) { l = d; break; }
+        }
+        if (l !== lvl) { if (lvl >= 0) paths[lvl].rect(run * C, ry * C, (rx - run) * C, C); run = rx; lvl = l; }
+      }
+    }
+    DARK_A.forEach((a, k) => { ctx.fillStyle = 'rgba(3,5,16,' + a + ')'; ctx.fill(paths[k]); });
   }
   const hash2 = (a, b, c) => { let h = Math.imul(a + 374761393, 668265263) ^ Math.imul(b + 1274126177, 2246822519) ^ Math.imul(c + 99, 3266489917); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
   // rain ripples / storm whitecaps on visible water tiles (pixel rings, 2 px steps)
@@ -2637,7 +2687,9 @@ const WORLD = (() => {
     requestAnimationFrame(frame);
   }
   return {
-    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, get objects() { return M.objects || []; }, setFish: (f) => { fishAt = f; }, follower: () => FOL,
+    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, get objects() { return M.objects || []; },
+    // clear tiles (and the objects standing on them) of a map, e.g. rubble after the rite; redraws the ground if it is the current map
+    openTiles: (mapId, cells, objIds) => { const m = MAPS[mapId]; if (!m) return; cells.forEach(([x, y]) => { if (m.grid[y]) m.grid[y][x] = '.'; }); m.objects = (m.objects || []).filter((o) => objIds.indexOf(o.id) === -1); if (M === m && canvas) prerender(); }, setFish: (f) => { fishAt = f; }, follower: () => FOL,
     addProp, PROPS, get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
     solidAt: (x, y) => solidAt(x, y),
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },
@@ -5364,6 +5416,13 @@ const APP = (() => {
     pers('joss', 'Lamplighter Joss', 'route-fc', near('route-fc', 'lighthouse', 3, 3), { h: '#BDBDBD', y: '#C0503A', Y: '#8A3A28' }, ['I still trim the lamp every dusk. It guides nobody now, but it feels right.', 'Glacier Coast runs between Frosthold and Coralbay. Frost and Tide critters live along it.']);
     pers('neri', 'Beachcomber Neri', 'route-cc', near('route-cc', 'wreck', 5, 2), { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, ['Tide critters nest in the wreck. Do not poke them, they bite!', 'Reef Causeway links Coralbay and Cinderport. Tide and Ember critters share it.']);
     pers('mae', 'Gardener Mae', 'town', spot('town', 24, 18), { h: '#F4EAD6', y: '#E0A0B8', Y: '#C07898' }, ['Mind the flowers! Sproutvale is nicest in the morning.', 'If you find a sparkling grass patch, take your time. Rare critters hide there.']);
+    // the Sealed Arch's guards and the Keeper (the Keeper is a boss: bonus essence on the first win, boss music)
+    const dsp = M['dg-arch'].spots;
+    out['dg-arch'] = [
+      rt('pell', 'Delver Pell', dsp.guard1[0], dsp.guard1[1], 'down', ['Dusk', 'Moss'], 4, 2, 14, 0.5, ['Halt. Nobody crosses the glowing moss without a battle.', 'The seat is kept. So are its rules.'], 'You are stronger than you look. Go on.', { h: '#3A2A1A', y: '#6A6A86', Y: '#3E3E58' }),
+      rt('ione', 'Delver Ione', dsp.guard2[0], dsp.guard2[1], 'down', ['Stone', 'Frost'], 4, 2, 14, 0.5, ['The lamp hall is mine. The Keeper is beyond me.', 'Show me you can hold your own first.'], 'Hm. Fair enough. The Keeper is waiting.', { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }),
+      Object.assign(rt('keeper', 'Keeper Orlen', dsp.keeper[0], dsp.keeper[1], 'down', ['Dusk', 'Stone'], 5, 3, 17, 0.6, ['You found your way in. Few remember the rhyme.', 'Eight critters were enough for the world, they said. The ninth was kept here, asleep.', 'Prove you can be trusted with the seat.'], 'The seat is yours to approach. It has waited a very long time.', { h: '#E8E8F0', y: '#33226E', Y: '#1E1448' }), { boss: true, bonus: 10, afterLines: ['The seat is quiet now. Go and see it.'] })
+    ];
     // residents of the house interiors
     const RES = {
       'house-fennel': ['Grandma Clover', ['Oh, a visitor! Fennel is out by the green again.', 'Take your time. Critters like a calm trainer.']],
@@ -5433,7 +5492,7 @@ const APP = (() => {
   // ---------- adventure: clues, objects, the Sealed Arch (content in adventure.js) ----------
   const advOf = () => { const a = (game && game.state.adv) || {}; return { clues: a.clues || [], open: a.open || {}, flags: a.flags || {} }; };
   function advSave(mut) { const a = advOf(), n = { clues: a.clues.slice(), open: Object.assign({}, a.open), flags: Object.assign({}, a.flags) }; mut(n); game.update({ adv: n }); try { setNear(WORLD.nearest()); } catch (e) {} }   // refresh the action label (e.g. Examine -> Enter)
-  function objState(o) { const a = advOf(); if (o.kind === 'plaque') return { open: !!a.open.arch, glow: a.clues.length }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; return {}; }
+  function objState(o) { const a = advOf(); if (o.kind === 'plaque') return { open: !!a.open.arch, glow: a.clues.length }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -5444,7 +5503,7 @@ const APP = (() => {
   function journal() {
     const have = advOf().clues, lines = ['Clues about the Sealed Arch: ' + have.length + ' of ' + ADV.CLUES.length + '.'];
     ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Not found yet. Try asking around ' + c.where + '.'));
-    if (advOf().open.arch) lines.push('The arch in Highland Pass is open.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
+    if (advOf().open.arch) { const f = advOf().flags; lines.push('The Sealed Arch: ' + (f.rubble ? 'the way north is clear.' : 'rubble blocks the way north. The empty seat, a fire bowl, a lamp and a hull lantern must mean something.') + (((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 ? ' You have beaten the Keeper.' : '')); } else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
     showDialog('Journal', lines);
   }
   function archUse() {
@@ -5460,9 +5519,31 @@ const APP = (() => {
     advSave((a) => { a.flags[key] = true; }); game.update({ bag: bag, essence: (game.state.essence || 0) + (r.essence | 0) }); game.sfx('claim');
     toast('You open the chest: ' + parts.join(' and ') + '!');
   }
+  // the rite: light the fire bowl, the lamp and the hull's lantern in that order (the camp rhyme); a wrong order puts them all out again (nothing is lost)
+  function riteUse(o) {
+    const a = advOf(); if (a.flags.rubble) { toast('The light burns steady.'); return; }
+    const seq = (a.flags.rite || []).slice();
+    if (seq.indexOf(o.order) !== -1) { toast('It is already lit.'); return; }
+    if (o.order === seq.length) {
+      seq.push(o.order); advSave((x) => { x.flags.rite = seq; }); game.sfx('claim');
+      if (seq.length === 3) { toast('The hull\u2019s lantern catches. The empty seat flares gold, and far to the north stone grinds aside.'); setTimeout(() => { advSave((x) => { x.flags.rubble = true; }); applyDungeon(); game.sfx('claim'); }, 700); }
+      else toast(seq.length === 1 ? 'The fire bowl catches. One light burns.' : 'The lamp wakes. Two lights burn.');
+    } else {
+      advSave((x) => { x.flags.rite = []; }); game.sfx('tap');
+      toast(a.clues.indexOf('camp') !== -1 ? 'The lights gutter out. The camp rhyme: fire first, then lamp, then hull.' : 'The lights gutter out. Maybe the order matters.');
+    }
+  }
+  // clear the rubble once the rite is done (also on load)
+  function applyDungeon() { const m = WORLD.MAPS['dg-arch']; if (!m || !advOf().flags.rubble) return; const rb = (m.objects || []).filter((x) => x.rubble); if (rb.length) WORLD.openTiles('dg-arch', m.rubble, rb.map((x) => x.id)); }
   function objectUse(o) {
     if (o.kind === 'plaque') { archUse(); return; }
     if (o.kind === 'chest') { chestUse(o); return; }
+    if (o.order !== undefined) { riteUse(o); return; }
+    if (o.kind === 'crown') {
+      const beaten = ((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1;
+      if (!beaten) { toast('The Keeper stands between you and the crown.'); return; }
+      showDialog('The crown', ['A small gold crown rests on the ninth seat. It hums softly, as if it were waiting for something.', 'Whatever it is waiting for will answer. But not yet.']); return;
+    }
     toast(o.text || 'Nothing happens.');
   }
   // weather / time-of-day remark for ordinary townsfolk (flavor.js); indoors the person hears the weather of the town outside
@@ -5529,8 +5610,8 @@ const APP = (() => {
     const seals = (game.state.npc && game.state.npc.seals) || [];
     const cleared = (game.state.npc && game.state.npc.cleared) || [];
     // trainers: full reward on the first win, half on daily rematches (keeps daily essence close to the pre-city economy)
-    const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward : Math.ceil(n.reward / 2));
-    game.setState({ trainer: { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader }, battle: null });
+    const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward + (n.bonus || 0) : Math.ceil(n.reward / 2));
+    game.setState({ trainer: { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss }, battle: null });
     openScreen('battle');
   }
   // ---------- Champion's Tower ----------
@@ -5685,7 +5766,7 @@ const APP = (() => {
     const st = game.state;
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
-    if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader) ? 'boss' : 'battle';
+    if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
     const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide', 'dg-arch': 'peak' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
@@ -5716,7 +5797,7 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { plank(m.name); setNear(null); renderWeather(); if (game && (m.city || m.id === 'peak') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
+      onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); renderWeather(); if (game && (m.city || m.id === 'peak') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
       objective: () => null, // no guide arrow or marker: signposts, paths and townsfolk lead the way
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map

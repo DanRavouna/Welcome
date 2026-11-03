@@ -561,6 +561,13 @@ const APP = (() => {
     pers('joss', 'Lamplighter Joss', 'route-fc', near('route-fc', 'lighthouse', 3, 3), { h: '#BDBDBD', y: '#C0503A', Y: '#8A3A28' }, ['I still trim the lamp every dusk. It guides nobody now, but it feels right.', 'Glacier Coast runs between Frosthold and Coralbay. Frost and Tide critters live along it.']);
     pers('neri', 'Beachcomber Neri', 'route-cc', near('route-cc', 'wreck', 5, 2), { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, ['Tide critters nest in the wreck. Do not poke them, they bite!', 'Reef Causeway links Coralbay and Cinderport. Tide and Ember critters share it.']);
     pers('mae', 'Gardener Mae', 'town', spot('town', 24, 18), { h: '#F4EAD6', y: '#E0A0B8', Y: '#C07898' }, ['Mind the flowers! Sproutvale is nicest in the morning.', 'If you find a sparkling grass patch, take your time. Rare critters hide there.']);
+    // the Sealed Arch's guards and the Keeper (the Keeper is a boss: bonus essence on the first win, boss music)
+    const dsp = M['dg-arch'].spots;
+    out['dg-arch'] = [
+      rt('pell', 'Delver Pell', dsp.guard1[0], dsp.guard1[1], 'down', ['Dusk', 'Moss'], 4, 2, 14, 0.5, ['Halt. Nobody crosses the glowing moss without a battle.', 'The seat is kept. So are its rules.'], 'You are stronger than you look. Go on.', { h: '#3A2A1A', y: '#6A6A86', Y: '#3E3E58' }),
+      rt('ione', 'Delver Ione', dsp.guard2[0], dsp.guard2[1], 'down', ['Stone', 'Frost'], 4, 2, 14, 0.5, ['The lamp hall is mine. The Keeper is beyond me.', 'Show me you can hold your own first.'], 'Hm. Fair enough. The Keeper is waiting.', { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }),
+      Object.assign(rt('keeper', 'Keeper Orlen', dsp.keeper[0], dsp.keeper[1], 'down', ['Dusk', 'Stone'], 5, 3, 17, 0.6, ['You found your way in. Few remember the rhyme.', 'Eight critters were enough for the world, they said. The ninth was kept here, asleep.', 'Prove you can be trusted with the seat.'], 'The seat is yours to approach. It has waited a very long time.', { h: '#E8E8F0', y: '#33226E', Y: '#1E1448' }), { boss: true, bonus: 10, afterLines: ['The seat is quiet now. Go and see it.'] })
+    ];
     // residents of the house interiors
     const RES = {
       'house-fennel': ['Grandma Clover', ['Oh, a visitor! Fennel is out by the green again.', 'Take your time. Critters like a calm trainer.']],
@@ -630,7 +637,7 @@ const APP = (() => {
   // ---------- adventure: clues, objects, the Sealed Arch (content in adventure.js) ----------
   const advOf = () => { const a = (game && game.state.adv) || {}; return { clues: a.clues || [], open: a.open || {}, flags: a.flags || {} }; };
   function advSave(mut) { const a = advOf(), n = { clues: a.clues.slice(), open: Object.assign({}, a.open), flags: Object.assign({}, a.flags) }; mut(n); game.update({ adv: n }); try { setNear(WORLD.nearest()); } catch (e) {} }   // refresh the action label (e.g. Examine -> Enter)
-  function objState(o) { const a = advOf(); if (o.kind === 'plaque') return { open: !!a.open.arch, glow: a.clues.length }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; return {}; }
+  function objState(o) { const a = advOf(); if (o.kind === 'plaque') return { open: !!a.open.arch, glow: a.clues.length }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -641,7 +648,7 @@ const APP = (() => {
   function journal() {
     const have = advOf().clues, lines = ['Clues about the Sealed Arch: ' + have.length + ' of ' + ADV.CLUES.length + '.'];
     ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Not found yet. Try asking around ' + c.where + '.'));
-    if (advOf().open.arch) lines.push('The arch in Highland Pass is open.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
+    if (advOf().open.arch) { const f = advOf().flags; lines.push('The Sealed Arch: ' + (f.rubble ? 'the way north is clear.' : 'rubble blocks the way north. The empty seat, a fire bowl, a lamp and a hull lantern must mean something.') + (((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 ? ' You have beaten the Keeper.' : '')); } else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
     showDialog('Journal', lines);
   }
   function archUse() {
@@ -657,9 +664,31 @@ const APP = (() => {
     advSave((a) => { a.flags[key] = true; }); game.update({ bag: bag, essence: (game.state.essence || 0) + (r.essence | 0) }); game.sfx('claim');
     toast('You open the chest: ' + parts.join(' and ') + '!');
   }
+  // the rite: light the fire bowl, the lamp and the hull's lantern in that order (the camp rhyme); a wrong order puts them all out again (nothing is lost)
+  function riteUse(o) {
+    const a = advOf(); if (a.flags.rubble) { toast('The light burns steady.'); return; }
+    const seq = (a.flags.rite || []).slice();
+    if (seq.indexOf(o.order) !== -1) { toast('It is already lit.'); return; }
+    if (o.order === seq.length) {
+      seq.push(o.order); advSave((x) => { x.flags.rite = seq; }); game.sfx('claim');
+      if (seq.length === 3) { toast('The hull\u2019s lantern catches. The empty seat flares gold, and far to the north stone grinds aside.'); setTimeout(() => { advSave((x) => { x.flags.rubble = true; }); applyDungeon(); game.sfx('claim'); }, 700); }
+      else toast(seq.length === 1 ? 'The fire bowl catches. One light burns.' : 'The lamp wakes. Two lights burn.');
+    } else {
+      advSave((x) => { x.flags.rite = []; }); game.sfx('tap');
+      toast(a.clues.indexOf('camp') !== -1 ? 'The lights gutter out. The camp rhyme: fire first, then lamp, then hull.' : 'The lights gutter out. Maybe the order matters.');
+    }
+  }
+  // clear the rubble once the rite is done (also on load)
+  function applyDungeon() { const m = WORLD.MAPS['dg-arch']; if (!m || !advOf().flags.rubble) return; const rb = (m.objects || []).filter((x) => x.rubble); if (rb.length) WORLD.openTiles('dg-arch', m.rubble, rb.map((x) => x.id)); }
   function objectUse(o) {
     if (o.kind === 'plaque') { archUse(); return; }
     if (o.kind === 'chest') { chestUse(o); return; }
+    if (o.order !== undefined) { riteUse(o); return; }
+    if (o.kind === 'crown') {
+      const beaten = ((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1;
+      if (!beaten) { toast('The Keeper stands between you and the crown.'); return; }
+      showDialog('The crown', ['A small gold crown rests on the ninth seat. It hums softly, as if it were waiting for something.', 'Whatever it is waiting for will answer. But not yet.']); return;
+    }
     toast(o.text || 'Nothing happens.');
   }
   // weather / time-of-day remark for ordinary townsfolk (flavor.js); indoors the person hears the weather of the town outside
@@ -726,8 +755,8 @@ const APP = (() => {
     const seals = (game.state.npc && game.state.npc.seals) || [];
     const cleared = (game.state.npc && game.state.npc.cleared) || [];
     // trainers: full reward on the first win, half on daily rematches (keeps daily essence close to the pre-city economy)
-    const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward : Math.ceil(n.reward / 2));
-    game.setState({ trainer: { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader }, battle: null });
+    const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward + (n.bonus || 0) : Math.ceil(n.reward / 2));
+    game.setState({ trainer: { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss }, battle: null });
     openScreen('battle');
   }
   // ---------- Champion's Tower ----------
@@ -882,7 +911,7 @@ const APP = (() => {
     const st = game.state;
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
-    if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader) ? 'boss' : 'battle';
+    if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
     const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide', 'dg-arch': 'peak' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
@@ -913,7 +942,7 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { plank(m.name); setNear(null); renderWeather(); if (game && (m.city || m.id === 'peak') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
+      onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); renderWeather(); if (game && (m.city || m.id === 'peak') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
       objective: () => null, // no guide arrow or marker: signposts, paths and townsfolk lead the way
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map

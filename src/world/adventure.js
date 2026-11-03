@@ -19,26 +19,35 @@ const ADV = (() => {
     Volt: 'A statue of a volt critter. Your hair stands up when you pass it.', Frost: 'A statue of a frost critter. The stone is cold as ice.', Dusk: 'A statue of a dusk critter. It seems to watch you from the corner of its eye.',
     Stone: 'A statue of a stone critter. It was carved from the same rock as the cave.', Bloom: 'A statue of a bloom critter. A single pink petal rests in its hand.'
   };
-  // ---- the Sealed Arch: a round hall, eight statues around a fire, one empty seat (north), rubble blocking the way on ----
+  // ---- the Sealed Arch ----
+  // South: a round hall (eight statues around a fire, an empty ninth seat, three unlit lights to light in the order of the camp rhyme).
+  // North, behind rubble that the rite clears: a moss gallery (wild Dusk/Stone critters, a guard), a lamp hall (a guard) and the Keeper's chamber (boss, chest, crown).
   function sealedArch() {
-    const W = 26, H = 20, rows = [], objects = [];
-    for (let y = 0; y < H; y++) { let r = ''; for (let x = 0; x < W; x++) { const dx = (x - 13) / 10.5, dy = (y - 9) / 7.5; r += dx * dx + dy * dy <= 1 ? '.' : 'C'; } rows.push(r.split('')); }
+    const W = 26, H = 60, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
     const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
-    for (let y = 0; y <= 3; y++) { set(12, y, '.'); set(13, y, '.'); }                 // the alcove behind the empty seat
-    for (let y = 16; y < H; y++) { set(12, y, '='); set(13, y, '='); }                 // the way in
-    for (let y = 11; y <= 16; y++) { set(12, y, '='); set(13, y, '='); }
-    for (let y = 5; y <= 11; y++) for (let x = 10; x <= 16; x++) if ((x - 13) * (x - 13) + (y - 8) * (y - 8) <= 7) set(x, y, '=');    // flagstones around the fire
-    objects.push({ id: 'fire', kind: 'fire', x: 13, y: 8, text: 'The fire burns without fuel or smoke. Eight stone shadows lean toward it.' });
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const dx = (x - 13) / 10.5, dy = (y - 49) / 7.5; if (dx * dx + dy * dy <= 1) set(x, y, '.'); }   // the hall
+    rect(12, 30, 13, 41); rect(12, 18, 13, 21); rect(12, 6, 13, 8);                      // corridors north (the first one is blocked by rubble at y 41)
+    rect(5, 22, 20, 29); rect(5, 9, 20, 17); rect(6, 1, 19, 5);                             // gallery, lamp hall, the Keeper's chamber
+    rect(12, 51, 13, 59, '=');                                                              // the way in
+    for (let y = 45; y <= 51; y++) for (let x = 10; x <= 16; x++) if ((x - 13) * (x - 13) + (y - 48) * (y - 48) <= 7) set(x, y, '=');   // flagstones around the fire
+    [[8, 23], [17, 23], [8, 28], [17, 28], [8, 11], [17, 11], [8, 15], [17, 15]].forEach(([x, y]) => set(x, y, 'C'));              // pillars
+    rect(6, 24, 9, 27, 'W'); rect(16, 24, 19, 27, 'W'); rect(11, 22, 14, 23, 'W');     // glowing moss: wild critters live here
+    objects.push({ id: 'fire', kind: 'fire', x: 13, y: 48, text: 'The fire burns without fuel or smoke. Eight stone shadows lean toward it.' });
     for (let i = 0; i < 9; i++) {
-      const a = (-90 + i * 40) * Math.PI / 180, x = Math.round(13 + 3.5 * Math.cos(a)), y = Math.round(8 + 3.5 * Math.sin(a));
+      const a = (-90 + i * 40) * Math.PI / 180, x = Math.round(13 + 3.5 * Math.cos(a)), y = Math.round(48 + 3.5 * Math.sin(a));
       if (i === 0) objects.push({ id: 'seat', kind: 'seat', x: x, y: y, text: 'The ninth seat is empty. Dust lies thick on the stone, and a small crown is carved above it.' });
       else { const t = TYPES[i - 1]; objects.push({ id: 'statue-' + t, kind: 'statue', type: t, x: x, y: y, text: STATUE_TEXT[t] }); }
     }
-    objects.push({ id: 'chest1', kind: 'chest', x: 5, y: 10, reward: { potion: 2, essence: 5 }, text: 'A dusty chest.' });
-    objects.push({ id: 'br1', kind: 'brazier', x: 10, y: 14, text: 'A brazier. Somebody keeps it lit.' }, { id: 'br2', kind: 'brazier', x: 16, y: 14, text: 'A brazier. Somebody keeps it lit.' });
-    objects.push({ id: 'rb1', kind: 'rubble', x: 12, y: 3, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' }, { id: 'rb2', kind: 'rubble', x: 13, y: 3, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' });
+    objects.push({ id: 'rite0', kind: 'pyre', order: 0, x: 5, y: 48, text: 'A cold stone fire bowl.' }, { id: 'rite1', kind: 'lamp', order: 1, x: 21, y: 48, text: 'A lamp on a post, long unlit.' }, { id: 'rite2', kind: 'hull', order: 2, x: 19, y: 54, text: 'The prow of an old boat, set into the stone. A lantern hangs from it.' });
+    objects.push({ id: 'chest1', kind: 'chest', x: 5, y: 51, reward: { potion: 2, essence: 5 }, text: 'A dusty chest.' });
+    [[10, 54], [16, 54], [5, 22], [20, 22], [5, 9], [20, 9], [7, 1], [18, 1]].forEach(([x, y], i) => objects.push({ id: 'br' + (i + 1), kind: 'brazier', x: x, y: y, text: 'A brazier. Somebody keeps it lit.' }));
+    objects.push({ id: 'rb1', kind: 'rubble', x: 12, y: 41, rubble: true, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' }, { id: 'rb2', kind: 'rubble', x: 13, y: 41, rubble: true, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' });
+    objects.push({ id: 'chest2', kind: 'chest', x: 17, y: 2, reward: { charm: 1, essence: 12 }, text: 'The Keeper’s chest.' }, { id: 'crown', kind: 'crown', x: 13, y: 1, text: 'A small gold crown.' });
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
-    return { name: 'The Sealed Arch', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [12.9, H - 1.4], exit: { edge: 's', a: 12, b: 13 }, dark: { r: 3.4 } };
+    return { name: 'The Sealed Arch', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [12.9, H - 1.4], exit: { edge: 's', a: 12, b: 13 }, dark: { r: 3.4 }, types: ['Dusk', 'Stone'], rate: 0.12,
+      spots: { guard1: [13, 25], guard2: [13, 12], keeper: [13, 3] }, rubble: [[12, 41], [13, 41]] };
   }
   const DUNGEONS = { 'dg-arch': sealedArch };
   // ---- pixel art (screen pixels, 32 px per tile, drawn on 2 px steps); x, y = the tile's top-left; st = object state from the app ----
@@ -88,6 +97,35 @@ const ADV = (() => {
       R(g, x + 2, y + 26, 28, 4, 'rgba(0,0,0,0.25)');
       [[2, 14, 14, 14], [14, 10, 14, 18], [8, 6, 12, 12], [18, 20, 12, 10]].forEach(([a, b, w, h], i) => { R(g, x + a, y + b, w, h, OL); R(g, x + a + 2, y + b + 2, w - 4, h - 4, i % 2 ? '#6C6880' : '#807C94'); R(g, x + a + 2, y + b + 2, w - 4, 2, '#A09CB4'); });
     },
+    pyre(g, x, y, st, t, o) {
+      R(g, x + 3, y + 28, 26, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 4, y + 16, 24, 12, OL); R(g, x + 6, y + 18, 20, 8, '#7A748A'); R(g, x + 6, y + 18, 20, 2, '#A49EB6'); R(g, x + 8, y + 22, 16, 3, '#3A3646');
+      if (st.lit) flame(g, x + 16, y + 20, t, 0.4, true); else { R(g, x + 10, y + 14, 12, 4, '#4A3A2A'); R(g, x + 12, y + 12, 8, 3, '#3A2C20'); R(g, x + 14, y + 10, 4, 2, '#555064'); }
+    },
+    lamp(g, x, y, st, t) {
+      R(g, x + 8, y + 29, 16, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 13, y + 12, 6, 18, OL); R(g, x + 14, y + 12, 4, 17, '#6A6478'); R(g, x + 9, y + 26, 14, 5, OL); R(g, x + 11, y + 27, 10, 3, '#8A8498');
+      R(g, x + 8, y + 2, 16, 14, OL);
+      if (st.lit) { const k = 0.75 + 0.25 * Math.sin(t * 8); R(g, x + 10, y + 4, 12, 10, '#FFD86B'); R(g, x + 12, y + 6, 8, 6, '#FFF3B0'); g.save(); g.globalAlpha = 0.25 * k; R(g, x + 2, y - 4, 28, 26, '#FFD86B'); g.restore(); }
+      else { R(g, x + 10, y + 4, 12, 10, '#4A4860'); R(g, x + 10, y + 4, 12, 2, '#6A6882'); }
+      R(g, x + 11, y, 10, 3, OL);
+    },
+    hull(g, x, y, st, t) {
+      R(g, x + 1, y + 28, 30, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 2, y + 18, 28, 11, OL); R(g, x + 4, y + 20, 24, 7, '#8A5A32'); R(g, x + 4, y + 20, 24, 2, '#A8723E'); R(g, x + 6, y + 24, 20, 2, '#5E3C22');
+      R(g, x + 22, y + 8, 8, 12, OL); R(g, x + 24, y + 10, 4, 9, '#8A5A32');
+      R(g, x + 12, y + 2, 4, 18, OL); R(g, x + 13, y + 3, 2, 16, '#A8723E');
+      R(g, x + 16, y + 6, 2, 6, OL);
+      if (st.lit) { const k = 0.75 + 0.25 * Math.sin(t * 7 + 2); R(g, x + 15, y + 10, 6, 6, OL); R(g, x + 16, y + 11, 4, 4, '#FFD86B'); g.save(); g.globalAlpha = 0.25 * k; R(g, x + 6, y + 2, 24, 24, '#FFD86B'); g.restore(); }
+      else { R(g, x + 15, y + 10, 6, 6, OL); R(g, x + 16, y + 11, 4, 4, '#4A4860'); }
+    },
+    crown(g, x, y, st, t) {
+      R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 6, y + 20, 20, 11, OL); R(g, x + 8, y + 21, 16, 9, '#7A768A'); R(g, x + 8, y + 21, 16, 2, '#A49EB6');
+      const k = 0.5 + 0.5 * Math.sin(t * 2);
+      R(g, x + 9, y + 12, 14, 9, OL); R(g, x + 10, y + 16, 12, 4, '#FFD86B'); R(g, x + 10, y + 12, 4, 6, '#FFD86B'); R(g, x + 15, y + 10, 4, 8, '#FFD86B'); R(g, x + 20, y + 12, 3, 6, '#FFD86B'); R(g, x + 11, y + 17, 10, 2, '#FFF3B0');
+      g.save(); g.globalAlpha = 0.2 + 0.3 * k; R(g, x + 6, y + 6, 20, 2, '#FFF3B0'); R(g, x + 14, y + 2, 4, 4, '#FFF3B0'); g.restore();
+    },
     plaque(g, x, y, st, t) {   // the arch's rune stone: one gold rune per clue found
       R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)');
       R(g, x + 6, y + 6, 20, 24, OL); R(g, x + 8, y + 8, 16, 20, '#6A6880'); R(g, x + 8, y + 8, 16, 2, '#9A98B0');
@@ -95,6 +133,6 @@ const ADV = (() => {
       for (let i = 0; i < 4; i++) { const on = i < n; g.save(); g.globalAlpha = on ? (st.open ? 1 : 0.6 + 0.4 * k) : 1; R(g, x + 12, y + 11 + i * 4, 8, 2, on ? '#FFD86B' : '#4A4860'); g.restore(); }
     }
   };
-  const LIGHT = { fire: () => 3.8, brazier: () => 2.4 };   // radius in tiles lit around an object
+  const LIGHT = { fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
   return { CLUES, DUNGEONS, ART, LIGHT, TCOL, TYPES };
 })();
