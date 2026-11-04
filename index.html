@@ -2873,9 +2873,7 @@ const WORLD = (() => {
       const name = MAPS[e.to] ? MAPS[e.to].name : e.to;
       let tx, ty; const mid = (e.a + e.b + 1) / 2;
       if (e.edge === 'n') { tx = mid * TS - cx; ty = 0.7 * TS - cy; } else if (e.edge === 's') { tx = mid * TS - cx; ty = (M.H - 0.7) * TS - cy; } else if (e.edge === 'w') { tx = 1.8 * TS - cx; ty = mid * TS - cy - 18; } else { tx = (M.W - 1.8) * TS - cx; ty = mid * TS - cy - 18; }
-      const lab = locked(e) && opts.lockLabel ? opts.lockLabel(e) : null;
-      if (lab) { if (e.edge === 'n') ty += 2.4 * TS; else if (e.edge === 's') ty -= 2.2 * TS; else tx += (e.edge === 'w' ? 1.2 : -1.2) * TS; }
-      if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag(lab ? name + ' · ' + lab : 'To ' + name, tx, ty, false);
+      if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag('To ' + name, tx, ty, false);   // just the place name; the level requirement is told when you touch the gate
     });
     if (flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.9, flash * 3) + ')'; ctx.fillRect(0, 0, vw, vh); }
     if (TR) transitionFx();
@@ -6282,7 +6280,6 @@ const APP = (() => {
         if (!folCache || folCache.key !== key) { const k = game.make(sd, e ? e.stage : 1), img = new Image(); img.src = PIX.sprite(k, 'icon'); folCache = { key: key, img: img, shiny: !!k.shiny }; }
         return folCache;
       },
-      lockLabel: (e) => 'Lv ' + (GATES[e.to] || ROUTE_GATES[e.to]),
       onLocked: (e) => ROUTE_GATES[e.to] ? toast(mapName(e.to) + ' opens at trainer level ' + ROUTE_GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.') : e.to === 'peak' ? toast("The trail to Champion's Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.') : toast(ZONE_NAMES[e.to] + ' opens at trainer level ' + GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.'),
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
