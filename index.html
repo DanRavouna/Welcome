@@ -1318,7 +1318,31 @@ const ADV = (() => {
     return { name: 'The Lamp Tower', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'ascent' },
       gates: { g1: ['L1', 'L2'], g2: ['L2', 'L3'], g3: ['L3'] }, spots: { guard1: [10, 29], guard2: [10, 16], warden: [10, 5] } };
   }
-  const DUNGEONS = { 'dg-arch': sealedArch, 'dg-lamp': lampTower };
+  // ---- the Forge Below: a hub with two side halls. Each hall holds a guard and a glowing core; carry both back to the hub sockets and the north gate opens onto the Forgemaster.
+  // Non-linear (either hall first). Gates here follow RULES (all listed flags set), not lever parity. ----
+  function forgeBelow() {
+    const W = 30, H = 44, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
+    const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const dx = (x - 15) / 6.8, dy = (y - 26) / 6.8; if (dx * dx + dy * dy <= 1) set(x, y, '.'); }   // the round hub
+    rect(2, 19, 7, 32); rect(22, 19, 27, 32); rect(7, 25, 9, 26); rect(20, 25, 23, 26);                          // west and east halls and their doorways
+    rect(14, 13, 15, 19); rect(7, 2, 22, 12); rect(14, 33, 15, 43, '=');                                         // the way north to the Forgemaster, and the way in
+    rect(14, 19, 15, 32, '='); rect(8, 25, 21, 26, '=');                                                          // flagstones across the hub
+    rect(3, 29, 4, 31, '~'); rect(25, 21, 26, 23, '~'); rect(9, 5, 10, 8, '~'); rect(19, 5, 20, 8, '~');         // lava pools (not walkable)
+    [[4, 22], [4, 27], [25, 27], [25, 31], [10, 10], [19, 10]].forEach(([x, y]) => set(x, y, 'C'));              // pillars
+    objects.push({ id: 'coreA', kind: 'core', core: 'A', gate: 'coreA', x: 3, y: 20, text: 'A core of living flame.' }, { id: 'coreB', kind: 'core', core: 'B', gate: 'coreB', x: 26, y: 31, text: 'A core of cooled stone, still humming.' });
+    objects.push({ id: 'sockA', kind: 'socket', core: 'A', x: 12, y: 22, text: 'A socket for the core of flame.' }, { id: 'sockB', kind: 'socket', core: 'B', x: 17, y: 22, text: 'A socket for the core of stone.' });
+    const gate = (id, y) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, x: 14, y: y, reach: 1.9, text: 'A slab of black iron seals the way north. Two sockets in the hub must wake first.' }, { id: id + 'b', kind: 'gate', gate: id, x: 15, y: y, reach: 1.9, text: 'A slab of black iron seals the way north. Two sockets in the hub must wake first.' }); };
+    gate('gb', 15);
+    objects.push({ id: 'chest1', kind: 'chest', x: 3, y: 31, reward: { super: 2, essence: 6 }, text: 'A scorched chest.' }, { id: 'chest2', kind: 'chest', x: 21, y: 3, reward: { charm: 1, essence: 12 }, text: 'The Forgemaster’s chest.' });
+    [[10, 22], [19, 22], [10, 30], [19, 30], [8, 3], [21, 12], [6, 21], [23, 21]].forEach(([x, y], i) => objects.push({ id: 'fr' + i, kind: 'brazier', x: x, y: y, text: 'A brazier of hot coals.' }));
+    objects.push({ id: 'furnace', kind: 'furnace', x: 14, y: 2, text: 'The great furnace.' });
+    objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
+    return { name: 'The Forge Below', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [14.9, H - 1.4], exit: { edge: 's', a: 14, b: 15, to: 'descent' }, dark: { r: 5.2 },
+      rules: { gb: ['sock:A', 'sock:B'] }, pickups: { coreA: 'core:A', coreB: 'core:B' }, spots: { guard1: [5, 25], guard2: [24, 25], hale: [14, 6] } };
+  }
+  const DUNGEONS = { 'dg-arch': sealedArch, 'dg-lamp': lampTower, 'dg-forge': forgeBelow };
   // ---- pixel art (screen pixels, 32 px per tile, drawn on 2 px steps); x, y = the tile's top-left; st = object state from the app ----
   const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, w, h); };
   const OL = '#14101E';
@@ -1414,6 +1438,31 @@ const ADV = (() => {
       else { R(g, x + 11, y + 9, 10, 10, '#5A6896'); }
       R(g, x + 15, y + 6, 2, 16, OL); R(g, x + 8, y + 13, 16, 2, OL); R(g, x + 8, y, 16, 5, OL); R(g, x + 10, y + 1, 12, 3, '#C9D0DE');
     },
+    cavemouth(g, x, y, st, t) {   // a doorway in a cliff wall, glowing from inside
+      const k = 0.6 + 0.4 * Math.sin(t * 4);
+      R(g, x, y, 32, 32, OL); R(g, x + 3, y + 8, 26, 24, '#2A1008'); R(g, x + 7, y + 4, 18, 8, '#2A1008');
+      R(g, x + 6, y + 12, 20, 20, '#8A2A10'); R(g, x + 9, y + 12, 14, 20, '#E8552A'); R(g, x + 12, y + 16, 8, 16, '#FFA03A'); R(g, x + 14, y + 22, 4, 10, '#FFE08A');
+      g.save(); g.globalAlpha = 0.25 * k; R(g, x - 6, y + 4, 44, 34, '#FF7A30'); g.restore();
+      R(g, x + 2, y + 6, 28, 3, '#5A4A4A'); R(g, x + 4, y + 3, 24, 3, '#7A6A6A');
+    },
+    core(g, x, y, st, t, o) {
+      const a = o.core === 'A', c1 = a ? '#FF9A3A' : '#8FD8EA', c2 = a ? '#FFE08A' : '#E0F4FF', k = 0.6 + 0.4 * Math.sin(t * 4 + (a ? 0 : 2));
+      R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)'); R(g, x + 8, y + 20, 16, 10, OL); R(g, x + 10, y + 22, 12, 7, '#7A748A'); R(g, x + 10, y + 22, 12, 2, '#A49EB6');
+      R(g, x + 9, y + 6, 14, 14, OL); R(g, x + 11, y + 8, 10, 10, c1); R(g, x + 13, y + 10, 6, 6, c2);
+      g.save(); g.globalAlpha = 0.3 * k; R(g, x + 3, y + 1, 26, 24, c1); g.restore();
+    },
+    socket(g, x, y, st, t, o) {
+      const a = o.core === 'A', c1 = a ? '#FF9A3A' : '#8FD8EA', c2 = a ? '#FFE08A' : '#E0F4FF';
+      R(g, x + 4, y + 28, 24, 3, 'rgba(0,0,0,0.25)'); R(g, x + 6, y + 14, 20, 16, OL); R(g, x + 8, y + 16, 16, 12, '#6A667A'); R(g, x + 8, y + 16, 16, 2, '#9A96AA');
+      R(g, x + 10, y + 8, 12, 8, OL); R(g, x + 12, y + 10, 8, 4, st.on ? c1 : '#3A3646');
+      if (st.on) { const k = 0.6 + 0.4 * Math.sin(t * 5); R(g, x + 13, y + 11, 6, 2, c2); g.save(); g.globalAlpha = 0.3 * k; R(g, x + 2, y + 2, 28, 22, c1); g.restore(); }
+    },
+    furnace(g, x, y, st, t) {
+      R(g, x + 2, y + 28, 28, 3, 'rgba(0,0,0,0.25)'); R(g, x, y + 8, 32, 22, OL); R(g, x + 2, y + 10, 28, 18, '#6A6070'); R(g, x + 2, y + 10, 28, 3, '#9A90A8');
+      R(g, x + 8, y + 14, 16, 14, OL); R(g, x + 10, y + 16, 12, 12, st.lit ? '#FF8A3A' : '#2A1E1E');
+      if (st.lit) { const k = 0.7 + 0.3 * Math.sin(t * 7); R(g, x + 12, y + 18, 8, 8, '#FFE08A'); R(g, x + 14, y + 20, 4, 6, '#FFFFFF'); g.save(); g.globalAlpha = 0.3 * k; R(g, x - 6, y + 2, 44, 34, '#FF7A30'); g.restore(); }
+      R(g, x + 11, y, 10, 10, OL); R(g, x + 13, y + 1, 6, 8, '#8A8498');
+    },
     plaque(g, x, y, st, t) {   // the arch's rune stone: one gold rune per clue found
       R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)');
       R(g, x + 6, y + 6, 20, 24, OL); R(g, x + 8, y + 8, 16, 20, '#6A6880'); R(g, x + 8, y + 8, 16, 2, '#9A98B0');
@@ -1421,7 +1470,7 @@ const ADV = (() => {
       for (let i = 0; i < 4; i++) { const on = i < n; g.save(); g.globalAlpha = on ? (st.open ? 1 : 0.6 + 0.4 * k) : 1; R(g, x + 12, y + 11 + i * 4, 8, 2, on ? '#FFD86B' : '#4A4860'); g.restore(); }
     }
   };
-  const LIGHT = { greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
+  const LIGHT = { furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
   return { CLUES, DUNGEONS, ART, LIGHT, TCOL, TYPES };
 })();
 
@@ -1443,6 +1492,8 @@ const PXW = (() => {
   PAL['dg-arch'] = { g: '#262B40', gd: '#2F3550', gt: '#1C2033', p: '#515A7C', ps: '#626C90', pe: '#383E5A', w: '#1E3A5F', wl: '#3A6A9A', we: '#122A48', t: '#2E4A4A', tb: '#1E3434', th: '#3E6A5A', tree: 'dead', ol: '#0A0C18', fl: ['#7AA0FF'], cw: '#171A2A', cwl: '#3A4160', cwd: '#0C0E1A' };
   PAL.ascent = { g: '#E8F0F8', gd: '#FFFFFF', gt: '#B9CCE0', p: '#A8B8D0', ps: '#98A8C2', pe: '#7888A4', w: '#7FB8E0', wl: '#D8EEFF', we: '#4A88B8', t: '#9CC9D9', tb: '#5E97AE', th: '#C8E8F2', tree: 'pine', ol: '#2E3A4A', fl: ['#FFFFFF', '#BBD5FF'], cw: '#6E7A96', cwl: '#C4D0E6', cwd: '#3E4864' };
   PAL['dg-lamp'] = { g: '#C9BFA8', gd: '#D8CFB8', gt: '#B5AA92', p: '#E4DAC2', ps: '#D2C8AE', pe: '#A89E86', w: '#7FB8E0', wl: '#D8EEFF', we: '#4A88B8', t: '#9CB89A', tb: '#6A8A68', th: '#C8E0C4', tree: 'pine', ol: '#2E2A3A', fl: ['#FFFFFF'], cw: '#7C7488', cwl: '#B8B0C8', cwd: '#4C4660' };
+  PAL.descent = { g: '#8A6A58', gd: '#A08068', gt: '#6A4A38', p: '#B08A70', ps: '#9A7860', pe: '#6A4A38', w: '#FF6A2B', wl: '#FFC24D', we: '#B83A10', t: '#C7A23A', tb: '#8E6B1E', th: '#E8C860', tree: 'dead', ol: '#2A1810', fl: ['#FFD86B', '#FF8A3D'], cw: '#3A2A2A', cwl: '#7A5A4A', cwd: '#1A1010' };
+  PAL['dg-forge'] = { g: '#4A3A38', gd: '#5A4A46', gt: '#3A2A28', p: '#8A6A5A', ps: '#7A5A4A', pe: '#5A3A2A', w: '#FF6A2B', wl: '#FFC24D', we: '#B83A10', t: '#6A4A38', tb: '#3A2A20', th: '#8A6A50', tree: 'dead', ol: '#1A0E0A', fl: ['#FF8A3D'], cw: '#2A1A1A', cwl: '#6A4A3A', cwd: '#120808' };
   PAL['route-mf'] = Object.assign({}, PAL.peak, { g: '#97B07E', gd: '#ABC492' }); PAL['route-fc'] = Object.assign({}, PAL.frost, { w: '#3C95DC', wl: '#A8D8FF', we: '#2A6FB0' }); PAL['route-cc'] = Object.assign({}, PAL.tide, { p: '#B08858', ps: '#9A7448', tree: 'palm' });
   PAL['route-cm'] = { g: '#8C9A5E', gd: '#A0AE70', gt: '#6E7A44', p: '#A08A6A', ps: '#8E7858', pe: '#6A5A40', w: '#4F9AD0', wl: '#9CD0F2', we: '#2F70A0', t: '#7E8A3A', tb: '#5E6A22', th: '#A0AE70', tree: 'dead', ol: '#2E2A1A', fl: ['#FF8A3D', '#FFD86B'] };
   function stamp(g, x0, y0, rows, colors) {
@@ -1683,7 +1734,7 @@ const WEATHER = (() => {
   const ROUTE_MIX = { 'route-mf': ['moss', 'frost'], 'route-cm': ['ember', 'moss'], 'route-fc': ['frost', 'tide'], 'route-cc': ['tide', 'ember'] };
   Object.keys(ROUTE_MIX).forEach((r) => { const c = {}; ROUTE_MIX[r].forEach((k) => { const w = CLIMATE[k]; Object.keys(w).forEach((x) => { c[x] = (c[x] || 0) + w[x] / 2; }); }); CLIMATE[r] = c; });
   // cities share the sky of the zone next to them
-  const REGION = { ascent: 'peak', town: 'town', peak: 'peak', moss: 'moss', mossbrook: 'moss', frost: 'frost', frosthold: 'frost', ember: 'ember', cinderport: 'ember', tide: 'tide', coralbay: 'tide' };
+  const REGION = { descent: 'ember', ascent: 'peak', town: 'town', peak: 'peak', moss: 'moss', mossbrook: 'moss', frost: 'frost', frosthold: 'frost', ember: 'ember', cinderport: 'ember', tide: 'tide', coralbay: 'tide' };
   function region(mapId) { return REGION[mapId] || (CLIMATE[mapId] ? mapId : null); }
   function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13; return (h >>> 0) / 4294967296; }
   function blockOf(d) { return Math.floor(d.getHours() / BLOCK_H); }
@@ -1909,6 +1960,8 @@ const WORLD = (() => {
   THEMES['dg-arch'] = { ground: '#262B40', blade: 'rgba(10,12,24,0.35)', path: '#515A7C', water: '#1E3A5F', tall: '#2E4A4A', tallBlade: '#1E3434', tree: 'dead', bg: '#0A0C18', flowers: ['#7AA0FF'], cave: true };
   THEMES.ascent = { ground: '#E8F0F8', blade: 'rgba(120,150,190,0.35)', path: '#A8B8D0', water: '#7FB8E0', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#9FB4D0', flowers: ['#FFFFFF', '#BBD5FF'], ice: true };
   THEMES['dg-lamp'] = { ground: '#C9BFA8', blade: 'rgba(120,100,70,0.25)', path: '#E4DAC2', water: '#7FB8E0', tall: '#9CB89A', tallBlade: '#6A8A68', tree: 'pine', bg: '#8E8470', flowers: ['#FFFFFF'], cave: true };
+  THEMES.descent = { ground: '#8A6A58', blade: 'rgba(60,30,20,0.35)', path: '#B08A70', water: '#FF6A2B', tall: '#C7A23A', tallBlade: '#8E6B1E', tree: 'dead', bg: '#3A1E14', flowers: ['#FFD86B', '#FF8A3D'], lava: true };
+  THEMES['dg-forge'] = { ground: '#4A3A38', blade: 'rgba(20,10,10,0.35)', path: '#8A6A5A', water: '#FF6A2B', tall: '#6A4A38', tallBlade: '#3A2A20', tree: 'dead', bg: '#1A0E0A', flowers: ['#FF8A3D'], cave: true, lava: true };
   THEMES['route-mf'] = THEMES.peak; THEMES['route-cm'] = Object.assign({}, THEMES.moss, { dense: false }); THEMES['route-fc'] = THEMES.frost; THEMES['route-cc'] = THEMES.tide;
   THEMES.mossbrook = { ground: '#5FA34A', blade: 'rgba(30,80,30,0.4)', path: '#C9A878', water: '#4F9AD0', tall: '#44803A', tallBlade: '#2A6A2C', tree: 'round', bg: '#2A5A2C', flowers: ['#F5A3D0', '#FFFFFF', '#FFD86B'] };
   const ZONES = {
@@ -2176,7 +2229,7 @@ const WORLD = (() => {
     M.exits.push({ edge: edge, a: a, b: a + 1, to: to });
     M.arriveFrom = Object.assign({}, M.arriveFrom, { [to]: arrive });
   }
-  const MAPS = { town: buildTown(), peak: buildPeak(), ascent: buildAscent(), mossbrook: buildMossbrook(), frosthold: buildCity(CITY_CFG.frosthold), cinderport: buildCity(CITY_CFG.cinderport), coralbay: buildCity(CITY_CFG.coralbay), frost: buildZone('frost'), ember: buildZone('ember'), moss: buildZone('moss'), tide: buildZone('tide'),
+  const MAPS = { town: buildTown(), peak: buildPeak(), ascent: buildAscent(), descent: buildDescent(), mossbrook: buildMossbrook(), frosthold: buildCity(CITY_CFG.frosthold), cinderport: buildCity(CITY_CFG.cinderport), coralbay: buildCity(CITY_CFG.coralbay), frost: buildZone('frost'), ember: buildZone('ember'), moss: buildZone('moss'), tide: buildZone('tide'),
     'route-mf': buildZone('route-mf'), 'route-cm': buildZone('route-cm'), 'route-fc': buildZone('route-fc'), 'route-cc': buildZone('route-cc') };
   linkEdge(MAPS.moss, 'w', 14, 'mossbrook', [1.2, 15.2]);
   MAPS.moss.grid[12][3] = 'G'; MAPS.moss.signs.push({ x: 3, y: 12, to: 'mossbrook', text: 'West: Mossbrook village, home of Elder Wren.' });
@@ -2210,6 +2263,7 @@ const WORLD = (() => {
   }
   // which landmarks stand on which map (hint spot, optional lore override). Future routes and cities: just add rows.
   const PROPS = {
+    descent: [['camp', [6, 7]], ['cairn', [24, 15], ''], ['cairn', [6, 19], ''], ['cairn', [24, 27], ''], ['cairn', [6, 35], ''], ['cairn', [24, 43], '']],
     ascent: [['camp', [6, 57]], ['cairn', [24, 50], ''], ['cairn', [6, 46], ''], ['cairn', [24, 38], ''], ['cairn', [6, 30], ''], ['cairn', [24, 22], '']],
     'route-mf': [['ruin', [9, 17]], ['cairn', [26, 9]], ['cairn', [7, 11], '']],
     'route-cm': [['camp', [25, 18]], ['well', [8, 9]], ['cairn', [27, 7]]],
@@ -2264,6 +2318,19 @@ const WORLD = (() => {
     return { id: 'ascent', name: 'The Cold Ascent', theme: THEMES.ascent, grid: m, W, H, places: [], signs: [], types: ['Frost', 'Stone'], rate: 0.12, rare: { x: 7, y: 18, w: 3, h: 3 },
       props: [{ id: 'beacon', x: 13, y: 3, w: 3, h: 5 }], objects: [{ id: 'beacon-door', kind: 'plaque', x: 14, y: 8, reach: 1.9, label: 'Examine the beacon door', text: 'The Beacon' }], exits: [{ edge: 's', a: 14, b: 15, to: 'frosthold' }], arrive: { s: arrive }, spawn: arrive };
   }
+  // ---------- the Cinder Descent: the Ascent's layout turned upside down. Entrance at the north (from Cinderport), ledges that step DOWN into the volcano, a lava river with a bridge,
+  // and the forge door cut into the crater's south wall. ----------
+  function buildDescent() {
+    const A = buildAscent(), W = A.W, H = A.H, g = A.grid.map((r) => r.slice()).reverse();
+    for (let y = 58; y <= 62; y++) for (let x = 13; x <= 15; x++) g[y][x] = '.';     // the Ascent's beacon footprint is not needed here
+    g[57][14] = '.';
+    for (let y = 53; y <= 62; y++) { g[y][14] = '='; g[y][15] = '='; }                 // the trail runs on to the crater floor
+    g[63][14] = 'O';                                                                    // the forge door (an object) in the south wall
+    const arrive = [14.9, 1.4];
+    return { id: 'descent', name: 'The Cinder Descent', theme: THEMES.descent, grid: g, W, H, places: [], signs: [], types: ['Ember', 'Stone'], rate: 0.12, rare: { x: 7, y: 45, w: 3, h: 3 }, props: [],
+      objects: [{ id: 'forge-door', kind: 'cavemouth', x: 14, y: 63, reach: 1.9, label: 'Enter the forge', text: 'The Forge' }],
+      exits: [{ edge: 'n', a: 14, b: 15, to: 'cinderport' }], arrive: { n: arrive }, spawn: arrive };
+  }
   // ---------- dungeons (layouts live in adventure.js) ----------
   // buildDungeon turns a layout into a map: cave walls 'C', objects on solid 'O' tiles, an exit gap, a darkness radius.
   function buildDungeon(id) {
@@ -2271,11 +2338,21 @@ const WORLD = (() => {
     const objects = d.objects.map((o) => { grid[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });
     const arrive = d.spawn;
     return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
-      exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: d.exit.to || 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive, gates: d.gates || {} };
+      exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: d.exit.to || 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive, gates: d.gates || {}, rules: d.rules || {}, pickups: d.pickups || {} };
   }
   MAPS['dg-arch'] = buildDungeon('dg-arch');
   MAPS['dg-lamp'] = buildDungeon('dg-lamp');
+  MAPS['dg-forge'] = buildDungeon('dg-forge');
   // the Cold Ascent hangs off Frosthold's north palisade (a gate cut at columns 31-32), with signposts and landmarks placed with the reusable props
+  (() => {   // Cinderport's southern gate (the gap in its tree line, columns 19-20) onto the Cinder Descent
+    const C = MAPS.cinderport, D = MAPS.descent;
+    for (let y = 20; y <= 27; y++) { C.grid[y][19] = '='; C.grid[y][20] = '='; }
+    C.grid[24][21] = 'G'; C.signs.push({ x: 21, y: 24, to: 'descent', text: 'South: the Cinder Descent. A trail winds down into the volcano to an old forge (Ember and Stone critters). Climbers should be at least level 13.' });
+    C.exits.push({ edge: 's', a: 19, b: 20, to: 'descent' }); C.arriveFrom = Object.assign({}, C.arriveFrom, { descent: [19.9, C.H - 1.4] });
+    D.arriveFrom = { cinderport: D.spawn, 'dg-forge': [14.5, 62.6] };
+    D.objects[0].glow = true;
+    D.grid[3][12] = 'G'; D.signs.push({ x: 12, y: 3, text: 'The Cinder Descent. Five ledges down into the caldera. Wild Ember and Stone critters hide in the ash tufts. The heat is real, so do not hurry back up.' });
+  })();
   (() => {
     const F = MAPS.frosthold, A = MAPS.ascent;
     for (let y = 0; y <= 11; y++) { F.grid[y][31] = '='; F.grid[y][32] = '='; }
@@ -3095,6 +3172,8 @@ const MUSIC = (() => {
       lead: 'D5 - - - F5 - A5 - | D5 - - - F5 - - . | Bb4 - - - D5 - F5 - | E5 - - - C#5 - - . | A5 - - - F5 - D5 - | G5 - - - Bb5 - D6 - | F5 - - - D5 - Bb4 - | E5 - C#5 - A4 - - .' },
     'dg-lamp': { bpm: 88, wave: 'triangle', chords: 'G Em C D G Em C D', bass: 'R . 5 . R . 5 .', drums: 'k . h . s . h .',
       lead: 'G5 - B5 - D6 - B5 - | E5 - G5 - B5 - - . | C5 - E5 - G5 - E5 - | D5 - F#5 - A5 - - . | G5 - B5 - D6 - G6 - | E6 - D6 - B5 - G5 - | C6 - B5 - A5 - G5 - | F#5 - A5 - D6 - - .' },
+    'dg-forge': { bpm: 78, wave: 'square', duty: 0.25, chords: 'Em Em C C Am Am B B', bass: 'R . R . 5 . R .', drums: 'k . . h k . s h',
+      lead: 'E5 - - - G5 - B5 - | E5 - - - D5 - - . | C5 - E5 - G5 - E5 - | D5 - C5 - B4 - - . | A4 - C5 - E5 - A5 - | G5 - E5 - C5 - - . | B4 - D#5 - F#5 - B5 - | A5 - F#5 - D#5 - - .' },
     spotted: { bpm: 160, wave: 'square', duty: 0.125, chords: 'Em Em C D Em Em C B', bass: 'R R R R R R R R', drums: 'k h k h s h k s',
       lead: 'E5 . E5 . G5 . E5 . | B5 . A5 . G5 . F#5 . | E5 . G5 . C6 . B5 . | A5 - - - D6 - - - | E5 . E5 . G5 . E5 . | B5 . A5 . G5 . B5 . | C6 . B5 . A5 . G5 . | F#5 - - - D#5 - - -' },
     battle: { bpm: 150, wave: 'square', duty: 0.25, chords: 'Am F G E Am F D E', bass: 'R R R R 5 R R 5', drums: 'k h s h k k s h',
@@ -3655,7 +3734,7 @@ class Component extends Base {
 
   // The secret critters (Veilcrown, Wickling): every field a normal critter has, with hand-placed geometry instead of seeded parts. Always their one form (stage 3).
   secretCritter(seed) {
-    const S = SECRETS[seed], ELEM = { Dusk: { name: 'Dusk', color: '#8B6CF0', tint: '#EAE3FF' }, Volt: { name: 'Volt', color: '#F5C518', tint: '#FFF4C7' } }[S.type];
+    const S = SECRETS[seed], ELEM = { Dusk: { name: 'Dusk', color: '#8B6CF0', tint: '#EAE3FF' }, Volt: { name: 'Volt', color: '#F5C518', tint: '#FFF4C7' }, Ember: { name: 'Ember', color: '#FF7A45', tint: '#FFE4D8' } }[S.type];
     const stats = S.stats.map(([label, v]) => ({ label: label, value: v, pct: Math.round(v / 150 * 100) }));
     const kit = this.kit(S.type, S.moves); kit[3].name = S.kit3;
     return Object.assign({
@@ -3669,6 +3748,27 @@ class Component extends Base {
   }
   secretGeometry(key) {
     const INK = '#1E2340';
+    if (key === 'slagback') {   // a low basalt body with glowing cracks, a glowing belly, orange horns, back crusts, four stubby feet and a flame-tipped tail
+      const body = '#4A3836', outline = '#1A1010', crust = '#6A4A42', hot = '#FF7A30';
+      return {
+        bodyColor: body, bellyBg: 'rgba(255,150,70,0.75)', outline: outline, bodyFill: 'radial-gradient(circle at 34% 26%, #7A5A50 0%, ' + body + ' 52%, #2A1A1A 100%)',
+        fx: [{ x: 52, y: 90, s: 11 }, { x: 188, y: 100, s: 10 }, { x: 140, y: 52, s: 12 }, { x: 70, y: 160, s: 9 }],
+        parts: [
+          { x: 40, y: 80, w: 160, h: 118, r: '50%', rot: 0, bg: 'rgba(255,122,48,0.30)', bw: 0, bc: INK },
+          { x: 74, y: 92, w: 34, h: 28, r: '40% 40% 20% 20%', rot: -8, bg: crust, bw: 3, bc: outline }, { x: 103, y: 84, w: 36, h: 30, r: '40% 40% 20% 20%', rot: 0, bg: crust, bw: 3, bc: outline }, { x: 134, y: 92, w: 34, h: 28, r: '40% 40% 20% 20%', rot: 8, bg: crust, bw: 3, bc: outline },
+          { x: 82, y: 96, w: 14, h: 24, r: '50% 50% 0 0', rot: -20, bg: '#FF9A3A', bw: 3, bc: '#8A3A10' }, { x: 144, y: 96, w: 14, h: 24, r: '50% 50% 0 0', rot: 20, bg: '#FF9A3A', bw: 3, bc: '#8A3A10' },
+          { x: 172, y: 146, w: 40, h: 20, r: '50%', rot: -20, bg: body, bw: 3, bc: outline }, { x: 200, y: 122, w: 22, h: 32, r: '50% 0 50% 50%', rot: -30, bg: '#FFA03A', bw: 3, bc: '#8A3A10' }, { x: 207, y: 133, w: 10, h: 14, r: '50% 0 50% 50%', rot: -30, bg: '#FFE08A', bw: 0, bc: INK },
+          { x: 62, y: 178, w: 32, h: 22, r: '40%', rot: 0, bg: '#3A2A2A', bw: 3, bc: outline }, { x: 100, y: 184, w: 30, h: 18, r: '40%', rot: 0, bg: '#3A2A2A', bw: 3, bc: outline }, { x: 126, y: 184, w: 30, h: 18, r: '40%', rot: 0, bg: '#3A2A2A', bw: 3, bc: outline }, { x: 158, y: 178, w: 32, h: 22, r: '40%', rot: 0, bg: '#3A2A2A', bw: 3, bc: outline }
+        ],
+        over: [
+          { x: 82, y: 140, w: 30, h: 4, r: '2px', rot: -25, bg: hot }, { x: 124, y: 134, w: 26, h: 4, r: '2px', rot: 20, bg: hot }, { x: 100, y: 156, w: 22, h: 4, r: '2px', rot: -10, bg: hot }, { x: 140, y: 152, w: 24, h: 4, r: '2px', rot: 30, bg: hot },
+          { x: 86, y: 102, w: 18, h: 4, r: '2px', rot: -10, bg: hot }, { x: 138, y: 100, w: 18, h: 4, r: '2px', rot: 10, bg: hot }
+        ],
+        body: { x: 55, y: 106, w: 134, h: 86, r: '50% 50% 46% 46% / 60% 60% 40% 40%' }, belly: { x: 88, y: 142, w: 68, h: 38 },
+        eyeRow: { x: 55, y: 124, w: 134 }, eyes: [{ s: 22, ps: 10 }, { s: 22, ps: 10 }],
+        mouth: { w: 26, h: 10, r: '0 0 50% 50%', bg: 'transparent', bw: '0 0 3px 0', x: 109, y: 154 }
+      };
+    }
     if (key === 'wickling') {   // a round gold spark with a lantern on its antenna, small pale-blue wings, ice crystals on its back and a wick tail
       const body = '#FFE08A', outline = '#8A6510', wing = '#CFE6FF', wing2 = '#E8F4FF', wo = '#5A8AB8', gold = '#E8B84A';
       return {
@@ -3900,7 +4000,7 @@ class Component extends Base {
     const ab = !(typeof window !== 'undefined' && window.__noAb), an = A.k.element.name, dn = D.k.element.name; let abMult = 1, abNote = '';
     if (ab) {
       if (dn === 'Dusk' && !SECRETS[D.k.seed] && rand() < 0.05) { D.fxHits = (D.fxHits || []).concat([{ m: 1, g: true, c: A.k.element.color }]); return 'dodged (Veil)'; }
-      if (an === 'Ember' && A.hp < A.max * 0.5) abMult *= 1.15;
+      if (an === 'Ember' && !SECRETS[A.k.seed] && A.hp < A.max * 0.5) abMult *= 1.15;
       if (dn === 'Frost') abMult *= 0.92;
       if (dn === 'Moss' && !D.abUsed) { abMult *= 0.7; D.abUsed = true; abNote = ' (Thick Bark)'; }
     }
@@ -3910,6 +4010,7 @@ class Component extends Base {
     if (ab && dn === 'Stone' && !D.abUsed && D.hp >= D.max * 0.6 && dmg >= D.hp) { dmg = D.hp - 1; D.abUsed = true; abNote = ' (Sturdy: held on)'; }
     if (warded) D.ward -= 1;
     D.hp = Math.max(0, D.hp - dmg);
+    if (ab && A.k.seed === SECRET3_SEED && D.hp > 0 && D.burn === 0 && rand() < 0.25) { D.burn = 3; abNote += ' (Slow Burn: ' + D.label + ' is burning)'; }
     if (ab && D.k.seed === SECRET2_SEED && !D.abUsed && D.hp > 0 && D.hp < D.max * 0.5) { D.hp = Math.min(D.max, D.hp + Math.round(D.max * 0.2)); D.abUsed = true; A.daze = Math.max(A.daze, 2); abNote = ' (Afterglow: healed, and ' + A.label + ' is dazed)'; }
     if (ab && dn === 'Bloom' && !D.abUsed && D.hp > 0 && D.hp < D.max * 0.3) { D.hp = Math.min(D.max, D.hp + Math.round(D.max * 0.15)); D.abUsed = true; abNote = ' (Regrow)'; }
     if (ab && dn === 'Volt' && !SECRETS[D.k.seed] && D.hp > 0 && A.daze === 0 && rand() < 0.2) { A.daze = 2; abNote = ' (Static dazed ' + A.label + ')'; }
@@ -4139,7 +4240,7 @@ class Component extends Base {
     }).filter((r) => r.cells.length > 0);
     const speciesChips = [chip('All species', !dexMissing, () => this.setState({ dexMissing: false })), chip('Not yet found', dexMissing, () => this.setState({ dexMissing: true }))];
     // the bonus species (#49, #50): each shows as ??? once its door has been opened and for good once found; never part of the 48
-    const bonusDefs = [[SECRET_SEED, !!(st.adv && st.adv.open && st.adv.open.arch)], [SECRET2_SEED, !!(st.adv && st.adv.open && st.adv.open.lamp)]];
+    const bonusDefs = [[SECRET_SEED, !!(st.adv && st.adv.open && st.adv.open.arch)], [SECRET2_SEED, !!(st.adv && st.adv.open && st.adv.open.lamp)], [SECRET3_SEED, !!(st.adv && st.adv.open && st.adv.open.forge)]];
     const bonusFound = (sd) => st.caught.some((e) => e.seed === sd);
     const bonusList = bonusDefs.map(([sd, opened]) => { const f = bonusFound(sd), S = SECRETS[sd]; return { show: (f || opened) && (!dexMissing || !f), icon: '', name: f ? S.name : '???', sub: f ? '#0' + S.speciesNo + ' · ' + S.type + ' · ' + S.ability.name : S.hint, sd: sd, f: f }; }).filter((x) => x.show);
     if (st.dexView === 'species') bonusList.forEach((x) => { x.icon = PIX.sprite(this.make(x.sd, 3, SECRETS[x.sd].lv), x.f ? 'icon' : 'silhouette'); });
@@ -4477,7 +4578,7 @@ const EVO_PLAN = [ // by body shape: arm length / width / tilt / height on the b
   { arm: 34, aw: 24, tilt: 50, at: 0.56, leg: 40 }, { arm: 46, aw: 22, tilt: 28, at: 0.46, leg: 32 }, { arm: 0, aw: 0, tilt: 0, at: 0.3, leg: 34, pads: true }
 ];
 // ---- the secret critters: hand-designed single-form species outside the 48 (#49, #50), reached only through reserved seeds ----
-const SECRET_SEED = 1000001, SECRET2_SEED = 1000002;   // normal seeds stop at 999999 (rolls, wild encounters, typed seeds), so these can never come up by chance
+const SECRET_SEED = 1000001, SECRET2_SEED = 1000002, SECRET3_SEED = 1000003;   // normal seeds stop at 999999 (rolls, wild encounters, typed seeds), so these can never come up by chance
 const SECRETS = {
   [SECRET_SEED]: { key: 'veilcrown', flag: 'secret', lv: 12, name: 'Veilcrown', speciesNo: 49, type: 'Dusk', kit3: 'Ninth Hex', height: '1.6 m', weight: '38.0 kg', nature: 'Solemn nature: balanced stats',
     ability: { name: 'Last Light', text: 'Once per battle, survives a knock-out with 1 HP, and its next hit lands 30% harder.' },
@@ -4488,7 +4589,12 @@ const SECRETS = {
     ability: { name: 'Afterglow', text: 'The first time it drops below half HP each battle, it glows: it heals 20% of its max HP and dazes the foe for 2 turns.' },
     hint: 'A spark is said to wait inside the old beacon.', flavor: 'The flame of the old beacon, kept alive by a spark that never wanted to leave the lamp.',
     stats: [['HP', 100], ['ATK', 112], ['DEF', 90], ['SPD', 134]],
-    moves: [{ name: 'Wick Flick', power: 68 }, { name: 'Lanternburst', power: 94 }] }
+    moves: [{ name: 'Wick Flick', power: 68 }, { name: 'Lanternburst', power: 94 }] },
+  [SECRET3_SEED]: { key: 'slagback', flag: 'slagback', lv: 16, name: 'Slagback', speciesNo: 51, type: 'Ember', kit3: 'Slow Roast', height: '1.1 m', weight: '210 kg', nature: 'Stubborn nature: slow but hard to move',
+    ability: { name: 'Slow Burn', text: 'Each of its hits has a 25% chance to burn the target for 3 turns.' },
+    hint: 'A coal is said to wait in the cold forge.', flavor: 'A coal that never went out, grown into a creature of cooling stone. It was the forge\u2019s last apprentice, and it never left.',
+    stats: [['HP', 130], ['ATK', 112], ['DEF', 120], ['SPD', 74]],
+    moves: [{ name: 'Magma Nudge', power: 66 }, { name: 'Caldera Slam', power: 96 }] }
 };
 const SECRET = SECRETS[SECRET_SEED];
 // developer options (browser-only, never saved or synced): see the Developer tools panel in app.js
@@ -4509,7 +4615,7 @@ const CITY_QUESTS = {
   coralbay: { giver: 'pearl', list: [{ k: 'see', map: 'route-cc', n: 5, txt: 'spot 5 wild critters on Reef Causeway' }, { k: 'keep', types: ['Tide', 'Dusk'], n: 1, txt: 'keep a Tide or Dusk critter' }, { k: 'beat', id: 'mako', n: 1, txt: 'beat Diver Mako on Reef Causeway' }] }
 };
 const CQ_REWARD = 4;
-const ROUTE_GATES = { 'route-mf': 3, 'route-cm': 6, 'route-fc': 9, 'route-cc': 9, ascent: 11 };
+const ROUTE_GATES = { 'route-mf': 3, 'route-cm': 6, 'route-fc': 9, 'route-cc': 9, ascent: 11, descent: 13 };
 const LEADERS = [
   { id: 'wren', zone: 'moss', name: 'Elder Wren', color: '#4FB06D' },
   { id: 'glacia', zone: 'frost', name: 'Glacia', color: '#8FD8EA' },
@@ -4531,6 +4637,7 @@ const TITLES = [
   { id: 'climber', name: 'Tower Climber', desc: 'Clear floor 10 of the Tower', essence: 0, goal: 10, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'summit', name: 'Summit Champion', desc: 'Clear all 20 Tower floors', essence: 0, goal: 20, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'lamp', name: 'Lamplighter', desc: 'Relight the old beacon', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.lampLit ? 1 : 0) },
+  { id: 'forge', name: 'Forge Keeper', desc: 'Relight the buried forge', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.forgeLit ? 1 : 0) },
   { id: 'secret', name: 'The Ninth Seat', desc: 'Uncover a secret', essence: 20, goal: 1, of: (s) => ((s.caught || []).some((e) => e.seed === SECRET_SEED) ? 1 : 0) },
   { id: 'shiny', name: 'Shiny Hunter', desc: 'Keep 3 shiny critters', essence: 0, goal: 3, of: (s) => (s.shinies || []).length }
 ];
@@ -5267,7 +5374,7 @@ const APP = (() => {
       return '<div class="mnode ' + cls + (c.open ? '' : ' locked') + (isHere ? ' here' : '') + '"><b>' + c.name + '</b><span>' + c.sub + '</span>' +
         (c.wx ? '<span class="wx">' + c.wx + '</span>' : '') + (c.found ? '<span>' + c.found + '</span>' : '') + (c.seal ? '<span>' + c.seal + '</span>' : '') + (c.lockTxt ? '<span class="lk">' + c.lockTxt + '</span>' : '') +
         (isHere ? '<span class="you">You are here</span>' : (c.open ? '<button data-travel="' + id + '">Travel here</button>' : '')) + '</div>'; };
-    const vis = st.visited || [], CITY = [['mossbrook', 'Mossbrook', 'past Moss Forest, to the west', 'Elder Wren\u2019s gym'], ['frosthold', 'Frosthold', 'past Frost Peaks, to the north', 'Glacia\u2019s gym'], ['cinderport', 'Cinderport', 'past Ember Fields, to the south', 'Blaze\u2019s gym'], ['coralbay', 'Coralbay', 'past Tide Shore, to the east', 'Admiral Coral\u2019s gym'], ['peak', "Champion's Peak", 'up the trail north of the plaza', 'The Tower'], ['ascent', 'The Cold Ascent', 'through the north gate of Frosthold', 'A climb to an old beacon']];
+    const vis = st.visited || [], CITY = [['mossbrook', 'Mossbrook', 'past Moss Forest, to the west', 'Elder Wren\u2019s gym'], ['frosthold', 'Frosthold', 'past Frost Peaks, to the north', 'Glacia\u2019s gym'], ['cinderport', 'Cinderport', 'past Ember Fields, to the south', 'Blaze\u2019s gym'], ['coralbay', 'Coralbay', 'past Tide Shore, to the east', 'Admiral Coral\u2019s gym'], ['peak', "Champion's Peak", 'up the trail north of the plaza', 'The Tower'], ['ascent', 'The Cold Ascent', 'through the north gate of Frosthold', 'A climb to an old beacon'], ['descent', 'The Cinder Descent', 'through the south gate of Cinderport', 'A descent to a buried forge']];
     const cnode = ([id, name, where, what]) => { const v = test || vis.indexOf(id) !== -1, isHere = here === id;
       return '<div class="mnode' + (v ? '' : ' locked') + (isHere ? ' here' : '') + '" style="min-width: 0; overflow-wrap: break-word"><b>' + (v ? name : 'Undiscovered') + '</b><span>' + (v ? what : 'Somewhere ' + where) + '</span>' + (v && weatherAt(id) ? '<span class="wx">' + weatherText(weatherAt(id)) + '</span>' : '') + (isHere ? '<span class="you">You are here</span>' : (v ? '<button data-travel="' + id + '">Travel here</button>' : '<span class="lk">Find it on foot first</span>')) + '</div>'; };
     $('wm-grid').innerHTML = '<div></div>' + node('frost', 'n') + '<div></div>' + node('moss', 'w') + node('town', 'c') + node('tide', 'e') + '<div></div>' + node('ember', 's') + '<div></div>' +
@@ -5652,6 +5759,13 @@ const APP = (() => {
     pers('joss', 'Lamplighter Joss', 'route-fc', near('route-fc', 'lighthouse', 3, 3), { h: '#BDBDBD', y: '#C0503A', Y: '#8A3A28' }, ['I still trim the lamp every dusk. It guides nobody now, but it feels right.', 'Glacier Coast runs between Frosthold and Coralbay. Frost and Tide critters live along it.']);
     pers('neri', 'Beachcomber Neri', 'route-cc', near('route-cc', 'wreck', 5, 2), { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, ['Tide critters nest in the wreck. Do not poke them, they bite!', 'Reef Causeway links Coralbay and Cinderport. Tide and Ember critters share it.']);
     pers('mae', 'Gardener Mae', 'town', spot('town', 24, 18), { h: '#F4EAD6', y: '#E0A0B8', Y: '#C07898' }, ['Mind the flowers! Sproutvale is nicest in the morning.', 'If you find a sparkling grass patch, take your time. Rare critters hide there.']);
+    // the Forge Below: two smiths guard the cores in the side halls (west one faces east, east one faces west), the Forgemaster waits north of the hub
+    const fsp = M['dg-forge'].spots;
+    out['dg-forge'] = [
+      rt('dross', 'Smith Dross', fsp.guard1[0], fsp.guard1[1], 'right', ['Stone', 'Ember'], 5, 3, 16, 0.5, ['The west hall belongs to the forge, and so does the core on that pedestal.', 'Win it from me, if you can.'], 'Take the core. The forge chose you before I did.', { h: '#3A2A1A', y: '#8A8498', Y: '#5A566A' }),
+      rt('ingot', 'Smith Ingot', fsp.guard2[0], fsp.guard2[1], 'left', ['Ember', 'Volt'], 5, 3, 16, 0.5, ['East hall. One core, one smith, one battle.', 'The hammer is warmed up!'], 'A fine strike. The core is yours.', { h: '#C0392B', y: '#F5C518', Y: '#C99A00' }),
+      Object.assign(rt('hale', 'Forgemaster Hale', fsp.hale[0], fsp.hale[1], 'down', ['Ember', 'Stone'], 5, 3, 18, 0.6, ['Two cores woke the hub. Not many climb down this far.', 'The furnace has been cold since my master laid down his hammer. I keep it cold until someone shows me they can keep it lit.', 'Show me.'], 'The fire knows you. Go and wake it.', { h: '#E8E8F0', y: '#FF8A3D', Y: '#C0503A' }), { boss: true, bonus: 10, afterLines: ['The furnace is yours to wake. Open its door.'] })
+    ];
     // the Lamp Tower's guards and the Warden (boss)
     const lsp = M['dg-lamp'].spots;
     out['dg-lamp'] = [
@@ -5659,6 +5773,15 @@ const APP = (() => {
       rt('odo', 'Lampkeeper Odo', lsp.guard2[0], lsp.guard2[1], 'down', ['Frost', 'Tide'], 5, 3, 20, 0.5, ['Cold up here, is it not? I keep the third chamber warm with battles.', 'Ready?'], 'Well fought. The Warden is waiting above.', { h: '#E8E8F0', y: '#3E8EF7', Y: '#2A5A9A' }),
       Object.assign(rt('maren', 'Warden Maren', lsp.warden[0], lsp.warden[1], 'down', ['Volt', 'Frost'], 5, 3, 18, 0.5, ['You climbed the whole way. Not many do.', 'The great lamp has been dark since before my grandmother. I keep it, and I keep it dark until someone proves they can carry its light.', 'Show me.'], 'The light knows you. Go and wake it.', { h: '#C9A8FF', y: '#FFF3B0', Y: '#E0C060' }), { boss: true, bonus: 10, afterLines: ['The lamp is yours to wake. Touch the glass.'] })
     ];
+    // the Cinder Descent (the Ascent turned upside down): a cook at the camp, an old smelter by the lava bridge, and three trainers (now facing up toward the trail)
+    out.descent = [
+      rt('kolb', 'Smelter Kolb', 14, 23, 'up', ['Ember', 'Stone'], 3, 3, 18, 0.5, ['The second ledge is mine, climber. Or should I say descender?', 'The heat sharpens my critters. Let us see yours!'], 'Cool as slag. Go on down.', { h: '#2A1A10', y: '#D8574A', Y: '#8A3A28' }),
+      rt('yara', 'Cinder Runner Yara', 17, 39, 'up', ['Ember', 'Volt'], 5, 3, 18, 0.5, ['I run this trail every morning before the vents wake up!', 'Race me, in a battle!'], 'Fast and tough. Mind the lava.', { h: '#C0392B', y: '#FFD86B', Y: '#E0A830' }),
+      rt('brec', 'Slag Hauler Brec', 18, 47, 'up', ['Stone', 'Ember'], 5, 3, 18, 0.5, ['The forge is just below. Nobody walks past my wagon without a battle.', 'I have been hauling slag all day and I need some fun.'], 'Hm. The forge is yours to look at.', { h: '#8A5A34', y: '#6A6A86', Y: '#3E3E58' }),
+      { id: 'mirel', name: 'Cook Mirel', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#E8C07A', y: '#FF8A3D', Y: '#C0503A' }, lines: ['Welcome to the rim camp! The trail zig-zags down five ledges to the crater floor. The vents get hot, but the camp never does.', 'Trainers watch the trail from the sides. Wild Ember and Stone critters hide in the ash tufts, and the sparkling patch deep down hides the rare ones.'] },
+      { id: 'brand', name: 'Old Brand', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#BDBDBD', y: '#8A5A34', Y: '#5E3C22' }, lines: ['That bridge crosses a river of real lava. It was built before anyone here was born, and it has never burned.', 'Below the crater there is a forge. They say it made every blade in the land, and then it went quiet.'] }
+    ];
+    out.descent[3].x = near('descent', 'camp', 4, 1)[0]; out.descent[3].y = near('descent', 'camp', 4, 1)[1]; const bs = spot('descent', 11, 27); out.descent[4].x = bs[0]; out.descent[4].y = bs[1];
     // the Cold Ascent: a guide at the base camp, an old hiker by the river, and three climbers whose sight lines cross the trail
     out.ascent = [
       rt('reka', 'Climber Reka', 14, 42, 'down', ['Frost', 'Stone'], 3, 3, 18, 0.5, ['The second ledge is mine. Everybody crosses it, and everybody battles me.', 'Rope up, trainer!'], 'Good footing. Go on up.', { h: '#C0503A', y: '#5E97AE', Y: '#3E6E8E' }),
@@ -5744,7 +5867,7 @@ const APP = (() => {
   // ---------- adventure: clues, objects, the Sealed Arch (content in adventure.js) ----------
   const advOf = () => { const a = (game && game.state.adv) || {}; return { clues: a.clues || [], open: a.open || {}, flags: a.flags || {} }; };
   function advSave(mut) { const a = advOf(), n = { clues: a.clues.slice(), open: Object.assign({}, a.open), flags: Object.assign({}, a.flags) }; mut(n); game.update({ adv: n }); try { setNear(WORLD.nearest()); } catch (e) {} }   // refresh the action label (e.g. Examine -> Enter)
-  function objState(o) { const a = advOf(); if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? a.clues.length : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; return {}; }
+  function objState(o) { const a = advOf(); if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? a.clues.length : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -5756,6 +5879,7 @@ const APP = (() => {
     const have = advOf().clues, lines = ['Clues about the Sealed Arch: ' + have.length + ' of ' + ADV.CLUES.length + '.'];
     ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Not found yet. Try asking around ' + c.where + '.'));
     if (advOf().open.arch) { const f = advOf().flags; lines.push('The Sealed Arch: ' + (f.rubble ? 'the way north is clear.' : 'rubble blocks the way north. The empty seat, a fire bowl, a lamp and a hull lantern must mean something.') + (((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 ? ' You have beaten the Keeper.' : '') + (advOf().flags.secret ? ' The ninth seat has answered.' : '')); }
+    if (advOf().open.forge) { const f = advOf().flags; lines.push('The Forge Below: ' + (f.forgeLit ? 'the great furnace is lit.' : 'the north gate opens when both hub sockets hold a core (' + ((f['sock:A'] ? 1 : 0) + (f['sock:B'] ? 1 : 0)) + '/2). One core lies in each side hall.')); } else if ((game.state.visited || []).indexOf('descent') !== -1) lines.push('The Cinder Descent leads down to a buried forge.');
     if (advOf().open.lamp) lines.push('The Lamp Tower: ' + (advOf().flags.lampLit ? 'the great lamp is lit, and its beam crosses the land.' : 'levers and gates climb to the great lamp. What opens one gate may close another.')); else if ((game.state.visited || []).indexOf('ascent') !== -1) lines.push('The Cold Ascent leads to an old beacon tower at the top of the peaks.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
     showDialog('Journal', lines);
   }
@@ -5817,7 +5941,38 @@ const APP = (() => {
       setTimeout(() => grantSecret(SECRET2_SEED), 1800);
     });
   }
+  // ---- the Forge Below: cores from the two halls go into the hub sockets (either order); both sockets open the north gate; the furnace ends the run ----
+  const CORE_NAME = { A: 'flame', B: 'stone' };
+  function applyForge() { const m = WORLD.MAPS['dg-forge']; if (!m) return; const f = advOf().flags; Object.keys(m.pickups || {}).forEach((g) => WORLD.setGate('dg-forge', g, !!f[m.pickups[g]])); Object.keys(m.rules || {}).forEach((g) => WORLD.setGate('dg-forge', g, m.rules[g].every((k) => f[k]))); }
+  function forgeDoorUse() {
+    if (advOf().open.forge) { game.sfx('tap'); WORLD.go('dg-forge'); return; }
+    showDialog('The forge door', ['A doorway of dry heat, cut into the crater wall.', 'The forge has been quiet for a long time. Something inside is still warm.'], null, () => { advSave((x) => { x.open.forge = true; }); game.sfx('claim'); setTimeout(() => WORLD.go('dg-forge'), 200); });
+  }
+  function coreUse(o) { const f = advOf().flags; if (f['core:' + o.core]) return; advSave((x) => { x.flags['core:' + o.core] = true; }); applyForge(); game.sfx('claim'); toast('You lift the core of ' + CORE_NAME[o.core] + '. It is warm in your hands. Carry it to the hub.'); }
+  function socketUse(o) {
+    const f = advOf().flags, c = o.core;
+    if (f['sock:' + c]) { toast('The socket glows steadily.'); return; }
+    if (!f['core:' + c]) { toast('A socket for the core of ' + CORE_NAME[c] + '. It belongs in one of the side halls.'); return; }
+    advSave((x) => { x.flags['sock:' + c] = true; }); applyForge(); game.sfx('claim');
+    const both = advOf().flags['sock:A'] && advOf().flags['sock:B'];
+    toast(both ? 'Both sockets wake. Far to the north, a slab of black iron grinds aside.' : 'The core of ' + CORE_NAME[c] + ' settles into its socket. One more.');
+  }
+  function furnaceUse() {
+    const beaten = ((game.state.npc && game.state.npc.cleared) || []).indexOf('hale') !== -1;
+    if (!beaten) { toast('The Forgemaster stands between you and the great furnace.'); return; }
+    const lit = advOf().flags.forgeLit, got = game.state.caught.some((e) => e.seed === SECRET3_SEED);
+    if (lit && got) { toast('The furnace roars quietly. The whole crater glows.'); return; }
+    if (lit) { showDialog('The great furnace', ['A coal in the ash shifts and looks up.', 'It climbs out, small and heavy and warm, and settles against your boots.'], null, () => grantSecret(SECRET3_SEED)); return; }   // lit before Slagback existed, or by the dev tools
+    showDialog('The great furnace', ['You pull the soot-black door open. A single ember glows in the ash.', 'You blow on it. It brightens, then catches, then roars.', 'Far above, the whole crater lights up, and the old forge wakes for the first time in a very long time.', 'A coal in the ash shifts and looks up. It climbs out, small and heavy and warm.'], null, () => {
+      advSave((x) => { x.flags.forgeLit = true; }); game.update({ essence: (game.state.essence || 0) + 30 }); game.sfx('mythic'); game.buzz([30, 40, 30, 40, 30, 40, 160]); toast('The forge is lit! +30 essence.');
+      setTimeout(() => grantSecret(SECRET3_SEED), 1800);
+    });
+  }
   function objectUse(o) {
+    if (o.kind === 'cavemouth') { forgeDoorUse(); return; }
+    if (o.kind === 'core') { coreUse(o); return; }
+    if (o.kind === 'socket') { socketUse(o); return; }
+    if (o.kind === 'furnace') { furnaceUse(); return; }
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
     if (o.kind === 'lever') { leverUse(o); return; }
     if (o.kind === 'greatlamp') { greatLampUse(); return; }
@@ -5837,7 +5992,7 @@ const APP = (() => {
   try { Object.assign(DEV, JSON.parse(localStorage.getItem(DEV_STORE) || '{}')); } catch (e) {}
   function devSave() { try { localStorage.setItem(DEV_STORE, JSON.stringify(DEV)); } catch (e) {} }
   const xpForLevel = (n) => 80 * (n - 1) + 20 * (n - 1) * (n - 2);   // total xp at which trainer level n starts
-  function devAdv(mut) { advSave(mut); applyDungeon(); applyLamp(); }
+  function devAdv(mut) { advSave(mut); applyDungeon(); applyLamp(); applyForge(); }
   function devClear(id) { const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, game.state.npc); if (npc.cleared.indexOf(id) === -1) npc.cleared = npc.cleared.concat([id]); game.update({ npc: npc }); }
   let devOpenFlag = false;
   function openDev() { devOpenFlag = true; renderDev(); $('dev').hidden = false; $('hud').hidden = true; WORLD.setPaused(true); $('dev-close').focus(); }
@@ -5851,8 +6006,8 @@ const APP = (() => {
       '<div class="dvs">Teleport</div><div class="dvg">' + maps.map((id) => b('tp:' + id, WORLD.MAPS[id].name + (WORLD.map.id === id ? ' (here)' : ''))).join('') + '</div>' +
       '<div class="dvs">Player</div><div class="dvg">' + [5, 10, 15, 20, 30].map((n) => b('lv:' + n, 'Level ' + n)).join('') + b('ess', '+100 essence') + b('crit', 'Add a Lv 20 stage 3 critter') + '</div>' +
       '<div class="dvs">Adventure</div><div class="dvg">' + b('clues', 'All clues') + b('arch', 'Open the arch') + b('rite', 'Clear the rubble') + b('keeper', 'Beat the Keeper' + (cl.indexOf('keeper') !== -1 ? ' (done)' : '')) + b('veil', 'Get Veilcrown') +
-      b('lampdoor', 'Open the beacon door') + b('gates', 'Open all tower gates') + b('maren', 'Beat the Warden' + (cl.indexOf('maren') !== -1 ? ' (done)' : '')) + b('lit', 'Light the great lamp') + b('wick', 'Get Wickling') + b('resetadv', 'Reset the adventure') + '</div>' +
-      '<p class="dvn">Adventure state: ' + a.clues.length + '/4 clues, arch ' + (a.open.arch ? 'open' : 'sealed') + ', rubble ' + (a.flags.rubble ? 'cleared' : 'in place') + ', beacon door ' + (a.open.lamp ? 'open' : 'shut') + ', lamp ' + (a.flags.lampLit ? 'lit' : 'dark') + '. After a reset, reload the page so cleared rubble comes back.</p>' +
+      b('lampdoor', 'Open the beacon door') + b('gates', 'Open all tower gates') + b('maren', 'Beat the Warden' + (cl.indexOf('maren') !== -1 ? ' (done)' : '')) + b('lit', 'Light the great lamp') + b('wick', 'Get Wickling') + b('forgedoor', 'Open the forge door') + b('cores', 'Wake both forge sockets') + b('hale', 'Beat the Forgemaster' + (cl.indexOf('hale') !== -1 ? ' (done)' : '')) + b('forgelit', 'Light the great furnace') + b('slag', 'Get Slagback') + b('resetadv', 'Reset the adventure') + '</div>' +
+      '<p class="dvn">Adventure state: ' + a.clues.length + '/4 clues, arch ' + (a.open.arch ? 'open' : 'sealed') + ', rubble ' + (a.flags.rubble ? 'cleared' : 'in place') + ', beacon door ' + (a.open.lamp ? 'open' : 'shut') + ', lamp ' + (a.flags.lampLit ? 'lit' : 'dark') + ', forge ' + (a.flags.forgeLit ? 'lit' : 'cold') + '. After a reset, reload the page so cleared rubble comes back.</p>' +
       '<div class="dvs">Developer mode</div><div class="dvg">' + b('devoff', 'Hide developer tools') + '</div><p class="dvn">Tap the ID in the menu 5 times to bring them back.</p>';
   }
   function devAction(act) {
@@ -5872,7 +6027,12 @@ const APP = (() => {
     else if (k === 'maren') devClear('maren');
     else if (k === 'lit') devAdv((x) => { x.flags.lampLit = true; });
     else if (k === 'wick') grantSecret(SECRET2_SEED, true);
-    else if (k === 'resetadv') { const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, st.npc); npc.cleared = npc.cleared.filter((i) => ['keeper', 'maren'].indexOf(i) === -1); game.update({ adv: { clues: [], open: {}, flags: {} }, npc: npc, caught: st.caught.filter((e) => !SECRETS[e.seed]) }); applyLamp(); toast('Adventure reset. Reload the page to restore the cleared rubble.'); }
+    else if (k === 'forgedoor') devAdv((x) => { x.open.forge = true; });
+    else if (k === 'cores') devAdv((x) => { x.flags['core:A'] = true; x.flags['core:B'] = true; x.flags['sock:A'] = true; x.flags['sock:B'] = true; });
+    else if (k === 'hale') devClear('hale');
+    else if (k === 'forgelit') devAdv((x) => { x.flags.forgeLit = true; });
+    else if (k === 'slag') grantSecret(SECRET3_SEED, true);
+    else if (k === 'resetadv') { const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, st.npc); npc.cleared = npc.cleared.filter((i) => ['keeper', 'maren', 'hale'].indexOf(i) === -1); game.update({ adv: { clues: [], open: {}, flags: {} }, npc: npc, caught: st.caught.filter((e) => !SECRETS[e.seed]) }); applyLamp(); applyForge(); toast('Adventure reset. Reload the page to restore the cleared rubble.'); }
     else if (k === 'devoff') { game.update({ dev: false }); closeDev(); toast('Developer tools hidden. Tap the ID in the menu 5 times to bring them back.'); return; }
     renderDev();
   }
@@ -6041,7 +6201,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', greatlamp: 'Touch the great lamp' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -6097,7 +6257,7 @@ const APP = (() => {
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
     if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
-    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
+    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { descent: 'ember', ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
@@ -6127,7 +6287,7 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); applyLamp(); renderWeather(); if (game && (m.city || m.id === 'peak' || m.id === 'ascent') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
+      onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); applyLamp(); applyForge(); renderWeather(); if (game && (m.city || m.id === 'peak' || m.id === 'ascent' || m.id === 'descent') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
       objective: () => null, // no guide arrow or marker: signposts, paths and townsfolk lead the way
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map

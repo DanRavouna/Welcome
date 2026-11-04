@@ -18,6 +18,8 @@ const WORLD = (() => {
   THEMES['dg-arch'] = { ground: '#262B40', blade: 'rgba(10,12,24,0.35)', path: '#515A7C', water: '#1E3A5F', tall: '#2E4A4A', tallBlade: '#1E3434', tree: 'dead', bg: '#0A0C18', flowers: ['#7AA0FF'], cave: true };
   THEMES.ascent = { ground: '#E8F0F8', blade: 'rgba(120,150,190,0.35)', path: '#A8B8D0', water: '#7FB8E0', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#9FB4D0', flowers: ['#FFFFFF', '#BBD5FF'], ice: true };
   THEMES['dg-lamp'] = { ground: '#C9BFA8', blade: 'rgba(120,100,70,0.25)', path: '#E4DAC2', water: '#7FB8E0', tall: '#9CB89A', tallBlade: '#6A8A68', tree: 'pine', bg: '#8E8470', flowers: ['#FFFFFF'], cave: true };
+  THEMES.descent = { ground: '#8A6A58', blade: 'rgba(60,30,20,0.35)', path: '#B08A70', water: '#FF6A2B', tall: '#C7A23A', tallBlade: '#8E6B1E', tree: 'dead', bg: '#3A1E14', flowers: ['#FFD86B', '#FF8A3D'], lava: true };
+  THEMES['dg-forge'] = { ground: '#4A3A38', blade: 'rgba(20,10,10,0.35)', path: '#8A6A5A', water: '#FF6A2B', tall: '#6A4A38', tallBlade: '#3A2A20', tree: 'dead', bg: '#1A0E0A', flowers: ['#FF8A3D'], cave: true, lava: true };
   THEMES['route-mf'] = THEMES.peak; THEMES['route-cm'] = Object.assign({}, THEMES.moss, { dense: false }); THEMES['route-fc'] = THEMES.frost; THEMES['route-cc'] = THEMES.tide;
   THEMES.mossbrook = { ground: '#5FA34A', blade: 'rgba(30,80,30,0.4)', path: '#C9A878', water: '#4F9AD0', tall: '#44803A', tallBlade: '#2A6A2C', tree: 'round', bg: '#2A5A2C', flowers: ['#F5A3D0', '#FFFFFF', '#FFD86B'] };
   const ZONES = {
@@ -285,7 +287,7 @@ const WORLD = (() => {
     M.exits.push({ edge: edge, a: a, b: a + 1, to: to });
     M.arriveFrom = Object.assign({}, M.arriveFrom, { [to]: arrive });
   }
-  const MAPS = { town: buildTown(), peak: buildPeak(), ascent: buildAscent(), mossbrook: buildMossbrook(), frosthold: buildCity(CITY_CFG.frosthold), cinderport: buildCity(CITY_CFG.cinderport), coralbay: buildCity(CITY_CFG.coralbay), frost: buildZone('frost'), ember: buildZone('ember'), moss: buildZone('moss'), tide: buildZone('tide'),
+  const MAPS = { town: buildTown(), peak: buildPeak(), ascent: buildAscent(), descent: buildDescent(), mossbrook: buildMossbrook(), frosthold: buildCity(CITY_CFG.frosthold), cinderport: buildCity(CITY_CFG.cinderport), coralbay: buildCity(CITY_CFG.coralbay), frost: buildZone('frost'), ember: buildZone('ember'), moss: buildZone('moss'), tide: buildZone('tide'),
     'route-mf': buildZone('route-mf'), 'route-cm': buildZone('route-cm'), 'route-fc': buildZone('route-fc'), 'route-cc': buildZone('route-cc') };
   linkEdge(MAPS.moss, 'w', 14, 'mossbrook', [1.2, 15.2]);
   MAPS.moss.grid[12][3] = 'G'; MAPS.moss.signs.push({ x: 3, y: 12, to: 'mossbrook', text: 'West: Mossbrook village, home of Elder Wren.' });
@@ -319,6 +321,7 @@ const WORLD = (() => {
   }
   // which landmarks stand on which map (hint spot, optional lore override). Future routes and cities: just add rows.
   const PROPS = {
+    descent: [['camp', [6, 7]], ['cairn', [24, 15], ''], ['cairn', [6, 19], ''], ['cairn', [24, 27], ''], ['cairn', [6, 35], ''], ['cairn', [24, 43], '']],
     ascent: [['camp', [6, 57]], ['cairn', [24, 50], ''], ['cairn', [6, 46], ''], ['cairn', [24, 38], ''], ['cairn', [6, 30], ''], ['cairn', [24, 22], '']],
     'route-mf': [['ruin', [9, 17]], ['cairn', [26, 9]], ['cairn', [7, 11], '']],
     'route-cm': [['camp', [25, 18]], ['well', [8, 9]], ['cairn', [27, 7]]],
@@ -373,6 +376,19 @@ const WORLD = (() => {
     return { id: 'ascent', name: 'The Cold Ascent', theme: THEMES.ascent, grid: m, W, H, places: [], signs: [], types: ['Frost', 'Stone'], rate: 0.12, rare: { x: 7, y: 18, w: 3, h: 3 },
       props: [{ id: 'beacon', x: 13, y: 3, w: 3, h: 5 }], objects: [{ id: 'beacon-door', kind: 'plaque', x: 14, y: 8, reach: 1.9, label: 'Examine the beacon door', text: 'The Beacon' }], exits: [{ edge: 's', a: 14, b: 15, to: 'frosthold' }], arrive: { s: arrive }, spawn: arrive };
   }
+  // ---------- the Cinder Descent: the Ascent's layout turned upside down. Entrance at the north (from Cinderport), ledges that step DOWN into the volcano, a lava river with a bridge,
+  // and the forge door cut into the crater's south wall. ----------
+  function buildDescent() {
+    const A = buildAscent(), W = A.W, H = A.H, g = A.grid.map((r) => r.slice()).reverse();
+    for (let y = 58; y <= 62; y++) for (let x = 13; x <= 15; x++) g[y][x] = '.';     // the Ascent's beacon footprint is not needed here
+    g[57][14] = '.';
+    for (let y = 53; y <= 62; y++) { g[y][14] = '='; g[y][15] = '='; }                 // the trail runs on to the crater floor
+    g[63][14] = 'O';                                                                    // the forge door (an object) in the south wall
+    const arrive = [14.9, 1.4];
+    return { id: 'descent', name: 'The Cinder Descent', theme: THEMES.descent, grid: g, W, H, places: [], signs: [], types: ['Ember', 'Stone'], rate: 0.12, rare: { x: 7, y: 45, w: 3, h: 3 }, props: [],
+      objects: [{ id: 'forge-door', kind: 'cavemouth', x: 14, y: 63, reach: 1.9, label: 'Enter the forge', text: 'The Forge' }],
+      exits: [{ edge: 'n', a: 14, b: 15, to: 'cinderport' }], arrive: { n: arrive }, spawn: arrive };
+  }
   // ---------- dungeons (layouts live in adventure.js) ----------
   // buildDungeon turns a layout into a map: cave walls 'C', objects on solid 'O' tiles, an exit gap, a darkness radius.
   function buildDungeon(id) {
@@ -380,11 +396,21 @@ const WORLD = (() => {
     const objects = d.objects.map((o) => { grid[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });
     const arrive = d.spawn;
     return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
-      exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: d.exit.to || 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive, gates: d.gates || {} };
+      exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: d.exit.to || 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive, gates: d.gates || {}, rules: d.rules || {}, pickups: d.pickups || {} };
   }
   MAPS['dg-arch'] = buildDungeon('dg-arch');
   MAPS['dg-lamp'] = buildDungeon('dg-lamp');
+  MAPS['dg-forge'] = buildDungeon('dg-forge');
   // the Cold Ascent hangs off Frosthold's north palisade (a gate cut at columns 31-32), with signposts and landmarks placed with the reusable props
+  (() => {   // Cinderport's southern gate (the gap in its tree line, columns 19-20) onto the Cinder Descent
+    const C = MAPS.cinderport, D = MAPS.descent;
+    for (let y = 20; y <= 27; y++) { C.grid[y][19] = '='; C.grid[y][20] = '='; }
+    C.grid[24][21] = 'G'; C.signs.push({ x: 21, y: 24, to: 'descent', text: 'South: the Cinder Descent. A trail winds down into the volcano to an old forge (Ember and Stone critters). Climbers should be at least level 13.' });
+    C.exits.push({ edge: 's', a: 19, b: 20, to: 'descent' }); C.arriveFrom = Object.assign({}, C.arriveFrom, { descent: [19.9, C.H - 1.4] });
+    D.arriveFrom = { cinderport: D.spawn, 'dg-forge': [14.5, 62.6] };
+    D.objects[0].glow = true;
+    D.grid[3][12] = 'G'; D.signs.push({ x: 12, y: 3, text: 'The Cinder Descent. Five ledges down into the caldera. Wild Ember and Stone critters hide in the ash tufts. The heat is real, so do not hurry back up.' });
+  })();
   (() => {
     const F = MAPS.frosthold, A = MAPS.ascent;
     for (let y = 0; y <= 11; y++) { F.grid[y][31] = '='; F.grid[y][32] = '='; }

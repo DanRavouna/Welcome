@@ -58,7 +58,7 @@ const EVO_PLAN = [ // by body shape: arm length / width / tilt / height on the b
   { arm: 34, aw: 24, tilt: 50, at: 0.56, leg: 40 }, { arm: 46, aw: 22, tilt: 28, at: 0.46, leg: 32 }, { arm: 0, aw: 0, tilt: 0, at: 0.3, leg: 34, pads: true }
 ];
 // ---- the secret critters: hand-designed single-form species outside the 48 (#49, #50), reached only through reserved seeds ----
-const SECRET_SEED = 1000001, SECRET2_SEED = 1000002;   // normal seeds stop at 999999 (rolls, wild encounters, typed seeds), so these can never come up by chance
+const SECRET_SEED = 1000001, SECRET2_SEED = 1000002, SECRET3_SEED = 1000003;   // normal seeds stop at 999999 (rolls, wild encounters, typed seeds), so these can never come up by chance
 const SECRETS = {
   [SECRET_SEED]: { key: 'veilcrown', flag: 'secret', lv: 12, name: 'Veilcrown', speciesNo: 49, type: 'Dusk', kit3: 'Ninth Hex', height: '1.6 m', weight: '38.0 kg', nature: 'Solemn nature: balanced stats',
     ability: { name: 'Last Light', text: 'Once per battle, survives a knock-out with 1 HP, and its next hit lands 30% harder.' },
@@ -69,7 +69,12 @@ const SECRETS = {
     ability: { name: 'Afterglow', text: 'The first time it drops below half HP each battle, it glows: it heals 20% of its max HP and dazes the foe for 2 turns.' },
     hint: 'A spark is said to wait inside the old beacon.', flavor: 'The flame of the old beacon, kept alive by a spark that never wanted to leave the lamp.',
     stats: [['HP', 100], ['ATK', 112], ['DEF', 90], ['SPD', 134]],
-    moves: [{ name: 'Wick Flick', power: 68 }, { name: 'Lanternburst', power: 94 }] }
+    moves: [{ name: 'Wick Flick', power: 68 }, { name: 'Lanternburst', power: 94 }] },
+  [SECRET3_SEED]: { key: 'slagback', flag: 'slagback', lv: 16, name: 'Slagback', speciesNo: 51, type: 'Ember', kit3: 'Slow Roast', height: '1.1 m', weight: '210 kg', nature: 'Stubborn nature: slow but hard to move',
+    ability: { name: 'Slow Burn', text: 'Each of its hits has a 25% chance to burn the target for 3 turns.' },
+    hint: 'A coal is said to wait in the cold forge.', flavor: 'A coal that never went out, grown into a creature of cooling stone. It was the forge\u2019s last apprentice, and it never left.',
+    stats: [['HP', 130], ['ATK', 112], ['DEF', 120], ['SPD', 74]],
+    moves: [{ name: 'Magma Nudge', power: 66 }, { name: 'Caldera Slam', power: 96 }] }
 };
 const SECRET = SECRETS[SECRET_SEED];
 // developer options (browser-only, never saved or synced): see the Developer tools panel in app.js
@@ -90,7 +95,7 @@ const CITY_QUESTS = {
   coralbay: { giver: 'pearl', list: [{ k: 'see', map: 'route-cc', n: 5, txt: 'spot 5 wild critters on Reef Causeway' }, { k: 'keep', types: ['Tide', 'Dusk'], n: 1, txt: 'keep a Tide or Dusk critter' }, { k: 'beat', id: 'mako', n: 1, txt: 'beat Diver Mako on Reef Causeway' }] }
 };
 const CQ_REWARD = 4;
-const ROUTE_GATES = { 'route-mf': 3, 'route-cm': 6, 'route-fc': 9, 'route-cc': 9, ascent: 11 };
+const ROUTE_GATES = { 'route-mf': 3, 'route-cm': 6, 'route-fc': 9, 'route-cc': 9, ascent: 11, descent: 13 };
 const LEADERS = [
   { id: 'wren', zone: 'moss', name: 'Elder Wren', color: '#4FB06D' },
   { id: 'glacia', zone: 'frost', name: 'Glacia', color: '#8FD8EA' },
@@ -112,6 +117,7 @@ const TITLES = [
   { id: 'climber', name: 'Tower Climber', desc: 'Clear floor 10 of the Tower', essence: 0, goal: 10, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'summit', name: 'Summit Champion', desc: 'Clear all 20 Tower floors', essence: 0, goal: 20, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'lamp', name: 'Lamplighter', desc: 'Relight the old beacon', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.lampLit ? 1 : 0) },
+  { id: 'forge', name: 'Forge Keeper', desc: 'Relight the buried forge', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.forgeLit ? 1 : 0) },
   { id: 'secret', name: 'The Ninth Seat', desc: 'Uncover a secret', essence: 20, goal: 1, of: (s) => ((s.caught || []).some((e) => e.seed === SECRET_SEED) ? 1 : 0) },
   { id: 'shiny', name: 'Shiny Hunter', desc: 'Keep 3 shiny critters', essence: 0, goal: 3, of: (s) => (s.shinies || []).length }
 ];

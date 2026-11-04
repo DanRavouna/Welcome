@@ -73,7 +73,31 @@ const ADV = (() => {
     return { name: 'The Lamp Tower', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'ascent' },
       gates: { g1: ['L1', 'L2'], g2: ['L2', 'L3'], g3: ['L3'] }, spots: { guard1: [10, 29], guard2: [10, 16], warden: [10, 5] } };
   }
-  const DUNGEONS = { 'dg-arch': sealedArch, 'dg-lamp': lampTower };
+  // ---- the Forge Below: a hub with two side halls. Each hall holds a guard and a glowing core; carry both back to the hub sockets and the north gate opens onto the Forgemaster.
+  // Non-linear (either hall first). Gates here follow RULES (all listed flags set), not lever parity. ----
+  function forgeBelow() {
+    const W = 30, H = 44, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
+    const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const dx = (x - 15) / 6.8, dy = (y - 26) / 6.8; if (dx * dx + dy * dy <= 1) set(x, y, '.'); }   // the round hub
+    rect(2, 19, 7, 32); rect(22, 19, 27, 32); rect(7, 25, 9, 26); rect(20, 25, 23, 26);                          // west and east halls and their doorways
+    rect(14, 13, 15, 19); rect(7, 2, 22, 12); rect(14, 33, 15, 43, '=');                                         // the way north to the Forgemaster, and the way in
+    rect(14, 19, 15, 32, '='); rect(8, 25, 21, 26, '=');                                                          // flagstones across the hub
+    rect(3, 29, 4, 31, '~'); rect(25, 21, 26, 23, '~'); rect(9, 5, 10, 8, '~'); rect(19, 5, 20, 8, '~');         // lava pools (not walkable)
+    [[4, 22], [4, 27], [25, 27], [25, 31], [10, 10], [19, 10]].forEach(([x, y]) => set(x, y, 'C'));              // pillars
+    objects.push({ id: 'coreA', kind: 'core', core: 'A', gate: 'coreA', x: 3, y: 20, text: 'A core of living flame.' }, { id: 'coreB', kind: 'core', core: 'B', gate: 'coreB', x: 26, y: 31, text: 'A core of cooled stone, still humming.' });
+    objects.push({ id: 'sockA', kind: 'socket', core: 'A', x: 12, y: 22, text: 'A socket for the core of flame.' }, { id: 'sockB', kind: 'socket', core: 'B', x: 17, y: 22, text: 'A socket for the core of stone.' });
+    const gate = (id, y) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, x: 14, y: y, reach: 1.9, text: 'A slab of black iron seals the way north. Two sockets in the hub must wake first.' }, { id: id + 'b', kind: 'gate', gate: id, x: 15, y: y, reach: 1.9, text: 'A slab of black iron seals the way north. Two sockets in the hub must wake first.' }); };
+    gate('gb', 15);
+    objects.push({ id: 'chest1', kind: 'chest', x: 3, y: 31, reward: { super: 2, essence: 6 }, text: 'A scorched chest.' }, { id: 'chest2', kind: 'chest', x: 21, y: 3, reward: { charm: 1, essence: 12 }, text: 'The Forgemaster’s chest.' });
+    [[10, 22], [19, 22], [10, 30], [19, 30], [8, 3], [21, 12], [6, 21], [23, 21]].forEach(([x, y], i) => objects.push({ id: 'fr' + i, kind: 'brazier', x: x, y: y, text: 'A brazier of hot coals.' }));
+    objects.push({ id: 'furnace', kind: 'furnace', x: 14, y: 2, text: 'The great furnace.' });
+    objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
+    return { name: 'The Forge Below', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [14.9, H - 1.4], exit: { edge: 's', a: 14, b: 15, to: 'descent' }, dark: { r: 5.2 },
+      rules: { gb: ['sock:A', 'sock:B'] }, pickups: { coreA: 'core:A', coreB: 'core:B' }, spots: { guard1: [5, 25], guard2: [24, 25], hale: [14, 6] } };
+  }
+  const DUNGEONS = { 'dg-arch': sealedArch, 'dg-lamp': lampTower, 'dg-forge': forgeBelow };
   // ---- pixel art (screen pixels, 32 px per tile, drawn on 2 px steps); x, y = the tile's top-left; st = object state from the app ----
   const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, w, h); };
   const OL = '#14101E';
@@ -169,6 +193,31 @@ const ADV = (() => {
       else { R(g, x + 11, y + 9, 10, 10, '#5A6896'); }
       R(g, x + 15, y + 6, 2, 16, OL); R(g, x + 8, y + 13, 16, 2, OL); R(g, x + 8, y, 16, 5, OL); R(g, x + 10, y + 1, 12, 3, '#C9D0DE');
     },
+    cavemouth(g, x, y, st, t) {   // a doorway in a cliff wall, glowing from inside
+      const k = 0.6 + 0.4 * Math.sin(t * 4);
+      R(g, x, y, 32, 32, OL); R(g, x + 3, y + 8, 26, 24, '#2A1008'); R(g, x + 7, y + 4, 18, 8, '#2A1008');
+      R(g, x + 6, y + 12, 20, 20, '#8A2A10'); R(g, x + 9, y + 12, 14, 20, '#E8552A'); R(g, x + 12, y + 16, 8, 16, '#FFA03A'); R(g, x + 14, y + 22, 4, 10, '#FFE08A');
+      g.save(); g.globalAlpha = 0.25 * k; R(g, x - 6, y + 4, 44, 34, '#FF7A30'); g.restore();
+      R(g, x + 2, y + 6, 28, 3, '#5A4A4A'); R(g, x + 4, y + 3, 24, 3, '#7A6A6A');
+    },
+    core(g, x, y, st, t, o) {
+      const a = o.core === 'A', c1 = a ? '#FF9A3A' : '#8FD8EA', c2 = a ? '#FFE08A' : '#E0F4FF', k = 0.6 + 0.4 * Math.sin(t * 4 + (a ? 0 : 2));
+      R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)'); R(g, x + 8, y + 20, 16, 10, OL); R(g, x + 10, y + 22, 12, 7, '#7A748A'); R(g, x + 10, y + 22, 12, 2, '#A49EB6');
+      R(g, x + 9, y + 6, 14, 14, OL); R(g, x + 11, y + 8, 10, 10, c1); R(g, x + 13, y + 10, 6, 6, c2);
+      g.save(); g.globalAlpha = 0.3 * k; R(g, x + 3, y + 1, 26, 24, c1); g.restore();
+    },
+    socket(g, x, y, st, t, o) {
+      const a = o.core === 'A', c1 = a ? '#FF9A3A' : '#8FD8EA', c2 = a ? '#FFE08A' : '#E0F4FF';
+      R(g, x + 4, y + 28, 24, 3, 'rgba(0,0,0,0.25)'); R(g, x + 6, y + 14, 20, 16, OL); R(g, x + 8, y + 16, 16, 12, '#6A667A'); R(g, x + 8, y + 16, 16, 2, '#9A96AA');
+      R(g, x + 10, y + 8, 12, 8, OL); R(g, x + 12, y + 10, 8, 4, st.on ? c1 : '#3A3646');
+      if (st.on) { const k = 0.6 + 0.4 * Math.sin(t * 5); R(g, x + 13, y + 11, 6, 2, c2); g.save(); g.globalAlpha = 0.3 * k; R(g, x + 2, y + 2, 28, 22, c1); g.restore(); }
+    },
+    furnace(g, x, y, st, t) {
+      R(g, x + 2, y + 28, 28, 3, 'rgba(0,0,0,0.25)'); R(g, x, y + 8, 32, 22, OL); R(g, x + 2, y + 10, 28, 18, '#6A6070'); R(g, x + 2, y + 10, 28, 3, '#9A90A8');
+      R(g, x + 8, y + 14, 16, 14, OL); R(g, x + 10, y + 16, 12, 12, st.lit ? '#FF8A3A' : '#2A1E1E');
+      if (st.lit) { const k = 0.7 + 0.3 * Math.sin(t * 7); R(g, x + 12, y + 18, 8, 8, '#FFE08A'); R(g, x + 14, y + 20, 4, 6, '#FFFFFF'); g.save(); g.globalAlpha = 0.3 * k; R(g, x - 6, y + 2, 44, 34, '#FF7A30'); g.restore(); }
+      R(g, x + 11, y, 10, 10, OL); R(g, x + 13, y + 1, 6, 8, '#8A8498');
+    },
     plaque(g, x, y, st, t) {   // the arch's rune stone: one gold rune per clue found
       R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)');
       R(g, x + 6, y + 6, 20, 24, OL); R(g, x + 8, y + 8, 16, 20, '#6A6880'); R(g, x + 8, y + 8, 16, 2, '#9A98B0');
@@ -176,6 +225,6 @@ const ADV = (() => {
       for (let i = 0; i < 4; i++) { const on = i < n; g.save(); g.globalAlpha = on ? (st.open ? 1 : 0.6 + 0.4 * k) : 1; R(g, x + 12, y + 11 + i * 4, 8, 2, on ? '#FFD86B' : '#4A4860'); g.restore(); }
     }
   };
-  const LIGHT = { greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
+  const LIGHT = { furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
   return { CLUES, DUNGEONS, ART, LIGHT, TCOL, TYPES };
 })();

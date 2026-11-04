@@ -1,9 +1,9 @@
 # How strong is the secret critter? Win rate of a party led by Veilcrown vs an ordinary best-of-10 party (stage 3), against chosen trainers.
-# Usage: python3 secretsim.py <lv> <n> <trainerId> [...]   (env SECRET=2 simulates Wickling instead of Veilcrown)
+# Usage: python3 secretsim.py <lv> <n> <trainerId> [...]   (env SECRET=2 simulates Wickling, SECRET=3 Slagback, otherwise Veilcrown)
 import sys, os
 from playwright.sync_api import sync_playwright
 lv, N, ids = int(sys.argv[1]), int(sys.argv[2]), sys.argv[3:]
-SEED = 'SECRET2_SEED' if os.environ.get('SECRET') == '2' else 'SECRET_SEED'
+SEED = {'2': 'SECRET2_SEED', '3': 'SECRET3_SEED'}.get(os.environ.get('SECRET'), 'SECRET_SEED')
 JS = """(cfg) => { const g = APP.game; const all = Object.values(WORLD.allNpcs()).flat(); const eff = { burn: 'burn', weaken: 'weak', daze: 'daze', sap: 'sap' };
   const smart = (bt) => { const P = bt.s[0], D = bt.s[1], s = P.k.kit[3]; if (P.uses > 0) { if (s.effect === 'heal' && P.hp < P.max * 0.45) return 3; if (s.effect === 'fortify' && P.fort === 0) return 3; if (eff[s.effect] && D[eff[s.effect]] === 0) return 3; } return 0; };
   const power = (k) => k.stats.reduce((a, q) => a + q.value, 0); const out = {};
