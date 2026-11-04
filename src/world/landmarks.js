@@ -55,6 +55,19 @@ const LAND = (() => {
         R(g, X + 30, Y + 2, 4, 20, OL); R(g, X + 31, Y + 3, 2, 18, '#B07A46'); R(g, X + 31, Y + 3, 12, 6, OL); R(g, X + 32, Y + 4, 10, 4, '#E8E2D0'); // mast and torn sail
         R(g, X + 8, Y + 8, 4, 8, OL); R(g, X + 9, Y + 9, 2, 6, '#B07A46');
       } },
+    // an ancient beacon tower (3x5): stone shaft, a ring balcony and a dark lantern cage on top (a lit beam is drawn by the world when an object asks for it)
+    beacon: { w: 3, h: 5, text: 'An ancient beacon tower. Its lantern has been dark for longer than anyone remembers.',
+      draw(g, X, Y, P, k) {
+        shadow(g, X, Y, 48, 80);
+        R(g, X + 2, Y + 62, 44, 16, OL); R(g, X + 4, Y + 64, 40, 12, '#8E98AD'); R(g, X + 4, Y + 64, 40, 3, '#C9D0DE'); R(g, X + 4, Y + 74, 40, 2, '#5A6482');   // plinth
+        R(g, X + 8, Y + 22, 32, 42, OL); R(g, X + 10, Y + 24, 28, 38, '#A8B2C6'); R(g, X + 10, Y + 24, 6, 38, '#DCE2EE'); R(g, X + 32, Y + 24, 6, 38, '#7E8AA2');   // shaft
+        for (let i = 0; i < 4; i++) { R(g, X + 10, Y + 30 + i * 8, 28, 2, '#8E98AD'); }                                                                             // stone courses
+        R(g, X + 20, Y + 38, 8, 12, OL); R(g, X + 22, Y + 40, 4, 8, '#2A3050'); R(g, X + 20, Y + 54, 8, 8, OL); R(g, X + 22, Y + 56, 4, 6, '#2A3050');                 // slits and the door
+        R(g, X + 4, Y + 18, 40, 7, OL); R(g, X + 6, Y + 19, 36, 4, '#C9D0DE');                                                                                       // balcony
+        R(g, X + 10, Y + 4, 28, 16, OL); R(g, X + 12, Y + 6, 24, 12, '#3A4468'); R(g, X + 14, Y + 8, 20, 8, '#5A6896'); R(g, X + 22, Y + 6, 3, 12, OL);               // lantern cage, dark glass
+        R(g, X + 8, Y + 2, 32, 4, OL); R(g, X + 10, Y + 2, 28, 2, '#C9D0DE'); R(g, X + 20, Y - 4, 8, 6, OL); R(g, X + 22, Y - 2, 4, 4, '#8E98AD');                     // roof and finial
+        moss(g, P, X + 10, Y + 24, 10);
+      } },
     // a single stack of stones (1 tile): cheap trail marker
     cairn: { w: 1, h: 1,
       draw(g, X, Y) {

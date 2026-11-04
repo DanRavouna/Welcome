@@ -16,6 +16,8 @@ const WORLD = (() => {
   THEMES.cinderport = { lava: true, ground: '#C9925C', blade: 'rgba(110,60,20,0.35)', path: '#7A6A62', water: '#FF6A2B', tall: '#B9963A', tallBlade: '#8E6B1E', tree: 'dead', bg: '#5A3418', flowers: ['#FFD86B', '#FF8A3D'] };
   THEMES.coralbay = { ground: '#F2DFA8', blade: 'rgba(150,120,60,0.3)', path: '#C9A070', water: '#2F8FD8', tall: '#B9C46A', tallBlade: '#7E8A32', tree: 'palm', bg: '#1F6FB0', flowers: ['#FFFFFF', '#F59ACB'] };
   THEMES['dg-arch'] = { ground: '#262B40', blade: 'rgba(10,12,24,0.35)', path: '#515A7C', water: '#1E3A5F', tall: '#2E4A4A', tallBlade: '#1E3434', tree: 'dead', bg: '#0A0C18', flowers: ['#7AA0FF'], cave: true };
+  THEMES.ascent = { ground: '#E8F0F8', blade: 'rgba(120,150,190,0.35)', path: '#A8B8D0', water: '#7FB8E0', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#9FB4D0', flowers: ['#FFFFFF', '#BBD5FF'], ice: true };
+  THEMES['dg-lamp'] = { ground: '#C9BFA8', blade: 'rgba(120,100,70,0.25)', path: '#E4DAC2', water: '#7FB8E0', tall: '#9CB89A', tallBlade: '#6A8A68', tree: 'pine', bg: '#8E8470', flowers: ['#FFFFFF'], cave: true };
   THEMES['route-mf'] = THEMES.peak; THEMES['route-cm'] = Object.assign({}, THEMES.moss, { dense: false }); THEMES['route-fc'] = THEMES.frost; THEMES['route-cc'] = THEMES.tide;
   THEMES.mossbrook = { ground: '#5FA34A', blade: 'rgba(30,80,30,0.4)', path: '#C9A878', water: '#4F9AD0', tall: '#44803A', tallBlade: '#2A6A2C', tree: 'round', bg: '#2A5A2C', flowers: ['#F5A3D0', '#FFFFFF', '#FFD86B'] };
   const ZONES = {
@@ -283,7 +285,7 @@ const WORLD = (() => {
     M.exits.push({ edge: edge, a: a, b: a + 1, to: to });
     M.arriveFrom = Object.assign({}, M.arriveFrom, { [to]: arrive });
   }
-  const MAPS = { town: buildTown(), peak: buildPeak(), mossbrook: buildMossbrook(), frosthold: buildCity(CITY_CFG.frosthold), cinderport: buildCity(CITY_CFG.cinderport), coralbay: buildCity(CITY_CFG.coralbay), frost: buildZone('frost'), ember: buildZone('ember'), moss: buildZone('moss'), tide: buildZone('tide'),
+  const MAPS = { town: buildTown(), peak: buildPeak(), ascent: buildAscent(), mossbrook: buildMossbrook(), frosthold: buildCity(CITY_CFG.frosthold), cinderport: buildCity(CITY_CFG.cinderport), coralbay: buildCity(CITY_CFG.coralbay), frost: buildZone('frost'), ember: buildZone('ember'), moss: buildZone('moss'), tide: buildZone('tide'),
     'route-mf': buildZone('route-mf'), 'route-cm': buildZone('route-cm'), 'route-fc': buildZone('route-fc'), 'route-cc': buildZone('route-cc') };
   linkEdge(MAPS.moss, 'w', 14, 'mossbrook', [1.2, 15.2]);
   MAPS.moss.grid[12][3] = 'G'; MAPS.moss.signs.push({ x: 3, y: 12, to: 'mossbrook', text: 'West: Mossbrook village, home of Elder Wren.' });
@@ -317,13 +319,14 @@ const WORLD = (() => {
   }
   // which landmarks stand on which map (hint spot, optional lore override). Future routes and cities: just add rows.
   const PROPS = {
+    ascent: [['camp', [6, 57]], ['cairn', [24, 50], ''], ['cairn', [6, 46], ''], ['cairn', [24, 38], ''], ['cairn', [6, 30], ''], ['cairn', [24, 22], '']],
     'route-mf': [['ruin', [9, 17]], ['cairn', [26, 9]], ['cairn', [7, 11], '']],
     'route-cm': [['camp', [25, 18]], ['well', [8, 9]], ['cairn', [27, 7]]],
     'route-fc': [['lighthouse', [27, 8]], ['cairn', [8, 18]]],
     'route-cc': [['wreck', [8, 17]], ['cairn', [24, 6]]]
   };
-  const PROP_RESERVED = [[13, 3, 19, 11]]; // the route trainer's stand and sight line
-  Object.keys(PROPS).forEach((mid) => PROPS[mid].forEach(([id, hint, text]) => addProp(MAPS[mid], id, hint, text === '' ? null : text, PROP_RESERVED)));
+  const PROP_RESERVED = [[13, 3, 19, 11]]; // the route trainer's stand and sight line (routes only)
+  Object.keys(PROPS).forEach((mid) => PROPS[mid].forEach(([id, hint, text]) => addProp(MAPS[mid], id, hint, text === '' ? null : text, mid.indexOf('route-') === 0 ? PROP_RESERVED : [])));
   ROUTE_LINKS.forEach(([rid, cityA, edgeA, aA, arrA, rEdgeB, cityB, edgeB, aB, arrB]) => {
     const R = MAPS[rid], back = R.exits[0];
     back.to = cityA; R.arriveFrom = { [cityA]: R.arrive[back.edge] };
@@ -340,6 +343,36 @@ const WORLD = (() => {
     post(MAPS[cityB], edgeB, aB, dirWord[edgeB] + ': ' + R.name + ' (' + R.types.join(' and ') + ' critters), the road to ' + MAPS[cityA].name + '.');
     post(R, rEdgeB, mid, dirWord[rEdgeB] + ': ' + MAPS[cityB].name + '.');
   });
+  // ---------- the Cold Ascent: five switchback ledges up the peaks above Frosthold, ending under the beacon tower ----------
+  // Ledges are rectangles joined by 4-wide ramps through the cliff rows between them; a packed-snow trail zig-zags up, so trainers beside it
+  // see you cross. Wild snow patches (W), a glacier river with a log bridge, a rare patch near the top, and a summit plateau with the beacon.
+  function buildAscent() {
+    const W = 30, H = 66, r = rng(4242), m = []; for (let y = 0; y < H; y++) m.push(new Array(W).fill('C'));
+    const set = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < H) m[y][x] = c; };
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    const L = [{ y0: 49, y1: 55, enter: 'r', yc: 52 }, { y0: 41, y1: 47, enter: 'l', yc: 44 }, { y0: 33, y1: 39, enter: 'r', yc: 36 }, { y0: 25, y1: 31, enter: 'l', yc: 28 }, { y0: 17, y1: 23, enter: 'r', yc: 20 }];
+    rect(5, 57, 24, 63); L.forEach((l) => rect(4, l.y0, 25, l.y1)); rect(3, 3, 26, 15);                          // camp, five ledges, the summit plateau
+    L.forEach((l) => { const rx = l.enter === 'r' ? 22 : 4; rect(rx, l.y1 + 1, rx + 3, l.y1 + 1); });             // the ramp below each ledge
+    rect(22, 56, 25, 56); rect(4, 16, 7, 16);                                                                       // camp -> first ledge (right), last ledge -> summit (left)
+    rect(12, 33, 16, 39, '~');                                                                                      // glacier river across the third ledge
+    [[6, 50, 9, 53], [14, 53, 17, 55], [18, 42, 22, 45], [8, 26, 12, 29], [12, 21, 18, 23], [17, 62, 21, 63]].forEach(([a, b, c, d]) => rect(a, b, c, d, 'W'));   // snow patches
+    const near = (x, y) => { for (let yy = y - 1; yy <= y + 1; yy++) for (let xx = x - 1; xx <= x + 1; xx++) if (['=', 'Z', '~'].indexOf(m[yy] ? m[yy][xx] : '.') !== -1) return true; return false; };
+    for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) { if (m[y][x] !== '.' || near(x, y)) continue; const v = r(); if (v < 0.07) set(x, y, 'T'); else if (v < 0.1) set(x, y, 'R'); else if (v < 0.17) set(x, y, ','); }
+    // the trail (2 wide): in from the south gap, along the camp, up each ramp, across each ledge on its middle rows, to the beacon door
+    const px = (x0, y0, x1, y1) => rect(Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1) + 1, Math.max(y0, y1) + 1, '=');
+    px(14, 61, 14, 65); px(14, 60, 23, 60); px(23, 56, 23, 60);
+    L.forEach((l, i) => { const e = l.enter === 'r' ? 23 : 5, x = l.enter === 'r' ? 5 : 23; px(e, l.y1 + 1, e, l.yc); px(e, l.yc, x, l.yc); px(x, l.y0 - 1, x, l.yc); });
+    px(5, 12, 5, 16); px(5, 12, 14, 12); px(14, 9, 14, 12);
+    rect(7, 18, 9, 20, 'Z');                                                                                        // a rare patch on the last ledge
+    for (let y = 3; y <= 7; y++) for (let x = 13; x <= 15; x++) set(x, y, 'X');                                      // footprint of the beacon tower (3 x 5; its prop is registered below)
+    set(14, 8, 'O');                                                                                               // the door tile under it (an object, see the app)
+    // trees on the summit plateau edges
+    [[4, 4], [5, 7], [4, 10], [25, 4], [24, 8], [25, 12], [9, 5], [20, 6], [10, 10], [19, 10]].forEach(([x, y]) => { if (m[y][x] === '.' || m[y][x] === ',') set(x, y, 'T'); });
+    m[64][14] = '='; m[64][15] = '=';
+    const arrive = [14.9, H - 1.4];
+    return { id: 'ascent', name: 'The Cold Ascent', theme: THEMES.ascent, grid: m, W, H, places: [], signs: [], types: ['Frost', 'Stone'], rate: 0.12, rare: { x: 7, y: 18, w: 3, h: 3 },
+      props: [{ id: 'beacon', x: 13, y: 3, w: 3, h: 5 }], objects: [{ id: 'beacon-door', kind: 'plaque', x: 14, y: 8, reach: 1.9, label: 'Examine the beacon door', text: 'The Beacon' }], exits: [{ edge: 's', a: 14, b: 15, to: 'frosthold' }], arrive: { s: arrive }, spawn: arrive };
+  }
   // ---------- dungeons (layouts live in adventure.js) ----------
   // buildDungeon turns a layout into a map: cave walls 'C', objects on solid 'O' tiles, an exit gap, a darkness radius.
   function buildDungeon(id) {
@@ -347,9 +380,21 @@ const WORLD = (() => {
     const objects = d.objects.map((o) => { grid[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });
     const arrive = d.spawn;
     return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
-      exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive };
+      exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: d.exit.to || 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive, gates: d.gates || {} };
   }
   MAPS['dg-arch'] = buildDungeon('dg-arch');
+  MAPS['dg-lamp'] = buildDungeon('dg-lamp');
+  // the Cold Ascent hangs off Frosthold's north palisade (a gate cut at columns 31-32), with signposts and landmarks placed with the reusable props
+  (() => {
+    const F = MAPS.frosthold, A = MAPS.ascent;
+    for (let y = 0; y <= 11; y++) { F.grid[y][31] = '='; F.grid[y][32] = '='; }
+    F.grid[4][30] = 'G'; F.signs.push({ x: 30, y: 4, to: 'ascent', text: 'North: the Cold Ascent. A trail climbs the peaks to an old beacon (Frost and Stone critters). Climbers should be at least level 11.' });
+    F.exits.push({ edge: 'n', a: 31, b: 32, to: 'ascent' }); F.arriveFrom = Object.assign({}, F.arriveFrom, { ascent: [31.9, 1.4] });
+    A.arriveFrom = { frosthold: A.spawn, 'dg-lamp': [14.5, 9.7] };
+    A.objects[0].beam = { x: 14.5, y: 3.75 };   // the beacon's lantern: a light shaft rises from it once the lamp is relit
+    A.grid[60][12] = 'G'; A.signs.push({ x: 12, y: 60, text: 'The Cold Ascent. Five ledges up to the old beacon. Wild Frost and Stone critters hide in the snow tufts. Turn back if the weather turns.' });
+    A.grid[16][3] = 'C';
+  })();
   // The Sealed Arch's door: the ruin's signpost tile becomes the "arch" object (a rune stone). With four clues the app opens it (see archUse in app.js).
   (() => {
     const Rm = MAPS['route-mf'], ruin = (Rm.props || []).find((p) => p.id === 'ruin'); if (!ruin) return;
@@ -581,7 +626,7 @@ const WORLD = (() => {
     if (best) return best;
     M.places.forEach((p) => { const [dx, dy] = p.door; const d = Math.hypot(tx - (dx + 1), ty - (dy + 1.1)); if (d < bd) { bd = d; best = { kind: 'place', place: p }; } });
     M.signs.forEach((s) => { const d = Math.hypot(tx - (s.x + 0.5), ty - (s.y + 0.5)); if (d < Math.min(bd, 1.6)) { bd = d; best = { kind: 'sign', sign: s }; } });
-    (M.objects || []).forEach((o) => { const d = Math.hypot(tx - (o.x + 0.5), ty - (o.y + 0.5)); if (d < Math.min(bd, o.reach || 1.7)) { bd = d; best = { kind: 'object', obj: o }; } });
+    (M.objects || []).forEach((o) => { if (o.hidden) return; const d = Math.hypot(tx - (o.x + 0.5), ty - (o.y + 0.5)); if (d < Math.min(bd, o.reach || 1.7)) { bd = d; best = { kind: 'object', obj: o }; } });
     if (!best && !(M.theme && M.theme.lava) && !M.interior) { // fishing: water next to you
       const fx = Math.floor(tx), fy = Math.floor(ty - 0.3), dirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }, f = dirs[P.dir] || [0, 1];
       const cand = [[fx + f[0], fy + f[1]], [fx, fy - 1], [fx, fy + 1], [fx - 1, fy], [fx + 1, fy]];
@@ -775,7 +820,7 @@ const WORLD = (() => {
     if (wk === 'snow') snowCaps(cx, cy);
     const fol = opts.follower ? opts.follower() : null;
     if (!FOL) followerReset();
-    const list = (NPCS[M.id] || []).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat((M.objects || []).map((o) => ({ y: (o.y + 0.95) * TS, o: o }))).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
+    const list = (NPCS[M.id] || []).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat((M.objects || []).filter((o) => !o.hidden).map((o) => ({ y: (o.y + 0.95) * TS, o: o }))).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
     list.forEach((it) => {
       if (it.p) { drawPlayer(pxs - cx, pys - cy); return; }
       if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy); if (ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50) return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (art) art(ctx, ox, oy, st, tAnim, o); return; }
@@ -830,6 +875,14 @@ const WORLD = (() => {
       ctx.fillStyle = gr; ctx.fillRect(X + 34, Y + 28, 60, 64);
       for (let i = 0; i < 9; i++) { const px2 = X + 40 + ((i * 17 + Math.floor(tAnim * 6) * 3) % 48), py2 = Y + 34 + ((i * 23 + Math.floor(tAnim * 12 + i * 5)) % 52); ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.9)' : 'rgba(255,216,107,0.9)'; ctx.fillRect(px2 & ~1, py2 & ~1, 2, 2); }
     });
+    // a lit beacon: a shaft of light rising from its lantern (objects with `beam`, when their state says lit)
+    (M.objects || []).forEach((o) => { if (!o.beam || !(opts.objState && (opts.objState(o) || {}).lit)) return;
+      const bx2 = snap(o.beam.x * TS - cx), by2 = snap(o.beam.y * TS - cy), k = 0.6 + 0.4 * Math.sin(tAnim * 3);
+      if (bx2 < -60 || bx2 > vw + 60 || by2 < -vh) return;
+      const gr = ctx.createLinearGradient(0, by2, 0, 0); gr.addColorStop(0, 'rgba(255,236,160,' + (0.75 * k).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,236,160,0)');
+      ctx.fillStyle = gr; ctx.fillRect(bx2 - 14, 0, 28, by2); ctx.fillStyle = 'rgba(255,248,200,' + (0.35 * k).toFixed(2) + ')'; ctx.fillRect(bx2 - 5, 0, 10, by2);
+      const gl = ctx.createRadialGradient(bx2, by2, 2, bx2, by2, 56); gl.addColorStop(0, 'rgba(255,236,160,0.8)'); gl.addColorStop(1, 'rgba(255,236,160,0)'); ctx.fillStyle = gl; ctx.fillRect(bx2 - 56, by2 - 56, 112, 112);
+    });
     // weather (outdoors only), under the time-of-day tint so night darkens it too
     if (typeof WEATHER !== 'undefined') WEATHER.draw(ctx, { kind: M.interior ? null : (opts.weather ? opts.weather() : null), mapId: M.id, vw: vw, vh: vh, cx: cx, cy: cy, t: tAnim, still: opts.still ? opts.still() : false });
     // time of day: tint the world (tags drawn later stay crisp)
@@ -878,6 +931,8 @@ const WORLD = (() => {
   return {
     init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, get objects() { return M.objects || []; },
     // clear tiles (and the objects standing on them) of a map, e.g. rubble after the rite; redraws the ground if it is the current map
+    // open or close a gate (all objects with `gate: id`): hidden + walkable when open, solid when closed
+    setGate: (mapId, gateId, open) => { const m = MAPS[mapId]; if (!m) return; (m.objects || []).forEach((o) => { if (o.gate !== gateId) return; o.hidden = !!open; m.grid[o.y][o.x] = open ? '.' : 'O'; }); },
     openTiles: (mapId, cells, objIds) => { const m = MAPS[mapId]; if (!m) return; cells.forEach(([x, y]) => { if (m.grid[y]) m.grid[y][x] = '.'; }); m.objects = (m.objects || []).filter((o) => objIds.indexOf(o.id) === -1); if (M === m && canvas) prerender(); }, setFish: (f) => { fishAt = f; }, follower: () => FOL,
     addProp, PROPS, get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
     solidAt: (x, y) => solidAt(x, y),

@@ -49,7 +49,30 @@ const ADV = (() => {
     return { name: 'The Sealed Arch', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [12.9, H - 1.4], exit: { edge: 's', a: 12, b: 13 }, dark: { r: 3.4 }, types: ['Dusk', 'Stone'], rate: 0.12,
       spots: { guard1: [13, 25], guard2: [13, 12], keeper: [13, 3] }, rubble: [[12, 41], [13, 41]] };
   }
-  const DUNGEONS = { 'dg-arch': sealedArch };
+  // ---- the Lamp Tower: a bright climb through four chambers. Levers flip gates (a gate is open when an odd number of its levers are ON), so going forward closes
+  // the way behind you, and flipping a lever back always undoes it (you can never be locked in). Guards in chambers 2 and 3, the Warden and the great lamp at the top. ----
+  function lampTower() {
+    const W = 22, H = 54, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
+    const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    rect(4, 37, 17, 47); rect(4, 25, 17, 33); rect(4, 13, 17, 21); rect(4, 1, 17, 9);                      // the four chambers (bottom to top)
+    rect(10, 34, 11, 36); rect(10, 22, 11, 24); rect(10, 10, 11, 12);                                         // corridors between them, each shut by a gate
+    rect(10, 48, 11, 53, '='); [[37, 47], [25, 33], [13, 21], [1, 9]].forEach(([a, c]) => rect(10, a, 11, c, '='));   // a flagstone way up the middle of each chamber
+    [[6, 40], [15, 40], [6, 44], [15, 44], [6, 28], [15, 28], [6, 16], [15, 19], [6, 4], [15, 6]].forEach(([x, y]) => set(x, y, 'C'));   // pillars
+    // gates: two tiles across each corridor; `levers` lists the levers that flip it
+    const gate = (id, y, levers) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, levers: levers, x: 10, y: y, reach: 1.9, text: 'An iron gate. Somewhere a lever works it.' }, { id: id + 'b', kind: 'gate', gate: id, levers: levers, x: 11, y: y, reach: 1.9, text: 'An iron gate. Somewhere a lever works it.' }); };
+    gate('g1', 35, ['L1', 'L2']); gate('g2', 23, ['L2', 'L3']); gate('g3', 11, ['L3']);
+    objects.push({ id: 'L1', kind: 'lever', x: 16, y: 44, text: 'A lever.' }, { id: 'L2', kind: 'lever', x: 5, y: 30, text: 'A lever.' }, { id: 'L3', kind: 'lever', x: 16, y: 18, text: 'A lever.' });
+    objects.push({ id: 'tab1', kind: 'plaque', x: 6, y: 47, label: 'Read the tablet', text: 'Carved in the stone: "Three levers, three gates. What opens one may close another. Climb, and the lamp will know you."' });
+    objects.push({ id: 'chest1', kind: 'chest', x: 16, y: 27, reward: { super: 2, essence: 6 }, text: 'A frosty chest.' }, { id: 'chest2', kind: 'chest', x: 16, y: 3, reward: { charm: 1, essence: 12 }, text: 'The Warden’s chest.' });
+    [[5, 38], [16, 38], [5, 26], [16, 33], [5, 14], [15, 14], [5, 2], [14, 2]].forEach(([x, y], i) => objects.push({ id: 'tr' + i, kind: 'brazier', x: x, y: y, text: 'A torch burns steadily.' }));
+    objects.push({ id: 'greatlamp', kind: 'greatlamp', x: 10, y: 2, text: 'The great lamp.' });
+    objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
+    return { name: 'The Lamp Tower', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'ascent' },
+      gates: { g1: ['L1', 'L2'], g2: ['L2', 'L3'], g3: ['L3'] }, spots: { guard1: [10, 29], guard2: [10, 16], warden: [10, 5] } };
+  }
+  const DUNGEONS = { 'dg-arch': sealedArch, 'dg-lamp': lampTower };
   // ---- pixel art (screen pixels, 32 px per tile, drawn on 2 px steps); x, y = the tile's top-left; st = object state from the app ----
   const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, w, h); };
   const OL = '#14101E';
@@ -126,6 +149,25 @@ const ADV = (() => {
       R(g, x + 9, y + 12, 14, 9, OL); R(g, x + 10, y + 16, 12, 4, '#FFD86B'); R(g, x + 10, y + 12, 4, 6, '#FFD86B'); R(g, x + 15, y + 10, 4, 8, '#FFD86B'); R(g, x + 20, y + 12, 3, 6, '#FFD86B'); R(g, x + 11, y + 17, 10, 2, '#FFF3B0');
       g.save(); g.globalAlpha = 0.2 + 0.3 * k; R(g, x + 6, y + 6, 20, 2, '#FFF3B0'); R(g, x + 14, y + 2, 4, 4, '#FFF3B0'); g.restore();
     },
+    lever(g, x, y, st) {
+      R(g, x + 4, y + 28, 24, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 6, y + 20, 20, 10, OL); R(g, x + 8, y + 22, 16, 6, '#8A8498'); R(g, x + 8, y + 22, 16, 2, '#B4AEC4');
+      const dx = st.on ? 8 : -8;   // the handle leans right when ON, left when OFF
+      R(g, x + 14 + dx / 2, y + 10, 4, 14, OL); R(g, x + 15 + dx / 2, y + 11, 2, 12, '#6A6478');
+      R(g, x + 12 + dx, y + 6, 8, 8, OL); R(g, x + 14 + dx, y + 8, 4, 4, st.on ? '#FFD86B' : '#D8574A');
+    },
+    gate(g, x, y) {
+      R(g, x, y + 2, 32, 4, OL); R(g, x + 1, y + 3, 30, 2, '#6A6478'); R(g, x, y + 26, 32, 4, OL); R(g, x + 1, y + 27, 30, 2, '#6A6478');
+      for (let i = 0; i < 5; i++) { R(g, x + 3 + i * 6, y + 4, 4, 24, OL); R(g, x + 4 + i * 6, y + 5, 2, 22, '#9A96AA'); }
+    },
+    greatlamp(g, x, y, st, t) {
+      R(g, x + 4, y + 28, 24, 3, 'rgba(0,0,0,0.25)');
+      R(g, x + 8, y + 22, 16, 8, OL); R(g, x + 10, y + 24, 12, 5, '#8A8498');
+      R(g, x + 6, y + 4, 20, 20, OL); R(g, x + 8, y + 6, 16, 16, st.lit ? '#FFE9A0' : '#3A4468');
+      if (st.lit) { const k = 0.7 + 0.3 * Math.sin(t * 6); R(g, x + 11, y + 9, 10, 10, '#FFFFFF'); g.save(); g.globalAlpha = 0.3 * k; R(g, x - 6, y - 6, 44, 40, '#FFD86B'); g.restore(); }
+      else { R(g, x + 11, y + 9, 10, 10, '#5A6896'); }
+      R(g, x + 15, y + 6, 2, 16, OL); R(g, x + 8, y + 13, 16, 2, OL); R(g, x + 8, y, 16, 5, OL); R(g, x + 10, y + 1, 12, 3, '#C9D0DE');
+    },
     plaque(g, x, y, st, t) {   // the arch's rune stone: one gold rune per clue found
       R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)');
       R(g, x + 6, y + 6, 20, 24, OL); R(g, x + 8, y + 8, 16, 20, '#6A6880'); R(g, x + 8, y + 8, 16, 2, '#9A98B0');
@@ -133,6 +175,6 @@ const ADV = (() => {
       for (let i = 0; i < 4; i++) { const on = i < n; g.save(); g.globalAlpha = on ? (st.open ? 1 : 0.6 + 0.4 * k) : 1; R(g, x + 12, y + 11 + i * 4, 8, 2, on ? '#FFD86B' : '#4A4860'); g.restore(); }
     }
   };
-  const LIGHT = { fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
+  const LIGHT = { greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
   return { CLUES, DUNGEONS, ART, LIGHT, TCOL, TYPES };
 })();

@@ -14,6 +14,8 @@ const PXW = (() => {
     tide: { g: '#F2DFA8', gd: '#FAECC4', gt: '#D9C38A', p: '#E2C98E', ps: '#CDB27A', pe: '#B09060', w: '#3C95DC', wl: '#A8D8FF', we: '#2A6FB0', t: '#B9C46A', tb: '#7E8A32', th: '#D8E08A', tree: 'palm', ol: '#5A4A20', fl: ['#FFFFFF', '#F5A3D0'] }
   };
   PAL['dg-arch'] = { g: '#262B40', gd: '#2F3550', gt: '#1C2033', p: '#515A7C', ps: '#626C90', pe: '#383E5A', w: '#1E3A5F', wl: '#3A6A9A', we: '#122A48', t: '#2E4A4A', tb: '#1E3434', th: '#3E6A5A', tree: 'dead', ol: '#0A0C18', fl: ['#7AA0FF'], cw: '#171A2A', cwl: '#3A4160', cwd: '#0C0E1A' };
+  PAL.ascent = { g: '#E8F0F8', gd: '#FFFFFF', gt: '#B9CCE0', p: '#A8B8D0', ps: '#98A8C2', pe: '#7888A4', w: '#7FB8E0', wl: '#D8EEFF', we: '#4A88B8', t: '#9CC9D9', tb: '#5E97AE', th: '#C8E8F2', tree: 'pine', ol: '#2E3A4A', fl: ['#FFFFFF', '#BBD5FF'], cw: '#6E7A96', cwl: '#C4D0E6', cwd: '#3E4864' };
+  PAL['dg-lamp'] = { g: '#C9BFA8', gd: '#D8CFB8', gt: '#B5AA92', p: '#E4DAC2', ps: '#D2C8AE', pe: '#A89E86', w: '#7FB8E0', wl: '#D8EEFF', we: '#4A88B8', t: '#9CB89A', tb: '#6A8A68', th: '#C8E0C4', tree: 'pine', ol: '#2E2A3A', fl: ['#FFFFFF'], cw: '#7C7488', cwl: '#B8B0C8', cwd: '#4C4660' };
   PAL['route-mf'] = Object.assign({}, PAL.peak, { g: '#97B07E', gd: '#ABC492' }); PAL['route-fc'] = Object.assign({}, PAL.frost, { w: '#3C95DC', wl: '#A8D8FF', we: '#2A6FB0' }); PAL['route-cc'] = Object.assign({}, PAL.tide, { p: '#B08858', ps: '#9A7448', tree: 'palm' });
   PAL['route-cm'] = { g: '#8C9A5E', gd: '#A0AE70', gt: '#6E7A44', p: '#A08A6A', ps: '#8E7858', pe: '#6A5A40', w: '#4F9AD0', wl: '#9CD0F2', we: '#2F70A0', t: '#7E8A3A', tb: '#5E6A22', th: '#A0AE70', tree: 'dead', ol: '#2E2A1A', fl: ['#FF8A3D', '#FFD86B'] };
   function stamp(g, x0, y0, rows, colors) {
