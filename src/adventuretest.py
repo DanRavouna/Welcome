@@ -50,7 +50,7 @@ with sync_playwright() as p:
   pg.evaluate("WORLD.setPos(12.9*WORLD.TS,59.2*WORLD.TS); WORLD.input.jy=1")
   for _ in range(20): pg.evaluate("WORLD.step(1/30)")
   pg.evaluate("WORLD.input.jy=0"); pg.wait_for_timeout(200); print('walked out the south gap ->', pg.evaluate("WORLD.map.id"), 'at', pg.evaluate("(()=>{const p=WORLD.pos();return [Math.round(p.x/32*10)/10,Math.round(p.y/32*10)/10]})()"))
-  pg.evaluate("APP.close()")   # walking out crosses the route's tall grass: close a wild encounter if one happened (random)
+  pg.wait_for_timeout(700); pg.evaluate("APP.close()")   # walking out crosses the route's tall grass: a wild encounter opens its screen ~280 ms after it starts, so wait, then close it if one happened (random)
   pg.evaluate("WORLD.enter('dg-arch')")
   # chest: reward once
   pg.evaluate("(()=>{const o=WORLD.objects.find(x=>x.id==='chest1');WORLD.setPos((o.x+1.5)*WORLD.TS,(o.y+0.6)*WORLD.TS)})()")
