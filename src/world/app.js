@@ -899,6 +899,7 @@ const APP = (() => {
       { label: 'Not now', fn: () => { n.declined = true; endDialog(); } }
     ]);
   }
+  function resumeWorld() { $('hud').hidden = false; WORLD.setPaused(false); }
   function startTrainer(n) {
     const team = game.teamFor(n);
     const seals = (game.state.npc && game.state.npc.seals) || [];
@@ -906,7 +907,7 @@ const APP = (() => {
     // trainers: full reward on the first win, half on daily rematches (keeps daily essence close to the pre-city economy)
     const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward + (n.bonus || 0) : Math.ceil(n.reward / 2));
     const tr = { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss };
-    if (ACT.canDuel() && ACT.startDuel({ tr: tr, npc: n })) { n.declined = true; return; }   // action mode: fight it out on the map
+    if (ACT.canDuel() && ACT.startDuel({ tr: tr, npc: n })) { n.declined = true; resumeWorld(); return; }   // action mode: fight it out on the map (the dialog that led here left the world paused)
     game.setState({ trainer: tr, battle: null });
     openScreen('battle');
   }
@@ -922,7 +923,7 @@ const APP = (() => {
     if (ACT.canDuel()) {   // action mode: the run's party fights the floor on the map; HP carries from the run
       const party = game.towerParty(), hp = {}; party.forEach((x) => { hp[x.seed] = x.hp; });
       const tw = game.towerTwist();
-      if (party.some((x) => x.hp > 0) && ACT.startDuel({ tr: trainer, party: party.map((x) => x.seed), hp: hp, surge: tw.id === 'surge' ? tw.type : null })) return;
+      if (party.some((x) => x.hp > 0) && ACT.startDuel({ tr: trainer, party: party.map((x) => x.seed), hp: hp, surge: tw.id === 'surge' ? tw.type : null })) { resumeWorld(); return; }
     }
     game.setState({ trainer: trainer, battle: null });
     openScreen('battle');

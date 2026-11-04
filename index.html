@@ -2646,6 +2646,7 @@ const WORLD = (() => {
   function followerReset() { trail = []; FOL = { x: P.x, y: P.y + 2, moving: false }; }
   function followerStep() {
     if (!FOL) followerReset();
+    if (Math.hypot(P.x - FOL.x, P.y - FOL.y) > TS * 6) { followerReset(); return; }   // the player was moved far (a teleport): the follower catches up at once
     const last = trail[trail.length - 1];
     if (!last || Math.hypot(P.x - last.x, P.y - last.y) > 2) { trail.push({ x: P.x, y: P.y }); if (trail.length > 60) trail.shift(); }
     let dist = 0, tgt = null;
@@ -3035,8 +3036,9 @@ const ACT = (() => {
   }
   function strike(e) {
     const a = st.atk, mv = hero.k.kit[a.mi], o = heroPos(), heavy = a.mi === 1, rad = (heavy ? 1.45 : 1.1) * e.TS;
-    const cx = o.x + a.dir[0] * 0.85 * e.TS, cy = o.y + a.dir[1] * 0.85 * e.TS, g = H.game();
-    FX.push({ k: 'slash', x: o.x + a.dir[0] * 0.55 * e.TS, y: o.y + a.dir[1] * 0.55 * e.TS - 8, ang: Math.atan2(a.dir[1], a.dir[0]), r: rad, col: hero.k.element.color, t: 0, big: heavy || a.kind === 'status' });
+    const ex = o.x + a.dir[0] * a.dash * 0.9, ey = o.y + a.dir[1] * a.dash * 0.9;   // the critter lunges to its target first: the blow lands where the lunge ends
+    const cx = ex + a.dir[0] * 0.85 * e.TS, cy = ey + a.dir[1] * 0.85 * e.TS, g = H.game();
+    FX.push({ k: 'slash', x: ex + a.dir[0] * 0.55 * e.TS, y: ey + a.dir[1] * 0.55 * e.TS - 8, ang: Math.atan2(a.dir[1], a.dir[0]), r: rad, col: hero.k.element.color, t: 0, big: heavy || a.kind === 'status' });
     if (a.kind === 'guard') return;
     E.slice().forEach((m) => {
       if (Math.hypot(m.x - cx, m.y - cy) > rad + 8) return;
@@ -6558,6 +6560,7 @@ const APP = (() => {
       { label: 'Not now', fn: () => { n.declined = true; endDialog(); } }
     ]);
   }
+  function resumeWorld() { $('hud').hidden = false; WORLD.setPaused(false); }
   function startTrainer(n) {
     const team = game.teamFor(n);
     const seals = (game.state.npc && game.state.npc.seals) || [];
@@ -6565,7 +6568,7 @@ const APP = (() => {
     // trainers: full reward on the first win, half on daily rematches (keeps daily essence close to the pre-city economy)
     const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward + (n.bonus || 0) : Math.ceil(n.reward / 2));
     const tr = { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss };
-    if (ACT.canDuel() && ACT.startDuel({ tr: tr, npc: n })) { n.declined = true; return; }   // action mode: fight it out on the map
+    if (ACT.canDuel() && ACT.startDuel({ tr: tr, npc: n })) { n.declined = true; resumeWorld(); return; }   // action mode: fight it out on the map (the dialog that led here left the world paused)
     game.setState({ trainer: tr, battle: null });
     openScreen('battle');
   }
@@ -6581,7 +6584,7 @@ const APP = (() => {
     if (ACT.canDuel()) {   // action mode: the run's party fights the floor on the map; HP carries from the run
       const party = game.towerParty(), hp = {}; party.forEach((x) => { hp[x.seed] = x.hp; });
       const tw = game.towerTwist();
-      if (party.some((x) => x.hp > 0) && ACT.startDuel({ tr: trainer, party: party.map((x) => x.seed), hp: hp, surge: tw.id === 'surge' ? tw.type : null })) return;
+      if (party.some((x) => x.hp > 0) && ACT.startDuel({ tr: trainer, party: party.map((x) => x.seed), hp: hp, surge: tw.id === 'surge' ? tw.type : null })) { resumeWorld(); return; }
     }
     game.setState({ trainer: trainer, battle: null });
     openScreen('battle');

@@ -666,6 +666,7 @@ const WORLD = (() => {
   function followerReset() { trail = []; FOL = { x: P.x, y: P.y + 2, moving: false }; }
   function followerStep() {
     if (!FOL) followerReset();
+    if (Math.hypot(P.x - FOL.x, P.y - FOL.y) > TS * 6) { followerReset(); return; }   // the player was moved far (a teleport): the follower catches up at once
     const last = trail[trail.length - 1];
     if (!last || Math.hypot(P.x - last.x, P.y - last.y) > 2) { trail.push({ x: P.x, y: P.y }); if (trail.length > 60) trail.shift(); }
     let dist = 0, tgt = null;

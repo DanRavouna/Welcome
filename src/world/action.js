@@ -65,8 +65,9 @@ const ACT = (() => {
   }
   function strike(e) {
     const a = st.atk, mv = hero.k.kit[a.mi], o = heroPos(), heavy = a.mi === 1, rad = (heavy ? 1.45 : 1.1) * e.TS;
-    const cx = o.x + a.dir[0] * 0.85 * e.TS, cy = o.y + a.dir[1] * 0.85 * e.TS, g = H.game();
-    FX.push({ k: 'slash', x: o.x + a.dir[0] * 0.55 * e.TS, y: o.y + a.dir[1] * 0.55 * e.TS - 8, ang: Math.atan2(a.dir[1], a.dir[0]), r: rad, col: hero.k.element.color, t: 0, big: heavy || a.kind === 'status' });
+    const ex = o.x + a.dir[0] * a.dash * 0.9, ey = o.y + a.dir[1] * a.dash * 0.9;   // the critter lunges to its target first: the blow lands where the lunge ends
+    const cx = ex + a.dir[0] * 0.85 * e.TS, cy = ey + a.dir[1] * 0.85 * e.TS, g = H.game();
+    FX.push({ k: 'slash', x: ex + a.dir[0] * 0.55 * e.TS, y: ey + a.dir[1] * 0.55 * e.TS - 8, ang: Math.atan2(a.dir[1], a.dir[0]), r: rad, col: hero.k.element.color, t: 0, big: heavy || a.kind === 'status' });
     if (a.kind === 'guard') return;
     E.slice().forEach((m) => {
       if (Math.hypot(m.x - cx, m.y - cy) > rad + 8) return;
