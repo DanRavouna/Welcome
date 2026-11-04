@@ -895,6 +895,23 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
             </button>
           </sc-for>
           </sc-if>
+          <sc-if value="{{showRt}}" hint-placeholder-val="{{ false }}">
+            <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px">
+              <button id="rt-atk" onClick="{{rtAtk}}" style="position: relative; overflow: hidden; min-height: 76px; padding: 8px 14px; border: 2px solid #FFFFFF; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-family: inherit; cursor: pointer; color: #2A1B00; background: #FFC94D; touch-action: manipulation">
+                <span id="rt-fill" style="position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: rgba(14,26,56,0.55); transform-origin: left center; pointer-events: none"></span>
+                <span style="position: relative; font-size: 18px; font-weight: 900">{{rtLabel}}</span>
+                <span style="position: relative; font-size: 12px; font-weight: 800">{{rtSub}}</span>
+              </button>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
+                <sc-for list="{{rtChips}}" as="ch" hint-placeholder-count="4">
+                  <button onClick="{{ch.pick}}" disabled="{{ch.off}}" aria-pressed="{{ch.on}}" style="min-height: 44px; padding: 4px 10px; border: 1.5px solid {{ch.border}}; border-radius: 14px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; text-align: left; font-family: inherit; cursor: pointer; color: {{ch.fg}}; background: {{ch.bg}}">
+                    <span style="font-size: 13px; font-weight: 900">{{ch.name}}</span>
+                    <span style="font-size: 11px; font-weight: 700; line-height: 1.2">{{ch.sub}}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
           <sc-if value="{{showSwitchList}}" hint-placeholder-val="{{ false }}">
             <sc-for list="{{benchList}}" as="bn" hint-placeholder-count="2">
               <button onClick="{{bn.use}}" disabled="{{bn.off}}" style="min-height: 58px; padding: 6px 14px; border-radius: 18px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left; font-family: inherit; cursor: pointer; backdrop-filter: blur(10px); border: 1.5px solid rgba(255,255,255,0.5); color: {{bn.fg}}; background: {{bn.bg}}">
@@ -3358,7 +3375,7 @@ class Component extends Base {
       seed: null, previewSeed: null, caught: [], tab: 'roll', selected: null, earned: [],
       seedInput: '', loadError: false, armed: false,
       essence: 0, wins: 0, day: '', used: 0,
-      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true, bigtext: false, contrast: false }
+      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { rtb: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true, bigtext: false, contrast: false }
     };
   }
 
@@ -3405,7 +3422,7 @@ class Component extends Base {
         const r = t.run && typeof t.run === 'object' && Array.isArray(t.run.party) ? { floor: Math.max(1, t.run.floor | 0), party: t.run.party.filter((n) => Number.isInteger(n)).slice(0, 3), hp: t.run.hp && typeof t.run.hp === 'object' ? t.run.hp : {} } : null;
         return { best: Math.max(0, t.best | 0), day: typeof t.day === 'string' ? t.day : '', runs: t.runs | 0, clears: t.clears | 0, run: r && r.party.length ? r : null };
       })(),
-      settings: d.settings && typeof d.settings === 'object' ? { sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false, bigtext: d.settings.bigtext === true, contrast: d.settings.contrast === true } : { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true, bigtext: false, contrast: false },
+      settings: d.settings && typeof d.settings === 'object' ? { rtb: d.settings.rtb === true, sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false, bigtext: d.settings.bigtext === true, contrast: d.settings.contrast === true } : { rtb: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true, bigtext: false, contrast: false },
       seen: (() => {
         const seen = Array.isArray(d.seen) ? d.seen.filter((n) => Number.isInteger(n) && n >= 1 && n <= 48) : [];
         (Array.isArray(d.caught) ? d.caught : []).forEach((e) => { if (e && Number.isInteger(e.seed)) { const no = this.make(e.seed, 1).speciesNo; if (no <= 48 && seen.indexOf(no) === -1) seen.push(no); } });   // the secret critter (#49) is a bonus, never counted in the 48
@@ -3973,7 +3990,7 @@ class Component extends Base {
       k: k, label: label, hp: Math.round(k.stats[0].value * 1.5 + 60), max: Math.round(k.stats[0].value * 1.5 + 60),
       burn: 0, weak: 0, daze: 0, sap: 0, fort: 0, guard: false, lastGuard: false, uses: 2, abUsed: false
     });
-    return { s: [side(me, me.name), side(foe, 'Wild ' + foe.name)], round: 1, log: [{ text: 'A wild ' + foe.name + ' appeared!' }], over: false, win: false, draw: false, fled: false, reward: reward };
+    return { uid: Math.random(), s: [side(me, me.name), side(foe, 'Wild ' + foe.name)], round: 1, log: [{ text: 'A wild ' + foe.name + ' appeared!' }], over: false, win: false, draw: false, fled: false, reward: reward };
   }
 
   aiChoice(b, i, rand) {
@@ -4064,6 +4081,15 @@ class Component extends Base {
       this.finish(b);
       if (b.over) return b;
     }
+    this.endRound(b);
+    this.finish(b);
+    b.round += 1;
+    if (!b.over && b.round > 60) { b.over = true; b.draw = true; b.log.push({ text: 'Both critters are worn out. It\u2019s a draw.' }); }
+    return b;
+  }
+
+  // end-of-round effects (burn, drain, Tide's Drizzle, status countdown): once per round in turn-based battles, once per RT tick in real-time ones
+  endRound(b) {
     for (let i = 0; i < 2; i++) {
       const A = b.s[i], D = b.s[1 - i];
       if (A.burn > 0) { const d = Math.max(1, Math.round(A.max * 0.05)); A.hp = Math.max(0, A.hp - d); b.log.push({ text: A.label + ' took ' + d + ' burn damage.' }); }
@@ -4071,9 +4097,32 @@ class Component extends Base {
       if (A.hp > 0 && A.k.element.name === 'Tide' && !(typeof window !== 'undefined' && window.__noAb)) { const h = Math.max(1, Math.round(A.max * 0.02)); A.hp = Math.min(A.max, A.hp + h); }
       ['burn', 'weak', 'daze', 'sap', 'fort'].forEach((key) => { if (A[key] > 0) A[key] -= 1; });
     }
+  }
+
+  // ---- real-time battles (opt-in setting): the same hit/act code, driven by cooldowns instead of rounds ----
+  // cooldown in ms for side i using move mi: damage per second is the same for every attack (a heavy move is slow, not better), scaled by relative speed
+  rtCooldown(b, i, mi) {
+    const A = b.s[i], mv = A.k.kit[mi], base = A.k.kit[0].power || 1;
+    const sa = A.k.stats[3].value, sb = b.s[1 - i].k.stats[3].value, r = sa / Math.max(1, sa + sb), spd = Math.max(0.75, Math.min(1.3, 1.45 - 0.9 * r));
+    let ms = mv.kind === 'attack' ? 1000 * Math.max(1, (mv.power * mv.acc / 100) / base) : (mv.kind === 'guard' ? 1200 : 1400);
+    return Math.round(ms * spd);
+  }
+  // one action by side i (no round, no counter-action); a guard is used up by the hit it blocks
+  rtStep(b, i, mi, rand) {
+    const D = b.s[1 - i], hp0 = D.hp, g0 = D.guard;
+    this.act(b, i, mi, rand);
+    if (g0 && D.hp < hp0) D.guard = false;
     this.finish(b);
     b.round += 1;
-    if (!b.over && b.round > 60) { b.over = true; b.draw = true; b.log.push({ text: 'Both critters are worn out. It\u2019s a draw.' }); }
+    if (!b.over && b.round > 500) { b.over = true; b.draw = true; b.log.push({ text: 'Both critters are worn out. It\u2019s a draw.' }); }
+    return b;
+  }
+  // one status tick (every ~2.4 s): burn, drain, Drizzle, countdowns; an unused guard fades after two ticks
+  rtTick(b) {
+    this.endRound(b);
+    b.s.forEach((A) => { if (A.guard) { A.gt = (A.gt || 0) + 1; if (A.gt >= 2) { A.guard = false; A.gt = 0; } } else A.gt = 0; });
+    this.finish(b);
+    b.round += 1;
     return b;
   }
 
@@ -4312,6 +4361,7 @@ class Component extends Base {
       glowClass: st.reveal && tab === 'roll' && !(st.settings && st.settings.calm) ? (st.reveal % 2 ? 'glow-a' : 'glow-b') : '',
       settingRows: [
         ['music', 'Music', 'Background tunes for each area and battle.'],
+        ['rtb', 'Real-time battles (beta)', 'Battles run live: tap Attack when its bar is full, swap moves any time. The foe acts on its own clock. Off = classic turns.'],
         ['follow', 'Critter follows you', 'Your lead critter walks behind you in the world.'],
         ['sound', 'Sound effects', 'Chimes for rolls, battles and level-ups.'],
         ['vibrate', 'Vibration', 'Buzz on Mythic rolls, wins and level-ups (Android).'],
@@ -4655,6 +4705,9 @@ const HABITAT = { Frost: 'Frost Peaks', Stone: 'Frost Peaks', Ember: 'Ember Fiel
 const MAX_LV = 20;
 const lvNeed = (lv) => 20 + 10 * (lv - 1);
 
+// real-time battles: how fast the foe acts compared with the cooldown table (1 = same pace as you; tuned with rtsim.py)
+const RT_FOE = 0.9;
+
 class Game extends Component {
   make(seed, stage, lv) {
     const k = super.make(seed, stage);
@@ -4919,24 +4972,58 @@ class Game extends Component {
     patch.caught = caught;
     if (grew) setTimeout(() => this.sfx('level'), 600);
   }
+  // ---- real-time battles: timing lives here (memory only, never saved); each action goes through battleAction({ rt }) ----
+  rtNow() { return (typeof performance !== 'undefined' ? performance.now() : Date.now()); }
+  rtOn() { const st = this.state; return !!(st.settings && st.settings.rtb) && !!st.battle && !st.battle.over; }
+  rtReset(b, now) { this._rt = { uid: b.uid, cd: [now + 500, now + 1600], tot: [500, 1600], tickAt: now + 2400, last: now, foeKey: b.s[1].k.seed + ':' + b.s[1].label, bench: b.s[0].k.seed }; }
+  // fraction of your attack cooldown still to wait (0 = ready)
+  rtWait(now) { const r = this._rt; if (!r) return 0; return Math.max(0, Math.min(1, (r.cd[0] - (now === undefined ? this.rtNow() : now)) / Math.max(1, r.tot[0]))); }
+  rtPlayer(mi) {
+    const now = this.rtNow(), b = this.state.battle; if (!this.rtOn()) return false;
+    if (!this._rt || this._rt.uid !== b.uid) this.rtReset(b, now);
+    if (this.rtWait(now) > 0) return false;
+    const P = b.s[0], mv = P.k.kit[mi]; if (!mv || (mv.kind === 'guard' && P.lastGuard) || (mv.kind === 'status' && P.uses === 0)) return false;
+    const ms = this.rtCooldown(b, 0, mi); this._rt.cd[0] = now + ms; this._rt.tot[0] = ms;
+    this.battleAction({ rt: 0, move: mi }); return true;
+  }
+  rtHold(ms) { const r = this._rt; if (r) { r.cd[0] = this.rtNow() + ms; r.tot[0] = ms; } }   // switching or using an item costs time
+  // call every ~100 ms while a real-time battle is on screen
+  rtUpdate(now) {
+    if (!this.rtOn()) return; let b = this.state.battle;
+    if (!this._rt || this._rt.uid !== b.uid) this.rtReset(b, now);
+    const r = this._rt, gap = now - r.last; r.last = now;
+    if (gap > 400) { r.cd[0] += gap; r.cd[1] += gap; r.tickAt += gap; return; }   // paused (a dialog, a menu, a hidden tab): nobody gets a free hit afterwards
+    const key = b.s[1].k.seed + ':' + b.s[1].label;
+    if (key !== r.foeKey) { r.foeKey = key; r.cd[1] = now + 1100; }                // the next critter takes a moment to come out
+    if (b.s[0].k.seed !== r.bench) { r.bench = b.s[0].k.seed; r.cd[0] = Math.max(r.cd[0], now + 1200); r.tot[0] = 1200; }
+    if (now >= r.tickAt) { r.tickAt += 2400; this.battleAction({ rt: 'tick' }); b = this.state.battle; if (!b || b.over) return; }
+    if (now >= r.cd[1]) {
+      const mi = this.aiChoice(b, 1, Math.random), ms = Math.round(this.rtCooldown(b, 1, mi) * (window.__rtFoe || RT_FOE) * (0.9 + Math.random() * 0.2));
+      r.cd[1] = now + ms; this.battleAction({ rt: 1, move: mi });
+    }
+  }
   battleAction(act) {
     const b = this.state.battle;
     if (!b || b.over) return;
     const nb = JSON.parse(JSON.stringify(b)); nb.bench = nb.bench || [];
     const events = [], patch = { battle: nb, bmode: 'moves' };
     let mi = -1, P = nb.s[0];
-    if (act.move !== undefined) {
-      const mv = P.k.kit[act.move];
-      if (!mv || (mv.kind === 'guard' && P.lastGuard) || (mv.kind === 'status' && P.uses === 0)) return;
-      mi = act.move; if (mv.kind === 'status') events.push({ t: 'special' });
+    const rt = act.rt; if (rt === 1 || rt === 'tick') delete patch.bmode;   // real-time mode: rt 0 = your action, rt 1 = the foe's action, 'tick' = a status tick (no round, no counter-action)
+    if (rt === 'tick') { /* nothing to choose */ }
+    else if (act.move !== undefined) {
+      const actor = rt === 1 ? nb.s[1] : P, mv = actor.k.kit[act.move];
+      if (!mv || (mv.kind === 'guard' && actor.lastGuard) || (mv.kind === 'status' && actor.uses === 0)) return;
+      mi = act.move; if (mv.kind === 'status' && rt !== 1) events.push({ t: 'special' });
     } else if (act.switchTo !== undefined) {
       const nxt = nb.bench[act.switchTo]; if (!nxt || nxt.hp <= 0) return;
+      if (rt === 0) this.rtHold(1600);
       nb.bench[act.switchTo] = P; nb.s[0] = nxt; nxt.guard = false; nxt.lastGuard = false;
       nb.log.push({ text: P.label + ' comes back. ' + nxt.label + ' steps in!' }); P = nxt;
     } else if (act.item) {
       const bag = Object.assign({}, BAG0, this.state.bag);
       const it = act.item, statused = P.burn > 0 || P.weak > 0 || P.daze > 0 || P.sap > 0;
       if (!(bag[it] > 0) || !this.itemUsable(it, P)) return;
+      if (rt === 0) this.rtHold(1400);
       bag[it] -= 1; patch.bag = bag;
       if (it === 'potion' || it === 'super') {
         const amt = it === 'super' ? P.max - P.hp : Math.min(P.max - P.hp, Math.round(P.max * 0.4));
@@ -4953,7 +5040,10 @@ class Game extends Component {
     const hp0 = [nb.s[0].hp - healed, nb.s[1].hp];
     nb.s.forEach((sd) => { delete sd.fxHits; delete sd.fxSt; });
     this._surge = nb.trainer && nb.trainer.tower && this.towerTwist().id === 'surge' ? this.towerTwist().type : null;
-    this.resolve(nb, mi, Math.random);
+    if (rt === 'tick') this.rtTick(nb);
+    else if (rt === 1) this.rtStep(nb, 1, mi, Math.random);
+    else if (rt === 0) { if (mi !== -1) this.rtStep(nb, 0, mi, Math.random); else this.finish(nb); }   // a switch or an item takes your time, not the foe's turn
+    else this.resolve(nb, mi, Math.random);
     this._surge = null;
     nb.fx = { round: nb.round, hit: [nb.s[0].hp < hp0[0], nb.s[1].hp < hp0[1]], side: this.fxSides(nb, hp0) };
     if (nb.fx.hit[0] || nb.fx.hit[1]) this.sfx('hit');
@@ -5127,8 +5217,16 @@ class Game extends Component {
       const bm = st.bmode || 'moves', inB = !!(b && !b.over), bench = (b && b.bench) || [];
       const alive = bench.filter((s) => s.hp > 0).length, P = b && b.s[0];
       const glass = 'rgba(14,26,56,0.78)', off = 'rgba(14,26,56,0.6)';
-      v.showMoves = inB && bm === 'moves'; v.showSwitchList = inB && bm === 'switch'; v.showBagList = inB && bm === 'bag';
-      v.benchList = bench.map((s, j) => ({ name: s.k.name, sub: s.hp > 0 ? s.k.element.name + ' · HP ' + s.hp + '/' + s.max : 'Fainted', off: s.hp <= 0, bg: s.hp <= 0 ? off : glass, fg: s.hp <= 0 ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction({ switchTo: j }) }));
+      const rtOn = !!(st.settings && st.settings.rtb);
+      v.showMoves = inB && bm === 'moves' && !rtOn; v.showRt = inB && bm === 'moves' && rtOn;
+      if (v.showRt && P) {
+        const sel = Math.min(3, st.rtSel || 0), cur = P.k.kit[sel], mb = v.moveButtons[sel];
+        v.rtLabel = (mb && mb.off ? 'Pick another move' : 'ATTACK · ' + cur.name); v.rtSub = mb ? mb.sub : '';
+        v.rtAtk = () => APP.rtAttack();
+        v.rtChips = v.moveButtons.map((m, i) => ({ name: m.name, sub: m.sub, on: i === sel, off: m.off, bg: i === sel ? 'rgba(255,201,77,0.95)' : m.bg, fg: i === sel ? '#2A1B00' : m.fg, border: i === sel ? '#FFFFFF' : m.border, pick: () => this.setState({ rtSel: i }) }));
+      }
+      v.showSwitchList = inB && bm === 'switch'; v.showBagList = inB && bm === 'bag';
+      v.benchList = bench.map((s, j) => ({ name: s.k.name, sub: s.hp > 0 ? s.k.element.name + ' · HP ' + s.hp + '/' + s.max : 'Fainted', off: s.hp <= 0, bg: s.hp <= 0 ? off : glass, fg: s.hp <= 0 ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction(rtOn ? { switchTo: j, rt: 0 } : { switchTo: j }) }));
       v.noBench = bench.length === 0;
       v.switchLabel = bm === 'switch' ? 'Moves' : 'Switch (' + alive + ')';
       v.cannotSwitch = bm !== 'switch' && alive === 0;
@@ -5138,7 +5236,7 @@ class Game extends Component {
       const IL = [['potion', 'Potion', 'Heals 40% HP'], ['super', 'Super Potion', 'Heals to full'], ['herb', 'Mossleaf Remedy', 'Heals 40% + cures status'], ['ward', 'Frost Ward', '65% less damage, next 5 hits'], ['whet', 'Whetstone', '+70% damage this battle']];
       v.itemList = IL.filter(([id]) => id === 'potion' || id === 'super' || bag[id] > 0).map(([id, name, sub]) => {
         const can = this.itemUsable(id, P), o = !bag[id] || !can;
-        return { name: name + ' ×' + bag[id], sub: !bag[id] ? 'None left. Buy at Mira’s stall.' : (!can ? (id === 'ward' || id === 'whet' ? 'Already active' : (id === 'herb' ? 'Full HP, no status' : 'Already at full HP')) : sub + ' · uses your turn'), off: o, bg: o ? off : glass, fg: o ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction({ item: id }) };
+        return { name: name + ' ×' + bag[id], sub: !bag[id] ? 'None left. Buy at Mira’s stall.' : (!can ? (id === 'ward' || id === 'whet' ? 'Already active' : (id === 'herb' ? 'Full HP, no status' : 'Already at full HP')) : sub + (rtOn ? ' · takes a moment' : ' · uses your turn')), off: o, bg: o ? off : glass, fg: o ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction(rtOn ? { item: id, rt: 0 } : { item: id }) };
       });
       v.bagLabel = bm === 'bag' ? 'Moves' : 'Bag (' + pots + ')';
       v.toggleBag = () => this.setState({ bmode: bm === 'bag' ? 'moves' : 'bag' });
@@ -6260,6 +6358,12 @@ const APP = (() => {
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
     setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
+    // real-time battles (Settings): the foe and the status ticks run on a clock while the battle screen is open; your attack button is a cooldown
+    setInterval(() => {
+      if (!game || !open || document.hidden || dlg || !game.rtOn()) return;
+      game.rtUpdate(game.rtNow());
+      const f = document.getElementById('rt-fill'); if (f) f.style.transform = 'scaleX(' + game.rtWait().toFixed(3) + ')';
+    }, 60);
     setInterval(() => { if (!document.hidden && game) game.addPlayTime(0.5); }, 30000);
     const comps = { Critter: TPL.compile(document.getElementById('tpl-critter').innerHTML) };
     const screenTpl = TPL.compile(document.getElementById('tpl-screen').innerHTML);
@@ -6382,7 +6486,8 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  function rtAttack() { if (game && game.rtOn()) { game.rtPlayer(Math.min(3, game.state.rtSel || 0)); const f = document.getElementById('rt-fill'); if (f) f.style.transform = 'scaleX(' + game.rtWait().toFixed(3) + ')'; } }
+  return { rtAttack, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
 

@@ -1066,6 +1066,12 @@ const APP = (() => {
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
     setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
+    // real-time battles (Settings): the foe and the status ticks run on a clock while the battle screen is open; your attack button is a cooldown
+    setInterval(() => {
+      if (!game || !open || document.hidden || dlg || !game.rtOn()) return;
+      game.rtUpdate(game.rtNow());
+      const f = document.getElementById('rt-fill'); if (f) f.style.transform = 'scaleX(' + game.rtWait().toFixed(3) + ')';
+    }, 60);
     setInterval(() => { if (!document.hidden && game) game.addPlayTime(0.5); }, 30000);
     const comps = { Critter: TPL.compile(document.getElementById('tpl-critter').innerHTML) };
     const screenTpl = TPL.compile(document.getElementById('tpl-screen').innerHTML);
@@ -1188,6 +1194,7 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  function rtAttack() { if (game && game.rtOn()) { game.rtPlayer(Math.min(3, game.state.rtSel || 0)); const f = document.getElementById('rt-fill'); if (f) f.style.transform = 'scaleX(' + game.rtWait().toFixed(3) + ')'; } }
+  return { rtAttack, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);

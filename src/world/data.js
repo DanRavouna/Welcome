@@ -136,3 +136,6 @@ const TOWER_CURVE = { size: [3, 3, 3, 3, 4, 3, 4, 4, 4, 5, 4, 4, 4, 4, 5, 4, 5, 
 const HABITAT = { Frost: 'Frost Peaks', Stone: 'Frost Peaks', Ember: 'Ember Fields', Volt: 'Ember Fields', Moss: 'Moss Forest', Bloom: 'Moss Forest', Tide: 'Tide Shore', Dusk: 'Tide Shore' };
 const MAX_LV = 20;
 const lvNeed = (lv) => 20 + 10 * (lv - 1);
+
+// real-time battles: how fast the foe acts compared with the cooldown table (1 = same pace as you; tuned with rtsim.py)
+const RT_FOE = 0.9;

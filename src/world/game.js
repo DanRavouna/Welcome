@@ -262,24 +262,58 @@ class Game extends Component {
     patch.caught = caught;
     if (grew) setTimeout(() => this.sfx('level'), 600);
   }
+  // ---- real-time battles: timing lives here (memory only, never saved); each action goes through battleAction({ rt }) ----
+  rtNow() { return (typeof performance !== 'undefined' ? performance.now() : Date.now()); }
+  rtOn() { const st = this.state; return !!(st.settings && st.settings.rtb) && !!st.battle && !st.battle.over; }
+  rtReset(b, now) { this._rt = { uid: b.uid, cd: [now + 500, now + 1600], tot: [500, 1600], tickAt: now + 2400, last: now, foeKey: b.s[1].k.seed + ':' + b.s[1].label, bench: b.s[0].k.seed }; }
+  // fraction of your attack cooldown still to wait (0 = ready)
+  rtWait(now) { const r = this._rt; if (!r) return 0; return Math.max(0, Math.min(1, (r.cd[0] - (now === undefined ? this.rtNow() : now)) / Math.max(1, r.tot[0]))); }
+  rtPlayer(mi) {
+    const now = this.rtNow(), b = this.state.battle; if (!this.rtOn()) return false;
+    if (!this._rt || this._rt.uid !== b.uid) this.rtReset(b, now);
+    if (this.rtWait(now) > 0) return false;
+    const P = b.s[0], mv = P.k.kit[mi]; if (!mv || (mv.kind === 'guard' && P.lastGuard) || (mv.kind === 'status' && P.uses === 0)) return false;
+    const ms = this.rtCooldown(b, 0, mi); this._rt.cd[0] = now + ms; this._rt.tot[0] = ms;
+    this.battleAction({ rt: 0, move: mi }); return true;
+  }
+  rtHold(ms) { const r = this._rt; if (r) { r.cd[0] = this.rtNow() + ms; r.tot[0] = ms; } }   // switching or using an item costs time
+  // call every ~100 ms while a real-time battle is on screen
+  rtUpdate(now) {
+    if (!this.rtOn()) return; let b = this.state.battle;
+    if (!this._rt || this._rt.uid !== b.uid) this.rtReset(b, now);
+    const r = this._rt, gap = now - r.last; r.last = now;
+    if (gap > 400) { r.cd[0] += gap; r.cd[1] += gap; r.tickAt += gap; return; }   // paused (a dialog, a menu, a hidden tab): nobody gets a free hit afterwards
+    const key = b.s[1].k.seed + ':' + b.s[1].label;
+    if (key !== r.foeKey) { r.foeKey = key; r.cd[1] = now + 1100; }                // the next critter takes a moment to come out
+    if (b.s[0].k.seed !== r.bench) { r.bench = b.s[0].k.seed; r.cd[0] = Math.max(r.cd[0], now + 1200); r.tot[0] = 1200; }
+    if (now >= r.tickAt) { r.tickAt += 2400; this.battleAction({ rt: 'tick' }); b = this.state.battle; if (!b || b.over) return; }
+    if (now >= r.cd[1]) {
+      const mi = this.aiChoice(b, 1, Math.random), ms = Math.round(this.rtCooldown(b, 1, mi) * (window.__rtFoe || RT_FOE) * (0.9 + Math.random() * 0.2));
+      r.cd[1] = now + ms; this.battleAction({ rt: 1, move: mi });
+    }
+  }
   battleAction(act) {
     const b = this.state.battle;
     if (!b || b.over) return;
     const nb = JSON.parse(JSON.stringify(b)); nb.bench = nb.bench || [];
     const events = [], patch = { battle: nb, bmode: 'moves' };
     let mi = -1, P = nb.s[0];
-    if (act.move !== undefined) {
-      const mv = P.k.kit[act.move];
-      if (!mv || (mv.kind === 'guard' && P.lastGuard) || (mv.kind === 'status' && P.uses === 0)) return;
-      mi = act.move; if (mv.kind === 'status') events.push({ t: 'special' });
+    const rt = act.rt; if (rt === 1 || rt === 'tick') delete patch.bmode;   // real-time mode: rt 0 = your action, rt 1 = the foe's action, 'tick' = a status tick (no round, no counter-action)
+    if (rt === 'tick') { /* nothing to choose */ }
+    else if (act.move !== undefined) {
+      const actor = rt === 1 ? nb.s[1] : P, mv = actor.k.kit[act.move];
+      if (!mv || (mv.kind === 'guard' && actor.lastGuard) || (mv.kind === 'status' && actor.uses === 0)) return;
+      mi = act.move; if (mv.kind === 'status' && rt !== 1) events.push({ t: 'special' });
     } else if (act.switchTo !== undefined) {
       const nxt = nb.bench[act.switchTo]; if (!nxt || nxt.hp <= 0) return;
+      if (rt === 0) this.rtHold(1600);
       nb.bench[act.switchTo] = P; nb.s[0] = nxt; nxt.guard = false; nxt.lastGuard = false;
       nb.log.push({ text: P.label + ' comes back. ' + nxt.label + ' steps in!' }); P = nxt;
     } else if (act.item) {
       const bag = Object.assign({}, BAG0, this.state.bag);
       const it = act.item, statused = P.burn > 0 || P.weak > 0 || P.daze > 0 || P.sap > 0;
       if (!(bag[it] > 0) || !this.itemUsable(it, P)) return;
+      if (rt === 0) this.rtHold(1400);
       bag[it] -= 1; patch.bag = bag;
       if (it === 'potion' || it === 'super') {
         const amt = it === 'super' ? P.max - P.hp : Math.min(P.max - P.hp, Math.round(P.max * 0.4));
@@ -296,7 +330,10 @@ class Game extends Component {
     const hp0 = [nb.s[0].hp - healed, nb.s[1].hp];
     nb.s.forEach((sd) => { delete sd.fxHits; delete sd.fxSt; });
     this._surge = nb.trainer && nb.trainer.tower && this.towerTwist().id === 'surge' ? this.towerTwist().type : null;
-    this.resolve(nb, mi, Math.random);
+    if (rt === 'tick') this.rtTick(nb);
+    else if (rt === 1) this.rtStep(nb, 1, mi, Math.random);
+    else if (rt === 0) { if (mi !== -1) this.rtStep(nb, 0, mi, Math.random); else this.finish(nb); }   // a switch or an item takes your time, not the foe's turn
+    else this.resolve(nb, mi, Math.random);
     this._surge = null;
     nb.fx = { round: nb.round, hit: [nb.s[0].hp < hp0[0], nb.s[1].hp < hp0[1]], side: this.fxSides(nb, hp0) };
     if (nb.fx.hit[0] || nb.fx.hit[1]) this.sfx('hit');
@@ -470,8 +507,16 @@ class Game extends Component {
       const bm = st.bmode || 'moves', inB = !!(b && !b.over), bench = (b && b.bench) || [];
       const alive = bench.filter((s) => s.hp > 0).length, P = b && b.s[0];
       const glass = 'rgba(14,26,56,0.78)', off = 'rgba(14,26,56,0.6)';
-      v.showMoves = inB && bm === 'moves'; v.showSwitchList = inB && bm === 'switch'; v.showBagList = inB && bm === 'bag';
-      v.benchList = bench.map((s, j) => ({ name: s.k.name, sub: s.hp > 0 ? s.k.element.name + ' · HP ' + s.hp + '/' + s.max : 'Fainted', off: s.hp <= 0, bg: s.hp <= 0 ? off : glass, fg: s.hp <= 0 ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction({ switchTo: j }) }));
+      const rtOn = !!(st.settings && st.settings.rtb);
+      v.showMoves = inB && bm === 'moves' && !rtOn; v.showRt = inB && bm === 'moves' && rtOn;
+      if (v.showRt && P) {
+        const sel = Math.min(3, st.rtSel || 0), cur = P.k.kit[sel], mb = v.moveButtons[sel];
+        v.rtLabel = (mb && mb.off ? 'Pick another move' : 'ATTACK · ' + cur.name); v.rtSub = mb ? mb.sub : '';
+        v.rtAtk = () => APP.rtAttack();
+        v.rtChips = v.moveButtons.map((m, i) => ({ name: m.name, sub: m.sub, on: i === sel, off: m.off, bg: i === sel ? 'rgba(255,201,77,0.95)' : m.bg, fg: i === sel ? '#2A1B00' : m.fg, border: i === sel ? '#FFFFFF' : m.border, pick: () => this.setState({ rtSel: i }) }));
+      }
+      v.showSwitchList = inB && bm === 'switch'; v.showBagList = inB && bm === 'bag';
+      v.benchList = bench.map((s, j) => ({ name: s.k.name, sub: s.hp > 0 ? s.k.element.name + ' · HP ' + s.hp + '/' + s.max : 'Fainted', off: s.hp <= 0, bg: s.hp <= 0 ? off : glass, fg: s.hp <= 0 ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction(rtOn ? { switchTo: j, rt: 0 } : { switchTo: j }) }));
       v.noBench = bench.length === 0;
       v.switchLabel = bm === 'switch' ? 'Moves' : 'Switch (' + alive + ')';
       v.cannotSwitch = bm !== 'switch' && alive === 0;
@@ -481,7 +526,7 @@ class Game extends Component {
       const IL = [['potion', 'Potion', 'Heals 40% HP'], ['super', 'Super Potion', 'Heals to full'], ['herb', 'Mossleaf Remedy', 'Heals 40% + cures status'], ['ward', 'Frost Ward', '65% less damage, next 5 hits'], ['whet', 'Whetstone', '+70% damage this battle']];
       v.itemList = IL.filter(([id]) => id === 'potion' || id === 'super' || bag[id] > 0).map(([id, name, sub]) => {
         const can = this.itemUsable(id, P), o = !bag[id] || !can;
-        return { name: name + ' ×' + bag[id], sub: !bag[id] ? 'None left. Buy at Mira’s stall.' : (!can ? (id === 'ward' || id === 'whet' ? 'Already active' : (id === 'herb' ? 'Full HP, no status' : 'Already at full HP')) : sub + ' · uses your turn'), off: o, bg: o ? off : glass, fg: o ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction({ item: id }) };
+        return { name: name + ' ×' + bag[id], sub: !bag[id] ? 'None left. Buy at Mira’s stall.' : (!can ? (id === 'ward' || id === 'whet' ? 'Already active' : (id === 'herb' ? 'Full HP, no status' : 'Already at full HP')) : sub + (rtOn ? ' · takes a moment' : ' · uses your turn')), off: o, bg: o ? off : glass, fg: o ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction(rtOn ? { item: id, rt: 0 } : { item: id }) };
       });
       v.bagLabel = bm === 'bag' ? 'Moves' : 'Bag (' + pots + ')';
       v.toggleBag = () => this.setState({ bmode: bm === 'bag' ? 'moves' : 'bag' });
