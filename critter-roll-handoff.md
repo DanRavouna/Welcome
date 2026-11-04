@@ -260,6 +260,21 @@ Attach this file plus `critter-roll-growth-source.tar.gz` (latest source + tests
 - Tests: `acttest.py` (phase 1, kill toast now becomes the party message when the party is down), `acttest2.py` (kill XP / essence, cap, level-up, daily reset, swap from the wheel, auto-swap, fainted refused, save field). `ACT.spawn(n)` is a test helper.
 - Still not built: keeping a defeated enemy (phase 4), enemy variety (3), trainers / bosses / Tower / dungeons in action mode (5), balance against real play (6). Not verified: real phone feel and frame rate (the wheel now has 6 slots).
 
+## Action mode phase 3: enemy variety (done, Nov 2026)
+- One behaviour per element (`BEH` in action.js; the old single melee swing is `BDEF`, the fallback). Every attack is telegraphed (a "!" plus an outline for the big ones) and does `kit[0].power x mul` through `Game.hit`:
+  - Ember: winds up 0.5 s, then charges in a straight line (300 px/s for 0.3 s); hits once if it reaches you.
+  - Tide: keeps about 3.2 tiles away (retreats under 2 tiles, at 80% speed), spits a slow bubble (105 px/s).
+  - Moss: slow (36 px/s); a thorn ring (1.6 tiles) around itself after 0.6 s.
+  - Volt: fastest (92 px/s), quick light hits (x0.7, 1 s), darts away for 0.9 s after each.
+  - Frost: keeps about 3.8 tiles away, fast ice shards (150 px/s).
+  - Dusk: blinks from more than 2.5 tiles away to just behind you (marker shown 0.5 s ahead), then attacks 0.28 s later.
+  - Stone: very slow (30 px/s), a huge slam (1.9 tiles, x1.3) after 0.75 s.
+  - Bloom: keeps about 3.6 tiles away; heals the most hurt friend within 6 tiles by 14% of its max HP (green ring); throws weak petals when nobody needs healing.
+- Projectiles (`PR`) are stopped by solid tiles and hit your critter or the player within 0.6 tiles; a guard still works (it is `Game.hit`). Enemies show a small element-colour pip over their head.
+- Tests: `acttest3.py` (every element's behaviour, telegraph, damage radius, projectile use, guarded vs unguarded hit). `ACT.spawn(n, element)` and `ACT.BEH` / `ACT.shots` are test helpers.
+- Live-bot check (`actsim2.py [trials]`, run with `PYTHONPATH=src/pwhook`; teleports to an open 9x9 spot, walks at the enemy and taps quick slash; lead Lv 15): every element killable (4/4); time / HP lost: Ember 3 s / 13%, Moss 4 s / 21%, Dusk 3.5 s / 17%, Stone 3 s / 17%, Volt 7.6 s / 51% (the only one that costs real HP), Bloom 11 s / 8%, Tide 15.6 s / 12%, Frost 17.6 s / 10%. The ranged ones take long because they keep away; a human who moves better may be faster, or may find them annoying: that needs a real phone. n = 4 per element, so treat as rough. `actsim.py` (phase 2) models only the plain melee swing.
+- Not built: elite / boss variants, enemies by level tier, a way to see an enemy's element other than the colour pip, any phase 4 (keeping), 5 (trainers, bosses, Tower, dungeons) or 6 work.
+
 ## Bot-player walk test + two layout fixes it found (done, Nov 2026)
 - `walktest.py`: a bot that WALKS with the real collision box (18 x 8 px on 32 px tiles): tile-search path, then frame-by-frame movement through `WORLD.input` / `WORLD.step`. It climbs the Cold Ascent from the south gap to the beacon door, walks the Sealed Arch (statue ring, both chests, crown, Keeper) and runs the whole Lamp Tower by hand (levers pulled with the real action button, through every gate to the great lamp, then every lever flipped back and out the exit). It avoids tall grass (`W`/`Z`) like a careful player and sets `WORLD.map.rate = 0`, because a random encounter pauses the world and would strand the bot (the same reason older tests close encounters).
 - Found and fixed: (1) the Sealed Arch gallery's only way north crossed a glowing-moss patch, so progress needed a wild-encounter chance; the middle lane is now clear (`rect(15, 22, 18, 23, 'W')`). (2) With the Keeper at (13, 3), touching the crown from the natural spot (13, 2) selected the Keeper (people win `nearest()` over objects within 1.45 tiles); he now stands at (13, 4). Rule of thumb: keep an NPC at least 3 tiles from any object the player must use.
