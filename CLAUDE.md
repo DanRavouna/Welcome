@@ -18,7 +18,7 @@ These rules apply to every task in this repository.
 
 ## Layout
 - `index.html` is the built game that GitHub Pages serves (plus `vendor/`). Never edit it by hand.
-- `src/world/` holds the source pieces (`shell.html`, `screen.html`, `runtime.js`, `pixel.js`, `pxworld.js`, `landmarks.js` (reusable props), `adventure.js` (clues, dungeon layouts, object art), `world.js`, `weather.js`, `ambient.js` (scenery critters), `cloud.js`, `music.js`, `flavor.js` (townsfolk remarks), then `base.js` (Base + Component), `data.js` (constants), `game.js` (Game class) and `app.js` (APP: HUD, menus, screens)). `logic.js`, `critter.html`, `helmet.html`, `build.py` and `reassemble.py` are older leftovers that the current build does not use.
+- `src/world/` holds the source pieces (`shell.html`, `screen.html`, `runtime.js`, `pixel.js`, `pxworld.js`, `landmarks.js` (reusable props), `adventure.js` (clues, dungeon layouts, object art), `world.js`, `weather.js`, `ambient.js` (scenery critters), `action.js` (action mode), `cloud.js`, `music.js`, `flavor.js` (townsfolk remarks), then `base.js` (Base + Component), `data.js` (constants), `game.js` (Game class) and `app.js` (APP: HUD, menus, screens)). `logic.js`, `critter.html`, `helmet.html`, `build.py` and `reassemble.py` are older leftovers that the current build does not use.
 - `src/*.py` and `src/*.js` are the tests and balance sims from the handoff.
 - Developer tools: tap the ID in the menu 5 times, then Menu > Game > Dev tools (teleport, ignore level requirements, adventure shortcuts). See the handoff.
 - Run tests by group: `bash src/run-tests.sh @world` (also `@battle`, `@saves`, `@ui`); no argument runs everything.

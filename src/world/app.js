@@ -1066,6 +1066,54 @@ const APP = (() => {
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
     setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
+    // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel
+    {
+      let leadCache = { key: '', k: null }; const foePool = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');
+      let holdT = null, wheelOn = false, hover = -1, slots = [];
+      ACT.bind({
+        game: () => game, toast: toast,
+        enabled: () => !!(game && game.state.settings && game.state.settings.arpg),
+        lead: () => {
+          const st = game.state; if (!st.caught.length) return null;
+          const seeds = game.partySeeds(), sd = st.caught.some((e) => e.seed === st.fighter) ? st.fighter : (seeds[0] || st.caught[0].seed), e = st.caught.find((c) => c.seed === sd), key = sd + ':' + (e ? e.stage : 1) + ':' + (e ? e.lv || 1 : 1);
+          if (leadCache.key !== key) leadCache = { key: key, k: game.make(sd, e ? e.stage : 1, e ? e.lv || 1 : 1) };
+          return leadCache.k;
+        },
+        foe: (types, lead) => {
+          const key = types.join(','), pool = foePool[key] || (foePool[key] = []);
+          if (pool.length < 10) for (let i = 0; i < 40 && pool.length < 10; i++) { const sd = 1 + Math.floor(Math.random() * 999998), k = game.make(sd, 1); if (!types.length || types.indexOf(k.element.name) !== -1) pool.push(sd); }
+          if (!pool.length) return null;
+          const lv = Math.max(1, (lead.lv || 1) + Math.floor(Math.random() * 3) - 1);
+          return game.make(pool[Math.floor(Math.random() * pool.length)], lead.stage || 1, lv);
+        },
+        img: (k) => { const key = k.seed + ':' + k.stage; if (!imgs[key]) { const im = new Image(); im.src = PIX.sprite(k, 'icon'); imgs[key] = im; } return imgs[key]; },
+        onKo: (k) => { toast('Defeated ' + k.name + '.'); }
+      });
+      const ctr = () => { const r = ring.getBoundingClientRect(), w = wheel.getBoundingClientRect(); return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top }; };
+      function openWheel() {
+        const mv = ACT.moves(); if (!mv.length) return; wheelOn = true; hover = -1; const c = ctr(), R = 124;
+        slots = mv.map((m, i) => { const a = (180 + i * 32) * Math.PI / 180, x = c.x + Math.cos(a) * R, y = c.y + Math.sin(a) * R; return { x: x, y: y, i: i }; });
+        wheel.innerHTML = '<div class="dim"></div>' + mv.map((m, i) => '<div class="slot' + (i === ACT.sel ? ' cur' : '') + '" data-i="' + i + '" style="left:' + slots[i].x.toFixed(0) + 'px;top:' + slots[i].y.toFixed(0) + 'px">' + esc(m.name) + '<small>' + ({ attack: i === 0 ? 'quick' : 'heavy', guard: 'guard', status: 'special' }[m.kind] || '') + '</small></div>').join('');
+        wheel.hidden = false; if (game.buzz) game.buzz([12]);
+      }
+      function wheelHover(cx, cy) {
+        const w = wheel.getBoundingClientRect(), x = cx - w.left, y = cy - w.top; let best = -1, bd = 52;
+        slots.forEach((s) => { const d = Math.hypot(s.x - x, s.y - y); if (d < bd) { bd = d; best = s.i; } });
+        if (best !== hover) { hover = best; [].forEach.call(wheel.querySelectorAll('.slot'), (el) => el.classList.toggle('on', +el.dataset.i === hover)); }
+      }
+      function closeWheel(pick) { wheelOn = false; wheel.hidden = true; if (pick && hover >= 0) { ACT.setSel(hover); if (game.sfx) game.sfx('tap'); } }
+      atk.addEventListener('pointerdown', (e) => { e.preventDefault(); try { atk.setPointerCapture(e.pointerId); } catch (x) {} wheelOn = false; clearTimeout(holdT); holdT = setTimeout(openWheel, 260); });
+      atk.addEventListener('pointermove', (e) => { if (wheelOn) wheelHover(e.clientX, e.clientY); });
+      atk.addEventListener('pointerup', (e) => { clearTimeout(holdT); if (wheelOn) { wheelHover(e.clientX, e.clientY); closeWheel(true); } else ACT.attack(); });
+      atk.addEventListener('pointercancel', () => { clearTimeout(holdT); if (wheelOn) closeWheel(false); });
+      atk.addEventListener('contextmenu', (e) => e.preventDefault());
+      window.addEventListener('keydown', (e) => { if (e.key === 'j' && !WORLD.paused) ACT.attack(); });
+      setInterval(() => {
+        const show = ACT.ready() && !WORLD.paused && !open; if (atk.hidden === show) atk.hidden = !show; if (!show) { if (wheelOn) closeWheel(false); return; }
+        atk.style.setProperty('--cd', ACT.cdFrac().toFixed(2));
+        const mv = ACT.moves()[ACT.sel]; const l = $('atk-label'); if (mv && l.textContent !== mv.name) l.textContent = mv.name;
+      }, 80);
+    }
     // real-time battles (Settings): the foe and the status ticks run on a clock while the battle screen is open; your attack button is a cooldown
     setInterval(() => {
       if (!game || !open || document.hidden || dlg || !game.rtOn()) return;

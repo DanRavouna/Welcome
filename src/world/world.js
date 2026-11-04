@@ -675,6 +675,7 @@ const WORLD = (() => {
   function update(dt) {
     if (paused || TR) { P.moving = false; return; }
     followerStep();
+    if (typeof ACT !== 'undefined') ACT.step({ M: M, TS: TS, P: P, FOL: FOL, fol: opts.follower ? opts.follower() : null, dt: dt, solidAt: (x, y) => solidAt(x, y) });
     let vx = input.jx, vy = input.jy; const k = input.keys;
     if (k.ArrowLeft || k.a) vx -= 1; if (k.ArrowRight || k.d) vx += 1; if (k.ArrowUp || k.w) vy -= 1; if (k.ArrowDown || k.s) vy += 1;
     const len = Math.hypot(vx, vy);
@@ -698,7 +699,7 @@ const WORLD = (() => {
         rustle = 0.35;
         if (opts.onGrass) opts.onGrass();
         const rate = t === 'Z' ? 0.22 : M.rate;
-        if (stepsSince >= 3 && opts.random() < rate && opts.onEncounter) {
+        if (stepsSince >= 3 && opts.random() < rate && opts.onEncounter && !(typeof ACT !== 'undefined' && ACT.active())) {
           stepsSince = 0;
           opts.onEncounter({ types: M.types, rare: t === 'Z', zone: M.name });
         }
@@ -847,11 +848,15 @@ const WORLD = (() => {
     const fol = opts.follower ? opts.follower() : null;
     if (!FOL) followerReset();
     const list = (NPCS[M.id] || []).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat((M.objects || []).filter((o) => !o.hidden).map((o) => ({ y: (o.y + 0.95) * TS, o: o }))).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
+    const actEnv = { M: M, TS: TS, P: P, FOL: FOL, fol: fol, ctx: ctx, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, snap: snap };
+    if (typeof ACT !== 'undefined') ACT.items(actEnv).forEach((a) => list.push(a));
+    list.sort((a, b) => a.y - b.y);
     list.forEach((it) => {
+      if (it.fn) { it.fn(ctx); return; }
       if (it.p) { drawPlayer(pxs - cx, pys - cy); return; }
       if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy); if (ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50) return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (art) art(ctx, ox, oy, st, tAnim, o); return; }
       if (it.f) {
-        const x = snap(FOL.x - cx), y = snap(FOL.y - cy), hop = FOL.moving ? Math.abs(Math.sin(tAnim * 12)) * 3 : Math.abs(Math.sin(tAnim * 2)) * 1;
+        const x = snap(FOL.x + (FOL.ox || 0) - cx), y = snap(FOL.y + (FOL.oy || 0) - cy), hop = FOL.moving ? Math.abs(Math.sin(tAnim * 12)) * 3 : Math.abs(Math.sin(tAnim * 2)) * 1;
         const w = 30, h = Math.round(30 * fol.img.height / Math.max(1, fol.img.width));
         ctx.fillStyle = 'rgba(10,30,10,0.28)'; ctx.fillRect(x - 8, y - 2, 16, 3); ctx.fillRect(x - 6, y - 3, 12, 5);
         ctx.imageSmoothingEnabled = false; ctx.drawImage(fol.img, Math.round(x - w / 2), Math.round(y - h - hop), w, h);
@@ -864,6 +869,7 @@ const WORLD = (() => {
       ctx.drawImage(n.frames[n.dir][0], x - 16, y - 38, 32, 40);
       if (n.alert > 0) { ctx.fillStyle = '#1E2A4A'; ctx.fillRect(x - 8, y - 66, 16, 22); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x - 6, y - 64, 12, 18); ctx.fillStyle = '#D8574A'; ctx.fillRect(x - 2, y - 61, 4, 9); ctx.fillRect(x - 2, y - 50, 4, 3); }
     });
+    if (typeof ACT !== 'undefined') ACT.drawFx(actEnv);
     if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'air', ambEnv);
     if (fishAt) { // bobber
       const bx = snap((fishAt.x + 0.5) * TS - cx), by = snap((fishAt.y + 0.55) * TS - cy + Math.sin(tAnim * (fishAt.bite ? 22 : 4)) * (fishAt.bite ? 3 : 1.5));
