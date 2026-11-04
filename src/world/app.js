@@ -905,7 +905,9 @@ const APP = (() => {
     const cleared = (game.state.npc && game.state.npc.cleared) || [];
     // trainers: full reward on the first win, half on daily rematches (keeps daily essence close to the pre-city economy)
     const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward + (n.bonus || 0) : Math.ceil(n.reward / 2));
-    game.setState({ trainer: { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss }, battle: null });
+    const tr = { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss };
+    if (ACT.canDuel() && ACT.startDuel({ tr: tr, npc: n })) { n.declined = true; return; }   // action mode: fight it out on the map
+    game.setState({ trainer: tr, battle: null });
     openScreen('battle');
   }
   // ---------- Champion's Tower ----------
@@ -916,7 +918,13 @@ const APP = (() => {
   function towerFloorStart() {
     const t = game.towerState(); if (!t.run) return;
     const tr = game.towerFloor(t.run.floor), team = game.teamFor(tr), first = t.run.floor > t.best;
-    game.setState({ trainer: { id: tr.id, name: tr.name, team: team, stage: tr.stage, lv: tr.lv, reward: first ? tr.reward : 0, winLine: tr.winLine, tower: true, floor: tr.floor, warden: tr.warden }, battle: null });
+    const trainer = { id: tr.id, name: tr.name, team: team, stage: tr.stage, lv: tr.lv, reward: first ? tr.reward : 0, winLine: tr.winLine, tower: true, floor: tr.floor, warden: tr.warden };
+    if (ACT.canDuel()) {   // action mode: the run's party fights the floor on the map; HP carries from the run
+      const party = game.towerParty(), hp = {}; party.forEach((x) => { hp[x.seed] = x.hp; });
+      const tw = game.towerTwist();
+      if (party.some((x) => x.hp > 0) && ACT.startDuel({ tr: trainer, party: party.map((x) => x.seed), hp: hp, surge: tw.id === 'surge' ? tw.type : null })) return;
+    }
+    game.setState({ trainer: trainer, battle: null });
     openScreen('battle');
   }
   function towerLobby() {
@@ -954,6 +962,22 @@ const APP = (() => {
     } else {
       setTimeout(() => showDialog(KEEPER, ['Your climb ended on floor ' + res.floor + '.', 'Best: floor ' + Math.max(t.best, 0) + ' of ' + TOWER.floors + '. Climbs left today: ' + (g.props.testMode ? 'unlimited' : g.towerRunsLeft()) + '.']), 60);
     }
+  }
+  // an action-mode duel ended: the same follow-ups the battle screen's close() gives
+  function duelDone(tr, npc, won, lines) {
+    const g = game; musicLoop();
+    const grew = (lines || []).filter((l) => /grew to level/.test(l));
+    if (tr.tower) { const res = g.state.towerResult; g.setState({ towerResult: null }); if (res) towerAfterClose(res); if (grew.length) setTimeout(() => toast(grew.join(' ')), 600); return; }
+    const sealed = g.state.justSealed;
+    if (sealed) {
+      g.setState({ justSealed: null });
+      const n = Object.values(WORLD.allNpcs()).flat().find((x) => x.id === sealed) || npc, count = ((g.state.npc && g.state.npc.seals) || []).length;
+      const ls = [n.sealLine, 'You now hold ' + count + ' of 4 Leader Seals.'];
+      if (count === 4) ls.push('Every leader in the land has fallen to you. You are the Champion of Sproutvale!');
+      setTimeout(() => showDialog(n.name, [tr.winLine].concat(ls)), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 4200); return;
+    }
+    if (won) { setTimeout(() => showDialog(tr.name, [tr.winLine, 'You earned ' + tr.reward + ' essence.'].filter((x) => x && !/^You earned 0 /.test(x))), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 3500); }
+    else toast('Your party was knocked out. ' + tr.name + ' wins this round. No penalty; you can try again.');
   }
   function close() {
     const tres = game.state.towerResult, trw = game.state.trainer, bw = game.state.battle;
@@ -1060,6 +1084,7 @@ const APP = (() => {
     const st = game.state;
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
+    { const di = ACT.duelInfo(); if (di && !open) return di.boss || di.tower ? 'boss' : 'battle'; }
     if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
     const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { descent: 'ember', ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
   }
@@ -1081,17 +1106,20 @@ const APP = (() => {
         },
         foe: (types, lead, rare) => {
           const key = types.join(',') + (rare ? '+rare' : ''), pool = foePool[key] || (foePool[key] = []);
-          if (pool.length < 10) for (let i = 0; i < (rare ? 400 : 40) && pool.length < 10; i++) { const sd = 1 + Math.floor(Math.random() * 999998), k = game.make(sd, 1); if ((!types.length || types.indexOf(k.element.name) !== -1) && (!rare || k.rarity === 'Rare' || k.rarity === 'Mythic')) pool.push(sd); }
+          if (pool.length < 30) for (let i = 0; i < (rare ? 600 : 150) && pool.length < 30; i++) { const sd = 1 + Math.floor(Math.random() * 999998), k = game.make(sd, 1); if ((!types.length || types.indexOf(k.element.name) !== -1) && (!rare || k.rarity === 'Rare' || k.rarity === 'Mythic')) pool.push(sd); }
           if (!pool.length) return null;
           const lv = Math.max(1, (lead.lv || 1) + Math.floor(Math.random() * 3) - 1);
-          return game.make(pool[Math.floor(Math.random() * pool.length)], lead.stage || 1, lv);
+          const own = new Set(game.state.caught.map((c) => c.seed)); let sd = pool[Math.floor(Math.random() * pool.length)]; for (let i = 0; i < 8 && own.has(sd); i++) sd = pool[Math.floor(Math.random() * pool.length)];   // skip critters you already keep when there is a choice
+          return game.make(sd, lead.stage || 1, lv);
         },
         img: (k) => { const key = k.seed + ':' + k.stage; if (!imgs[key]) { const im = new Image(); im.src = PIX.sprite(k, 'icon'); imgs[key] = im; } return imgs[key]; },
         bench: () => {
           const st = game.state, lead = leadCache.k ? leadCache.k.seed : null;
-          return game.partySeeds().filter((sd) => sd !== lead).slice(0, 2).map((sd) => { const e = st.caught.find((c) => c.seed === sd), key = sd + ':' + e.stage + ':' + (e.lv || 1); if (!benchCache[key]) benchCache[key] = game.make(sd, e.stage, e.lv || 1); return benchCache[key]; });
+          return (ACT.duelParty() || game.partySeeds()).filter((sd) => sd !== lead).slice(0, 2).map((sd) => { const e = st.caught.find((c) => c.seed === sd), key = sd + ':' + e.stage + ':' + (e.lv || 1); if (!benchCache[key]) benchCache[key] = game.make(sd, e.stage, e.lv || 1); return benchCache[key]; });
         },
         setLead: (seed) => { game.update({ fighter: seed }); },
+        kOf: (sd) => { const e = game.state.caught.find((c) => c.seed === sd); if (!e) return null; const key = sd + ':' + e.stage + ':' + (e.lv || 1); if (!benchCache[key]) benchCache[key] = game.make(sd, e.stage, e.lv || 1); return benchCache[key]; },
+        duelDone: (tr, npc, won, lines) => duelDone(tr, npc, won, lines),
         onKill: (foe, mine) => game.actKill(foe, mine),
         keep: (k) => { const r = game.actKeep(k); if (r.ok) toast('Kept ' + k.name + '!' + (r.species ? ' New species.' : '') + (r.cost ? ' (' + r.cost + (r.cost === 1 ? ' roll' : ' rolls') + ')' : ' (free)')); else if (r.why === 'rolls') toast('Keeping ' + k.name + ' needs ' + r.cost + (r.cost === 1 ? ' roll.' : ' rolls.')); else if (r.why === 'owned') toast('You already have this one.'); return r; },
         sfx: (k) => game.sfx(k)
@@ -1125,6 +1153,12 @@ const APP = (() => {
         if (sig !== kbSig) { kbSig = sig; kb.hidden = !offs.length; kb.innerHTML = offs.map((o) => { const c = game.actKeepCost(o.k), owned = game.state.caught.some((e) => e.seed === o.k.seed); return '<button data-id="' + o.id + '"' + (owned ? ' disabled' : '') + '><b>Keep ' + esc(o.k.name) + '</b><span>' + esc(o.k.rarity) + ' · ' + (c.cost ? c.cost + (c.cost === 1 ? ' roll' : ' rolls') : 'free') + ' · joins at Lv 1</span><i></i></button>'; }).join(''); }
         [].forEach.call(kb.querySelectorAll('button'), (b) => { const o = offs.find((x) => x.id === +b.dataset.id); if (o) b.lastChild.style.width = Math.max(0, 100 * o.t / o.tot).toFixed(0) + '%'; });
       }, 120);
+      const db = $('duel'); let dbSig = '';
+      db.addEventListener('click', (ev) => { if (ev.target.closest('button')) ACT.giveUp(); });
+      setInterval(() => {
+        const di = ACT.duelInfo(), sig = di ? di.name + di.defeated + '/' + di.total : '';
+        if (sig !== dbSig) { dbSig = sig; db.hidden = !di; if (di) db.innerHTML = '<b>' + esc(di.tower ? 'Floor ' + di.floor : di.name) + '</b><span>' + di.defeated + ' of ' + di.total + ' down</span><button aria-label="Give up the duel">Give up</button>'; }
+      }, 150);
       setInterval(() => {
         const show = ACT.ready() && !WORLD.paused && !open; if (atk.hidden === show) atk.hidden = !show; if (!show) { if (wheelOn) closeWheel(false); return; }
         atk.style.setProperty('--cd', ACT.cdFrac().toFixed(2));
@@ -1159,7 +1193,7 @@ const APP = (() => {
       },
       onLocked: (e) => ROUTE_GATES[e.to] ? toast(mapName(e.to) + ' opens at trainer level ' + ROUTE_GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.') : e.to === 'peak' ? toast("The trail to Champion's Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.') : toast(ZONE_NAMES[e.to] + ' opens at trainer level ' + GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.'),
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
-      canChallenge: (n) => !DEV.safe && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
+      canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
       onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); applyLamp(); applyForge(); renderWeather(); if (game && (m.city || m.id === 'peak' || m.id === 'ascent' || m.id === 'descent') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
@@ -1260,6 +1294,6 @@ const APP = (() => {
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
   function rtAttack() { if (game && game.rtOn()) { game.rtPlayer(Math.min(3, game.state.rtSel || 0)); const f = document.getElementById('rt-fill'); if (f) f.style.transform = 'scaleX(' + game.rtWait().toFixed(3) + ')'; } }
-  return { rtAttack, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { towerFloorStart, rtAttack, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);

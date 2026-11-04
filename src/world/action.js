@@ -6,7 +6,7 @@
 const ACT = (() => {
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const CD = [0.45, 1.1, 1.4, 3.0];            // seconds: quick slash, heavy slash, guard, special
-  let H = null, hero = null, team = {}, OFF = [], offId = 1, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
+  let H = null, hero = null, team = {}, OFF = [], offId = 1, duel = null, armed = false, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
   const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null };
   const rand = Math.random;
   function bind(h) { H = h; }
@@ -40,7 +40,8 @@ const ACT = (() => {
     E.push({ k: k, s: s, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: rand() * 2, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1 + rand(), tick: 1, img: H.img(k) });
     return true;
   }
-  function reset(e) { E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; for (let i = 0; i < 4; i++) spawnOne(e, 7); }
+  function reset(e) { if (duel) abortDuel('You left the duel.'); E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7); }
+  const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }
   function faceVec(e) { return DIRS[e.P.dir] || DIRS.down; }
@@ -80,6 +81,11 @@ const ACT = (() => {
   }
   function kill(m, e) {
     E.splice(E.indexOf(m), 1); for (let i = 0; i < 8; i++) FX.push({ k: 'puff', x: m.x, y: m.y - 10, vx: (rand() - 0.5) * 80, vy: -20 - rand() * 50, t: 0, col: m.k.element.color });
+    if (m.duel) {   // a trainer's critter: its XP is paid when the duel ends, there is nothing to keep
+      duel.down += 1; duel.koXp[hero.k.seed] = (duel.koXp[hero.k.seed] || 0) + 8 + 2 * (m.k.lv || 1) + 5 * (m.k.stage || 1); if (H.sfx) H.sfx('claim');
+      if (duel.down >= duel.queue.length) endDuel(true); else duel.next = 1.3;
+      return;
+    }
     spawnT = Math.min(spawnT, 8); OFF.push({ id: offId++, k: m.k, t: 9, tot: 9 }); if (OFF.length > 2) OFF.shift();
     const r = H.onKill ? H.onKill(m.k, hero.k) : null;
     if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); } if (H.sfx) H.sfx('claim'); }
@@ -102,7 +108,7 @@ const ACT = (() => {
     hero.hp = 0; st.atk = null; hero.guard = false; st.guard = 0; if (H.sfx) H.sfx('lose');
     const alt = benchSides().filter((b) => b.hp > 0).sort((a, b) => b.hp / b.max - a.hp / a.max)[0];
     if (alt) { st.swapIn = { seed: alt.k.seed, t: 0.9 }; st.calm = 1.6; if (H.toast) H.toast(hero.k.name + ' was knocked out. Go, ' + alt.k.name + '!'); }
-    else { st.down = 4; st.calm = 4; if (H.toast) H.toast('Your party is knocked out. They recover in a moment.'); }
+    else { st.down = 4; st.calm = 4; if (duel) endDuel(false); else if (H.toast) H.toast('Your party is knocked out. They recover in a moment.'); }
   }
   function hurtHero(m, mul) {
     const before = hero.hp; H.game().hit(m.s, hero, Math.max(1, Math.round(m.k.kit[0].power * mul)), rand); delete hero.fxHits;
@@ -148,17 +154,55 @@ const ACT = (() => {
     if (kind === 'blink') m.aim = { x: tx + ux * 0.9 * TS, y: ty + uy * 0.9 * TS };   // behind you
     if (kind === 'heal') m.aim = { x: m.x, y: m.y };
   }
+  // ---- trainer duels (the old battle screen, played live): the trainer's critters come out one at a time next to the trainer ----
+  function spawnDuelFoe(e) {
+    const d = duel, g = H.game(), k = g.make(d.queue[d.idx], d.tr.stage, d.tr.lv || 1); d.idx += 1;
+    const s = g.newBattle(lead(), k, 0).s[1]; s.label = d.tr.name + "'s " + k.name; d.lastFoe = s;
+    const p = e.P, n = d.npc, bx = n ? (n.x + 0.5) * e.TS : p.x, by = n ? (n.y + 0.9) * e.TS : p.y, a0 = Math.atan2(p.y - by, p.x - bx); let best = null;
+    for (const r of [2.2, 1.6, 3, 1]) for (let i = 0; i < 8 && !best; i++) { const a = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.5, x = bx + Math.cos(a) * r * e.TS, y = by + Math.sin(a) * r * e.TS; if (tileFree(e, x, y)) best = { x: x, y: y }; }
+    if (!best) best = { x: bx, y: by };
+    E.push({ k: k, s: s, x: best.x, y: best.y, hx: best.x, hy: best.y, mode: 'chase', t: 0, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1.2, tick: 1, img: H.img(k), duel: true });
+    num(best.x, best.y - 36, d.tr.name + ' sent out ' + k.name + '!', '#FFFFFF'); if (H.sfx) H.sfx('claim');
+  }
+  // o = { tr (the same object the battle screen uses), npc, party (Tower: the run's critters), hp (Tower: their HP), surge (Tower twist type) }
+  function startDuel(o) {
+    if (!armed || !hero || duel || !lastEnv) return false;
+    const e = lastEnv; duel = { tr: o.tr, npc: o.npc || null, queue: o.tr.team.slice(), idx: 0, down: 0, part: {}, koXp: {}, next: 0.9, party: o.party || null, surge: o.surge || null, lastFoe: null };
+    mapId = e.M.id; E = []; PR = []; OFF = []; FX = []; st.calm = 0; st.swapIn = null;
+    if (o.party) {
+      o.party.forEach((sd) => { const k = H.kOf(sd); if (k) { const side = sideFor(k); if (o.hp && o.hp[sd] !== undefined) side.hp = Math.max(0, Math.min(side.max, o.hp[sd])); } });
+      const lk = lead(); if (!lk || o.party.indexOf(lk.seed) === -1 || team[lk.seed].side.hp <= 0) { const alive = o.party.find((sd) => team[sd] && team[sd].side.hp > 0); if (alive) H.setLead(alive); }
+    }
+    return true;
+  }
+  function endDuel(win) {
+    const d = duel; duel = null; const g = H.game(); g._surge = null; E = E.filter((m) => !m.duel); PR = []; st.calm = 3; spawnT = 6;
+    const lines = g.actDuelEnd(d.tr, win, { lead: hero, foe: d.lastFoe || hero, bench: benchSides(), part: d.part, koXp: d.koXp });
+    if (H.duelDone) H.duelDone(d.tr, d.npc, win, lines);
+  }
+  function abortDuel(why) {
+    const d = duel; if (!d) return; duel = null; H.game()._surge = null; E = E.filter((m) => !m.duel); PR = [];
+    if (d.tr.tower && hero) H.game().actTowerHold([hero].concat(benchSides()));
+    if (why && H.toast) H.toast(why + (d.tr.tower ? ' Your HP is kept; the floor starts over.' : ' No reward.'));
+  }
   function step(e) {
     on = false; lastEnv = e;
-    if (!enabled() || !e.fol || e.M.interior || e.M.cave || !(e.M.rate > 0)) { if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
-    mkHero(); if (!hero) return; on = true; const dt = e.dt, g = H.game();
+    armed = false;
+    if (!enabled() || !e.fol || e.M.interior) { if (duel) abortDuel(''); if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
+    mkHero(); if (!hero) return; armed = true;
+    if (!wildOk(e) && !duel) { if (E.length) { E = []; FX = []; PR = []; OFF = []; } mapId = ''; if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }   // a quiet place (city, cave): nothing roams here
+    on = true; const dt = e.dt, g = H.game();
     if (mapId !== e.M.id) reset(e);
     st.cd = Math.max(0, st.cd - dt); st.calm = Math.max(0, st.calm - dt); st.quiet += dt;
     if (st.guard > 0) { st.guard -= dt; if (st.guard <= 0) hero.guard = false; }
     if (st.down > 0) { st.down -= dt; if (st.down <= 0) Object.keys(team).forEach((k) => { const sd = team[k].side; sd.hp = Math.max(sd.hp, Math.round(sd.max * 0.5)); }); }
-    if (st.quiet > 4 && hero.hp > 0 && st.down <= 0) hero.hp = Math.min(hero.max, hero.hp + hero.max * 0.03 * dt);
-    benchSides().forEach((b) => { const c = team[b.k.seed]; if (b.hp > 0) b.hp = Math.min(b.max, b.hp + b.max * 0.015 * dt); else { c.rev += dt; if (c.rev >= 40) { c.rev = 0; b.hp = Math.round(b.max * 0.25); } } });
+    if (!duel && st.quiet > 4 && hero.hp > 0 && st.down <= 0) hero.hp = Math.min(hero.max, hero.hp + hero.max * 0.03 * dt);
+    if (!duel) benchSides().forEach((b) => { const c = team[b.k.seed]; if (b.hp > 0) b.hp = Math.min(b.max, b.hp + b.max * 0.015 * dt); else { c.rev += dt; if (c.rev >= 40) { c.rev = 0; b.hp = Math.round(b.max * 0.25); } } });
     if (st.swapIn) { st.swapIn.t -= dt; if (st.swapIn.t <= 0) { const sw = st.swapIn.seed; st.swapIn = null; H.setLead(sw); st.cd = st.cdTot = 0.5; if (H.sfx) H.sfx('claim'); } }
+    if (duel) {   // a trainer duel: the trainer's critters come out one at a time
+      duel.part[hero.k.seed] = true; g._surge = duel.surge || null;
+      if (!E.some((m) => m.duel) && duel.idx < duel.queue.length) { duel.next -= dt; if (duel.next <= 0) spawnDuelFoe(e); }
+    }
     // the swing
     const f = e.FOL, a = st.atk; f.ox = 0; f.oy = 0;
     if (a) {
@@ -173,8 +217,8 @@ const ACT = (() => {
       if (Math.abs(m.kx) + Math.abs(m.ky) > 1) { walk(m, e, m.kx, m.ky, dt); m.kx *= 0.82; m.ky *= 0.82; } else { m.kx = 0; m.ky = 0; }
       m.tick -= dt; if (m.tick <= 0) { m.tick = 1; if (m.s.burn || m.s.sap || m.s.weak || m.s.daze) { const b = { s: [m.s, dummy()], log: [], round: 1, over: false }, h = m.s.hp; g.endRound(b); if (m.s.hp < h) num(m.x, m.y - 26, String(h - m.s.hp), '#FF9A5A'); if (m.s.hp <= 0) { kill(m, e); return; } } }
       const dp = Math.hypot(p.x - m.x, p.y - m.y), dh = Math.hypot(hp0.x - m.x, hp0.y - m.y), near = Math.min(dp, dh);
-      if (m.mode === 'idle') { if (near < 5 * e.TS && st.calm <= 0 && st.down <= 0) { m.mode = 'chase'; m.t = 0; m.s.__alert = 0.5; } else { if (m.t > 1.5) { m.t = 0; const r = rand(); m.dx = r < 0.4 ? 0 : (rand() - 0.5) * 2; m.dy = r < 0.4 ? 0 : (rand() - 0.5) * 2; } if (Math.hypot(m.x - m.hx, m.y - m.hy) > 4 * e.TS) { m.dx = Math.sign(m.hx - m.x); m.dy = Math.sign(m.hy - m.y); } walk(m, e, m.dx * 26, m.dy * 26, dt); } }
-      else { if (near > 9 * e.TS || st.calm > 0 || st.down > 0) { m.mode = 'idle'; m.tele = 0; m.dash = 0; return; } think(m, e, dt, p, hp0, dp, dh); }
+      if (m.mode === 'idle') { if ((near < 5 * e.TS || m.duel) && st.calm <= 0 && st.down <= 0) { m.mode = 'chase'; m.t = 0; m.s.__alert = 0.5; } else { if (m.t > 1.5) { m.t = 0; const r = rand(); m.dx = r < 0.4 ? 0 : (rand() - 0.5) * 2; m.dy = r < 0.4 ? 0 : (rand() - 0.5) * 2; } if (Math.hypot(m.x - m.hx, m.y - m.hy) > 4 * e.TS) { m.dx = Math.sign(m.hx - m.x); m.dy = Math.sign(m.hy - m.y); } walk(m, e, m.dx * 26, m.dy * 26, dt); } }
+      else { if ((!m.duel && near > 9 * e.TS) || st.calm > 0 || st.down > 0) { m.mode = 'idle'; m.tele = 0; m.dash = 0; return; } think(m, e, dt, p, hp0, dp, dh); }
     });
     if (hero.__hurt) hero.__hurt = Math.max(0, hero.__hurt - dt);
     OFF.forEach((o) => { o.t -= dt; }); OFF = OFF.filter((o) => o.t > 0);
@@ -182,7 +226,7 @@ const ACT = (() => {
       if (q.t > 2.4 || !tileFree(e, q.x, q.y + 12)) { PR.splice(PR.indexOf(q), 1); return; }
       if (Math.min(Math.hypot(hp1.x - q.x, hp1.y - 12 - q.y), Math.hypot(e.P.x - q.x, e.P.y - 12 - q.y)) < 0.6 * e.TS && hero.hp > 0 && st.down <= 0) { PR.splice(PR.indexOf(q), 1); if (q.m && q.m.s.hp > 0) hurtHero(q.m, q.mul); } });
     // respawns
-    spawnT -= dt; if (spawnT <= 0) { spawnT = 6; if (E.length < 4) spawnOne(e, 8); }
+    spawnT -= dt; if (spawnT <= 0) { spawnT = 6; if (!duel && E.length < 4 && wildOk(e)) spawnOne(e, 8); }
     FX.forEach((x) => { x.t += dt; if (x.k === 'puff') { x.x += x.vx * dt; x.y += x.vy * dt; x.vy += 90 * dt; } });
     FX = FX.filter((x) => x.t < (x.k === 'slash' ? 0.22 : (x.k === 'num' ? 0.8 : 0.5)));
   }
@@ -222,7 +266,8 @@ const ACT = (() => {
     });
   }
   return {
-    bind, step, items, drawFx, active, attack, swapTo, spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, offers: () => OFF, keep: (id) => { const o = OFF.find((x) => x.id === id); if (!o) return { ok: false, why: 'gone' }; const r = H.keep(o.k); if (r.ok) OFF.splice(OFF.indexOf(o), 1); return r; }, get shots() { return PR; }, BEH,
+    bind, step, items, drawFx, active, attack, swapTo, startDuel, giveUp: () => abortDuel('You gave up.'), dueling: () => !!duel, canDuel: () => armed && !duel,
+    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, offers: () => OFF, keep: (id) => { const o = OFF.find((x) => x.id === id); if (!o) return { ok: false, why: 'gone' }; const r = H.keep(o.k); if (r.ok) OFF.splice(OFF.indexOf(o), 1); return r; }, get shots() { return PR; }, BEH,
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },
     get enemies() { return E; }, moves: () => (hero ? hero.k.kit.map((m, i) => ({ name: m.name, kind: m.kind, sub: m.sub, i: i })) : []),

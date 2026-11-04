@@ -86,6 +86,8 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 #atk .ring{position:relative;overflow:hidden;width:72px;height:72px;border-radius:50%;border:3px solid #fff;background:linear-gradient(180deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,0) 60%),#FF7A5A;display:flex;align-items:center;justify-content:center;color:#3A0E00;box-shadow:0 6px 18px rgba(255,100,60,.5)}
 #atk .ring::after{content:'';position:absolute;inset:0;background:rgba(14,26,56,.62);clip-path:inset(calc((1 - var(--cd,0))*100%) 0 0 0);pointer-events:none}
 #atk-label{padding:2px 9px;border-radius:999px;background:var(--glass);color:#fff;font-size:11px;font-weight:800;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+#duel{position:absolute;left:50%;transform:translateX(-50%);top:calc(112px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;padding:6px 8px 6px 14px;border-radius:999px;background:var(--glass);border:2px solid #FF8A7A;color:#fff;z-index:5;white-space:nowrap}
+#duel b{font-size:13px;font-weight:900}#duel span{font-size:11px;font-weight:700;color:#C9D6F2}#duel button{border:0;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;font:inherit;font-size:11px;font-weight:800;padding:4px 10px;cursor:pointer}
 #keepbar{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(272px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-end;z-index:5}
 #keepbar button{position:relative;overflow:hidden;border:2px solid #FFC94D;border-radius:14px;padding:6px 12px 9px;background:var(--glass);color:#fff;font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:1px;max-width:230px}
 #keepbar button b{font-size:13px;font-weight:900}#keepbar button span{font-size:11px;font-weight:700;color:#C9D6F2}
@@ -212,7 +214,7 @@ html.hc .prof{background:#12204A!important;backdrop-filter:none!important}
 html.hc .mgroup{background:#08122A!important}html.hc .mht span{color:#FFFFFF!important}
 html.hc button,html.hc .chip{outline-color:#FFFFFF}
 html.hc :focus-visible{outline:3px solid #FFD86B!important;outline-offset:2px}
-#screen[hidden],#atk[hidden],#wheel[hidden],#keepbar[hidden],#toast[hidden],#tip[hidden],#hud[hidden],.dot[hidden]{display:none}
+#screen[hidden],#atk[hidden],#wheel[hidden],#keepbar[hidden],#duel[hidden],#toast[hidden],#tip[hidden],#hud[hidden],.dot[hidden]{display:none}
 button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
 </style>
 </head>
@@ -239,6 +241,7 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
     <button id="atk" hidden aria-label="Attack. Hold to choose a move"><span class="ring"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20L18 6M14 4h6v6M7 17l-3 3"></path></svg></span><span id="atk-label">Slash</span></button>
     <div id="wheel" hidden aria-hidden="true"></div>
     <div id="keepbar" hidden></div>
+    <div id="duel" hidden></div>
     <div id="toast" role="status" aria-live="polite" hidden></div>
   </div>
   </section>
@@ -2957,7 +2960,7 @@ const WORLD = (() => {
 const ACT = (() => {
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const CD = [0.45, 1.1, 1.4, 3.0];            // seconds: quick slash, heavy slash, guard, special
-  let H = null, hero = null, team = {}, OFF = [], offId = 1, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
+  let H = null, hero = null, team = {}, OFF = [], offId = 1, duel = null, armed = false, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
   const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null };
   const rand = Math.random;
   function bind(h) { H = h; }
@@ -2991,7 +2994,8 @@ const ACT = (() => {
     E.push({ k: k, s: s, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: rand() * 2, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1 + rand(), tick: 1, img: H.img(k) });
     return true;
   }
-  function reset(e) { E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; for (let i = 0; i < 4; i++) spawnOne(e, 7); }
+  function reset(e) { if (duel) abortDuel('You left the duel.'); E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7); }
+  const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }
   function faceVec(e) { return DIRS[e.P.dir] || DIRS.down; }
@@ -3031,6 +3035,11 @@ const ACT = (() => {
   }
   function kill(m, e) {
     E.splice(E.indexOf(m), 1); for (let i = 0; i < 8; i++) FX.push({ k: 'puff', x: m.x, y: m.y - 10, vx: (rand() - 0.5) * 80, vy: -20 - rand() * 50, t: 0, col: m.k.element.color });
+    if (m.duel) {   // a trainer's critter: its XP is paid when the duel ends, there is nothing to keep
+      duel.down += 1; duel.koXp[hero.k.seed] = (duel.koXp[hero.k.seed] || 0) + 8 + 2 * (m.k.lv || 1) + 5 * (m.k.stage || 1); if (H.sfx) H.sfx('claim');
+      if (duel.down >= duel.queue.length) endDuel(true); else duel.next = 1.3;
+      return;
+    }
     spawnT = Math.min(spawnT, 8); OFF.push({ id: offId++, k: m.k, t: 9, tot: 9 }); if (OFF.length > 2) OFF.shift();
     const r = H.onKill ? H.onKill(m.k, hero.k) : null;
     if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); } if (H.sfx) H.sfx('claim'); }
@@ -3053,7 +3062,7 @@ const ACT = (() => {
     hero.hp = 0; st.atk = null; hero.guard = false; st.guard = 0; if (H.sfx) H.sfx('lose');
     const alt = benchSides().filter((b) => b.hp > 0).sort((a, b) => b.hp / b.max - a.hp / a.max)[0];
     if (alt) { st.swapIn = { seed: alt.k.seed, t: 0.9 }; st.calm = 1.6; if (H.toast) H.toast(hero.k.name + ' was knocked out. Go, ' + alt.k.name + '!'); }
-    else { st.down = 4; st.calm = 4; if (H.toast) H.toast('Your party is knocked out. They recover in a moment.'); }
+    else { st.down = 4; st.calm = 4; if (duel) endDuel(false); else if (H.toast) H.toast('Your party is knocked out. They recover in a moment.'); }
   }
   function hurtHero(m, mul) {
     const before = hero.hp; H.game().hit(m.s, hero, Math.max(1, Math.round(m.k.kit[0].power * mul)), rand); delete hero.fxHits;
@@ -3099,17 +3108,55 @@ const ACT = (() => {
     if (kind === 'blink') m.aim = { x: tx + ux * 0.9 * TS, y: ty + uy * 0.9 * TS };   // behind you
     if (kind === 'heal') m.aim = { x: m.x, y: m.y };
   }
+  // ---- trainer duels (the old battle screen, played live): the trainer's critters come out one at a time next to the trainer ----
+  function spawnDuelFoe(e) {
+    const d = duel, g = H.game(), k = g.make(d.queue[d.idx], d.tr.stage, d.tr.lv || 1); d.idx += 1;
+    const s = g.newBattle(lead(), k, 0).s[1]; s.label = d.tr.name + "'s " + k.name; d.lastFoe = s;
+    const p = e.P, n = d.npc, bx = n ? (n.x + 0.5) * e.TS : p.x, by = n ? (n.y + 0.9) * e.TS : p.y, a0 = Math.atan2(p.y - by, p.x - bx); let best = null;
+    for (const r of [2.2, 1.6, 3, 1]) for (let i = 0; i < 8 && !best; i++) { const a = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.5, x = bx + Math.cos(a) * r * e.TS, y = by + Math.sin(a) * r * e.TS; if (tileFree(e, x, y)) best = { x: x, y: y }; }
+    if (!best) best = { x: bx, y: by };
+    E.push({ k: k, s: s, x: best.x, y: best.y, hx: best.x, hy: best.y, mode: 'chase', t: 0, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1.2, tick: 1, img: H.img(k), duel: true });
+    num(best.x, best.y - 36, d.tr.name + ' sent out ' + k.name + '!', '#FFFFFF'); if (H.sfx) H.sfx('claim');
+  }
+  // o = { tr (the same object the battle screen uses), npc, party (Tower: the run's critters), hp (Tower: their HP), surge (Tower twist type) }
+  function startDuel(o) {
+    if (!armed || !hero || duel || !lastEnv) return false;
+    const e = lastEnv; duel = { tr: o.tr, npc: o.npc || null, queue: o.tr.team.slice(), idx: 0, down: 0, part: {}, koXp: {}, next: 0.9, party: o.party || null, surge: o.surge || null, lastFoe: null };
+    mapId = e.M.id; E = []; PR = []; OFF = []; FX = []; st.calm = 0; st.swapIn = null;
+    if (o.party) {
+      o.party.forEach((sd) => { const k = H.kOf(sd); if (k) { const side = sideFor(k); if (o.hp && o.hp[sd] !== undefined) side.hp = Math.max(0, Math.min(side.max, o.hp[sd])); } });
+      const lk = lead(); if (!lk || o.party.indexOf(lk.seed) === -1 || team[lk.seed].side.hp <= 0) { const alive = o.party.find((sd) => team[sd] && team[sd].side.hp > 0); if (alive) H.setLead(alive); }
+    }
+    return true;
+  }
+  function endDuel(win) {
+    const d = duel; duel = null; const g = H.game(); g._surge = null; E = E.filter((m) => !m.duel); PR = []; st.calm = 3; spawnT = 6;
+    const lines = g.actDuelEnd(d.tr, win, { lead: hero, foe: d.lastFoe || hero, bench: benchSides(), part: d.part, koXp: d.koXp });
+    if (H.duelDone) H.duelDone(d.tr, d.npc, win, lines);
+  }
+  function abortDuel(why) {
+    const d = duel; if (!d) return; duel = null; H.game()._surge = null; E = E.filter((m) => !m.duel); PR = [];
+    if (d.tr.tower && hero) H.game().actTowerHold([hero].concat(benchSides()));
+    if (why && H.toast) H.toast(why + (d.tr.tower ? ' Your HP is kept; the floor starts over.' : ' No reward.'));
+  }
   function step(e) {
     on = false; lastEnv = e;
-    if (!enabled() || !e.fol || e.M.interior || e.M.cave || !(e.M.rate > 0)) { if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
-    mkHero(); if (!hero) return; on = true; const dt = e.dt, g = H.game();
+    armed = false;
+    if (!enabled() || !e.fol || e.M.interior) { if (duel) abortDuel(''); if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
+    mkHero(); if (!hero) return; armed = true;
+    if (!wildOk(e) && !duel) { if (E.length) { E = []; FX = []; PR = []; OFF = []; } mapId = ''; if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }   // a quiet place (city, cave): nothing roams here
+    on = true; const dt = e.dt, g = H.game();
     if (mapId !== e.M.id) reset(e);
     st.cd = Math.max(0, st.cd - dt); st.calm = Math.max(0, st.calm - dt); st.quiet += dt;
     if (st.guard > 0) { st.guard -= dt; if (st.guard <= 0) hero.guard = false; }
     if (st.down > 0) { st.down -= dt; if (st.down <= 0) Object.keys(team).forEach((k) => { const sd = team[k].side; sd.hp = Math.max(sd.hp, Math.round(sd.max * 0.5)); }); }
-    if (st.quiet > 4 && hero.hp > 0 && st.down <= 0) hero.hp = Math.min(hero.max, hero.hp + hero.max * 0.03 * dt);
-    benchSides().forEach((b) => { const c = team[b.k.seed]; if (b.hp > 0) b.hp = Math.min(b.max, b.hp + b.max * 0.015 * dt); else { c.rev += dt; if (c.rev >= 40) { c.rev = 0; b.hp = Math.round(b.max * 0.25); } } });
+    if (!duel && st.quiet > 4 && hero.hp > 0 && st.down <= 0) hero.hp = Math.min(hero.max, hero.hp + hero.max * 0.03 * dt);
+    if (!duel) benchSides().forEach((b) => { const c = team[b.k.seed]; if (b.hp > 0) b.hp = Math.min(b.max, b.hp + b.max * 0.015 * dt); else { c.rev += dt; if (c.rev >= 40) { c.rev = 0; b.hp = Math.round(b.max * 0.25); } } });
     if (st.swapIn) { st.swapIn.t -= dt; if (st.swapIn.t <= 0) { const sw = st.swapIn.seed; st.swapIn = null; H.setLead(sw); st.cd = st.cdTot = 0.5; if (H.sfx) H.sfx('claim'); } }
+    if (duel) {   // a trainer duel: the trainer's critters come out one at a time
+      duel.part[hero.k.seed] = true; g._surge = duel.surge || null;
+      if (!E.some((m) => m.duel) && duel.idx < duel.queue.length) { duel.next -= dt; if (duel.next <= 0) spawnDuelFoe(e); }
+    }
     // the swing
     const f = e.FOL, a = st.atk; f.ox = 0; f.oy = 0;
     if (a) {
@@ -3124,8 +3171,8 @@ const ACT = (() => {
       if (Math.abs(m.kx) + Math.abs(m.ky) > 1) { walk(m, e, m.kx, m.ky, dt); m.kx *= 0.82; m.ky *= 0.82; } else { m.kx = 0; m.ky = 0; }
       m.tick -= dt; if (m.tick <= 0) { m.tick = 1; if (m.s.burn || m.s.sap || m.s.weak || m.s.daze) { const b = { s: [m.s, dummy()], log: [], round: 1, over: false }, h = m.s.hp; g.endRound(b); if (m.s.hp < h) num(m.x, m.y - 26, String(h - m.s.hp), '#FF9A5A'); if (m.s.hp <= 0) { kill(m, e); return; } } }
       const dp = Math.hypot(p.x - m.x, p.y - m.y), dh = Math.hypot(hp0.x - m.x, hp0.y - m.y), near = Math.min(dp, dh);
-      if (m.mode === 'idle') { if (near < 5 * e.TS && st.calm <= 0 && st.down <= 0) { m.mode = 'chase'; m.t = 0; m.s.__alert = 0.5; } else { if (m.t > 1.5) { m.t = 0; const r = rand(); m.dx = r < 0.4 ? 0 : (rand() - 0.5) * 2; m.dy = r < 0.4 ? 0 : (rand() - 0.5) * 2; } if (Math.hypot(m.x - m.hx, m.y - m.hy) > 4 * e.TS) { m.dx = Math.sign(m.hx - m.x); m.dy = Math.sign(m.hy - m.y); } walk(m, e, m.dx * 26, m.dy * 26, dt); } }
-      else { if (near > 9 * e.TS || st.calm > 0 || st.down > 0) { m.mode = 'idle'; m.tele = 0; m.dash = 0; return; } think(m, e, dt, p, hp0, dp, dh); }
+      if (m.mode === 'idle') { if ((near < 5 * e.TS || m.duel) && st.calm <= 0 && st.down <= 0) { m.mode = 'chase'; m.t = 0; m.s.__alert = 0.5; } else { if (m.t > 1.5) { m.t = 0; const r = rand(); m.dx = r < 0.4 ? 0 : (rand() - 0.5) * 2; m.dy = r < 0.4 ? 0 : (rand() - 0.5) * 2; } if (Math.hypot(m.x - m.hx, m.y - m.hy) > 4 * e.TS) { m.dx = Math.sign(m.hx - m.x); m.dy = Math.sign(m.hy - m.y); } walk(m, e, m.dx * 26, m.dy * 26, dt); } }
+      else { if ((!m.duel && near > 9 * e.TS) || st.calm > 0 || st.down > 0) { m.mode = 'idle'; m.tele = 0; m.dash = 0; return; } think(m, e, dt, p, hp0, dp, dh); }
     });
     if (hero.__hurt) hero.__hurt = Math.max(0, hero.__hurt - dt);
     OFF.forEach((o) => { o.t -= dt; }); OFF = OFF.filter((o) => o.t > 0);
@@ -3133,7 +3180,7 @@ const ACT = (() => {
       if (q.t > 2.4 || !tileFree(e, q.x, q.y + 12)) { PR.splice(PR.indexOf(q), 1); return; }
       if (Math.min(Math.hypot(hp1.x - q.x, hp1.y - 12 - q.y), Math.hypot(e.P.x - q.x, e.P.y - 12 - q.y)) < 0.6 * e.TS && hero.hp > 0 && st.down <= 0) { PR.splice(PR.indexOf(q), 1); if (q.m && q.m.s.hp > 0) hurtHero(q.m, q.mul); } });
     // respawns
-    spawnT -= dt; if (spawnT <= 0) { spawnT = 6; if (E.length < 4) spawnOne(e, 8); }
+    spawnT -= dt; if (spawnT <= 0) { spawnT = 6; if (!duel && E.length < 4 && wildOk(e)) spawnOne(e, 8); }
     FX.forEach((x) => { x.t += dt; if (x.k === 'puff') { x.x += x.vx * dt; x.y += x.vy * dt; x.vy += 90 * dt; } });
     FX = FX.filter((x) => x.t < (x.k === 'slash' ? 0.22 : (x.k === 'num' ? 0.8 : 0.5)));
   }
@@ -3173,7 +3220,8 @@ const ACT = (() => {
     });
   }
   return {
-    bind, step, items, drawFx, active, attack, swapTo, spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, offers: () => OFF, keep: (id) => { const o = OFF.find((x) => x.id === id); if (!o) return { ok: false, why: 'gone' }; const r = H.keep(o.k); if (r.ok) OFF.splice(OFF.indexOf(o), 1); return r; }, get shots() { return PR; }, BEH,
+    bind, step, items, drawFx, active, attack, swapTo, startDuel, giveUp: () => abortDuel('You gave up.'), dueling: () => !!duel, canDuel: () => armed && !duel,
+    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, offers: () => OFF, keep: (id) => { const o = OFF.find((x) => x.id === id); if (!o) return { ok: false, why: 'gone' }; const r = H.keep(o.k); if (r.ok) OFF.splice(OFF.indexOf(o), 1); return r; }, get shots() { return PR; }, BEH,
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },
     get enemies() { return E; }, moves: () => (hero ? hero.k.kit.map((m, i) => ({ name: m.name, kind: m.kind, sub: m.sub, i: i })) : []),
@@ -5289,6 +5337,41 @@ class Game extends Component {
       r.cd[1] = now + ms; this.battleAction({ rt: 1, move: mi });
     }
   }
+  // the end of a trainer or wild battle (shared by the turn-based screen and the action-mode duel): rewards, seals, quests, Tower progress, XP
+  settleBattle(nb, tr, won, lost, patch, events) {
+    if (won) {
+      nb.over = true; nb.win = true; nb.draw = false;
+      patch.wins = this.state.wins + 1; patch.essence = this.state.essence + nb.reward;
+      events.push({ t: 'win', type: nb.s[0].k.element.name, adv: this.beats()[nb.s[0].k.element.name].indexOf(nb.s[1].k.element.name) !== -1 });
+      if (tr && !tr.tower) {
+        this.questTick('beat', tr.id, patch);
+        const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, this.state.npc);
+        npc.beaten = Object.assign({}, npc.beaten, { [tr.id]: new Date().toDateString() });
+        if ((npc.cleared || []).indexOf(tr.id) === -1) npc.cleared = (npc.cleared || []).concat([tr.id]);
+        if (tr.leader && (npc.seals || []).indexOf(tr.id) === -1) { npc.seals = (npc.seals || []).concat([tr.id]); patch.justSealed = tr.id; events.push({ t: 'leader' }); }
+        patch.npc = npc;
+        nb.log.push({ text: tr.name + ': "' + tr.winLine + '"' });
+      }
+      setTimeout(() => this.sfx('win'), 250); this.buzz([40, 30, 40]);
+    } else if (lost) {
+      nb.over = true; nb.win = false;
+      if (!nb.draw) { events.push({ t: 'loss' }); setTimeout(() => this.sfx('lose'), 250); }
+    } else if (nb.over && nb.draw) { /* round limit */ }
+    if (tr && tr.tower) this.towerAfter(nb, won, lost || (nb.over && !won), patch);
+    if (nb.over) this.awardXp(nb, won, patch);
+    this.update(patch, events);
+  }
+  // action mode: a duel in the overworld ended. `o` = { lead, foe, bench (battler sides), part: {seed: true}, koXp: {seed: xp} }. Returns the log lines (level-ups).
+  actDuelEnd(tr, won, o) {
+    const nb = { s: [o.lead, o.foe], bench: o.bench || [], reward: tr.reward || 0, round: 1, log: [], over: true, win: !!won, draw: false, trainer: tr, part: o.part || {}, koXp: o.koXp || {} };
+    this._surge = null; this.settleBattle(nb, tr, !!won, !won, {}, []);
+    return nb.log.map((l) => l.text);
+  }
+  // action mode: leaving a Tower floor unfinished keeps the party's HP in the run (the floor starts over)
+  actTowerHold(sides) {
+    const t = this.towerState(); if (!t.run) return; const run = { floor: t.run.floor, party: t.run.party.slice(), hp: Object.assign({}, t.run.hp) };
+    sides.forEach((sd) => { run.hp[sd.k.seed] = Math.max(0, Math.round(sd.hp)); }); this.update({ tower: Object.assign({}, t, { run: run }) });
+  }
   battleAction(act) {
     const b = this.state.battle;
     if (!b || b.over) return;
@@ -5357,27 +5440,7 @@ class Game extends Component {
         nb.over = false; nb.win = false; nb.draw = false;
       } else lost = true;
     }
-    if (won) {
-      nb.over = true; nb.win = true; nb.draw = false;
-      patch.wins = this.state.wins + 1; patch.essence = this.state.essence + nb.reward;
-      events.push({ t: 'win', type: nb.s[0].k.element.name, adv: this.beats()[nb.s[0].k.element.name].indexOf(nb.s[1].k.element.name) !== -1 });
-      if (tr && !tr.tower) {
-        this.questTick('beat', tr.id, patch);
-        const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, this.state.npc);
-        npc.beaten = Object.assign({}, npc.beaten, { [tr.id]: new Date().toDateString() });
-        if ((npc.cleared || []).indexOf(tr.id) === -1) npc.cleared = (npc.cleared || []).concat([tr.id]);
-        if (tr.leader && (npc.seals || []).indexOf(tr.id) === -1) { npc.seals = (npc.seals || []).concat([tr.id]); patch.justSealed = tr.id; events.push({ t: 'leader' }); }
-        patch.npc = npc;
-        nb.log.push({ text: tr.name + ': "' + tr.winLine + '"' });
-      }
-      setTimeout(() => this.sfx('win'), 250); this.buzz([40, 30, 40]);
-    } else if (lost) {
-      nb.over = true; nb.win = false;
-      if (!nb.draw) { events.push({ t: 'loss' }); setTimeout(() => this.sfx('lose'), 250); }
-    } else if (nb.over && nb.draw) { /* round limit */ }
-    if (tr && tr.tower) this.towerAfter(nb, won, lost || (nb.over && !won), patch);
-    if (nb.over) this.awardXp(nb, won, patch);
-    this.update(patch, events);
+    this.settleBattle(nb, tr, won, lost, patch, events);
   }
   towerAfter(nb, won, lost, patch) {
     const t = this.towerState(); if (!t.run) return;
@@ -6484,7 +6547,9 @@ const APP = (() => {
     const cleared = (game.state.npc && game.state.npc.cleared) || [];
     // trainers: full reward on the first win, half on daily rematches (keeps daily essence close to the pre-city economy)
     const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward + (n.bonus || 0) : Math.ceil(n.reward / 2));
-    game.setState({ trainer: { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss }, battle: null });
+    const tr = { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss };
+    if (ACT.canDuel() && ACT.startDuel({ tr: tr, npc: n })) { n.declined = true; return; }   // action mode: fight it out on the map
+    game.setState({ trainer: tr, battle: null });
     openScreen('battle');
   }
   // ---------- Champion's Tower ----------
@@ -6495,7 +6560,13 @@ const APP = (() => {
   function towerFloorStart() {
     const t = game.towerState(); if (!t.run) return;
     const tr = game.towerFloor(t.run.floor), team = game.teamFor(tr), first = t.run.floor > t.best;
-    game.setState({ trainer: { id: tr.id, name: tr.name, team: team, stage: tr.stage, lv: tr.lv, reward: first ? tr.reward : 0, winLine: tr.winLine, tower: true, floor: tr.floor, warden: tr.warden }, battle: null });
+    const trainer = { id: tr.id, name: tr.name, team: team, stage: tr.stage, lv: tr.lv, reward: first ? tr.reward : 0, winLine: tr.winLine, tower: true, floor: tr.floor, warden: tr.warden };
+    if (ACT.canDuel()) {   // action mode: the run's party fights the floor on the map; HP carries from the run
+      const party = game.towerParty(), hp = {}; party.forEach((x) => { hp[x.seed] = x.hp; });
+      const tw = game.towerTwist();
+      if (party.some((x) => x.hp > 0) && ACT.startDuel({ tr: trainer, party: party.map((x) => x.seed), hp: hp, surge: tw.id === 'surge' ? tw.type : null })) return;
+    }
+    game.setState({ trainer: trainer, battle: null });
     openScreen('battle');
   }
   function towerLobby() {
@@ -6533,6 +6604,22 @@ const APP = (() => {
     } else {
       setTimeout(() => showDialog(KEEPER, ['Your climb ended on floor ' + res.floor + '.', 'Best: floor ' + Math.max(t.best, 0) + ' of ' + TOWER.floors + '. Climbs left today: ' + (g.props.testMode ? 'unlimited' : g.towerRunsLeft()) + '.']), 60);
     }
+  }
+  // an action-mode duel ended: the same follow-ups the battle screen's close() gives
+  function duelDone(tr, npc, won, lines) {
+    const g = game; musicLoop();
+    const grew = (lines || []).filter((l) => /grew to level/.test(l));
+    if (tr.tower) { const res = g.state.towerResult; g.setState({ towerResult: null }); if (res) towerAfterClose(res); if (grew.length) setTimeout(() => toast(grew.join(' ')), 600); return; }
+    const sealed = g.state.justSealed;
+    if (sealed) {
+      g.setState({ justSealed: null });
+      const n = Object.values(WORLD.allNpcs()).flat().find((x) => x.id === sealed) || npc, count = ((g.state.npc && g.state.npc.seals) || []).length;
+      const ls = [n.sealLine, 'You now hold ' + count + ' of 4 Leader Seals.'];
+      if (count === 4) ls.push('Every leader in the land has fallen to you. You are the Champion of Sproutvale!');
+      setTimeout(() => showDialog(n.name, [tr.winLine].concat(ls)), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 4200); return;
+    }
+    if (won) { setTimeout(() => showDialog(tr.name, [tr.winLine, 'You earned ' + tr.reward + ' essence.'].filter((x) => x && !/^You earned 0 /.test(x))), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 3500); }
+    else toast('Your party was knocked out. ' + tr.name + ' wins this round. No penalty; you can try again.');
   }
   function close() {
     const tres = game.state.towerResult, trw = game.state.trainer, bw = game.state.battle;
@@ -6639,6 +6726,7 @@ const APP = (() => {
     const st = game.state;
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
+    { const di = ACT.duelInfo(); if (di && !open) return di.boss || di.tower ? 'boss' : 'battle'; }
     if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
     const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { descent: 'ember', ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
   }
@@ -6660,17 +6748,20 @@ const APP = (() => {
         },
         foe: (types, lead, rare) => {
           const key = types.join(',') + (rare ? '+rare' : ''), pool = foePool[key] || (foePool[key] = []);
-          if (pool.length < 10) for (let i = 0; i < (rare ? 400 : 40) && pool.length < 10; i++) { const sd = 1 + Math.floor(Math.random() * 999998), k = game.make(sd, 1); if ((!types.length || types.indexOf(k.element.name) !== -1) && (!rare || k.rarity === 'Rare' || k.rarity === 'Mythic')) pool.push(sd); }
+          if (pool.length < 30) for (let i = 0; i < (rare ? 600 : 150) && pool.length < 30; i++) { const sd = 1 + Math.floor(Math.random() * 999998), k = game.make(sd, 1); if ((!types.length || types.indexOf(k.element.name) !== -1) && (!rare || k.rarity === 'Rare' || k.rarity === 'Mythic')) pool.push(sd); }
           if (!pool.length) return null;
           const lv = Math.max(1, (lead.lv || 1) + Math.floor(Math.random() * 3) - 1);
-          return game.make(pool[Math.floor(Math.random() * pool.length)], lead.stage || 1, lv);
+          const own = new Set(game.state.caught.map((c) => c.seed)); let sd = pool[Math.floor(Math.random() * pool.length)]; for (let i = 0; i < 8 && own.has(sd); i++) sd = pool[Math.floor(Math.random() * pool.length)];   // skip critters you already keep when there is a choice
+          return game.make(sd, lead.stage || 1, lv);
         },
         img: (k) => { const key = k.seed + ':' + k.stage; if (!imgs[key]) { const im = new Image(); im.src = PIX.sprite(k, 'icon'); imgs[key] = im; } return imgs[key]; },
         bench: () => {
           const st = game.state, lead = leadCache.k ? leadCache.k.seed : null;
-          return game.partySeeds().filter((sd) => sd !== lead).slice(0, 2).map((sd) => { const e = st.caught.find((c) => c.seed === sd), key = sd + ':' + e.stage + ':' + (e.lv || 1); if (!benchCache[key]) benchCache[key] = game.make(sd, e.stage, e.lv || 1); return benchCache[key]; });
+          return (ACT.duelParty() || game.partySeeds()).filter((sd) => sd !== lead).slice(0, 2).map((sd) => { const e = st.caught.find((c) => c.seed === sd), key = sd + ':' + e.stage + ':' + (e.lv || 1); if (!benchCache[key]) benchCache[key] = game.make(sd, e.stage, e.lv || 1); return benchCache[key]; });
         },
         setLead: (seed) => { game.update({ fighter: seed }); },
+        kOf: (sd) => { const e = game.state.caught.find((c) => c.seed === sd); if (!e) return null; const key = sd + ':' + e.stage + ':' + (e.lv || 1); if (!benchCache[key]) benchCache[key] = game.make(sd, e.stage, e.lv || 1); return benchCache[key]; },
+        duelDone: (tr, npc, won, lines) => duelDone(tr, npc, won, lines),
         onKill: (foe, mine) => game.actKill(foe, mine),
         keep: (k) => { const r = game.actKeep(k); if (r.ok) toast('Kept ' + k.name + '!' + (r.species ? ' New species.' : '') + (r.cost ? ' (' + r.cost + (r.cost === 1 ? ' roll' : ' rolls') + ')' : ' (free)')); else if (r.why === 'rolls') toast('Keeping ' + k.name + ' needs ' + r.cost + (r.cost === 1 ? ' roll.' : ' rolls.')); else if (r.why === 'owned') toast('You already have this one.'); return r; },
         sfx: (k) => game.sfx(k)
@@ -6704,6 +6795,12 @@ const APP = (() => {
         if (sig !== kbSig) { kbSig = sig; kb.hidden = !offs.length; kb.innerHTML = offs.map((o) => { const c = game.actKeepCost(o.k), owned = game.state.caught.some((e) => e.seed === o.k.seed); return '<button data-id="' + o.id + '"' + (owned ? ' disabled' : '') + '><b>Keep ' + esc(o.k.name) + '</b><span>' + esc(o.k.rarity) + ' · ' + (c.cost ? c.cost + (c.cost === 1 ? ' roll' : ' rolls') : 'free') + ' · joins at Lv 1</span><i></i></button>'; }).join(''); }
         [].forEach.call(kb.querySelectorAll('button'), (b) => { const o = offs.find((x) => x.id === +b.dataset.id); if (o) b.lastChild.style.width = Math.max(0, 100 * o.t / o.tot).toFixed(0) + '%'; });
       }, 120);
+      const db = $('duel'); let dbSig = '';
+      db.addEventListener('click', (ev) => { if (ev.target.closest('button')) ACT.giveUp(); });
+      setInterval(() => {
+        const di = ACT.duelInfo(), sig = di ? di.name + di.defeated + '/' + di.total : '';
+        if (sig !== dbSig) { dbSig = sig; db.hidden = !di; if (di) db.innerHTML = '<b>' + esc(di.tower ? 'Floor ' + di.floor : di.name) + '</b><span>' + di.defeated + ' of ' + di.total + ' down</span><button aria-label="Give up the duel">Give up</button>'; }
+      }, 150);
       setInterval(() => {
         const show = ACT.ready() && !WORLD.paused && !open; if (atk.hidden === show) atk.hidden = !show; if (!show) { if (wheelOn) closeWheel(false); return; }
         atk.style.setProperty('--cd', ACT.cdFrac().toFixed(2));
@@ -6738,7 +6835,7 @@ const APP = (() => {
       },
       onLocked: (e) => ROUTE_GATES[e.to] ? toast(mapName(e.to) + ' opens at trainer level ' + ROUTE_GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.') : e.to === 'peak' ? toast("The trail to Champion's Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.') : toast(ZONE_NAMES[e.to] + ' opens at trainer level ' + GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.'),
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
-      canChallenge: (n) => !DEV.safe && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
+      canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
       onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); applyLamp(); applyForge(); renderWeather(); if (game && (m.city || m.id === 'peak' || m.id === 'ascent' || m.id === 'descent') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
@@ -6839,7 +6936,7 @@ const APP = (() => {
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
   function rtAttack() { if (game && game.rtOn()) { game.rtPlayer(Math.min(3, game.state.rtSel || 0)); const f = document.getElementById('rt-fill'); if (f) f.style.transform = 'scaleX(' + game.rtWait().toFixed(3) + ')'; } }
-  return { rtAttack, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { towerFloorStart, rtAttack, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
 

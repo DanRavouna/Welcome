@@ -86,6 +86,8 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 #atk .ring{position:relative;overflow:hidden;width:72px;height:72px;border-radius:50%;border:3px solid #fff;background:linear-gradient(180deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,0) 60%),#FF7A5A;display:flex;align-items:center;justify-content:center;color:#3A0E00;box-shadow:0 6px 18px rgba(255,100,60,.5)}
 #atk .ring::after{content:'';position:absolute;inset:0;background:rgba(14,26,56,.62);clip-path:inset(calc((1 - var(--cd,0))*100%) 0 0 0);pointer-events:none}
 #atk-label{padding:2px 9px;border-radius:999px;background:var(--glass);color:#fff;font-size:11px;font-weight:800;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+#duel{position:absolute;left:50%;transform:translateX(-50%);top:calc(112px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;padding:6px 8px 6px 14px;border-radius:999px;background:var(--glass);border:2px solid #FF8A7A;color:#fff;z-index:5;white-space:nowrap}
+#duel b{font-size:13px;font-weight:900}#duel span{font-size:11px;font-weight:700;color:#C9D6F2}#duel button{border:0;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;font:inherit;font-size:11px;font-weight:800;padding:4px 10px;cursor:pointer}
 #keepbar{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(272px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-end;z-index:5}
 #keepbar button{position:relative;overflow:hidden;border:2px solid #FFC94D;border-radius:14px;padding:6px 12px 9px;background:var(--glass);color:#fff;font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:1px;max-width:230px}
 #keepbar button b{font-size:13px;font-weight:900}#keepbar button span{font-size:11px;font-weight:700;color:#C9D6F2}
@@ -212,7 +214,7 @@ html.hc .prof{background:#12204A!important;backdrop-filter:none!important}
 html.hc .mgroup{background:#08122A!important}html.hc .mht span{color:#FFFFFF!important}
 html.hc button,html.hc .chip{outline-color:#FFFFFF}
 html.hc :focus-visible{outline:3px solid #FFD86B!important;outline-offset:2px}
-#screen[hidden],#atk[hidden],#wheel[hidden],#keepbar[hidden],#toast[hidden],#tip[hidden],#hud[hidden],.dot[hidden]{display:none}
+#screen[hidden],#atk[hidden],#wheel[hidden],#keepbar[hidden],#duel[hidden],#toast[hidden],#tip[hidden],#hud[hidden],.dot[hidden]{display:none}
 button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
 </style>
 </head>
@@ -239,6 +241,7 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
     <button id="atk" hidden aria-label="Attack. Hold to choose a move"><span class="ring"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20L18 6M14 4h6v6M7 17l-3 3"></path></svg></span><span id="atk-label">Slash</span></button>
     <div id="wheel" hidden aria-hidden="true"></div>
     <div id="keepbar" hidden></div>
+    <div id="duel" hidden></div>
     <div id="toast" role="status" aria-live="polite" hidden></div>
   </div>
   </section>

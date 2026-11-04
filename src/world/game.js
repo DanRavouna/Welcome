@@ -318,6 +318,41 @@ class Game extends Component {
       r.cd[1] = now + ms; this.battleAction({ rt: 1, move: mi });
     }
   }
+  // the end of a trainer or wild battle (shared by the turn-based screen and the action-mode duel): rewards, seals, quests, Tower progress, XP
+  settleBattle(nb, tr, won, lost, patch, events) {
+    if (won) {
+      nb.over = true; nb.win = true; nb.draw = false;
+      patch.wins = this.state.wins + 1; patch.essence = this.state.essence + nb.reward;
+      events.push({ t: 'win', type: nb.s[0].k.element.name, adv: this.beats()[nb.s[0].k.element.name].indexOf(nb.s[1].k.element.name) !== -1 });
+      if (tr && !tr.tower) {
+        this.questTick('beat', tr.id, patch);
+        const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, this.state.npc);
+        npc.beaten = Object.assign({}, npc.beaten, { [tr.id]: new Date().toDateString() });
+        if ((npc.cleared || []).indexOf(tr.id) === -1) npc.cleared = (npc.cleared || []).concat([tr.id]);
+        if (tr.leader && (npc.seals || []).indexOf(tr.id) === -1) { npc.seals = (npc.seals || []).concat([tr.id]); patch.justSealed = tr.id; events.push({ t: 'leader' }); }
+        patch.npc = npc;
+        nb.log.push({ text: tr.name + ': "' + tr.winLine + '"' });
+      }
+      setTimeout(() => this.sfx('win'), 250); this.buzz([40, 30, 40]);
+    } else if (lost) {
+      nb.over = true; nb.win = false;
+      if (!nb.draw) { events.push({ t: 'loss' }); setTimeout(() => this.sfx('lose'), 250); }
+    } else if (nb.over && nb.draw) { /* round limit */ }
+    if (tr && tr.tower) this.towerAfter(nb, won, lost || (nb.over && !won), patch);
+    if (nb.over) this.awardXp(nb, won, patch);
+    this.update(patch, events);
+  }
+  // action mode: a duel in the overworld ended. `o` = { lead, foe, bench (battler sides), part: {seed: true}, koXp: {seed: xp} }. Returns the log lines (level-ups).
+  actDuelEnd(tr, won, o) {
+    const nb = { s: [o.lead, o.foe], bench: o.bench || [], reward: tr.reward || 0, round: 1, log: [], over: true, win: !!won, draw: false, trainer: tr, part: o.part || {}, koXp: o.koXp || {} };
+    this._surge = null; this.settleBattle(nb, tr, !!won, !won, {}, []);
+    return nb.log.map((l) => l.text);
+  }
+  // action mode: leaving a Tower floor unfinished keeps the party's HP in the run (the floor starts over)
+  actTowerHold(sides) {
+    const t = this.towerState(); if (!t.run) return; const run = { floor: t.run.floor, party: t.run.party.slice(), hp: Object.assign({}, t.run.hp) };
+    sides.forEach((sd) => { run.hp[sd.k.seed] = Math.max(0, Math.round(sd.hp)); }); this.update({ tower: Object.assign({}, t, { run: run }) });
+  }
   battleAction(act) {
     const b = this.state.battle;
     if (!b || b.over) return;
@@ -386,27 +421,7 @@ class Game extends Component {
         nb.over = false; nb.win = false; nb.draw = false;
       } else lost = true;
     }
-    if (won) {
-      nb.over = true; nb.win = true; nb.draw = false;
-      patch.wins = this.state.wins + 1; patch.essence = this.state.essence + nb.reward;
-      events.push({ t: 'win', type: nb.s[0].k.element.name, adv: this.beats()[nb.s[0].k.element.name].indexOf(nb.s[1].k.element.name) !== -1 });
-      if (tr && !tr.tower) {
-        this.questTick('beat', tr.id, patch);
-        const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, this.state.npc);
-        npc.beaten = Object.assign({}, npc.beaten, { [tr.id]: new Date().toDateString() });
-        if ((npc.cleared || []).indexOf(tr.id) === -1) npc.cleared = (npc.cleared || []).concat([tr.id]);
-        if (tr.leader && (npc.seals || []).indexOf(tr.id) === -1) { npc.seals = (npc.seals || []).concat([tr.id]); patch.justSealed = tr.id; events.push({ t: 'leader' }); }
-        patch.npc = npc;
-        nb.log.push({ text: tr.name + ': "' + tr.winLine + '"' });
-      }
-      setTimeout(() => this.sfx('win'), 250); this.buzz([40, 30, 40]);
-    } else if (lost) {
-      nb.over = true; nb.win = false;
-      if (!nb.draw) { events.push({ t: 'loss' }); setTimeout(() => this.sfx('lose'), 250); }
-    } else if (nb.over && nb.draw) { /* round limit */ }
-    if (tr && tr.tower) this.towerAfter(nb, won, lost || (nb.over && !won), patch);
-    if (nb.over) this.awardXp(nb, won, patch);
-    this.update(patch, events);
+    this.settleBattle(nb, tr, won, lost, patch, events);
   }
   towerAfter(nb, won, lost, patch) {
     const t = this.towerState(); if (!t.run) return;
