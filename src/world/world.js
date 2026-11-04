@@ -822,6 +822,7 @@ const WORLD = (() => {
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = M.theme.bg; ctx.fillRect(0, 0, vw, vh);
     ctx.drawImage(terrain, -cx, -cy, terrain.width * 2, terrain.height * 2);
+    if (typeof VFX !== 'undefined') { const sk = VFX.shakeNow(tAnim); if (sk.x || sk.y) { cx += sk.x; cy += sk.y; } }   // a blow shakes the camera along its direction (off in Reduce motion)
     lastCam = { cx: cx, cy: cy };
     if (M.id === 'town') {
       const sh = M.places[2], gx = (sh.x + sh.w / 2) * TS - cx, gy = (sh.y + sh.h / 2) * TS - cy + 6, pulse = 0.6 + 0.4 * Math.sin(tAnim * 2.2);

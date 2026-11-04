@@ -6,10 +6,10 @@
 const ACT = (() => {
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const CD = [0.45, 1.1, 1.4, 3.0];            // seconds: quick slash, heavy slash, guard, special
-  let H = null, hero = null, team = {}, OFF = [], offId = 1, duel = null, armed = false, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
+  let GH = [], H = null, hero = null, team = {}, OFF = [], offId = 1, duel = null, armed = false, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
   const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null };
   const rand = Math.random;
-  function bind(h) { H = h; }
+  function bind(h) { H = h; if (typeof VFX !== 'undefined') VFX.bind(h); }
   const enabled = () => !!(H && H.enabled && H.enabled());
   const active = () => on;
   function lead() { return H && H.lead ? H.lead() : null; }
@@ -20,7 +20,7 @@ const ACT = (() => {
     const side = H.game().newBattle(k, k, 0).s[0]; side.label = k.name; side.hp = c ? Math.max(0, Math.round(side.max * c.side.hp / c.side.max)) : side.max;
     team[k.seed] = { key: key, side: side, rev: c ? c.rev : 0 }; return side;
   }
-  function mkHero() { const k = lead(); hero = k ? sideFor(k) : null; }
+  function mkHero() { const k = lead(); hero = k ? sideFor(k) : null; if (k) VFX.warm(k.element.name, k.element.color); }
   function benchSides() { return (H.bench ? H.bench() : []).map((k) => sideFor(k)); }
   // tap-free swap from the wheel: only to a critter that can still fight
   function swapTo(seed) {
@@ -40,7 +40,7 @@ const ACT = (() => {
     E.push({ k: k, s: s, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: rand() * 2, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1 + rand(), tick: 1, img: H.img(k) });
     return true;
   }
-  function reset(e) { if (duel) abortDuel('You left the duel.'); E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7); }
+  function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7); }
   const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }
@@ -67,20 +67,23 @@ const ACT = (() => {
     const a = st.atk, mv = hero.k.kit[a.mi], o = heroPos(), heavy = a.mi === 1, rad = (heavy ? 1.45 : 1.1) * e.TS;
     const ex = o.x + a.dir[0] * a.dash * 0.9, ey = o.y + a.dir[1] * a.dash * 0.9;   // the critter lunges to its target first: the blow lands where the lunge ends
     const cx = ex + a.dir[0] * 0.85 * e.TS, cy = ey + a.dir[1] * 0.85 * e.TS, g = H.game();
-    FX.push({ k: 'slash', x: ex + a.dir[0] * 0.55 * e.TS, y: ey + a.dir[1] * 0.55 * e.TS - 8, ang: Math.atan2(a.dir[1], a.dir[0]), r: rad, col: hero.k.element.color, t: 0, big: heavy || a.kind === 'status' });
+    const EL = hero.k.element.name, HEX = hero.k.element.color, bigFx = heavy || a.kind === 'status', Rs = bigFx ? 60 : 44;
+    VFX.slash(EL, HEX, cx - a.dir[0] * Rs, cy - a.dir[1] * Rs - 8, Math.atan2(a.dir[1], a.dir[0]), bigFx);   // the crescent sits where the blow lands
     if (a.kind === 'guard') return;
     E.slice().forEach((m) => {
       if (Math.hypot(m.x - cx, m.y - cy) > rad + 8) return;
       if (a.kind === 'attack' && rand() * 100 >= mv.acc) { num(m.x, m.y - 26, 'Miss', '#FFFFFF'); return; }
       const before = m.s.hp, power = a.kind === 'status' ? Math.round(hero.k.kit[0].power * 0.6) : mv.power;
-      g.hit(hero, m.s, power, rand); delete m.s.fxHits;
+      g.hit(hero, m.s, power, rand); const mult = ((m.s.fxHits || [])[0] || {}).m || 1; delete m.s.fxHits;
       if (a.kind === 'status') { const key = { burn: 'burn', weaken: 'weak', daze: 'daze', sap: 'sap' }[mv.effect]; if (key) m.s[key] = mv.effect === 'daze' ? 2 : 3; else if (mv.effect === 'heal') { hero.hp = Math.min(hero.max, hero.hp + Math.round(hero.max * 0.28)); } else if (mv.effect === 'fortify') hero.fort = 4; }
       const dmg = before - m.s.hp; num(m.x, m.y - 26, String(dmg), dmg >= 40 ? '#FFD86B' : '#FFFFFF'); if (H.sfx && dmg > 0) H.sfx('hit');
+      if (dmg > 0) { const big = heavy || mult > 1; VFX.impact(EL, HEX, m.x, m.y - 14, big); VFX.burst(EL, HEX, m.x, m.y - 14, big ? 14 : 8, a.dir[0], a.dir[1], big ? 1.3 : 1); VFX.shake(a.dir[0], a.dir[1], heavy ? 7 : (mult > 1 ? 5 : 3)); VFX.hitStop(heavy ? 0.09 : 0.05); if (mult > 1) num(m.x, m.y - 42, 'Strong!', '#FFD86B'); else if (mult < 1) num(m.x, m.y - 42, 'Weak', '#9FB0D0'); }
       m.flash = 0.16; m.mode = 'chase'; m.t = 0; const d = Math.hypot(m.x - o.x, m.y - o.y) || 1, kb = (heavy ? 1.3 : 0.7) * e.TS; m.kx = (m.x - o.x) / d * kb * 6; m.ky = (m.y - o.y) / d * kb * 6;
       if (m.s.hp <= 0) kill(m, e);
     });
   }
   function kill(m, e) {
+    VFX.impact(m.k.element.name, m.k.element.color, m.x, m.y - 14, true); VFX.burst(m.k.element.name, m.k.element.color, m.x, m.y - 14, 16, 0, 0, 1.2);
     E.splice(E.indexOf(m), 1); for (let i = 0; i < 8; i++) FX.push({ k: 'puff', x: m.x, y: m.y - 10, vx: (rand() - 0.5) * 80, vy: -20 - rand() * 50, t: 0, col: m.k.element.color });
     if (m.duel) {   // a trainer's critter: its XP is paid when the duel ends, there is nothing to keep
       duel.down += 1; duel.koXp[hero.k.seed] = (duel.koXp[hero.k.seed] || 0) + 8 + 2 * (m.k.lv || 1) + 5 * (m.k.stage || 1); if (H.sfx) H.sfx('claim');
@@ -114,22 +117,23 @@ const ACT = (() => {
   }
   function hurtHero(m, mul) {
     if (m.duel) mul *= duelK().dmg;
-    const before = hero.hp; H.game().hit(m.s, hero, Math.max(1, Math.round(m.k.kit[0].power * mul)), rand); delete hero.fxHits;
-    const o = heroPos(); num(o.x, o.y - 30, String(Math.round(before - hero.hp)), '#FF8A7A'); st.quiet = 0; hero.__hurt = 0.2; if (H.sfx) H.sfx('hit'); if (hero.hp <= 0) koHero();
+    const before = hero.hp, guarded = hero.guard; H.game().hit(m.s, hero, Math.max(1, Math.round(m.k.kit[0].power * mul)), rand); delete hero.fxHits;
+    const o = heroPos(), me = m.k.element, bx = o.x - m.x, by = o.y - m.y;
+    if (guarded) { VFX.impact('Frost', '#9CC8FF', o.x, o.y - 14, false); VFX.burst('Frost', '#9CC8FF', o.x, o.y - 14, 8, bx, by, 1); VFX.shake(bx, by, 2); } else { VFX.impact(me.name, me.color, o.x, o.y - 14, false); VFX.burst(me.name, me.color, o.x, o.y - 14, 7, bx, by, 0.9); VFX.shake(bx, by, 3.5); } num(o.x, o.y - 30, String(Math.round(before - hero.hp)), '#FF8A7A'); st.quiet = 0; hero.__hurt = 0.2; if (H.sfx) H.sfx('hit'); if (hero.hp <= 0) koHero();
   }
   const closest = (m, p, h) => Math.min(Math.hypot(p.x - m.x, p.y - m.y), Math.hypot(h.x - m.x, h.y - m.y));
   function allyToHeal(m, e) { let best = null, br = 0.9; E.forEach((o) => { if (o === m || o.s.hp <= 0) return; const r = o.s.hp / o.s.max; if (r < br && Math.hypot(o.x - m.x, o.y - m.y) < 6 * e.TS) { br = r; best = o; } }); return best; }
   function think(m, e, dt, p, hp0, dp, dh) {
     const B = BEH[m.k.element.name] || BDEF, TS = e.TS;
-    if (m.dash > 0) { m.dash -= dt; walk(m, e, m.dvx, m.dvy, dt); const hpos = heroPos(); if (!m.dashHit && closest(m, p, hpos) < 0.95 * TS) { m.dashHit = true; hurtHero(m, B.mul); } return; }
+    if (m.dash > 0) { m.dash -= dt; walk(m, e, m.dvx, m.dvy, dt); VFX.trail(m.k.element.name, m.k.element.color, m.x, m.y - 10); VFX.trail(m.k.element.name, m.k.element.color, m.x, m.y - 14); const hpos = heroPos(); if (!m.dashHit && closest(m, p, hpos) < 0.95 * TS) { m.dashHit = true; hurtHero(m, B.mul); } return; }
     if (m.tele > 0) {
       m.tele -= dt; if (m.tele > 0) return;
       const hpos = heroPos(), aim = m.aim || { x: hpos.x, y: hpos.y }, ax = aim.x, ay = aim.y; if (!m.kind) m.kind = 'melee';
       if (m.s.daze > 0 && rand() < 0.45) return;
-      if (m.kind === 'melee') { if (closest(m, p, hpos) < 1.35 * TS) { hurtHero(m, B.mul); if (B.runAway) m.retreat = B.runAway; } }
+      if (m.kind === 'melee') { { const q = Math.hypot(hpos.x - m.x, hpos.y - m.y) || 1, ux = (hpos.x - m.x) / q, uy = (hpos.y - m.y) / q, me = m.k.element; VFX.slash(me.name, me.color, m.x + ux * 0.9 * TS - ux * 44, m.y + uy * 0.9 * TS - uy * 44 - 8, Math.atan2(uy, ux), false); } if (closest(m, p, hpos) < 1.35 * TS) { hurtHero(m, B.mul); if (B.runAway) m.retreat = B.runAway; } }
       else if (m.kind === 'dash') { const L = Math.hypot(ax - m.x, ay - m.y) || 1; m.dvx = (ax - m.x) / L * 300; m.dvy = (ay - m.y) / L * 300; m.dash = 0.3; m.dashHit = false; }
       else if (m.kind === 'shoot') { const L = Math.hypot(ax - m.x, ay - m.y) || 1; PR.push({ x: m.x, y: m.y - 12, vx: (ax - m.x) / L * (B.ps || 100), vy: (ay - m.y) / L * (B.ps || 100), t: 0, m: m, mul: B.mul, col: m.k.element.color }); }
-      else if (m.kind === 'aoe') { FX.push({ k: 'ring', x: m.x, y: m.y - 4, r: B.rad * TS, t: 0, col: m.k.element.color }); if (closest(m, p, hpos) < B.rad * TS) hurtHero(m, B.mul); }
+      else if (m.kind === 'aoe') { FX.push({ k: 'ring', x: m.x, y: m.y - 4, r: B.rad * TS, t: 0, col: m.k.element.color }); VFX.impact(m.k.element.name, m.k.element.color, m.x, m.y - 6, true); VFX.burst(m.k.element.name, m.k.element.color, m.x, m.y - 6, 14, 0, 0, 1.2); if (closest(m, p, hpos) < B.rad * TS) hurtHero(m, B.mul); }
       else if (m.kind === 'blink') { for (let i = 0; i < 6; i++) FX.push({ k: 'puff', x: m.x, y: m.y - 10, vx: (rand() - 0.5) * 60, vy: -10 - rand() * 30, t: 0, col: m.k.element.color }); if (tileFree(e, ax, ay)) { m.x = ax; m.y = ay; } m.kind = 'melee'; m.tele = 0.28; m.aim = { x: ax, y: ay }; }
       else if (m.kind === 'heal') { const al = allyToHeal(m, e); if (al) { const h = Math.round(al.s.max * 0.14); al.s.hp = Math.min(al.s.max, al.s.hp + h); num(al.x, al.y - 30, '+' + h, '#7BE07B'); FX.push({ k: 'ring', x: al.x, y: al.y - 4, r: 0.7 * TS, t: 0, col: '#7BE07B' }); } }
       return;
@@ -191,11 +195,13 @@ const ACT = (() => {
   function step(e) {
     on = false; lastEnv = e;
     armed = false;
-    if (!enabled() || !e.fol || e.M.interior) { if (duel) abortDuel(''); if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
+    if (!enabled() || !e.fol || e.M.interior) { if (duel) abortDuel(''); if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; VFX.clear(); } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
     mkHero(); if (!hero) return; armed = true;
     if (!wildOk(e) && !duel) { if (E.length) { E = []; FX = []; PR = []; OFF = []; } mapId = ''; if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }   // a quiet place (city, cave): nothing roams here
     on = true; const dt = e.dt, g = H.game();
     if (mapId !== e.M.id) reset(e);
+    if (VFX.freeze(dt)) return;   // hit-stop: a blow freezes the fight for a few frames
+    VFX.step(dt); GH.forEach((q) => { q.t += dt; }); GH = GH.filter((q) => q.t < 0.2);
     st.cd = Math.max(0, st.cd - dt); st.calm = Math.max(0, st.calm - dt); st.quiet += dt;
     if (st.guard > 0) { st.guard -= dt; if (st.guard <= 0) hero.guard = false; }
     if (st.down > 0) { st.down -= dt; if (st.down <= 0) Object.keys(team).forEach((k) => { const sd = team[k].side; sd.hp = Math.max(sd.hp, Math.round(sd.max * 0.5)); }); }
@@ -212,6 +218,7 @@ const ACT = (() => {
       a.t += dt; const W = 0.09, S = 0.12, R = 0.2; let k = 0;
       if (a.t < W) k = -0.25 * (a.t / W); else if (a.t < W + S) { k = -0.25 + 1.25 * ((a.t - W) / S); if (!a.done) { a.done = true; strike(e); } } else if (a.t < W + S + R) k = 1 - (a.t - W - S) / R; else st.atk = null;
       const L = a.kind === 'guard' ? 0 : (k < 0 ? k * e.TS * 0.6 : k * a.dash); f.ox = a.dir[0] * L; f.oy = a.dir[1] * L;
+      if (a.kind !== 'guard' && a.t > 0.09 && L > 6) GH.push({ x: f.x + f.ox, y: f.y + f.oy, t: 0 });   // afterimages of the lunge
     }
     const hp0 = heroPos(), p = e.P;
     // enemies
@@ -225,7 +232,7 @@ const ACT = (() => {
     });
     if (hero.__hurt) hero.__hurt = Math.max(0, hero.__hurt - dt);
     OFF.forEach((o) => { o.t -= dt; }); OFF = OFF.filter((o) => o.t > 0);
-    PR.slice().forEach((q) => { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; const hp1 = heroPos();
+    PR.slice().forEach((q) => { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; const hp1 = heroPos(); if (rand() < 0.7) VFX.trail(q.m.k.element.name, q.col, q.x, q.y);
       if (q.t > 2.4 || !tileFree(e, q.x, q.y + 12)) { PR.splice(PR.indexOf(q), 1); return; }
       if (Math.min(Math.hypot(hp1.x - q.x, hp1.y - 12 - q.y), Math.hypot(e.P.x - q.x, e.P.y - 12 - q.y)) < 0.6 * e.TS && hero.hp > 0 && st.down <= 0) { PR.splice(PR.indexOf(q), 1); if (q.m && q.m.s.hp > 0) hurtHero(q.m, q.mul); } });
     // respawns
@@ -243,7 +250,7 @@ const ACT = (() => {
       c.fillStyle = m.k.element.color; c.fillRect(x - 13, y - 44, 5, 5);
       if (m.s.hp < m.s.max) { c.fillStyle = '#1E2A4A'; c.fillRect(x - 13, y - 38, 26, 5); c.fillStyle = '#FF6B6B'; c.fillRect(x - 12, y - 37, Math.max(0, Math.round(24 * m.s.hp / m.s.max)), 3); }
       if (m.tele > 0) { c.fillStyle = '#D8574A'; c.fillRect(x - 2, y - 52, 4, 9); c.fillRect(x - 2, y - 41, 4, 3); }
-      if (m.s.burn) { c.fillStyle = '#FF9A3A'; c.fillRect(x + 8, y - 30, 4, 4); }
+      VFX.status(c, x + 16, y - 44, m.s, e.t);
     } }));
     return out;
   }
@@ -252,14 +259,16 @@ const ACT = (() => {
     // your critter: health bar and guard bubble
     const o = heroPos(), x = e.snap(o.x - e.cx), y = e.snap(o.y - e.cy);
     c.fillStyle = '#1E2A4A'; c.fillRect(x - 15, y - 44, 30, 6); c.fillStyle = st.down > 0 ? '#9FB0D0' : (hero.hp / hero.max > 0.5 ? '#A7F04A' : (hero.hp / hero.max > 0.25 ? '#FFD86B' : '#FF6B6B')); c.fillRect(x - 14, y - 43, Math.max(0, Math.round(28 * hero.hp / hero.max)), 4);
-    if (hero.guard) { c.strokeStyle = 'rgba(150,200,255,0.9)'; c.lineWidth = 3; c.beginPath(); c.arc(x, y - 14, 20, 0, 6.3); c.stroke(); }
+    if (e.fol && e.fol.img && e.fol.img.complete && GH.length) { const hh = Math.round(30 * e.fol.img.height / Math.max(1, e.fol.img.width)); GH.forEach((q) => { c.globalAlpha = 0.4 * (1 - q.t / 0.2); c.drawImage(e.fol.img, e.snap(q.x - e.cx - 15), e.snap(q.y - e.cy - hh), 30, hh); }); c.globalAlpha = 1; }
+    if (hero.guard) VFX.shield(c, x, y, e.t, hero.k.element.color);
     if (st.down > 0) { c.fillStyle = '#FFFFFF'; c.font = '800 11px system-ui,sans-serif'; c.textAlign = 'center'; c.fillText('KO', x, y - 50); }
     E.forEach((m) => { if (!(m.tele > 0) || !m.aim) return; const B = BEH[m.k.element.name] || BDEF, mx = e.snap(m.x - e.cx), my = e.snap(m.y - e.cy), u = 1 - m.tele / B.tele; c.save(); c.strokeStyle = 'rgba(255,80,60,' + (0.35 + 0.4 * u) + ')'; c.lineWidth = 3;
       if (m.kind === 'aoe') { c.beginPath(); c.arc(mx, my - 4, B.rad * e.TS * (0.55 + 0.45 * u), 0, 6.3); c.stroke(); }
       else if (m.kind === 'dash') { c.beginPath(); c.moveTo(mx, my - 8); c.lineTo(e.snap(m.aim.x - e.cx), e.snap(m.aim.y - e.cy) - 8); c.stroke(); }
       else if (m.kind === 'blink') { const bx = e.snap(m.aim.x - e.cx), by = e.snap(m.aim.y - e.cy); c.beginPath(); c.arc(bx, by - 4, 10, 0, 6.3); c.stroke(); }
       c.restore(); });
-    PR.forEach((q) => { const qx = e.snap(q.x - e.cx), qy = e.snap(q.y - e.cy); c.fillStyle = q.col; c.beginPath(); c.arc(qx, qy, 5, 0, 6.3); c.fill(); c.fillStyle = '#FFFFFF'; c.fillRect(qx - 1, qy - 1, 3, 3); });
+    PR.forEach((q) => { const qx = e.snap(q.x - e.cx), qy = e.snap(q.y - e.cy); c.imageSmoothingEnabled = false; c.drawImage(VFX.orb(q.m.k.element.name, q.col), qx - 14, qy - 14, 28, 28); });
+    VFX.draw(c, e.cx, e.cy, e.snap);
     FX.forEach((f) => {
       const fx = e.snap(f.x - e.cx), fy = e.snap(f.y - e.cy);
       if (f.k === 'ring') { c.save(); c.globalAlpha = 1 - f.t / 0.5; c.strokeStyle = f.col; c.lineWidth = 4; c.beginPath(); c.arc(fx, fy, f.r * (0.5 + f.t), 0, 6.3); c.stroke(); c.restore(); return; }

@@ -1097,7 +1097,7 @@ const APP = (() => {
       let leadCache = { key: '', k: null }; const foePool = {}, benchCache = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');
       let holdT = null, wheelOn = false, hover = -1, slots = [];
       ACT.bind({
-        game: () => game, toast: toast,
+        game: () => game, toast: toast, calm: () => !!(game && game.state.settings && game.state.settings.calm),
         enabled: () => !!(game && game.state.settings && game.state.settings.arpg),
         lead: () => {
           const st = game.state; if (!st.caught.length) return null;
