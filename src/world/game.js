@@ -247,6 +247,18 @@ class Game extends Component {
       return this.newBattle(k, foe, 0).s[0];
     });
   }
+  // action mode: keep a defeated wild critter. Same price as meeting and keeping it in the grass: the keep cost in rolls (shiny = free)
+  // plus the sighting (a free one while any are left today, otherwise one roll). It joins at stage 1, level 1, like any kept critter.
+  actKeepCost(k) { const free = this.sightingsLeft() > 0; return { cost: (k.shiny ? 0 : (KEEP_COST[k.rarity] || 1)) + (free ? 0 : 1), free: free }; }
+  actKeep(k) {
+    const st = this.state; if (st.caught.some((e) => e.seed === k.seed)) return { ok: false, why: 'owned' };
+    const e2 = this.energy(), today = new Date().toDateString(), c = this.actKeepCost(k);
+    if (e2.left < c.cost) return { ok: false, why: 'rolls', cost: c.cost };
+    const s = st.sight && st.sight.day === today ? st.sight : { day: today, n: 0 }, no = this.make(k.seed, 1).speciesNo, seen = (st.seen || []).slice(), events = [{ t: 'keep' }];
+    if (no <= 48 && seen.indexOf(no) === -1) { seen.push(no); events.push({ t: 'species' }); }
+    this.update({ caught: [{ seed: k.seed, stage: 1 }].concat(st.caught), seen: seen, day: e2.today, used: e2.used + c.cost, sight: { day: today, n: s.n + (c.free ? 1 : 0) } }, events);
+    this.sfx('claim'); return { ok: true, cost: c.cost, species: events.length > 1 };
+  }
   // action mode: a defeated wild critter pays the lead critter XP (it can level up) and, for the first ACT_ESS_CAP kills each day, essence like a won wild battle
   actKill(foeK, leadK) {
     const st = this.state, today = new Date().toDateString(), a = st.act && st.act.day === today ? st.act : { day: today, n: 0 };

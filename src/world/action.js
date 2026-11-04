@@ -6,7 +6,7 @@
 const ACT = (() => {
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const CD = [0.45, 1.1, 1.4, 3.0];            // seconds: quick slash, heavy slash, guard, special
-  let H = null, hero = null, team = {}, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
+  let H = null, hero = null, team = {}, OFF = [], offId = 1, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
   const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null };
   const rand = Math.random;
   function bind(h) { H = h; }
@@ -30,17 +30,17 @@ const ACT = (() => {
   }
   function dummy() { return { k: hero.k, hp: 9999, max: 9999, burn: 0, weak: 0, daze: 0, sap: 0, fort: 0, guard: false, uses: 9, abUsed: false }; }
   function tileFree(e, x, y) { return !e.solidAt(Math.floor((x - 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor((x + 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor(x / e.TS), Math.floor((y - 5) / e.TS)); }
-  function spawnOne(e, far, elem) {
+  function spawnOne(e, far, elem, rare) {
     const cells = [], M = e.M, px = e.P.x / e.TS, py = e.P.y / e.TS;
     for (let y = 0; y < M.H; y++) for (let x = 0; x < M.W; x++) { const t = M.grid[y][x]; if ((t === 'W' || t === 'Z') && Math.hypot(x - px, y - py) >= far) cells.push([x, y]); }
     if (!cells.length) return false;
-    const c = cells[Math.floor(rand() * cells.length)], k = H.foe(elem ? [elem] : (M.types || []), lead());
+    const c = cells[Math.floor(rand() * cells.length)], isRare = rare !== undefined ? rare : M.grid[c[1]][c[0]] === 'Z', k = H.foe(elem ? [elem] : (M.types || []), lead(), isRare);
     if (!k) return false;
     const s = H.game().newBattle(lead(), k, 0).s[1]; s.label = 'Wild ' + k.name;
     E.push({ k: k, s: s, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: rand() * 2, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1 + rand(), tick: 1, img: H.img(k) });
     return true;
   }
-  function reset(e) { E = []; FX = []; PR = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; for (let i = 0; i < 4; i++) spawnOne(e, 7); }
+  function reset(e) { E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; for (let i = 0; i < 4; i++) spawnOne(e, 7); }
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }
   function faceVec(e) { return DIRS[e.P.dir] || DIRS.down; }
@@ -80,7 +80,7 @@ const ACT = (() => {
   }
   function kill(m, e) {
     E.splice(E.indexOf(m), 1); for (let i = 0; i < 8; i++) FX.push({ k: 'puff', x: m.x, y: m.y - 10, vx: (rand() - 0.5) * 80, vy: -20 - rand() * 50, t: 0, col: m.k.element.color });
-    spawnT = Math.min(spawnT, 8);
+    spawnT = Math.min(spawnT, 8); OFF.push({ id: offId++, k: m.k, t: 9, tot: 9 }); if (OFF.length > 2) OFF.shift();
     const r = H.onKill ? H.onKill(m.k, hero.k) : null;
     if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); } if (H.sfx) H.sfx('claim'); }
   }
@@ -150,7 +150,7 @@ const ACT = (() => {
   }
   function step(e) {
     on = false; lastEnv = e;
-    if (!enabled() || !e.fol || e.M.interior || e.M.cave || !(e.M.rate > 0)) { if (E.length) { E = []; FX = []; PR = []; mapId = ''; } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
+    if (!enabled() || !e.fol || e.M.interior || e.M.cave || !(e.M.rate > 0)) { if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
     mkHero(); if (!hero) return; on = true; const dt = e.dt, g = H.game();
     if (mapId !== e.M.id) reset(e);
     st.cd = Math.max(0, st.cd - dt); st.calm = Math.max(0, st.calm - dt); st.quiet += dt;
@@ -177,6 +177,7 @@ const ACT = (() => {
       else { if (near > 9 * e.TS || st.calm > 0 || st.down > 0) { m.mode = 'idle'; m.tele = 0; m.dash = 0; return; } think(m, e, dt, p, hp0, dp, dh); }
     });
     if (hero.__hurt) hero.__hurt = Math.max(0, hero.__hurt - dt);
+    OFF.forEach((o) => { o.t -= dt; }); OFF = OFF.filter((o) => o.t > 0);
     PR.slice().forEach((q) => { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; const hp1 = heroPos();
       if (q.t > 2.4 || !tileFree(e, q.x, q.y + 12)) { PR.splice(PR.indexOf(q), 1); return; }
       if (Math.min(Math.hypot(hp1.x - q.x, hp1.y - 12 - q.y), Math.hypot(e.P.x - q.x, e.P.y - 12 - q.y)) < 0.6 * e.TS && hero.hp > 0 && st.down <= 0) { PR.splice(PR.indexOf(q), 1); if (q.m && q.m.s.hp > 0) hurtHero(q.m, q.mul); } });
@@ -221,7 +222,7 @@ const ACT = (() => {
     });
   }
   return {
-    bind, step, items, drawFx, active, attack, swapTo, spawn: (n, elem) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem); }, get shots() { return PR; }, BEH,
+    bind, step, items, drawFx, active, attack, swapTo, spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, offers: () => OFF, keep: (id) => { const o = OFF.find((x) => x.id === id); if (!o) return { ok: false, why: 'gone' }; const r = H.keep(o.k); if (r.ok) OFF.splice(OFF.indexOf(o), 1); return r; }, get shots() { return PR; }, BEH,
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },
     get enemies() { return E; }, moves: () => (hero ? hero.k.kit.map((m, i) => ({ name: m.name, kind: m.kind, sub: m.sub, i: i })) : []),

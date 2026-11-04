@@ -86,6 +86,11 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 #atk .ring{position:relative;overflow:hidden;width:72px;height:72px;border-radius:50%;border:3px solid #fff;background:linear-gradient(180deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,0) 60%),#FF7A5A;display:flex;align-items:center;justify-content:center;color:#3A0E00;box-shadow:0 6px 18px rgba(255,100,60,.5)}
 #atk .ring::after{content:'';position:absolute;inset:0;background:rgba(14,26,56,.62);clip-path:inset(calc((1 - var(--cd,0))*100%) 0 0 0);pointer-events:none}
 #atk-label{padding:2px 9px;border-radius:999px;background:var(--glass);color:#fff;font-size:11px;font-weight:800;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+#keepbar{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(272px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-end;z-index:5}
+#keepbar button{position:relative;overflow:hidden;border:2px solid #FFC94D;border-radius:14px;padding:6px 12px 9px;background:var(--glass);color:#fff;font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:1px;max-width:230px}
+#keepbar button b{font-size:13px;font-weight:900}#keepbar button span{font-size:11px;font-weight:700;color:#C9D6F2}
+#keepbar button i{position:absolute;left:0;bottom:0;height:4px;background:#FFC94D}
+#keepbar button:disabled{opacity:.5}
 #wheel{position:absolute;inset:0;pointer-events:none;z-index:6}
 #wheel .slot{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;border:3px solid rgba(255,255,255,.75);background:rgba(14,26,56,.88);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:10.5px;font-weight:900;line-height:1.15;padding:4px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
 #wheel .slot small{font-size:9px;font-weight:700;color:#C9D6F2}
@@ -207,7 +212,7 @@ html.hc .prof{background:#12204A!important;backdrop-filter:none!important}
 html.hc .mgroup{background:#08122A!important}html.hc .mht span{color:#FFFFFF!important}
 html.hc button,html.hc .chip{outline-color:#FFFFFF}
 html.hc :focus-visible{outline:3px solid #FFD86B!important;outline-offset:2px}
-#screen[hidden],#atk[hidden],#wheel[hidden],#toast[hidden],#tip[hidden],#hud[hidden],.dot[hidden]{display:none}
+#screen[hidden],#atk[hidden],#wheel[hidden],#keepbar[hidden],#toast[hidden],#tip[hidden],#hud[hidden],.dot[hidden]{display:none}
 button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
 </style>
 </head>
@@ -233,6 +238,7 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
     <button id="act" disabled><span class="ring"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg></span><span id="act-label">Walk up to a place</span></button>
     <button id="atk" hidden aria-label="Attack. Hold to choose a move"><span class="ring"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20L18 6M14 4h6v6M7 17l-3 3"></path></svg></span><span id="atk-label">Slash</span></button>
     <div id="wheel" hidden aria-hidden="true"></div>
+    <div id="keepbar" hidden></div>
     <div id="toast" role="status" aria-live="polite" hidden></div>
   </div>
   </section>
@@ -2951,7 +2957,7 @@ const WORLD = (() => {
 const ACT = (() => {
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const CD = [0.45, 1.1, 1.4, 3.0];            // seconds: quick slash, heavy slash, guard, special
-  let H = null, hero = null, team = {}, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
+  let H = null, hero = null, team = {}, OFF = [], offId = 1, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
   const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null };
   const rand = Math.random;
   function bind(h) { H = h; }
@@ -2975,17 +2981,17 @@ const ACT = (() => {
   }
   function dummy() { return { k: hero.k, hp: 9999, max: 9999, burn: 0, weak: 0, daze: 0, sap: 0, fort: 0, guard: false, uses: 9, abUsed: false }; }
   function tileFree(e, x, y) { return !e.solidAt(Math.floor((x - 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor((x + 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor(x / e.TS), Math.floor((y - 5) / e.TS)); }
-  function spawnOne(e, far, elem) {
+  function spawnOne(e, far, elem, rare) {
     const cells = [], M = e.M, px = e.P.x / e.TS, py = e.P.y / e.TS;
     for (let y = 0; y < M.H; y++) for (let x = 0; x < M.W; x++) { const t = M.grid[y][x]; if ((t === 'W' || t === 'Z') && Math.hypot(x - px, y - py) >= far) cells.push([x, y]); }
     if (!cells.length) return false;
-    const c = cells[Math.floor(rand() * cells.length)], k = H.foe(elem ? [elem] : (M.types || []), lead());
+    const c = cells[Math.floor(rand() * cells.length)], isRare = rare !== undefined ? rare : M.grid[c[1]][c[0]] === 'Z', k = H.foe(elem ? [elem] : (M.types || []), lead(), isRare);
     if (!k) return false;
     const s = H.game().newBattle(lead(), k, 0).s[1]; s.label = 'Wild ' + k.name;
     E.push({ k: k, s: s, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: rand() * 2, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1 + rand(), tick: 1, img: H.img(k) });
     return true;
   }
-  function reset(e) { E = []; FX = []; PR = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; for (let i = 0; i < 4; i++) spawnOne(e, 7); }
+  function reset(e) { E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; for (let i = 0; i < 4; i++) spawnOne(e, 7); }
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }
   function faceVec(e) { return DIRS[e.P.dir] || DIRS.down; }
@@ -3025,7 +3031,7 @@ const ACT = (() => {
   }
   function kill(m, e) {
     E.splice(E.indexOf(m), 1); for (let i = 0; i < 8; i++) FX.push({ k: 'puff', x: m.x, y: m.y - 10, vx: (rand() - 0.5) * 80, vy: -20 - rand() * 50, t: 0, col: m.k.element.color });
-    spawnT = Math.min(spawnT, 8);
+    spawnT = Math.min(spawnT, 8); OFF.push({ id: offId++, k: m.k, t: 9, tot: 9 }); if (OFF.length > 2) OFF.shift();
     const r = H.onKill ? H.onKill(m.k, hero.k) : null;
     if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); } if (H.sfx) H.sfx('claim'); }
   }
@@ -3095,7 +3101,7 @@ const ACT = (() => {
   }
   function step(e) {
     on = false; lastEnv = e;
-    if (!enabled() || !e.fol || e.M.interior || e.M.cave || !(e.M.rate > 0)) { if (E.length) { E = []; FX = []; PR = []; mapId = ''; } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
+    if (!enabled() || !e.fol || e.M.interior || e.M.cave || !(e.M.rate > 0)) { if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
     mkHero(); if (!hero) return; on = true; const dt = e.dt, g = H.game();
     if (mapId !== e.M.id) reset(e);
     st.cd = Math.max(0, st.cd - dt); st.calm = Math.max(0, st.calm - dt); st.quiet += dt;
@@ -3122,6 +3128,7 @@ const ACT = (() => {
       else { if (near > 9 * e.TS || st.calm > 0 || st.down > 0) { m.mode = 'idle'; m.tele = 0; m.dash = 0; return; } think(m, e, dt, p, hp0, dp, dh); }
     });
     if (hero.__hurt) hero.__hurt = Math.max(0, hero.__hurt - dt);
+    OFF.forEach((o) => { o.t -= dt; }); OFF = OFF.filter((o) => o.t > 0);
     PR.slice().forEach((q) => { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; const hp1 = heroPos();
       if (q.t > 2.4 || !tileFree(e, q.x, q.y + 12)) { PR.splice(PR.indexOf(q), 1); return; }
       if (Math.min(Math.hypot(hp1.x - q.x, hp1.y - 12 - q.y), Math.hypot(e.P.x - q.x, e.P.y - 12 - q.y)) < 0.6 * e.TS && hero.hp > 0 && st.down <= 0) { PR.splice(PR.indexOf(q), 1); if (q.m && q.m.s.hp > 0) hurtHero(q.m, q.mul); } });
@@ -3166,7 +3173,7 @@ const ACT = (() => {
     });
   }
   return {
-    bind, step, items, drawFx, active, attack, swapTo, spawn: (n, elem) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem); }, get shots() { return PR; }, BEH,
+    bind, step, items, drawFx, active, attack, swapTo, spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, offers: () => OFF, keep: (id) => { const o = OFF.find((x) => x.id === id); if (!o) return { ok: false, why: 'gone' }; const r = H.keep(o.k); if (r.ok) OFF.splice(OFF.indexOf(o), 1); return r; }, get shots() { return PR; }, BEH,
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },
     get enemies() { return E; }, moves: () => (hero ? hero.k.kit.map((m, i) => ({ name: m.name, kind: m.kind, sub: m.sub, i: i })) : []),
@@ -5211,6 +5218,18 @@ class Game extends Component {
       return this.newBattle(k, foe, 0).s[0];
     });
   }
+  // action mode: keep a defeated wild critter. Same price as meeting and keeping it in the grass: the keep cost in rolls (shiny = free)
+  // plus the sighting (a free one while any are left today, otherwise one roll). It joins at stage 1, level 1, like any kept critter.
+  actKeepCost(k) { const free = this.sightingsLeft() > 0; return { cost: (k.shiny ? 0 : (KEEP_COST[k.rarity] || 1)) + (free ? 0 : 1), free: free }; }
+  actKeep(k) {
+    const st = this.state; if (st.caught.some((e) => e.seed === k.seed)) return { ok: false, why: 'owned' };
+    const e2 = this.energy(), today = new Date().toDateString(), c = this.actKeepCost(k);
+    if (e2.left < c.cost) return { ok: false, why: 'rolls', cost: c.cost };
+    const s = st.sight && st.sight.day === today ? st.sight : { day: today, n: 0 }, no = this.make(k.seed, 1).speciesNo, seen = (st.seen || []).slice(), events = [{ t: 'keep' }];
+    if (no <= 48 && seen.indexOf(no) === -1) { seen.push(no); events.push({ t: 'species' }); }
+    this.update({ caught: [{ seed: k.seed, stage: 1 }].concat(st.caught), seen: seen, day: e2.today, used: e2.used + c.cost, sight: { day: today, n: s.n + (c.free ? 1 : 0) } }, events);
+    this.sfx('claim'); return { ok: true, cost: c.cost, species: events.length > 1 };
+  }
   // action mode: a defeated wild critter pays the lead critter XP (it can level up) and, for the first ACT_ESS_CAP kills each day, essence like a won wild battle
   actKill(foeK, leadK) {
     const st = this.state, today = new Date().toDateString(), a = st.act && st.act.day === today ? st.act : { day: today, n: 0 };
@@ -6639,9 +6658,9 @@ const APP = (() => {
           if (leadCache.key !== key) leadCache = { key: key, k: game.make(sd, e ? e.stage : 1, e ? e.lv || 1 : 1) };
           return leadCache.k;
         },
-        foe: (types, lead) => {
-          const key = types.join(','), pool = foePool[key] || (foePool[key] = []);
-          if (pool.length < 10) for (let i = 0; i < 40 && pool.length < 10; i++) { const sd = 1 + Math.floor(Math.random() * 999998), k = game.make(sd, 1); if (!types.length || types.indexOf(k.element.name) !== -1) pool.push(sd); }
+        foe: (types, lead, rare) => {
+          const key = types.join(',') + (rare ? '+rare' : ''), pool = foePool[key] || (foePool[key] = []);
+          if (pool.length < 10) for (let i = 0; i < (rare ? 400 : 40) && pool.length < 10; i++) { const sd = 1 + Math.floor(Math.random() * 999998), k = game.make(sd, 1); if ((!types.length || types.indexOf(k.element.name) !== -1) && (!rare || k.rarity === 'Rare' || k.rarity === 'Mythic')) pool.push(sd); }
           if (!pool.length) return null;
           const lv = Math.max(1, (lead.lv || 1) + Math.floor(Math.random() * 3) - 1);
           return game.make(pool[Math.floor(Math.random() * pool.length)], lead.stage || 1, lv);
@@ -6653,6 +6672,7 @@ const APP = (() => {
         },
         setLead: (seed) => { game.update({ fighter: seed }); },
         onKill: (foe, mine) => game.actKill(foe, mine),
+        keep: (k) => { const r = game.actKeep(k); if (r.ok) toast('Kept ' + k.name + '!' + (r.species ? ' New species.' : '') + (r.cost ? ' (' + r.cost + (r.cost === 1 ? ' roll' : ' rolls') + ')' : ' (free)')); else if (r.why === 'rolls') toast('Keeping ' + k.name + ' needs ' + r.cost + (r.cost === 1 ? ' roll.' : ' rolls.')); else if (r.why === 'owned') toast('You already have this one.'); return r; },
         sfx: (k) => game.sfx(k)
       });
       const ctr = () => { const r = ring.getBoundingClientRect(), w = wheel.getBoundingClientRect(); return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top }; };
@@ -6677,6 +6697,13 @@ const APP = (() => {
       atk.addEventListener('pointercancel', () => { clearTimeout(holdT); if (wheelOn) closeWheel(false); });
       atk.addEventListener('contextmenu', (e) => e.preventDefault());
       window.addEventListener('keydown', (e) => { if (e.key === 'j' && !WORLD.paused) ACT.attack(); });
+      const kb = $('keepbar'); let kbSig = '';
+      kb.addEventListener('click', (ev) => { const b = ev.target.closest('button[data-id]'); if (b) ACT.keep(+b.dataset.id); });
+      setInterval(() => {
+        const offs = ACT.ready() && !WORLD.paused && !open ? ACT.offers() : [], sig = offs.map((o) => o.id).join(',');
+        if (sig !== kbSig) { kbSig = sig; kb.hidden = !offs.length; kb.innerHTML = offs.map((o) => { const c = game.actKeepCost(o.k), owned = game.state.caught.some((e) => e.seed === o.k.seed); return '<button data-id="' + o.id + '"' + (owned ? ' disabled' : '') + '><b>Keep ' + esc(o.k.name) + '</b><span>' + esc(o.k.rarity) + ' · ' + (c.cost ? c.cost + (c.cost === 1 ? ' roll' : ' rolls') : 'free') + ' · joins at Lv 1</span><i></i></button>'; }).join(''); }
+        [].forEach.call(kb.querySelectorAll('button'), (b) => { const o = offs.find((x) => x.id === +b.dataset.id); if (o) b.lastChild.style.width = Math.max(0, 100 * o.t / o.tot).toFixed(0) + '%'; });
+      }, 120);
       setInterval(() => {
         const show = ACT.ready() && !WORLD.paused && !open; if (atk.hidden === show) atk.hidden = !show; if (!show) { if (wheelOn) closeWheel(false); return; }
         atk.style.setProperty('--cd', ACT.cdFrac().toFixed(2));

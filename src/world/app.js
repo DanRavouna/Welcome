@@ -1079,9 +1079,9 @@ const APP = (() => {
           if (leadCache.key !== key) leadCache = { key: key, k: game.make(sd, e ? e.stage : 1, e ? e.lv || 1 : 1) };
           return leadCache.k;
         },
-        foe: (types, lead) => {
-          const key = types.join(','), pool = foePool[key] || (foePool[key] = []);
-          if (pool.length < 10) for (let i = 0; i < 40 && pool.length < 10; i++) { const sd = 1 + Math.floor(Math.random() * 999998), k = game.make(sd, 1); if (!types.length || types.indexOf(k.element.name) !== -1) pool.push(sd); }
+        foe: (types, lead, rare) => {
+          const key = types.join(',') + (rare ? '+rare' : ''), pool = foePool[key] || (foePool[key] = []);
+          if (pool.length < 10) for (let i = 0; i < (rare ? 400 : 40) && pool.length < 10; i++) { const sd = 1 + Math.floor(Math.random() * 999998), k = game.make(sd, 1); if ((!types.length || types.indexOf(k.element.name) !== -1) && (!rare || k.rarity === 'Rare' || k.rarity === 'Mythic')) pool.push(sd); }
           if (!pool.length) return null;
           const lv = Math.max(1, (lead.lv || 1) + Math.floor(Math.random() * 3) - 1);
           return game.make(pool[Math.floor(Math.random() * pool.length)], lead.stage || 1, lv);
@@ -1093,6 +1093,7 @@ const APP = (() => {
         },
         setLead: (seed) => { game.update({ fighter: seed }); },
         onKill: (foe, mine) => game.actKill(foe, mine),
+        keep: (k) => { const r = game.actKeep(k); if (r.ok) toast('Kept ' + k.name + '!' + (r.species ? ' New species.' : '') + (r.cost ? ' (' + r.cost + (r.cost === 1 ? ' roll' : ' rolls') + ')' : ' (free)')); else if (r.why === 'rolls') toast('Keeping ' + k.name + ' needs ' + r.cost + (r.cost === 1 ? ' roll.' : ' rolls.')); else if (r.why === 'owned') toast('You already have this one.'); return r; },
         sfx: (k) => game.sfx(k)
       });
       const ctr = () => { const r = ring.getBoundingClientRect(), w = wheel.getBoundingClientRect(); return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top }; };
@@ -1117,6 +1118,13 @@ const APP = (() => {
       atk.addEventListener('pointercancel', () => { clearTimeout(holdT); if (wheelOn) closeWheel(false); });
       atk.addEventListener('contextmenu', (e) => e.preventDefault());
       window.addEventListener('keydown', (e) => { if (e.key === 'j' && !WORLD.paused) ACT.attack(); });
+      const kb = $('keepbar'); let kbSig = '';
+      kb.addEventListener('click', (ev) => { const b = ev.target.closest('button[data-id]'); if (b) ACT.keep(+b.dataset.id); });
+      setInterval(() => {
+        const offs = ACT.ready() && !WORLD.paused && !open ? ACT.offers() : [], sig = offs.map((o) => o.id).join(',');
+        if (sig !== kbSig) { kbSig = sig; kb.hidden = !offs.length; kb.innerHTML = offs.map((o) => { const c = game.actKeepCost(o.k), owned = game.state.caught.some((e) => e.seed === o.k.seed); return '<button data-id="' + o.id + '"' + (owned ? ' disabled' : '') + '><b>Keep ' + esc(o.k.name) + '</b><span>' + esc(o.k.rarity) + ' · ' + (c.cost ? c.cost + (c.cost === 1 ? ' roll' : ' rolls') : 'free') + ' · joins at Lv 1</span><i></i></button>'; }).join(''); }
+        [].forEach.call(kb.querySelectorAll('button'), (b) => { const o = offs.find((x) => x.id === +b.dataset.id); if (o) b.lastChild.style.width = Math.max(0, 100 * o.t / o.tot).toFixed(0) + '%'; });
+      }, 120);
       setInterval(() => {
         const show = ACT.ready() && !WORLD.paused && !open; if (atk.hidden === show) atk.hidden = !show; if (!show) { if (wheelOn) closeWheel(false); return; }
         atk.style.setProperty('--cd', ACT.cdFrac().toFixed(2));
