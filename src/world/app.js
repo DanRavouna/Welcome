@@ -923,7 +923,7 @@ const APP = (() => {
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
     if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
-    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide', 'dg-arch': 'peak' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
+    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {

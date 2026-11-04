@@ -36,6 +36,9 @@ with sync_playwright() as p:
   for _ in range(6): pg.evaluate("WORLD.step(1/30)")
   pg.click('#act'); pg.wait_for_timeout(300); finish(); pg.wait_for_timeout(600)
   print('after the 4th clue: map', pg.evaluate("WORLD.map.id"), '| open flag', pg.evaluate("APP.game.state.adv.open.arch"), '| saved:', adv()['open'])
+  # music: the hall has its own track (the game picks it by map id), other maps are unaffected
+  pg.wait_for_timeout(900); print('wanted track in the dungeon:', pg.evaluate("MUSIC.state.want"), '| has a track of its own:', pg.evaluate("MUSIC.tracks.indexOf('dg-arch')!==-1"))
+  pg.evaluate("WORLD.enter('route-mf')"); pg.wait_for_timeout(900); print('wanted track on Highland Pass:', pg.evaluate("MUSIC.state.want")); pg.evaluate("WORLD.enter('dg-arch')"); pg.wait_for_timeout(500)
   # the hall
   H=pg.evaluate("""(()=>{const M=WORLD.map;const S=(x,y)=>x<0||y<0||x>=M.W||y>=M.H||WORLD.solidAt(x,y);const sp=[Math.floor(M.spawn[0]),Math.floor(M.spawn[1])];const seen=new Set([sp.join()]);const q=[sp];
     while(q.length){const [x,y]=q.shift();for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const a=x+dx,b=y+dy,k=a+','+b;if(a>=0&&b>=0&&a<M.W&&b<M.H&&!seen.has(k)&&!S(a,b)){seen.add(k);q.push([a,b])}}}
