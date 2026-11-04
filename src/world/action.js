@@ -115,7 +115,7 @@ const ACT = (() => {
     if (m.dash > 0) { m.dash -= dt; walk(m, e, m.dvx, m.dvy, dt); const hpos = heroPos(); if (!m.dashHit && closest(m, p, hpos) < 0.95 * TS) { m.dashHit = true; hurtHero(m, B.mul); } return; }
     if (m.tele > 0) {
       m.tele -= dt; if (m.tele > 0) return;
-      const hpos = heroPos(), ax = m.aim.x, ay = m.aim.y;
+      const hpos = heroPos(), aim = m.aim || { x: hpos.x, y: hpos.y }, ax = aim.x, ay = aim.y; if (!m.kind) m.kind = 'melee';
       if (m.s.daze > 0 && rand() < 0.45) return;
       if (m.kind === 'melee') { if (closest(m, p, hpos) < 1.35 * TS) { hurtHero(m, B.mul); if (B.runAway) m.retreat = B.runAway; } }
       else if (m.kind === 'dash') { const L = Math.hypot(ax - m.x, ay - m.y) || 1; m.dvx = (ax - m.x) / L * 300; m.dvy = (ay - m.y) / L * 300; m.dash = 0.3; m.dashHit = false; }
