@@ -7,6 +7,7 @@ def adv(pg):
     pg.evaluate("APP.advance()")
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
+  pg.add_init_script("window.__noFollower = true")   # test hook: no follower, so no action mode (these suites test the older flows)
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1100)
   pg.evaluate("APP.game.update({settings:Object.assign({},APP.game.state.settings,{follow:false})})")   # these suites test the turn-based battle screen, which is what the game uses when Critter follows you is off
   pg.evaluate("APP.game.update({caught:[5000,5001,5002].map(s=>({seed:s,stage:3,lv:15})), party:[5000,5001,5002], fighter:5000, essence:100, npc:{done:['fern'],beaten:{},cleared:[],seals:[]}})")

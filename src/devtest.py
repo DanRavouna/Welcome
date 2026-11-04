@@ -6,6 +6,7 @@ with sync_playwright() as p:
   b=p.chromium.launch(); ctx=b.new_context(viewport={'width':390,'height':800})
   ctx.add_init_script("try{ if(!sessionStorage.getItem('s')){ sessionStorage.setItem('s','1'); localStorage.setItem('critter-roll:v2', JSON.stringify({caught:[{seed:2,stage:3,lv:14}],party:[2],fighter:2,essence:20,wins:0,intro:true,settings:{sound:true,vibrate:true,calm:false,test:false,daynight:true,track:true,follow:false,weather:false,ambient:false}})); localStorage.setItem('critter-roll:menu', JSON.stringify(['critters','journey','game'])); } window.__noTransition=true; }catch(e){}")
   pg=ctx.new_page(); pg.on('pageerror',lambda e:errs.append(str(e)))
+  pg.add_init_script("window.__noFollower = true")   # test hook: no follower, so no action mode (these suites test the older flows)
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1300)
   pg.evaluate("document.getElementById('tip')&&(document.getElementById('tip').hidden=true)")
   def menu_has_dev(): pg.click('#b-menu'); pg.wait_for_timeout(200); r=pg.evaluate("!!document.querySelector('[data-tile=dev]')"); pg.click('#m-close'); pg.wait_for_timeout(150); return r

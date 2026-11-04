@@ -5,6 +5,7 @@ PW=sync_playwright().start()
 def run(hour, shots):
     b=PW.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':600}); pg.on('pageerror',lambda e:errs.append(str(e)))
     pg.clock.set_fixed_time(f'2026-11-03T{hour:02d}:00:00')
+    pg.add_init_script("window.__noFollower = true")   # test hook: no follower, so no action mode (these suites test the older flows)
     pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1100)
     pg.evaluate("APP.game.update({caught:[{seed:2,stage:2,lv:9}], party:[2], fighter:2, intro:true, settings:Object.assign({},APP.game.state.settings,{follow:false})}); document.getElementById('tip') && (document.getElementById('tip').hidden=true)")
     return pg,b

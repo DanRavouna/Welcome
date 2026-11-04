@@ -3,6 +3,7 @@ from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':760}); pg.on('pageerror',lambda e:errs.append(str(e)))
+  pg.add_init_script("window.__noFollower = true")   # test hook: no follower, so no action mode (these suites test the older flows)
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
   pg.evaluate("APP.game.update({caught:[{seed:2,stage:2,lv:9}],party:[2],fighter:2,intro:true,essence:10,bag:{potion:0,super:0,charm:0,ticket:0,herb:0,ward:0,whet:0},settings:Object.assign({},APP.game.state.settings,{follow:false,weather:false,ambient:false})}); document.getElementById('tip')&&(document.getElementById('tip').hidden=true)")
   def finish():
