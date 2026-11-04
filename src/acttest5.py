@@ -34,6 +34,7 @@ with sync_playwright() as p:
   go('town'); a=S(); start('rowan')
   print('duel started on the map, no battle screen:', pg.evaluate("[ACT.dueling(), document.getElementById('screen').hidden, APP.game.state.trainer, !document.getElementById('duel').hidden]"), '|', pg.inner_text('#duel').replace('\n',' ')[:60])
   print('wild critters are gone, the trainer sends one out:', pg.evaluate("ACT.enemies.every(m=>m.duel)"), duelFoe(), pg.evaluate("ACT.enemies.map(m=>m.s.label)"))
+  print('duel foe HP carries the tuning multiplier:', pg.evaluate("(()=>{const m=ACT.enemies.find(x=>x.duel),base=Math.round(m.k.stats[0].value*1.5+60);return +(m.s.max/base).toFixed(2)})()"), '(DUEL_HP =', pg.evaluate('DUEL_HP'), ')')
   n=win(); pg.wait_for_timeout(900); c=S(); print('beat Rowan after', n, 'critters | duel over:', not pg.evaluate("ACT.dueling()"), '| essence +', c['ess']-a['ess'], '| wins +', c['wins']-a['wins'], '| cleared:', 'rowan' in c['cl'], '| XP/levels changed:', a['xp']!=c['xp'], '| dialog:', pg.evaluate("APP.dialog&&APP.dialog.lines[0]"))
   finish()
   # 2) rematch pays half; losing pays nothing and does not mark the trainer

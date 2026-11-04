@@ -142,3 +142,8 @@ const RT_FOE = 0.9;
 
 // action mode rewards: XP per kill is half of a battle KO (the old formula 8 + 2 x level + 5 x stage), scaled by how the foe's level compares with yours; essence for the first kills each day only
 const ACT_XP = 0.5, ACT_ESS_CAP = 15;
+
+// action-mode duels: multipliers on the trainer's critters (HP, damage, and how often they attack: <1 = more often). Tuned with duelsim.py against the turn-based win rates.
+const DUEL_HP = 2.65, DUEL_DMG = 1.48, DUEL_PACE = 0.73;
+// per-trainer corrections on top of the above (bosses whose type mix is weak against a critter that stands at their feet); multiplied in
+const DUEL_TUNE = { maren: { hp: 1.15 }, keeper: { hp: 1.25 }, coral: { hp: 1.35 } };

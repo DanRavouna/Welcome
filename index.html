@@ -3076,6 +3076,7 @@ const ACT = (() => {
   };
   const BDEF = { atk: 'melee', spd: 58, cd: 1.7, mul: 1, tele: 0.32 };
   let PR = [];
+  const duelK = () => { const o = (typeof window !== 'undefined' && window.__duel) || { hp: DUEL_HP, dmg: DUEL_DMG, pace: DUEL_PACE }, t = (duel && DUEL_TUNE[duel.tr.id]) || {}; return { hp: o.hp * (t.hp || 1), dmg: o.dmg * (t.dmg || 1), pace: o.pace * (t.pace || 1) }; };   // window.__duel is the simulator's override
   function koHero() {
     hero.hp = 0; st.atk = null; hero.guard = false; st.guard = 0; if (H.sfx) H.sfx('lose');
     const alt = benchSides().filter((b) => b.hp > 0).sort((a, b) => b.hp / b.max - a.hp / a.max)[0];
@@ -3083,6 +3084,7 @@ const ACT = (() => {
     else { st.down = 4; st.calm = 4; if (duel) endDuel(false); else if (H.toast) H.toast('Your party is knocked out. They recover in a moment.'); }
   }
   function hurtHero(m, mul) {
+    if (m.duel) mul *= duelK().dmg;
     const before = hero.hp; H.game().hit(m.s, hero, Math.max(1, Math.round(m.k.kit[0].power * mul)), rand); delete hero.fxHits;
     const o = heroPos(); num(o.x, o.y - 30, String(Math.round(before - hero.hp)), '#FF8A7A'); st.quiet = 0; hero.__hurt = 0.2; if (H.sfx) H.sfx('hit'); if (hero.hp <= 0) koHero();
   }
@@ -3118,18 +3120,18 @@ const ACT = (() => {
     else if (B.atk === 'dash' && d >= 1.6 * TS && d <= B.rng * TS) kind = 'dash';
     else if (B.atk === 'dash' && d < 1.6 * TS) kind = 'melee';
     else if (B.atk === 'aoe' && d <= B.rad * TS * 0.9) kind = 'aoe';
-    else if (B.atk === 'shoot' && d >= 1.5 * TS && d <= 7 * TS) kind = 'shoot';
+    else if (B.atk === 'shoot' && d <= 7 * TS) kind = 'shoot';   // also point-blank: hugging a shooter must not switch it off
     else if (B.atk === 'blink') kind = d > 2.5 * TS ? 'blink' : (d <= 0.95 * TS ? 'melee' : null);
-    else if (B.atk === 'heal') kind = allyToHeal(m, e) ? 'heal' : (d >= 1.5 * TS && d <= 7 * TS ? 'shoot' : null);
+    else if (B.atk === 'heal') kind = allyToHeal(m, e) ? 'heal' : (d <= 7 * TS ? 'shoot' : null);
     if (!kind) return;
-    m.kind = kind; m.tele = B.tele; m.cd = B.cd + rand() * 0.4; m.aim = { x: tx, y: ty };
+    m.kind = kind; m.tele = B.tele; m.cd = (B.cd + rand() * 0.4) * (m.duel ? duelK().pace : 1); m.aim = { x: tx, y: ty };
     if (kind === 'blink') m.aim = { x: tx + ux * 0.9 * TS, y: ty + uy * 0.9 * TS };   // behind you
     if (kind === 'heal') m.aim = { x: m.x, y: m.y };
   }
   // ---- trainer duels (the old battle screen, played live): the trainer's critters come out one at a time next to the trainer ----
   function spawnDuelFoe(e) {
     const d = duel, g = H.game(), k = g.make(d.queue[d.idx], d.tr.stage, d.tr.lv || 1); d.idx += 1;
-    const s = g.newBattle(lead(), k, 0).s[1]; s.label = d.tr.name + "'s " + k.name; d.lastFoe = s;
+    const s = g.newBattle(lead(), k, 0).s[1]; s.label = d.tr.name + "'s " + k.name; d.lastFoe = s; s.max = Math.round(s.max * duelK().hp); s.hp = s.max;
     const p = e.P, n = d.npc, bx = n ? (n.x + 0.5) * e.TS : p.x, by = n ? (n.y + 0.9) * e.TS : p.y, a0 = Math.atan2(p.y - by, p.x - bx); let best = null;
     for (const r of [2.2, 1.6, 3, 1]) for (let i = 0; i < 8 && !best; i++) { const a = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.5, x = bx + Math.cos(a) * r * e.TS, y = by + Math.sin(a) * r * e.TS; if (tileFree(e, x, y)) best = { x: x, y: y }; }
     if (!best) best = { x: bx, y: by };
@@ -5035,6 +5037,11 @@ const RT_FOE = 0.9;
 
 // action mode rewards: XP per kill is half of a battle KO (the old formula 8 + 2 x level + 5 x stage), scaled by how the foe's level compares with yours; essence for the first kills each day only
 const ACT_XP = 0.5, ACT_ESS_CAP = 15;
+
+// action-mode duels: multipliers on the trainer's critters (HP, damage, and how often they attack: <1 = more often). Tuned with duelsim.py against the turn-based win rates.
+const DUEL_HP = 2.65, DUEL_DMG = 1.48, DUEL_PACE = 0.73;
+// per-trainer corrections on top of the above (bosses whose type mix is weak against a critter that stands at their feet); multiplied in
+const DUEL_TUNE = { maren: { hp: 1.15 }, keeper: { hp: 1.25 }, coral: { hp: 1.35 } };
 
 class Game extends Component {
   make(seed, stage, lv) {
