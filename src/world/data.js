@@ -57,15 +57,23 @@ const EVO_PLAN = [ // by body shape: arm length / width / tilt / height on the b
   { arm: 42, aw: 22, tilt: 24, at: 0.40, leg: 30 }, { arm: 30, aw: 24, tilt: 38, at: 0.50, leg: 36 }, { arm: 56, aw: 20, tilt: 14, at: 0.34, leg: 26 },
   { arm: 34, aw: 24, tilt: 50, at: 0.56, leg: 40 }, { arm: 46, aw: 22, tilt: 28, at: 0.46, leg: 32 }, { arm: 0, aw: 0, tilt: 0, at: 0.3, leg: 34, pads: true }
 ];
-// ---- the secret critter of the Sealed Arch: a hand-designed single-form species (#49, outside the 48), reached only through the reserved seed ----
-const SECRET_SEED = 1000001;   // normal seeds stop at 999999 (rolls, wild encounters, typed seeds), so this can never come up by chance
-const SECRET = {
-  name: 'Veilcrown', speciesNo: 49,
-  ability: { name: 'Last Light', text: 'Once per battle, survives a knock-out with 1 HP, and its next hit lands 30% harder.' },
-  flavor: 'Kept beneath the old arch since before the eight statues were carved. It wears the crown that nobody ever claimed.',
-  stats: [['HP', 120], ['ATK', 110], ['DEF', 106], ['SPD', 100]],   // level 1 values (total 436, about what the best of ten kept stage-3 critters reaches); the usual +3% per level applies (160 / 146 / 141 / 133 at level 12)
-  moves: [{ name: 'Crown Strike', power: 66 }, { name: 'Eclipse Wave', power: 92 }]
+// ---- the secret critters: hand-designed single-form species outside the 48 (#49, #50), reached only through reserved seeds ----
+const SECRET_SEED = 1000001, SECRET2_SEED = 1000002;   // normal seeds stop at 999999 (rolls, wild encounters, typed seeds), so these can never come up by chance
+const SECRETS = {
+  [SECRET_SEED]: { key: 'veilcrown', flag: 'secret', lv: 12, name: 'Veilcrown', speciesNo: 49, type: 'Dusk', kit3: 'Ninth Hex', height: '1.6 m', weight: '38.0 kg', nature: 'Solemn nature: balanced stats',
+    ability: { name: 'Last Light', text: 'Once per battle, survives a knock-out with 1 HP, and its next hit lands 30% harder.' },
+    hint: 'Something waits where eight sit at one fire.', flavor: 'Kept beneath the old arch since before the eight statues were carved. It wears the crown that nobody ever claimed.',
+    stats: [['HP', 120], ['ATK', 110], ['DEF', 106], ['SPD', 100]],   // level 1 values (total 436, about what the best of ten kept stage-3 critters reaches); +3% per level applies
+    moves: [{ name: 'Crown Strike', power: 66 }, { name: 'Eclipse Wave', power: 92 }] },
+  [SECRET2_SEED]: { key: 'wickling', flag: 'wickling', lv: 14, name: 'Wickling', speciesNo: 50, type: 'Volt', kit3: 'Guiding Light', height: '0.8 m', weight: '4.2 kg', nature: 'Eager nature: quick on its feet',
+    ability: { name: 'Afterglow', text: 'The first time it drops below half HP each battle, it glows: it heals 20% of its max HP and dazes the foe for 2 turns.' },
+    hint: 'A spark is said to wait inside the old beacon.', flavor: 'The flame of the old beacon, kept alive by a spark that never wanted to leave the lamp.',
+    stats: [['HP', 100], ['ATK', 112], ['DEF', 90], ['SPD', 134]],
+    moves: [{ name: 'Wick Flick', power: 68 }, { name: 'Lanternburst', power: 94 }] }
 };
+const SECRET = SECRETS[SECRET_SEED];
+// developer options (browser-only, never saved or synced): see the Developer tools panel in app.js
+const DEV = { levels: false, safe: false };
 const FREE_SIGHTINGS = 40;
 const KEEP_COST = { Common: 1, Uncommon: 2, Rare: 4, Mythic: 8 };
 const GATES = { moss: 1, frost: 3, ember: 6, tide: 9 };

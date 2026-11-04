@@ -70,6 +70,7 @@ const APP = (() => {
       { id: 'species', label: 'Species', sub: (st.seen || []).length + '/48', icon: I.species },
       { id: 'trainer', label: 'Trainer', sub: 'Level ' + lv.level, icon: I.trainer },
       { id: 'quests', label: 'Quests', sub: done + '/3 today', icon: I.quests, badge: ready ? ready + ' ready' : '' },
+      ...(st.dev ? [{ id: 'dev', label: 'Dev tools', sub: 'Skip gates, teleport', icon: 'M8 6l-6 6 6 6M16 6l6 6-6 6M14 4l-4 16' }] : []),
       { id: 'journal', label: 'Journal', sub: advOf().clues.length + '/' + ADV.CLUES.length + ' clues', icon: 'M6 3h10a2 2 0 0 1 2 2v16H8a2 2 0 0 1-2-2zM6 19a2 2 0 0 1 2-2h10M10 8h5M10 12h5' },
       { id: 'badges', label: 'Badges', sub: v.badgeCount + '/9', icon: I.badges },
       { id: 'settings', label: 'Settings', sub: 'Sound, motion', icon: I.settings },
@@ -86,7 +87,7 @@ const APP = (() => {
     $('m-sound').setAttribute('aria-pressed', st.settings && st.settings.sound ? 'true' : 'false');
     $('m-sound-off').setAttribute('display', st.settings && st.settings.sound ? 'none' : 'inline');
     const tiles = menuTiles(), byId = {}; tiles.forEach((t) => { byId[t.id] = t; });
-    const GROUPS = [['critters', 'My critters', ['dex', 'species', 'party', 'bag'], 'M12 3l3 6 6 1-4.5 4.5 1 6.5L12 17l-5.5 3 1-6.5L3 10l6-1z'], ['journey', 'Journey', ['map', 'quests', 'journal', 'trainer', 'badges', 'seals'], 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14'], ['game', 'Game', ['settings', 'backup'], 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z']];
+    const GROUPS = [['critters', 'My critters', ['dex', 'species', 'party', 'bag'], 'M12 3l3 6 6 1-4.5 4.5 1 6.5L12 17l-5.5 3 1-6.5L3 10l6-1z'], ['journey', 'Journey', ['map', 'quests', 'journal', 'trainer', 'badges', 'seals'], 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14'], ['game', 'Game', ['settings', 'backup', 'dev'], 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z']];
     const open = menuGroupsOpen();
     const tileHtml = (t) => '<button class="tile' + (t.wide ? ' wide' : '') + (t.locked ? ' locked' : '') + '" data-tile="' + t.id + '"' + (t.locked ? ' aria-disabled="true"' : '') + '>' +
       '<span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + t.icon + '"></path></svg></span>' +
@@ -122,6 +123,7 @@ const APP = (() => {
     if (id === 'map') { openMap(); return; }
     if (id === 'backup') { openBackup(); return; }
     if (id === 'journal') { closeMenu(); journal(); return; }
+    if (id === 'dev') { closeMenu(true); openDev(); return; }
     if (id === 'bag' || id === 'party') { openPanel(id); return; }
     closeMenu(true);
     if (id === 'dex') openScreen('dex');
@@ -161,7 +163,7 @@ const APP = (() => {
   // ---------- world map ----------
   let mapOpen = false;
   function renderMap() {
-    const st = game.state, lv = game.levelInfo(st.xp || 0).level, here = WORLD.map.id, test = game.props.testMode;
+    const st = game.state, lv = game.levelInfo(st.xp || 0).level, here = WORLD.map.id, test = game.props.noGates;
     const seals = (st.npc && st.npc.seals) || [], seen = st.seen || [];
     const TYPES = ['Ember', 'Tide', 'Moss', 'Volt', 'Frost', 'Dusk', 'Stone', 'Bloom'];
     const zoneTypes = { frost: ['Frost', 'Stone'], ember: ['Ember', 'Volt'], moss: ['Moss', 'Bloom'], tide: ['Tide', 'Dusk'] };
@@ -698,13 +700,15 @@ const APP = (() => {
   // clear the rubble once the rite is done (also on load)
   function applyDungeon() { const m = WORLD.MAPS['dg-arch']; if (!m || !advOf().flags.rubble) return; const rb = (m.objects || []).filter((x) => x.rubble); if (rb.length) WORLD.openTiles('dg-arch', m.rubble, rb.map((x) => x.id)); }
   // the ninth seat answers: Veilcrown joins you (level 12, one form); the Dex opens on it
-  function grantSecret() {
-    if (game.state.caught.some((e) => e.seed === SECRET_SEED)) return;
-    advSave((a) => { a.flags.secret = true; });
-    game.update({ caught: game.state.caught.concat([{ seed: SECRET_SEED, stage: 3, lv: 12 }]) });
+  function grantSecret(seed, quiet) {
+    seed = seed || SECRET_SEED; const S = SECRETS[seed];
+    if (!S || game.state.caught.some((e) => e.seed === seed)) return;
+    advSave((a) => { a.flags[S.flag] = true; });
+    game.update({ caught: game.state.caught.concat([{ seed: seed, stage: 3, lv: S.lv }]) });
+    toast(S.name + ' joined you!');
+    if (quiet) return;
     game.sfx('mythic'); game.buzz([30, 40, 30, 40, 30, 40, 160]);
-    toast('Veilcrown joined you!');
-    setTimeout(() => { openScreen('dex'); game.setState({ selected: SECRET_SEED, dexView: 'mine', armed: false }); }, 900);   // openScreen clears the selection, so select after opening
+    setTimeout(() => { openScreen('dex'); game.setState({ selected: seed, dexView: 'mine', armed: false }); }, 900);   // openScreen clears the selection, so select after opening
   }
   // ---- the Lamp Tower: levers flip gates (open = an odd number of its levers are ON), the beacon door leads in, the great lamp ends the climb ----
   function applyLamp() { const m = WORLD.MAPS['dg-lamp']; if (!m || !m.gates) return; const f = advOf().flags; Object.keys(m.gates).forEach((gid) => WORLD.setGate('dg-lamp', gid, m.gates[gid].filter((l) => f['lv:' + l]).length % 2 === 1)); }
@@ -716,9 +720,12 @@ const APP = (() => {
   function greatLampUse() {
     const beaten = ((game.state.npc && game.state.npc.cleared) || []).indexOf('maren') !== -1;
     if (!beaten) { toast('The Warden stands between you and the great lamp.'); return; }
-    if (advOf().flags.lampLit) { toast('The great lamp burns steadily. Its light reaches the whole land.'); return; }
-    showDialog('The great lamp', ['You touch the cold glass. A spark answers you.', 'The flame wakes, and a beam of light climbs out of the tower, over the peaks and across the whole land.', 'Far away, in the old arch and the lighthouse, something wakes too.'], null, () => {
+    const lit = advOf().flags.lampLit, got = game.state.caught.some((e) => e.seed === SECRET2_SEED);
+    if (lit && got) { toast('The great lamp burns steadily. Its light reaches the whole land.'); return; }
+    if (lit) { showDialog('The great lamp', ['The glass glows warm under your hand. Something small stirs inside it.', 'A spark slips out of the flame, bright and curious, and lands on your shoulder.'], null, () => grantSecret(SECRET2_SEED)); return; }   // lit before Wickling existed, or by the dev tools
+    showDialog('The great lamp', ['You touch the cold glass. A spark answers you.', 'The flame wakes, and a beam of light climbs out of the tower, over the peaks and across the whole land.', 'Far away, in the old arch and the lighthouse, something wakes too.', 'A spark slips out of the flame, bright and curious, and lands on your shoulder.'], null, () => {
       advSave((x) => { x.flags.lampLit = true; }); game.update({ essence: (game.state.essence || 0) + 30 }); game.sfx('mythic'); game.buzz([30, 40, 30, 40, 30, 40, 160]); toast('The beacon is lit! +30 essence.');
+      setTimeout(() => grantSecret(SECRET2_SEED), 1800);
     });
   }
   function objectUse(o) {
@@ -732,9 +739,53 @@ const APP = (() => {
       if (!beaten) { toast('The Keeper stands between you and the crown.'); return; }
       const got = game.state.caught.some((e) => e.seed === SECRET_SEED) || advOf().flags.secret;
       if (got) { showDialog('The ninth seat', ['The seat is warm. Whatever was kept here is with you now.']); return; }
-      showDialog('The ninth seat', ['The crown lifts from the stone and the dust settles around it.', 'Something that has been kept here a very long time opens its eyes.', 'It looks at you. Then it looks at the empty seat, and it chooses you instead.'], null, grantSecret); return;
+      showDialog('The ninth seat', ['The crown lifts from the stone and the dust settles around it.', 'Something that has been kept here a very long time opens its eyes.', 'It looks at you. Then it looks at the empty seat, and it chooses you instead.'], null, () => grantSecret(SECRET_SEED)); return;
     }
     toast(o.text || 'Nothing happens.');
+  }
+  // ---------- developer tools (unlocked by tapping the ID in the menu 5 times; options are browser-only, never saved or synced) ----------
+  const DEV_STORE = 'critter-roll:dev';
+  try { Object.assign(DEV, JSON.parse(localStorage.getItem(DEV_STORE) || '{}')); } catch (e) {}
+  function devSave() { try { localStorage.setItem(DEV_STORE, JSON.stringify(DEV)); } catch (e) {} }
+  const xpForLevel = (n) => 80 * (n - 1) + 20 * (n - 1) * (n - 2);   // total xp at which trainer level n starts
+  function devAdv(mut) { advSave(mut); applyDungeon(); applyLamp(); }
+  function devClear(id) { const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, game.state.npc); if (npc.cleared.indexOf(id) === -1) npc.cleared = npc.cleared.concat([id]); game.update({ npc: npc }); }
+  let devOpenFlag = false;
+  function openDev() { devOpenFlag = true; renderDev(); $('dev').hidden = false; $('hud').hidden = true; WORLD.setPaused(true); $('dev-close').focus(); }
+  function closeDev() { devOpenFlag = false; $('dev').hidden = true; $('hud').hidden = false; WORLD.setPaused(false); }
+  function renderDev() {
+    const st = game.state, lv = game.levelInfo(st.xp || 0).level, a = advOf(), cl = (st.npc && st.npc.cleared) || [], b = (id, label, on) => '<button class="dvb" data-dev="' + id + '"' + (on === undefined ? '' : ' aria-pressed="' + (on ? 'true' : 'false') + '"') + '>' + label + '</button>';
+    const maps = Object.keys(WORLD.MAPS).filter((id) => !WORLD.MAPS[id].interior);
+    $('dev-body').innerHTML =
+      '<div class="dvs">Requirements</div><div class="dvg">' + b('tog:levels', 'Ignore level requirements', DEV.levels) + b('tog:test', 'Test mode (unlimited rolls)', !!(st.settings && st.settings.test)) + b('tog:safe', 'No trainer challenges', DEV.safe) + '</div>' +
+      '<p class="dvn">Level requirements cover zones, routes, the Ascent and the Tower. Trainer level now: ' + lv + '.</p>' +
+      '<div class="dvs">Teleport</div><div class="dvg">' + maps.map((id) => b('tp:' + id, WORLD.MAPS[id].name + (WORLD.map.id === id ? ' (here)' : ''))).join('') + '</div>' +
+      '<div class="dvs">Player</div><div class="dvg">' + [5, 10, 15, 20, 30].map((n) => b('lv:' + n, 'Level ' + n)).join('') + b('ess', '+100 essence') + b('crit', 'Add a Lv 20 stage 3 critter') + '</div>' +
+      '<div class="dvs">Adventure</div><div class="dvg">' + b('clues', 'All clues') + b('arch', 'Open the arch') + b('rite', 'Clear the rubble') + b('keeper', 'Beat the Keeper' + (cl.indexOf('keeper') !== -1 ? ' (done)' : '')) + b('veil', 'Get Veilcrown') +
+      b('lampdoor', 'Open the beacon door') + b('gates', 'Open all tower gates') + b('maren', 'Beat the Warden' + (cl.indexOf('maren') !== -1 ? ' (done)' : '')) + b('lit', 'Light the great lamp') + b('wick', 'Get Wickling') + b('resetadv', 'Reset the adventure') + '</div>' +
+      '<p class="dvn">Adventure state: ' + a.clues.length + '/4 clues, arch ' + (a.open.arch ? 'open' : 'sealed') + ', rubble ' + (a.flags.rubble ? 'cleared' : 'in place') + ', beacon door ' + (a.open.lamp ? 'open' : 'shut') + ', lamp ' + (a.flags.lampLit ? 'lit' : 'dark') + '. After a reset, reload the page so cleared rubble comes back.</p>' +
+      '<div class="dvs">Developer mode</div><div class="dvg">' + b('devoff', 'Hide developer tools') + '</div><p class="dvn">Tap the ID in the menu 5 times to bring them back.</p>';
+  }
+  function devAction(act) {
+    const [k, arg] = act.split(':'), st = game.state;
+    if (k === 'tog') { if (arg === 'test') game.update({ settings: Object.assign({}, st.settings, { test: !(st.settings && st.settings.test) }) }); else { DEV[arg] = !DEV[arg]; devSave(); } }
+    else if (k === 'tp') { closeDev(); WORLD.enter(arg); toast('Teleported to ' + mapName(arg) + '.'); return; }
+    else if (k === 'lv') game.update({ xp: Math.max(st.xp || 0, xpForLevel(+arg)) });
+    else if (k === 'ess') game.update({ essence: (st.essence || 0) + 100 });
+    else if (k === 'crit') { let s = 0; for (let i = 0; i < 400 && !s; i++) { const c = 1 + Math.floor(Math.random() * 999998); if (game.make(c, 1).rarity !== 'Mythic') s = c; } game.update({ caught: st.caught.concat([{ seed: s, stage: 3, lv: 20 }]) }); toast('Added ' + game.make(s, 3, 20).name + '.'); }
+    else if (k === 'clues') devAdv((x) => { x.clues = ADV.CLUES.map((c) => c.id); });
+    else if (k === 'arch') devAdv((x) => { x.open.arch = true; });
+    else if (k === 'rite') devAdv((x) => { x.flags.rite = [0, 1, 2]; x.flags.rubble = true; });
+    else if (k === 'keeper') devClear('keeper');
+    else if (k === 'veil') grantSecret(SECRET_SEED, true);
+    else if (k === 'lampdoor') devAdv((x) => { x.open.lamp = true; });
+    else if (k === 'gates') devAdv((x) => { x.flags['lv:L1'] = true; x.flags['lv:L2'] = false; x.flags['lv:L3'] = true; });
+    else if (k === 'maren') devClear('maren');
+    else if (k === 'lit') devAdv((x) => { x.flags.lampLit = true; });
+    else if (k === 'wick') grantSecret(SECRET2_SEED, true);
+    else if (k === 'resetadv') { const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, st.npc); npc.cleared = npc.cleared.filter((i) => ['keeper', 'maren'].indexOf(i) === -1); game.update({ adv: { clues: [], open: {}, flags: {} }, npc: npc, caught: st.caught.filter((e) => !SECRETS[e.seed]) }); applyLamp(); toast('Adventure reset. Reload the page to restore the cleared rubble.'); }
+    else if (k === 'devoff') { game.update({ dev: false }); closeDev(); toast('Developer tools hidden. Tap the ID in the menu 5 times to bring them back.'); return; }
+    renderDev();
   }
   // weather / time-of-day remark for ordinary townsfolk (flavor.js); indoors the person hears the weather of the town outside
   function flavorLine(n) {
@@ -817,7 +868,7 @@ const APP = (() => {
   }
   function towerLobby() {
     const g = game, t = g.towerState(), seals = ((g.state.npc && g.state.npc.seals) || []).length;
-    if (seals < 4 && !g.props.testMode) { toast("The Champion's Tower opens to trainers with all 4 Leader Seals. You hold " + seals + '.'); return; }
+    if (seals < 4 && !g.props.noGates) { toast("The Champion's Tower opens to trainers with all 4 Leader Seals. You hold " + seals + '.'); return; }
     if (t.run) {
       if (!g.towerParty().some((x) => x.hp > 0)) { g.endTowerRun(); towerLobby(); return; }
       showDialog(KEEPER, ['Your climb is waiting on floor ' + t.run.floor + ' of ' + TOWER.floors + '.', 'Your party: ' + partyLine() + '.'], [
@@ -884,7 +935,7 @@ const APP = (() => {
     if (!n) return;
     if (n.kind === 'sign') {
       const to = n.sign.to, lv = game.levelInfo(game.state.xp || 0).level;
-      toast(n.sign.text + (to && lv < GATES[to] ? (game.props.testMode ? ' Normally opens at level ' + GATES[to] + ' (open now in test mode).' : ' Opens at trainer level ' + GATES[to] + '.') : ''));
+      toast(n.sign.text + (to && lv < GATES[to] ? (game.props.noGates ? ' Normally opens at level ' + GATES[to] + ' (open now in test mode).' : ' Opens at trainer level ' + GATES[to] + '.') : ''));
       return;
     }
     if (n.kind === 'water') { fish(n); return; }
@@ -973,7 +1024,7 @@ const APP = (() => {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
       objState: objState, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
-      exitLocked: (e) => !game.props.testMode && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.testMode && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
+      exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       follower: () => {
         const st = game.state; if (!st.caught.length || (st.settings && st.settings.follow === false)) return null;
@@ -985,7 +1036,7 @@ const APP = (() => {
       lockLabel: (e) => 'Lv ' + (GATES[e.to] || ROUTE_GATES[e.to]),
       onLocked: (e) => ROUTE_GATES[e.to] ? toast(mapName(e.to) + ' opens at trainer level ' + ROUTE_GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.') : e.to === 'peak' ? toast("The trail to Champion's Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.') : toast(ZONE_NAMES[e.to] + ' opens at trainer level ' + GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.'),
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
-      canChallenge: (n) => !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
+      canChallenge: (n) => !DEV.safe && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
       onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); applyLamp(); renderWeather(); if (game && (m.city || m.id === 'peak' || m.id === 'ascent') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
@@ -1054,6 +1105,7 @@ const APP = (() => {
       $('bk-msg').textContent = 'Found a save with ' + r.summary + '. This replaces your current game. Tap again to confirm.';
     });
     $('m-close').addEventListener('click', () => closeMenu());
+    $('dev-close').addEventListener('click', closeDev); $('dev-body').addEventListener('click', (e) => { const t = e.target.closest('[data-dev]'); if (t) devAction(t.dataset.dev); });
     $('m-help').addEventListener('click', () => { closeMenu(); toast('Walk with the joystick. Tall grass hides wild critters, sparkling grass hides rarer ones. The shrine rolls any type, the Arena is for battles.'); });
     $('m-sound').addEventListener('click', () => { const s = Object.assign({}, game.state.settings); s.sound = !s.sound; game.update({ settings: s }); if (s.sound) game.sfx('tap'); renderMenu(); });
     $('m-grid').addEventListener('click', (e) => { const g = e.target.closest('[data-group]'); if (g) { toggleMenuGroup(g.dataset.group); return; } const t = e.target.closest('[data-tile]'); if (t) tile(t.dataset.tile); });
@@ -1063,7 +1115,7 @@ const APP = (() => {
     let devTaps = 0, devTimer = null;
     $('m-id').addEventListener('click', () => {
       devTaps += 1; clearTimeout(devTimer); devTimer = setTimeout(() => { devTaps = 0; }, 1500);
-      if (devTaps >= 5 && !game.state.dev) { devTaps = 0; game.update({ dev: true }); toast('Developer options unlocked: Test mode is now in Trainer, Settings.'); }
+      if (devTaps >= 5 && !game.state.dev) { devTaps = 0; game.update({ dev: true }); renderMenu(); toast('Developer tools unlocked: open Menu, Game, Dev tools. Test mode is also in Settings.'); }
     });
     $('goal').addEventListener('click', () => toast(wayHint()));
     $('st-list').addEventListener('click', (e) => { const b = e.target.closest('[data-start]'); if (b) chooseStarter(+b.dataset.start); });

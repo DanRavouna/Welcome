@@ -1,7 +1,7 @@
 // ---- Glue part 1: Base and Component (game logic ported from the original canvas) ----
 // ---- Glue: game state, screens over the world, HUD ----
 class Base {
-  get props() { const s = (this.state && this.state.settings) || {}; return { accent: '#FFC94D', testMode: s.test !== false }; }
+  get props() { const s = (this.state && this.state.settings) || {}; return { accent: '#FFC94D', testMode: s.test !== false, noGates: s.test !== false || DEV.levels }; }
   setState(p) { this.state = Object.assign({}, this.state, p); APP.schedule(); }
 }
 
@@ -132,7 +132,7 @@ class Component extends Base {
   }
 
   make(seed, stage) {
-    if (seed === SECRET_SEED) return this.secretCritter();
+    if (SECRETS[seed]) return this.secretCritter(seed);
     stage = stage || 1;
     const r = this.rng(seed);
     const pick = (arr) => arr[Math.floor(r() * arr.length)];
@@ -382,37 +382,66 @@ class Component extends Base {
     try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
   }
 
-  // The secret critter (Veilcrown): every field a normal critter has, with hand-placed geometry instead of seeded parts. Always its one form (stage 3).
-  secretCritter() {
-    const INK = '#1E2340', S = SECRET, body = '#5B45B8', outline = '#241A5A', dark = '#33257A', darker = '#2A1E66', gold = '#FFD86B', pale = '#F2E6B8';
+  // The secret critters (Veilcrown, Wickling): every field a normal critter has, with hand-placed geometry instead of seeded parts. Always their one form (stage 3).
+  secretCritter(seed) {
+    const S = SECRETS[seed], ELEM = { Dusk: { name: 'Dusk', color: '#8B6CF0', tint: '#EAE3FF' }, Volt: { name: 'Volt', color: '#F5C518', tint: '#FFF4C7' } }[S.type];
     const stats = S.stats.map(([label, v]) => ({ label: label, value: v, pct: Math.round(v / 150 * 100) }));
-    const kit = this.kit('Dusk', S.moves); kit[3].name = 'Ninth Hex';
-    const parts = [
-      { x: 34, y: 42, w: 172, h: 158, r: '50%', rot: 0, bg: 'rgba(255,216,77,0.35)', bw: 0, bc: INK },                          // gold aura (CSS only)
-      { x: 14, y: 72, w: 84, h: 58, r: '0 100% 0 100%', rot: -26, bg: dark, bw: 3, bc: '#1B1240' }, { x: 8, y: 112, w: 76, h: 44, r: '0 100% 0 100%', rot: -8, bg: darker, bw: 3, bc: '#1B1240' },   // cloak wings
-      { x: 142, y: 72, w: 84, h: 58, r: '100% 0 100% 0', rot: 26, bg: dark, bw: 3, bc: '#1B1240' }, { x: 156, y: 112, w: 76, h: 44, r: '100% 0 100% 0', rot: 8, bg: darker, bw: 3, bc: '#1B1240' },
-      { x: 176, y: 152, w: 30, h: 26, r: '50%', rot: 0, bg: '#6B55C8', bw: 3, bc: outline }, { x: 196, y: 134, w: 20, h: 18, r: '50%', rot: 0, bg: '#7C66D8', bw: 3, bc: outline }, { x: 208, y: 120, w: 12, h: 12, r: '50%', rot: 0, bg: '#9A86EA', bw: 3, bc: outline },   // wisp tail
-      { x: 76, y: 40, w: 20, h: 46, r: '60% 0 40% 0', rot: -20, bg: pale, bw: 3, bc: '#8A6A2A' }, { x: 144, y: 40, w: 20, h: 46, r: '0 60% 0 40%', rot: 20, bg: pale, bw: 3, bc: '#8A6A2A' }    // crescent horns
-    ];
-    const over = [
-      { x: 92, y: 62, w: 56, h: 12, r: '3px', rot: 0, bg: gold },                                                                   // the crown: band, three points, a gem
-      { x: 90, y: 48, w: 14, h: 14, r: '3px', rot: 45, bg: gold }, { x: 113, y: 40, w: 14, h: 14, r: '3px', rot: 45, bg: gold }, { x: 136, y: 48, w: 14, h: 14, r: '3px', rot: 45, bg: gold },
-      { x: 116, y: 64, w: 8, h: 8, r: '2px', rot: 45, bg: '#FF6AA8' },
-      { x: 76, y: 104, w: 8, h: 8, r: '2px', rot: 45, bg: '#FFE9A0' }, { x: 158, y: 98, w: 8, h: 8, r: '2px', rot: 45, bg: '#FFE9A0' }, { x: 150, y: 152, w: 8, h: 8, r: '2px', rot: 45, bg: '#FFE9A0' }, { x: 82, y: 156, w: 8, h: 8, r: '2px', rot: 45, bg: '#FFE9A0' }   // stars on the cloak
-    ];
-    return {
-      seed: SECRET_SEED, stage: 3, no: '049', speciesNo: S.speciesNo, speciesName: S.name, name: S.name,
-      alt: S.name + ', the secret mythic Dusk-type critter of the Sealed Arch',
-      element: { name: 'Dusk', color: '#8B6CF0', tint: '#EAE3FF' }, strongVs: this.beats().Dusk.join(' + ').toUpperCase(), ability: S.ability,
+    const kit = this.kit(S.type, S.moves); kit[3].name = S.kit3;
+    return Object.assign({
+      seed: seed, stage: 3, no: String(S.speciesNo).padStart(3, '0'), speciesNo: S.speciesNo, speciesName: S.name, name: S.name,
+      alt: S.name + ', a secret mythic ' + S.type + '-type critter',
+      element: ELEM, strongVs: this.beats()[S.type].join(' + ').toUpperCase(), ability: S.ability,
       rarity: 'Mythic', rarityBg: 'linear-gradient(180deg, #FFE69A, #F5B93A)', rarityFg: '#2A1B00',
-      stats: stats, moves: S.moves.map((m) => ({ name: m.name, power: m.power })), kit: kit, height: '1.6 m', weight: '38.0 kg',
-      flavor: S.flavor, natureText: 'Solemn nature: balanced stats',
-      bodyColor: body, bellyBg: '#C9B8FF', fx: [{ x: 46, y: 70, s: 12 }, { x: 186, y: 88, s: 10 }, { x: 150, y: 28, s: 12 }, { x: 60, y: 150, s: 9 }],
-      stageRing: '#FFD86B', stageShadow: '0 0 16px rgba(255,216,107,0.75)',
-      bodyFill: 'radial-gradient(circle at 34% 26%, #8E78E8 0%, ' + body + ' 52%, #3A2A82 100%)', outline: outline, glow: '#FFD84D',
-      parts: parts, over: over,
+      stats: stats, moves: S.moves.map((m) => ({ name: m.name, power: m.power })), kit: kit, height: S.height, weight: S.weight, flavor: S.flavor, natureText: S.nature,
+      stageRing: '#FFD86B', stageShadow: '0 0 16px rgba(255,216,107,0.75)', glow: '#FFD84D', look: 'center'
+    }, this.secretGeometry(S.key));
+  }
+  secretGeometry(key) {
+    const INK = '#1E2340';
+    if (key === 'wickling') {   // a round gold spark with a lantern on its antenna, small pale-blue wings, ice crystals on its back and a wick tail
+      const body = '#FFE08A', outline = '#8A6510', wing = '#CFE6FF', wing2 = '#E8F4FF', wo = '#5A8AB8', gold = '#E8B84A';
+      return {
+        bodyColor: body, bellyBg: 'rgba(255,255,255,0.75)', outline: outline, bodyFill: 'radial-gradient(circle at 34% 26%, #FFFFFF 0%, ' + body + ' 52%, ' + gold + ' 100%)',
+        fx: [{ x: 56, y: 70, s: 12 }, { x: 178, y: 78, s: 10 }, { x: 150, y: 20, s: 12 }, { x: 62, y: 150, s: 9 }],
+        parts: [
+          { x: 50, y: 14, w: 140, h: 182, r: '50%', rot: 0, bg: 'rgba(255,230,140,0.35)', bw: 0, bc: INK },                                            // glow (CSS only)
+          { x: 20, y: 98, w: 66, h: 34, r: '0 100% 0 100%', rot: -30, bg: wing, bw: 3, bc: wo }, { x: 26, y: 122, w: 54, h: 26, r: '0 100% 0 100%', rot: -8, bg: wing2, bw: 3, bc: wo },
+          { x: 154, y: 98, w: 66, h: 34, r: '100% 0 100% 0', rot: 30, bg: wing, bw: 3, bc: wo }, { x: 160, y: 122, w: 54, h: 26, r: '100% 0 100% 0', rot: 8, bg: wing2, bw: 3, bc: wo },
+          { x: 86, y: 80, w: 12, h: 12, r: '2px', rot: 45, bg: '#BFE3F5', bw: 2, bc: wo }, { x: 142, y: 80, w: 12, h: 12, r: '2px', rot: 45, bg: '#BFE3F5', bw: 2, bc: wo }, { x: 114, y: 76, w: 12, h: 12, r: '2px', rot: 45, bg: '#E0F4FF', bw: 2, bc: wo },
+          { x: 116, y: 50, w: 8, h: 54, r: '4px', rot: 0, bg: '#B8862A', bw: 3, bc: '#6A4A10' },                                                       // antenna stalk
+          { x: 98, y: 16, w: 44, h: 44, r: '50%', rot: 0, bg: '#FFD86B', bw: 3, bc: outline }, { x: 106, y: 24, w: 28, h: 28, r: '50%', rot: 0, bg: '#FFF8D0', bw: 0, bc: INK },   // the lantern
+          { x: 166, y: 152, w: 28, h: 14, r: '50%', rot: -30, bg: gold, bw: 3, bc: outline }, { x: 184, y: 126, w: 22, h: 30, r: '50% 0 50% 50%', rot: -30, bg: '#FFA03A', bw: 3, bc: '#8A4A10' }, { x: 190, y: 136, w: 10, h: 14, r: '50% 0 50% 50%', rot: -30, bg: '#FFE08A', bw: 0, bc: INK },   // wick tail and flame
+          { x: 84, y: 184, w: 30, h: 16, r: '50%', rot: 0, bg: gold, bw: 3, bc: outline }, { x: 126, y: 184, w: 30, h: 16, r: '50%', rot: 0, bg: gold, bw: 3, bc: outline }
+        ],
+        over: [
+          { x: 82, y: 142, w: 18, h: 10, r: '50%', rot: 0, bg: 'rgba(120,180,255,0.55)' }, { x: 140, y: 142, w: 18, h: 10, r: '50%', rot: 0, bg: 'rgba(120,180,255,0.55)' },
+          { x: 100, y: 100, w: 7, h: 7, r: '2px', rot: 45, bg: '#FFFFFF' }, { x: 138, y: 104, w: 6, h: 6, r: '2px', rot: 45, bg: '#FFFFFF' }, { x: 120, y: 168, w: 6, h: 6, r: '2px', rot: 45, bg: '#FFFFFF' }
+        ],
+        body: { x: 70, y: 92, w: 100, h: 100, r: '50%' }, belly: { x: 92, y: 142, w: 56, h: 40 },
+        eyeRow: { x: 70, y: 112, w: 100 }, eyes: [{ s: 26, ps: 12 }, { s: 26, ps: 12 }],
+        mouth: { w: 24, h: 10, r: '0 0 50% 50%', bg: 'transparent', bw: '0 0 3px 0', x: 108, y: 148 }
+      };
+    }
+    // Veilcrown: a violet body with a gold crown and gem, crescent horns, cloak-like wings dotted with stars and a wisp tail
+    const body = '#5B45B8', outline = '#241A5A', dark = '#33257A', darker = '#2A1E66', gold = '#FFD86B', pale = '#F2E6B8';
+    return {
+      bodyColor: body, bellyBg: '#C9B8FF', outline: outline, bodyFill: 'radial-gradient(circle at 34% 26%, #8E78E8 0%, ' + body + ' 52%, #3A2A82 100%)',
+      fx: [{ x: 46, y: 70, s: 12 }, { x: 186, y: 88, s: 10 }, { x: 150, y: 28, s: 12 }, { x: 60, y: 150, s: 9 }],
+      parts: [
+        { x: 34, y: 42, w: 172, h: 158, r: '50%', rot: 0, bg: 'rgba(255,216,77,0.35)', bw: 0, bc: INK },
+        { x: 14, y: 72, w: 84, h: 58, r: '0 100% 0 100%', rot: -26, bg: dark, bw: 3, bc: '#1B1240' }, { x: 8, y: 112, w: 76, h: 44, r: '0 100% 0 100%', rot: -8, bg: darker, bw: 3, bc: '#1B1240' },
+        { x: 142, y: 72, w: 84, h: 58, r: '100% 0 100% 0', rot: 26, bg: dark, bw: 3, bc: '#1B1240' }, { x: 156, y: 112, w: 76, h: 44, r: '100% 0 100% 0', rot: 8, bg: darker, bw: 3, bc: '#1B1240' },
+        { x: 176, y: 152, w: 30, h: 26, r: '50%', rot: 0, bg: '#6B55C8', bw: 3, bc: outline }, { x: 196, y: 134, w: 20, h: 18, r: '50%', rot: 0, bg: '#7C66D8', bw: 3, bc: outline }, { x: 208, y: 120, w: 12, h: 12, r: '50%', rot: 0, bg: '#9A86EA', bw: 3, bc: outline },
+        { x: 76, y: 40, w: 20, h: 46, r: '60% 0 40% 0', rot: -20, bg: pale, bw: 3, bc: '#8A6A2A' }, { x: 144, y: 40, w: 20, h: 46, r: '0 60% 0 40%', rot: 20, bg: pale, bw: 3, bc: '#8A6A2A' }
+      ],
+      over: [
+        { x: 92, y: 62, w: 56, h: 12, r: '3px', rot: 0, bg: gold },
+        { x: 90, y: 48, w: 14, h: 14, r: '3px', rot: 45, bg: gold }, { x: 113, y: 40, w: 14, h: 14, r: '3px', rot: 45, bg: gold }, { x: 136, y: 48, w: 14, h: 14, r: '3px', rot: 45, bg: gold },
+        { x: 116, y: 64, w: 8, h: 8, r: '2px', rot: 45, bg: '#FF6AA8' },
+        { x: 76, y: 104, w: 8, h: 8, r: '2px', rot: 45, bg: '#FFE9A0' }, { x: 158, y: 98, w: 8, h: 8, r: '2px', rot: 45, bg: '#FFE9A0' }, { x: 150, y: 152, w: 8, h: 8, r: '2px', rot: 45, bg: '#FFE9A0' }, { x: 82, y: 156, w: 8, h: 8, r: '2px', rot: 45, bg: '#FFE9A0' }
+      ],
       body: { x: 60, y: 66, w: 120, h: 126, r: '50% 50% 46% 46% / 62% 62% 38% 38%' }, belly: { x: 84, y: 130, w: 72, h: 46 },
-      eyeRow: { x: 60, y: 92, w: 120 }, eyes: [{ s: 30, ps: 13 }, { s: 30, ps: 13 }], look: 'center',
+      eyeRow: { x: 60, y: 92, w: 120 }, eyes: [{ s: 30, ps: 13 }, { s: 30, ps: 13 }],
       mouth: { w: 28, h: 12, r: '0 0 50% 50%', bg: 'transparent', bw: '0 0 3px 0', x: 106, y: 132 }
     };
   }
@@ -599,7 +628,7 @@ class Component extends Base {
     // abilities (one per type, both sides); window.__noAb switches them off for balance comparisons
     const ab = !(typeof window !== 'undefined' && window.__noAb), an = A.k.element.name, dn = D.k.element.name; let abMult = 1, abNote = '';
     if (ab) {
-      if (dn === 'Dusk' && D.k.seed !== SECRET_SEED && rand() < 0.05) { D.fxHits = (D.fxHits || []).concat([{ m: 1, g: true, c: A.k.element.color }]); return 'dodged (Veil)'; }
+      if (dn === 'Dusk' && !SECRETS[D.k.seed] && rand() < 0.05) { D.fxHits = (D.fxHits || []).concat([{ m: 1, g: true, c: A.k.element.color }]); return 'dodged (Veil)'; }
       if (an === 'Ember' && A.hp < A.max * 0.5) abMult *= 1.15;
       if (dn === 'Frost') abMult *= 0.92;
       if (dn === 'Moss' && !D.abUsed) { abMult *= 0.7; D.abUsed = true; abNote = ' (Thick Bark)'; }
@@ -610,8 +639,9 @@ class Component extends Base {
     if (ab && dn === 'Stone' && !D.abUsed && D.hp >= D.max * 0.6 && dmg >= D.hp) { dmg = D.hp - 1; D.abUsed = true; abNote = ' (Sturdy: held on)'; }
     if (warded) D.ward -= 1;
     D.hp = Math.max(0, D.hp - dmg);
+    if (ab && D.k.seed === SECRET2_SEED && !D.abUsed && D.hp > 0 && D.hp < D.max * 0.5) { D.hp = Math.min(D.max, D.hp + Math.round(D.max * 0.2)); D.abUsed = true; A.daze = Math.max(A.daze, 2); abNote = ' (Afterglow: healed, and ' + A.label + ' is dazed)'; }
     if (ab && dn === 'Bloom' && !D.abUsed && D.hp > 0 && D.hp < D.max * 0.3) { D.hp = Math.min(D.max, D.hp + Math.round(D.max * 0.15)); D.abUsed = true; abNote = ' (Regrow)'; }
-    if (ab && dn === 'Volt' && D.hp > 0 && A.daze === 0 && rand() < 0.2) { A.daze = 2; abNote = ' (Static dazed ' + A.label + ')'; }
+    if (ab && dn === 'Volt' && !SECRETS[D.k.seed] && D.hp > 0 && A.daze === 0 && rand() < 0.2) { A.daze = 2; abNote = ' (Static dazed ' + A.label + ')'; }
     D.fxHits = (D.fxHits || []).concat([{ m: mult, g: !!D.guard, c: A.k.element.color }]);
     return dmg + ' dmg' + (mult > 1 ? ' (strong)' : (mult < 1 ? ' (weak)' : '')) + (D.guard ? ' (blocked)' : '') + abNote;
   }
@@ -837,9 +867,11 @@ class Component extends Base {
       return { name: tn, color: TCOL[tn], count: cells.filter((x) => x.found).length + '/6', cells: dexMissing ? cells.filter((x) => !x.found) : cells };
     }).filter((r) => r.cells.length > 0);
     const speciesChips = [chip('All species', !dexMissing, () => this.setState({ dexMissing: false })), chip('Not yet found', dexMissing, () => this.setState({ dexMissing: true }))];
-    // the bonus species (#49): shown once the arch has been opened (as ???) and for good once found; never part of the 48
-    const secretFound = st.caught.some((e) => e.seed === SECRET_SEED), skr = this.make(SECRET_SEED, 3, 12);
-    const bonusShow = (secretFound || !!(st.adv && st.adv.open && st.adv.open.arch)) && (!dexMissing || !secretFound);
+    // the bonus species (#49, #50): each shows as ??? once its door has been opened and for good once found; never part of the 48
+    const bonusDefs = [[SECRET_SEED, !!(st.adv && st.adv.open && st.adv.open.arch)], [SECRET2_SEED, !!(st.adv && st.adv.open && st.adv.open.lamp)]];
+    const bonusFound = (sd) => st.caught.some((e) => e.seed === sd);
+    const bonusList = bonusDefs.map(([sd, opened]) => { const f = bonusFound(sd), S = SECRETS[sd]; return { show: (f || opened) && (!dexMissing || !f), icon: '', name: f ? S.name : '???', sub: f ? '#0' + S.speciesNo + ' · ' + S.type + ' · ' + S.ability.name : S.hint, sd: sd, f: f }; }).filter((x) => x.show);
+    if (st.dexView === 'species') bonusList.forEach((x) => { x.icon = PIX.sprite(this.make(x.sd, 3, SECRETS[x.sd].lv), x.f ? 'icon' : 'silhouette'); });
     const spTi = Math.floor((spSel - 1) / 6), spSi = (spSel - 1) % 6, spFound = seen.indexOf(spSel) !== -1;
     const spd = {
       no: String(spSel).padStart(3, '0'),
@@ -965,7 +997,7 @@ class Component extends Base {
       showTestTools: tab === 'badges' && testMode,
       seedInput: st.seedInput,
       loadError: st.loadError,
-      releaseLabel: detail && entry.seed === SECRET_SEED ? 'Cannot be released' : (st.armed ? 'Tap to confirm' : 'Release (+' + releaseGain + ')'),
+      releaseLabel: detail && SECRETS[entry.seed] ? 'Cannot be released' : (st.armed ? 'Tap to confirm' : 'Release (+' + releaseGain + ')'),
       releaseBg: st.armed ? 'rgba(150,40,30,0.85)' : 'rgba(14,26,56,0.78)',
       cannotEvolve: !canEvolve,
       evolveLabel: detail && entry.stage === 3 ? 'Fully evolved' : 'Evolve (−' + evolveCost + ')',
@@ -1014,7 +1046,7 @@ class Component extends Base {
       speciesFound: seen.length,
       dexToggle: dexToggle,
       showDexToggle: tab === 'dex' && !detail,
-      showSpecies: tab === 'dex' && !detail && dexView === 'species', speciesChips: speciesChips, showBonus: bonusShow, bonusCount: secretFound ? '1/1' : '0/1', bonusIcon: bonusShow && dexView === 'species' ? PIX.sprite(skr, secretFound ? 'icon' : 'silhouette') : '', bonusName: secretFound ? 'Veilcrown' : '???', bonusSub: secretFound ? '#049 · Dusk · ' + SECRET.ability.name : 'Something waits where eight sit at one fire.', dexNoMissing: dexMissing && speciesRows.length === 0,
+      showSpecies: tab === 'dex' && !detail && dexView === 'species', speciesChips: speciesChips, showBonus: bonusList.length > 0, bonusList: bonusList, bonusCount: bonusDefs.filter(([sd]) => bonusFound(sd)).length + '/' + bonusDefs.length, dexNoMissing: dexMissing && speciesRows.length === 0,
       showLevelUp: !!st.levelUp,
       levelUpText: st.levelUp ? 'Trainer level ' + st.levelUp + '! +2 essence' : '',
       badgeCount: badges.filter((x) => x.earned).length,
@@ -1050,7 +1082,7 @@ class Component extends Base {
       },
       release: () => {
         if (!detail) return;
-        if (entry.seed === SECRET_SEED) { this.sfx('tap'); return; }   // the secret critter stays with you
+        if (SECRETS[entry.seed]) { this.sfx('tap'); return; }   // the secret critters stay with you
         if (!st.armed) { this.setState({ armed: true }); return; }
         this.update({
           caught: st.caught.filter((e) => e.seed !== entry.seed),

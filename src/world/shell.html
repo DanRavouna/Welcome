@@ -114,6 +114,8 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .mhb{position:static!important;flex:none;white-space:nowrap}
 .mchev{flex:none;transition:transform .15s}.mgroup.open .mchev{transform:rotate(180deg)}
 .mbody{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 8px 10px}.mbody[hidden]{display:none}
+.dvs{margin:12px 0 6px;font-size:13px;font-weight:900;color:#8A6510;text-transform:uppercase;letter-spacing:.04em}.dvs:first-child{margin-top:0}
+.dvg{display:flex;flex-wrap:wrap;gap:6px}.dvb{min-height:40px;padding:0 12px;border:1.5px solid #1E2A4A;border-radius:12px;background:#fff;color:#1E2A4A;font:inherit;font-size:13px;font-weight:800;cursor:pointer}.dvb[aria-pressed=true]{background:#1E2A4A;color:#fff}.dvn{margin:4px 0 0;font-size:12px;font-weight:700;color:#3A4868;line-height:1.35}
 .mhead:focus-visible{outline:3px solid #FFD86B;outline-offset:-3px}
 @media (prefers-reduced-motion: reduce){.mchev{transition:none}}
 .tile .ti{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 40% 30%,#3A4A78 0%,#1E2A4A 70%);color:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:2px}
@@ -123,7 +125,7 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .rail{display:flex;flex-direction:column;gap:10px;padding:8px 6px;border-radius:999px;background:rgba(14,26,56,.55);border:1.5px solid rgba(255,255,255,.4);align-self:flex-start}
 .rail button{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.8);background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .rail button[aria-pressed="false"]{opacity:.6}
-#starter[hidden],#cf[hidden],#party[hidden],#bag[hidden],#shop[hidden],#wmap[hidden],#bk[hidden],#menu[hidden],#dlg[hidden],#dlg-choices[hidden],.dmore[hidden]{display:none}
+#starter[hidden],#cf[hidden],#party[hidden],#bag[hidden],#shop[hidden],#wmap[hidden],#bk[hidden],#dev[hidden],#menu[hidden],#dlg[hidden],#dlg-choices[hidden],.dmore[hidden]{display:none}
 #dlg{position:fixed;inset:0;z-index:7;display:flex;align-items:flex-end;justify-content:center;padding:0 10px calc(14px + env(safe-area-inset-bottom,0px))}
 .dwrap{width:min(520px,100%);display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 #dlg-box{position:relative;width:100%;min-height:118px;padding:24px 18px 18px;text-align:left;cursor:pointer;background:#F8F8F8;border:4px solid #1E2A4A;box-shadow:inset 0 0 0 3px #8FA3C8,0 6px 0 rgba(0,0,0,.25);font:inherit;color:#1E2A4A;image-rendering:pixelated}
@@ -135,7 +137,7 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 #dlg-choices button{height:48px;padding:0 18px;text-align:left;background:#F8F8F8;border:4px solid #1E2A4A;box-shadow:inset 0 0 0 3px #8FA3C8;color:#1E2A4A;font-family:'Pixelify Sans',Nunito,sans-serif;font-size:18px;font-weight:700;cursor:pointer}
 #dlg-choices button:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
 .wm-panel{width:min(520px,100%);max-height:100%;overflow-y:auto;box-sizing:border-box;padding:14px;border-radius:22px;background:rgba(244,248,255,.95);border:1.5px solid #fff;box-shadow:0 10px 30px rgba(10,20,60,.4);color:#1E2A4A}
-#wmap,#bk,.ovl{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;padding:calc(12px + env(safe-area-inset-top,0px)) 10px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(8,16,40,.55)}
+#wmap,#bk,#dev,.ovl{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;padding:calc(12px + env(safe-area-inset-top,0px)) 10px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(8,16,40,.55)}
 .wm-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}.wm-head h2{margin:0;font-size:20px;font-weight:900}
 .wm-head button{width:44px;height:44px;border-radius:50%;border:0;background:#1E2A4A;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .wm-tod{margin:0 0 10px;font-size:13px;font-weight:800;color:#3A4868}
@@ -183,13 +185,13 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 @media (prefers-reduced-motion: reduce){.dmore{animation:none}}
 @media (prefers-reduced-motion: reduce){.plank.drop{animation:none}}
 /* accessibility: Settings "Larger text" scales the overlays (not the map HUD); "High contrast" makes panels solid and text stronger */
-html.bigtext #screen,html.bigtext #menu,html.bigtext #wmap,html.bigtext #bk,html.bigtext #cf,html.bigtext #starter,html.bigtext #party,html.bigtext #bag,html.bigtext #shop,html.bigtext #dlg{zoom:1.25}
+html.bigtext #screen,html.bigtext #menu,html.bigtext #wmap,html.bigtext #dev,html.bigtext #bk,html.bigtext #cf,html.bigtext #starter,html.bigtext #party,html.bigtext #bag,html.bigtext #shop,html.bigtext #dlg{zoom:1.25}
 html.hc{--glass:#050B1C;--glass-line:#FFFFFF;--light:#FFFFFF}
 html.hc [style*="color: #C9D6F2"],html.hc [style*="color: #E6ECF7"],html.hc [style*="color:#C9D6F2"],html.hc [style*="color:#E6ECF7"]{color:#FFFFFF!important}
 html.hc [style*="color: #3A4868"],html.hc [style*="color:#3A4868"]{color:#0A1226!important}
 html.hc [style*="rgba(14,26,56,0.78)"],html.hc [style*="rgba(14,20,80,0.4)"]{background:#08122A!important}
 html.hc [style*="rgba(255,255,255,0.62)"],html.hc [style*="rgba(255,255,255,0.7)"],html.hc [style*="rgba(255,255,255,0.72)"]{background:#FFFFFF!important}
-html.hc #wmap,html.hc #bk,html.hc .ovl,html.hc #menu{background:#050B1C!important;backdrop-filter:none!important}
+html.hc #wmap,html.hc #bk,html.hc #dev,html.hc .ovl,html.hc #menu{background:#050B1C!important;backdrop-filter:none!important}
 html.hc .wm-panel,html.hc .tile,html.hc .loc{background:#FFFFFF!important;backdrop-filter:none!important}
 html.hc .prof{background:#12204A!important;backdrop-filter:none!important}
 html.hc .mgroup{background:#08122A!important}html.hc .mht span{color:#FFFFFF!important}
@@ -265,6 +267,12 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
       <div class="wm-head"><h2 id="wm-title">World map</h2><button id="wm-close" aria-label="Close map"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
       <p id="wm-tod" class="wm-tod"></p>
       <div class="wm-grid" id="wm-grid"></div>
+    </div>
+  </div>
+  <div id="dev" role="dialog" aria-modal="true" aria-labelledby="dev-title" hidden>
+    <div class="wm-panel">
+      <div class="wm-head"><h2 id="dev-title">Developer tools</h2><button id="dev-close" aria-label="Close developer tools"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+      <div id="dev-body"></div>
     </div>
   </div>
   <div id="bk" role="dialog" aria-modal="true" aria-labelledby="bk-title" hidden>

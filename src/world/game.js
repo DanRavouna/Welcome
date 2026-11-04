@@ -6,8 +6,8 @@ class Game extends Component {
     const m = 1 + 0.03 * (lv - 1);
     k.stats.forEach((q) => { q.value = Math.min(250, Math.round(q.value * m)); q.pct = Math.min(100, Math.round(q.value / 200 * 100)); });
     k.lv = lv;
-    k.seedLabel = seed === SECRET_SEED ? 'secret' : String(seed);
-    const sh = seed === SECRET_SEED ? 0 : this.shinyHash(seed);   // the secret critter is never shiny
+    k.seedLabel = SECRETS[seed] ? 'secret' : String(seed);
+    const sh = SECRETS[seed] ? 0 : this.shinyHash(seed);   // the secret critter is never shiny
     if (sh) this.shinify(k, sh);
     return k;
   }
@@ -500,7 +500,7 @@ class Game extends Component {
     const seals = (this.state.npc && this.state.npc.seals) || [];
     const lvNow = this.levelInfo(this.state.xp || 0).level;
     v.seals = LEADERS.map((L) => {
-      const got = seals.indexOf(L.id) !== -1, open = lvNow >= GATES[L.zone] || this.props.testMode;
+      const got = seals.indexOf(L.id) !== -1, open = lvNow >= GATES[L.zone] || this.props.noGates;
       return { name: L.name, zone: ZONE_NAMES[L.zone], got: got, notGot: !got, color: got ? L.color : '#AEBBD6', ring: got ? '#F5C542' : '#8C9BBD', glow: got ? '0 0 12px rgba(245,197,66,0.7)' : 'none',
         status: got ? 'Seal earned' : (open ? 'Waiting in ' + mapName(npcHome(L.id) || L.zone) : 'Opens at level ' + GATES[L.zone]), aria: L.name + ', ' + (got ? 'seal earned' : 'seal not earned') };
     });

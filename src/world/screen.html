@@ -185,16 +185,18 @@
           </div>
         </sc-for>
         <sc-if value="{{showBonus}}" hint-placeholder-val="{{ false }}">
-          <div style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; background: rgba(255,255,255,0.62); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 4px 12px rgba(40,70,140,0.12)">
-            <div style="flex-shrink: 0; width: 48px; height: 48px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2.5px solid #F5C542; background: #EAF2FF">
-              <img src="{{bonusIcon}}" alt="" width="36" height="32" style="width: 36px; height: 32px; image-rendering: pixelated">
+          <span style="margin: 4px 4px 0; font-size: 12px; font-weight: 900; color: #8A6510">Bonus species · {{bonusCount}}</span>
+          <sc-for list="{{bonusList}}" as="bn" hint-placeholder-count="2">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; background: rgba(255,255,255,0.62); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 4px 12px rgba(40,70,140,0.12)">
+              <div style="flex-shrink: 0; width: 48px; height: 48px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2.5px solid #F5C542; background: #EAF2FF">
+                <img src="{{bn.icon}}" alt="" width="36" height="32" style="width: 36px; height: 32px; image-rendering: pixelated">
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+                <span style="font-size: 15px; font-weight: 900; color: #1E2A4A">{{bn.name}}</span>
+                <span style="font-size: 12px; font-weight: 700; color: #3A4868">{{bn.sub}}</span>
+              </div>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
-              <span style="font-size: 12px; font-weight: 900; color: #8A6510">Bonus species · {{bonusCount}}</span>
-              <span style="font-size: 15px; font-weight: 900; color: #1E2A4A">{{bonusName}}</span>
-              <span style="font-size: 12px; font-weight: 700; color: #3A4868">{{bonusSub}}</span>
-            </div>
-          </div>
+          </sc-for>
         </sc-if>
       </sc-if>
 

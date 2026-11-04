@@ -20,6 +20,7 @@ These rules apply to every task in this repository.
 - `index.html` is the built game that GitHub Pages serves (plus `vendor/`). Never edit it by hand.
 - `src/world/` holds the source pieces (`shell.html`, `screen.html`, `runtime.js`, `pixel.js`, `pxworld.js`, `landmarks.js` (reusable props), `adventure.js` (clues, dungeon layouts, object art), `world.js`, `weather.js`, `ambient.js` (scenery critters), `cloud.js`, `music.js`, `flavor.js` (townsfolk remarks), then `base.js` (Base + Component), `data.js` (constants), `game.js` (Game class) and `app.js` (APP: HUD, menus, screens)). `logic.js`, `critter.html`, `helmet.html`, `build.py` and `reassemble.py` are older leftovers that the current build does not use.
 - `src/*.py` and `src/*.js` are the tests and balance sims from the handoff.
+- Developer tools: tap the ID in the menu 5 times, then Menu > Game > Dev tools (teleport, ignore level requirements, adventure shortcuts). See the handoff.
 - Run tests by group: `bash src/run-tests.sh @world` (also `@battle`, `@saves`, `@ui`); no argument runs everything.
 
 ## Build
@@ -34,7 +35,7 @@ bash src/test-setup.sh           # links the paths the tests expect (/mnt/user-d
 bash src/run-tests.sh            # full suite, one line per test; logs go to /tmp/cr-test-logs/
 bash src/run-tests.sh wplay.py   # one test
 ```
-- `p17` runs without the `pwhook` seed hook, and every other suite runs with it. `run-tests.sh` handles both.
+- `p17`, `menutest`, `transitiontest` and `devtest` run without the `pwhook` seed hook (real defaults); every other suite runs with it. `run-tests.sh` handles both.
 - A zero exit code is not proof of a pass. Most suites print numbers that must be read and compared with the handoff.
 - `peaktest` and `towertest` compare against an old build (`live-before-endgame.html`) that is missing, so `test-setup.sh` uses the current build as a stand-in. Their "tiles changed" line proves nothing until a real old build is supplied.
 - `supatest.py` tests real cloud saves against the live Supabase project (two throwaway accounts, created and deleted by the test). It is not part of `run-tests.sh`. Run it whenever `cloud.js`, the account panel or the schema changes:

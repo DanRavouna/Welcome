@@ -7,7 +7,7 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 LOG="${LOG_DIR:-/tmp/cr-test-logs}"; mkdir -p "$LOG"
 HOOKED="hudcheck wplay p14 p15 p18r ctest ntest ptest ztest jitter perf peaktest citytest towertest shinytest titletest musictest fxtest statstest routes questtest itemtest hometest interiors aggrotest twisttest fishtest guidetest cities"
 # Groups: bash src/run-tests.sh @world  (or @battle @saves @ui, several allowed; no argument = everything)
-GROUP_world="lamptest ascenttest secrettest adventuretest transitiontest flavortest ambienttest landmarkstest wplay ztest jitter perf peaktest citytest routes cities interiors hometest guidetest fishtest weathertest"
+GROUP_world="wicktest devtest lamptest ascenttest secrettest adventuretest transitiontest flavortest ambienttest landmarkstest wplay ztest jitter perf peaktest citytest routes cities interiors hometest guidetest fishtest weathertest"
 GROUP_battle="abilitytest ntest ptest aggrotest fxtest towertest twisttest itemtest shinytest"
 GROUP_saves="menutest dextest p14 p15 p18r ctest statstest titletest questtest p17"
 GROUP_ui="evotest a11ytest hudcheck musictest"
@@ -16,7 +16,7 @@ if [ $# -gt 0 ]; then TESTS="$(expand "$@")"; else TESTS="$(for t in $HOOKED wea
 cd /tmp
 for t in $TESTS; do
   n="${t%.py}"
-  if [ "$n" = p17 ] || [ "$n" = menutest ] || [ "$n" = transitiontest ]; then PP=""; else PP="$SRC/pwhook"; fi  # these two run WITHOUT the seed hook (real defaults)
+  if [ "$n" = p17 ] || [ "$n" = menutest ] || [ "$n" = transitiontest ] || [ "$n" = devtest ]; then PP=""; else PP="$SRC/pwhook"; fi  # these two run WITHOUT the seed hook (real defaults)
   start=$(date +%s)
   PYTHONPATH="$PP" timeout 600 python3 "$SRC/$n.py" > "$LOG/$n.log" 2>&1; rc=$?
   bad=$(grep -ciE "traceback|pageerror|uncaught|errors: \[['\"]" "$LOG/$n.log")
