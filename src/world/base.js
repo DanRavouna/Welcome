@@ -12,7 +12,7 @@ class Component extends Base {
       seed: null, previewSeed: null, caught: [], tab: 'roll', selected: null, earned: [],
       seedInput: '', loadError: false, armed: false,
       essence: 0, wins: 0, day: '', used: 0,
-      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { rtb: false, arpg: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true, bigtext: false, contrast: false }
+      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { rtb: false, arpg: false, ctrlcrit: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true, bigtext: false, contrast: false }
     };
   }
 
@@ -60,7 +60,7 @@ class Component extends Base {
         const r = t.run && typeof t.run === 'object' && Array.isArray(t.run.party) ? { floor: Math.max(1, t.run.floor | 0), party: t.run.party.filter((n) => Number.isInteger(n)).slice(0, 3), hp: t.run.hp && typeof t.run.hp === 'object' ? t.run.hp : {} } : null;
         return { best: Math.max(0, t.best | 0), day: typeof t.day === 'string' ? t.day : '', runs: t.runs | 0, clears: t.clears | 0, run: r && r.party.length ? r : null };
       })(),
-      settings: d.settings && typeof d.settings === 'object' ? { rtb: d.settings.rtb === true, arpg: d.settings.arpg === true, sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false, bigtext: d.settings.bigtext === true, contrast: d.settings.contrast === true } : { rtb: false, arpg: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true, bigtext: false, contrast: false },
+      settings: d.settings && typeof d.settings === 'object' ? { rtb: d.settings.rtb === true, arpg: d.settings.arpg === true, ctrlcrit: d.settings.ctrlcrit === true, sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false, bigtext: d.settings.bigtext === true, contrast: d.settings.contrast === true } : { rtb: false, arpg: false, ctrlcrit: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true, bigtext: false, contrast: false },
       seen: (() => {
         const seen = Array.isArray(d.seen) ? d.seen.filter((n) => Number.isInteger(n) && n >= 1 && n <= 48) : [];
         (Array.isArray(d.caught) ? d.caught : []).forEach((e) => { if (e && Number.isInteger(e.seed)) { const no = this.make(e.seed, 1).speciesNo; if (no <= 48 && seen.indexOf(no) === -1) seen.push(no); } });   // the secret critter (#49) is a bonus, never counted in the 48
@@ -1000,6 +1000,7 @@ class Component extends Base {
       settingRows: [
         ['music', 'Music', 'Background tunes for each area and battle.'],
         ['arpg', 'Action mode (prototype)', 'Your critter fights live on the map: tap Attack to slash, hold it to pick a move on the wheel. Wild critters roam the grass instead of random encounters.'],
+        ['ctrlcrit', 'Steer your critter (action mode)', 'The joystick moves your critter and you walk behind it, so aiming is where it faces. Needs Action mode and Critter follows you.'],
         ['rtb', 'Real-time battles (beta)', 'Battles run live: tap Attack when its bar is full, swap moves any time. The foe acts on its own clock. Off = classic turns.'],
         ['follow', 'Critter follows you', 'Your lead critter walks behind you in the world.'],
         ['sound', 'Sound effects', 'Chimes for rolls, battles and level-ups.'],

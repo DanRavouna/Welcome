@@ -670,12 +670,16 @@ const WORLD = (() => {
     if (!last || Math.hypot(P.x - last.x, P.y - last.y) > 2) { trail.push({ x: P.x, y: P.y }); if (trail.length > 60) trail.shift(); }
     let dist = 0, tgt = null;
     for (let i = trail.length - 1; i > 0; i--) { dist += Math.hypot(trail[i].x - trail[i - 1].x, trail[i].y - trail[i - 1].y); if (dist >= TS * 1.05) { tgt = trail[i - 1]; break; } }
-    if (tgt) { FOL.moving = Math.hypot(tgt.x - FOL.x, tgt.y - FOL.y) > 0.5; FOL.x += (tgt.x - FOL.x) * 0.35; FOL.y += (tgt.y - FOL.y) * 0.35; } else FOL.moving = false;
+    if (tgt) { const ox = FOL.x, oy = FOL.y; FOL.moving = Math.hypot(tgt.x - FOL.x, tgt.y - FOL.y) > 0.5; FOL.x += (tgt.x - FOL.x) * 0.35; FOL.y += (tgt.y - FOL.y) * 0.35;
+      const mx = FOL.x - ox, my = FOL.y - oy; if (Math.hypot(mx, my) > 0.15) { FOL.dir = Math.abs(mx) > Math.abs(my) ? (mx > 0 ? 'right' : 'left') : (my > 0 ? 'down' : 'up'); } if (FOL.moving) FOL.step = (FOL.step || 0) + 0.15; } else FOL.moving = false;
   }
+  // critter-lead mode (Settings, with action mode): you steer the critter; the human walks behind it. P stays "the controlled body" for collisions, interactions, exits and the camera.
+  let LEAD = false;
+  function critterLead(fol) { return !!(fol && fol.img && fol.img.complete && opts.critterLead && opts.critterLead()); }
   function update(dt) {
     if (paused || TR) { P.moving = false; return; }
     followerStep();
-    if (typeof ACT !== 'undefined') ACT.step({ M: M, TS: TS, P: P, FOL: FOL, fol: opts.follower ? opts.follower() : null, dt: dt, solidAt: (x, y) => solidAt(x, y) });
+    if (typeof ACT !== 'undefined') { const fl = opts.follower ? opts.follower() : null; LEAD = critterLead(fl); if (!LEAD) { P.ox = 0; P.oy = 0; } ACT.step({ M: M, TS: TS, P: LEAD ? FOL : P, FOL: LEAD ? P : FOL, lead: LEAD, fol: fl, dt: dt, solidAt: (x, y) => solidAt(x, y) }); }
     let vx = input.jx, vy = input.jy; const k = input.keys;
     if (k.ArrowLeft || k.a) vx -= 1; if (k.ArrowRight || k.d) vx += 1; if (k.ArrowUp || k.w) vy -= 1; if (k.ArrowDown || k.s) vy += 1;
     const len = Math.hypot(vx, vy);
@@ -720,18 +724,27 @@ const WORLD = (() => {
     if (nk !== lastNear) { lastNear = nk; if (opts.onNear) opts.onNear(n); }
   }
   let FR = null, lastPlayerScreen = null, lastCam = null, tintNow = 'day';
-  function drawPlayer(sx, sy) {
+  function drawPlayer(sx, sy, body) {
     if (!FR) FR = PXW.frames();
-    const x = Math.round(sx * dpr) / dpr, y = Math.round(sy * dpr) / dpr;
-    lastPlayerScreen = { x: x, y: y };
+    const B = body || P, x = Math.round(sx * dpr) / dpr, y = Math.round(sy * dpr) / dpr;
+    if (!body) lastPlayerScreen = { x: x, y: y };
     ctx.fillStyle = 'rgba(10,30,10,0.32)'; ctx.fillRect(x - 10, y - 2, 20, 4); ctx.fillRect(x - 8, y - 4, 16, 8);
-    const f = P.moving ? (Math.floor(P.step / 1.6) % 2 ? 1 : 2) : 0;
-    ctx.drawImage(FR[P.dir][f], x - 16, y - 38, 32, 40);
-    const t = M.grid[Math.floor(P.y / TS)] && M.grid[Math.floor(P.y / TS)][Math.floor(P.x / TS)];
+    const f = B.moving ? (Math.floor((B.step || 0) / 1.6) % 2 ? 1 : 2) : 0;
+    ctx.drawImage(FR[B.dir || 'down'][f], x - 16, y - 38, 32, 40);
+    const t = M.grid[Math.floor(B.y / TS)] && M.grid[Math.floor(B.y / TS)][Math.floor(B.x / TS)];
     if (t === 'W' || t === 'Z') {
       const pal = PXW.PAL[M.id] || PXW.PAL.town, sway = rustle > 0 ? (Math.floor(tAnim * 20) % 2) * 2 : 0;
       for (let i = -3; i <= 3; i++) { const bx = x + i * 5 + sway; ctx.fillStyle = pal.tb; ctx.fillRect(bx - 2, y - 8, 4, 10); ctx.fillStyle = t === 'Z' ? '#FFF7D6' : pal.th; ctx.fillRect(bx - 2, y - 10, 2, 4); }
     }
+  }
+  function drawCritterAt(fol, wx, wy, moving, cx, cy, snap, isBody) {
+    const x = snap(wx - cx), y = snap(wy - cy), hop = moving ? Math.abs(Math.sin(tAnim * 12)) * 3 : Math.abs(Math.sin(tAnim * 2)) * 1;
+    const w = 30, h = Math.round(30 * fol.img.height / Math.max(1, fol.img.width));
+    if (isBody) lastPlayerScreen = { x: x, y: y };
+    ctx.fillStyle = 'rgba(10,30,10,0.28)'; ctx.fillRect(x - 8, y - 2, 16, 3); ctx.fillRect(x - 6, y - 3, 12, 5);
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(fol.img, Math.round(x - w / 2), Math.round(y - h - hop), w, h);
+    if (fol.shiny && Math.floor(tAnim * 1.5) % 3 === 0) { const sx = x + 10 - (Math.floor(tAnim * 6) % 3) * 6, sy = y - h - 2 - hop; ctx.fillStyle = '#FFF3B0'; ctx.fillRect(sx - 1, sy - 4, 2, 8); ctx.fillRect(sx - 4, sy - 1, 8, 2); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(sx - 1, sy - 1, 2, 2); }
+    if (isBody) { const t = M.grid[Math.floor(wy / TS)] && M.grid[Math.floor(wy / TS)][Math.floor(wx / TS)]; if (t === 'W' || t === 'Z') { const pal = PXW.PAL[M.id] || PXW.PAL.town, sway = rustle > 0 ? (Math.floor(tAnim * 20) % 2) * 2 : 0; for (let i = -3; i <= 3; i++) { const bx = x + i * 5 + sway; ctx.fillStyle = pal.tb; ctx.fillRect(bx - 2, y - 8, 4, 10); ctx.fillStyle = t === 'Z' ? '#FFF7D6' : pal.th; ctx.fillRect(bx - 2, y - 10, 2, 4); } } }
   }
   function drawTag(text, sx, sy, gold) {
     ctx.font = '600 13px "Pixelify Sans", Nunito, sans-serif';
@@ -848,13 +861,15 @@ const WORLD = (() => {
     const fol = opts.follower ? opts.follower() : null;
     if (!FOL) followerReset();
     const list = (NPCS[M.id] || []).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat((M.objects || []).filter((o) => !o.hidden).map((o) => ({ y: (o.y + 0.95) * TS, o: o }))).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
-    const actEnv = { M: M, TS: TS, P: P, FOL: FOL, fol: fol, ctx: ctx, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, snap: snap };
+    LEAD = critterLead(fol); if (!LEAD) { P.ox = 0; P.oy = 0; }
+    const actEnv = { M: M, TS: TS, P: LEAD ? FOL : P, FOL: LEAD ? P : FOL, lead: LEAD, fol: fol, ctx: ctx, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, snap: snap };
     if (typeof ACT !== 'undefined') ACT.items(actEnv).forEach((a) => list.push(a));
     list.sort((a, b) => a.y - b.y);
     list.forEach((it) => {
       if (it.fn) { it.fn(ctx); return; }
-      if (it.p) { drawPlayer(pxs - cx, pys - cy); return; }
+      if (it.p) { if (LEAD) drawCritterAt(fol, P.x + (P.ox || 0), P.y + (P.oy || 0), P.moving, cx, cy, snap, true); else drawPlayer(pxs - cx, pys - cy); return; }
       if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy); if (ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50) return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (art) art(ctx, ox, oy, st, tAnim, o); return; }
+      if (it.f && LEAD) { drawPlayer(snap(FOL.x - cx), snap(FOL.y - cy), { x: FOL.x, y: FOL.y, dir: FOL.dir || P.dir, moving: FOL.moving, step: FOL.step || 0 }); return; }
       if (it.f) {
         const x = snap(FOL.x + (FOL.ox || 0) - cx), y = snap(FOL.y + (FOL.oy || 0) - cy), hop = FOL.moving ? Math.abs(Math.sin(tAnim * 12)) * 3 : Math.abs(Math.sin(tAnim * 2)) * 1;
         const w = 30, h = Math.round(30 * fol.img.height / Math.max(1, fol.img.width));
@@ -968,6 +983,7 @@ const WORLD = (() => {
     solidAt: (x, y) => solidAt(x, y),
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },
     get npcs() { return NPCS[M.id] || []; }, allNpcs: () => NPCS, facePlayer, inSight,
+    followerPos: () => (FOL ? { x: FOL.x, y: FOL.y, dir: FOL.dir || null, moving: !!FOL.moving } : null), get lead() { return LEAD; },
     pos: () => ({ x: P.x, y: P.y }), debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
   };
 })();

@@ -44,7 +44,7 @@ const ACT = (() => {
   const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }
-  function faceVec(e) { return DIRS[e.P.dir] || DIRS.down; }
+  function faceVec(e) { return DIRS[(e.lead ? e.FOL.dir : e.P.dir)] || DIRS.down; }   // in critter-lead mode the critter (e.FOL) is the one you steer
   function target(e, dir) {
     const o = heroPos(); let best = null, bd = 3.2 * e.TS;
     E.forEach((m) => { const dx = m.x - o.x, dy = m.y - o.y, d = Math.hypot(dx, dy); if (d < bd && d > 1 && (dx * dir[0] + dy * dir[1]) / d > 0.17) { bd = d; best = m; } });

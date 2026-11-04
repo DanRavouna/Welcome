@@ -1184,6 +1184,7 @@ const APP = (() => {
       objState: objState, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
       exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
+      critterLead: () => !!(game && game.state.settings && game.state.settings.arpg && game.state.settings.ctrlcrit && game.state.settings.follow !== false && game.state.caught.length),
       follower: () => {
         const st = game.state; if (!st.caught.length || (st.settings && st.settings.follow === false)) return null;
         const seeds = game.partySeeds(), sd = st.caught.some((e) => e.seed === st.fighter) ? st.fighter : (seeds[0] || st.caught[0].seed), e = st.caught.find((c) => c.seed === sd);

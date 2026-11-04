@@ -2650,12 +2650,16 @@ const WORLD = (() => {
     if (!last || Math.hypot(P.x - last.x, P.y - last.y) > 2) { trail.push({ x: P.x, y: P.y }); if (trail.length > 60) trail.shift(); }
     let dist = 0, tgt = null;
     for (let i = trail.length - 1; i > 0; i--) { dist += Math.hypot(trail[i].x - trail[i - 1].x, trail[i].y - trail[i - 1].y); if (dist >= TS * 1.05) { tgt = trail[i - 1]; break; } }
-    if (tgt) { FOL.moving = Math.hypot(tgt.x - FOL.x, tgt.y - FOL.y) > 0.5; FOL.x += (tgt.x - FOL.x) * 0.35; FOL.y += (tgt.y - FOL.y) * 0.35; } else FOL.moving = false;
+    if (tgt) { const ox = FOL.x, oy = FOL.y; FOL.moving = Math.hypot(tgt.x - FOL.x, tgt.y - FOL.y) > 0.5; FOL.x += (tgt.x - FOL.x) * 0.35; FOL.y += (tgt.y - FOL.y) * 0.35;
+      const mx = FOL.x - ox, my = FOL.y - oy; if (Math.hypot(mx, my) > 0.15) { FOL.dir = Math.abs(mx) > Math.abs(my) ? (mx > 0 ? 'right' : 'left') : (my > 0 ? 'down' : 'up'); } if (FOL.moving) FOL.step = (FOL.step || 0) + 0.15; } else FOL.moving = false;
   }
+  // critter-lead mode (Settings, with action mode): you steer the critter; the human walks behind it. P stays "the controlled body" for collisions, interactions, exits and the camera.
+  let LEAD = false;
+  function critterLead(fol) { return !!(fol && fol.img && fol.img.complete && opts.critterLead && opts.critterLead()); }
   function update(dt) {
     if (paused || TR) { P.moving = false; return; }
     followerStep();
-    if (typeof ACT !== 'undefined') ACT.step({ M: M, TS: TS, P: P, FOL: FOL, fol: opts.follower ? opts.follower() : null, dt: dt, solidAt: (x, y) => solidAt(x, y) });
+    if (typeof ACT !== 'undefined') { const fl = opts.follower ? opts.follower() : null; LEAD = critterLead(fl); if (!LEAD) { P.ox = 0; P.oy = 0; } ACT.step({ M: M, TS: TS, P: LEAD ? FOL : P, FOL: LEAD ? P : FOL, lead: LEAD, fol: fl, dt: dt, solidAt: (x, y) => solidAt(x, y) }); }
     let vx = input.jx, vy = input.jy; const k = input.keys;
     if (k.ArrowLeft || k.a) vx -= 1; if (k.ArrowRight || k.d) vx += 1; if (k.ArrowUp || k.w) vy -= 1; if (k.ArrowDown || k.s) vy += 1;
     const len = Math.hypot(vx, vy);
@@ -2700,18 +2704,27 @@ const WORLD = (() => {
     if (nk !== lastNear) { lastNear = nk; if (opts.onNear) opts.onNear(n); }
   }
   let FR = null, lastPlayerScreen = null, lastCam = null, tintNow = 'day';
-  function drawPlayer(sx, sy) {
+  function drawPlayer(sx, sy, body) {
     if (!FR) FR = PXW.frames();
-    const x = Math.round(sx * dpr) / dpr, y = Math.round(sy * dpr) / dpr;
-    lastPlayerScreen = { x: x, y: y };
+    const B = body || P, x = Math.round(sx * dpr) / dpr, y = Math.round(sy * dpr) / dpr;
+    if (!body) lastPlayerScreen = { x: x, y: y };
     ctx.fillStyle = 'rgba(10,30,10,0.32)'; ctx.fillRect(x - 10, y - 2, 20, 4); ctx.fillRect(x - 8, y - 4, 16, 8);
-    const f = P.moving ? (Math.floor(P.step / 1.6) % 2 ? 1 : 2) : 0;
-    ctx.drawImage(FR[P.dir][f], x - 16, y - 38, 32, 40);
-    const t = M.grid[Math.floor(P.y / TS)] && M.grid[Math.floor(P.y / TS)][Math.floor(P.x / TS)];
+    const f = B.moving ? (Math.floor((B.step || 0) / 1.6) % 2 ? 1 : 2) : 0;
+    ctx.drawImage(FR[B.dir || 'down'][f], x - 16, y - 38, 32, 40);
+    const t = M.grid[Math.floor(B.y / TS)] && M.grid[Math.floor(B.y / TS)][Math.floor(B.x / TS)];
     if (t === 'W' || t === 'Z') {
       const pal = PXW.PAL[M.id] || PXW.PAL.town, sway = rustle > 0 ? (Math.floor(tAnim * 20) % 2) * 2 : 0;
       for (let i = -3; i <= 3; i++) { const bx = x + i * 5 + sway; ctx.fillStyle = pal.tb; ctx.fillRect(bx - 2, y - 8, 4, 10); ctx.fillStyle = t === 'Z' ? '#FFF7D6' : pal.th; ctx.fillRect(bx - 2, y - 10, 2, 4); }
     }
+  }
+  function drawCritterAt(fol, wx, wy, moving, cx, cy, snap, isBody) {
+    const x = snap(wx - cx), y = snap(wy - cy), hop = moving ? Math.abs(Math.sin(tAnim * 12)) * 3 : Math.abs(Math.sin(tAnim * 2)) * 1;
+    const w = 30, h = Math.round(30 * fol.img.height / Math.max(1, fol.img.width));
+    if (isBody) lastPlayerScreen = { x: x, y: y };
+    ctx.fillStyle = 'rgba(10,30,10,0.28)'; ctx.fillRect(x - 8, y - 2, 16, 3); ctx.fillRect(x - 6, y - 3, 12, 5);
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(fol.img, Math.round(x - w / 2), Math.round(y - h - hop), w, h);
+    if (fol.shiny && Math.floor(tAnim * 1.5) % 3 === 0) { const sx = x + 10 - (Math.floor(tAnim * 6) % 3) * 6, sy = y - h - 2 - hop; ctx.fillStyle = '#FFF3B0'; ctx.fillRect(sx - 1, sy - 4, 2, 8); ctx.fillRect(sx - 4, sy - 1, 8, 2); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(sx - 1, sy - 1, 2, 2); }
+    if (isBody) { const t = M.grid[Math.floor(wy / TS)] && M.grid[Math.floor(wy / TS)][Math.floor(wx / TS)]; if (t === 'W' || t === 'Z') { const pal = PXW.PAL[M.id] || PXW.PAL.town, sway = rustle > 0 ? (Math.floor(tAnim * 20) % 2) * 2 : 0; for (let i = -3; i <= 3; i++) { const bx = x + i * 5 + sway; ctx.fillStyle = pal.tb; ctx.fillRect(bx - 2, y - 8, 4, 10); ctx.fillStyle = t === 'Z' ? '#FFF7D6' : pal.th; ctx.fillRect(bx - 2, y - 10, 2, 4); } } }
   }
   function drawTag(text, sx, sy, gold) {
     ctx.font = '600 13px "Pixelify Sans", Nunito, sans-serif';
@@ -2828,13 +2841,15 @@ const WORLD = (() => {
     const fol = opts.follower ? opts.follower() : null;
     if (!FOL) followerReset();
     const list = (NPCS[M.id] || []).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat((M.objects || []).filter((o) => !o.hidden).map((o) => ({ y: (o.y + 0.95) * TS, o: o }))).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
-    const actEnv = { M: M, TS: TS, P: P, FOL: FOL, fol: fol, ctx: ctx, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, snap: snap };
+    LEAD = critterLead(fol); if (!LEAD) { P.ox = 0; P.oy = 0; }
+    const actEnv = { M: M, TS: TS, P: LEAD ? FOL : P, FOL: LEAD ? P : FOL, lead: LEAD, fol: fol, ctx: ctx, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, snap: snap };
     if (typeof ACT !== 'undefined') ACT.items(actEnv).forEach((a) => list.push(a));
     list.sort((a, b) => a.y - b.y);
     list.forEach((it) => {
       if (it.fn) { it.fn(ctx); return; }
-      if (it.p) { drawPlayer(pxs - cx, pys - cy); return; }
+      if (it.p) { if (LEAD) drawCritterAt(fol, P.x + (P.ox || 0), P.y + (P.oy || 0), P.moving, cx, cy, snap, true); else drawPlayer(pxs - cx, pys - cy); return; }
       if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy); if (ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50) return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (art) art(ctx, ox, oy, st, tAnim, o); return; }
+      if (it.f && LEAD) { drawPlayer(snap(FOL.x - cx), snap(FOL.y - cy), { x: FOL.x, y: FOL.y, dir: FOL.dir || P.dir, moving: FOL.moving, step: FOL.step || 0 }); return; }
       if (it.f) {
         const x = snap(FOL.x + (FOL.ox || 0) - cx), y = snap(FOL.y + (FOL.oy || 0) - cy), hop = FOL.moving ? Math.abs(Math.sin(tAnim * 12)) * 3 : Math.abs(Math.sin(tAnim * 2)) * 1;
         const w = 30, h = Math.round(30 * fol.img.height / Math.max(1, fol.img.width));
@@ -2948,6 +2963,7 @@ const WORLD = (() => {
     solidAt: (x, y) => solidAt(x, y),
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },
     get npcs() { return NPCS[M.id] || []; }, allNpcs: () => NPCS, facePlayer, inSight,
+    followerPos: () => (FOL ? { x: FOL.x, y: FOL.y, dir: FOL.dir || null, moving: !!FOL.moving } : null), get lead() { return LEAD; },
     pos: () => ({ x: P.x, y: P.y }), debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
   };
 })();
@@ -2998,7 +3014,7 @@ const ACT = (() => {
   const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }
-  function faceVec(e) { return DIRS[e.P.dir] || DIRS.down; }
+  function faceVec(e) { return DIRS[(e.lead ? e.FOL.dir : e.P.dir)] || DIRS.down; }   // in critter-lead mode the critter (e.FOL) is the one you steer
   function target(e, dir) {
     const o = heroPos(); let best = null, bd = 3.2 * e.TS;
     E.forEach((m) => { const dx = m.x - o.x, dy = m.y - o.y, d = Math.hypot(dx, dy); if (d < bd && d > 1 && (dx * dir[0] + dy * dir[1]) / d > 0.17) { bd = d; best = m; } });
@@ -3679,7 +3695,7 @@ class Component extends Base {
       seed: null, previewSeed: null, caught: [], tab: 'roll', selected: null, earned: [],
       seedInput: '', loadError: false, armed: false,
       essence: 0, wins: 0, day: '', used: 0,
-      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { rtb: false, arpg: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true, bigtext: false, contrast: false }
+      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { rtb: false, arpg: false, ctrlcrit: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true, bigtext: false, contrast: false }
     };
   }
 
@@ -3727,7 +3743,7 @@ class Component extends Base {
         const r = t.run && typeof t.run === 'object' && Array.isArray(t.run.party) ? { floor: Math.max(1, t.run.floor | 0), party: t.run.party.filter((n) => Number.isInteger(n)).slice(0, 3), hp: t.run.hp && typeof t.run.hp === 'object' ? t.run.hp : {} } : null;
         return { best: Math.max(0, t.best | 0), day: typeof t.day === 'string' ? t.day : '', runs: t.runs | 0, clears: t.clears | 0, run: r && r.party.length ? r : null };
       })(),
-      settings: d.settings && typeof d.settings === 'object' ? { rtb: d.settings.rtb === true, arpg: d.settings.arpg === true, sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false, bigtext: d.settings.bigtext === true, contrast: d.settings.contrast === true } : { rtb: false, arpg: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true, bigtext: false, contrast: false },
+      settings: d.settings && typeof d.settings === 'object' ? { rtb: d.settings.rtb === true, arpg: d.settings.arpg === true, ctrlcrit: d.settings.ctrlcrit === true, sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false, bigtext: d.settings.bigtext === true, contrast: d.settings.contrast === true } : { rtb: false, arpg: false, ctrlcrit: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true, bigtext: false, contrast: false },
       seen: (() => {
         const seen = Array.isArray(d.seen) ? d.seen.filter((n) => Number.isInteger(n) && n >= 1 && n <= 48) : [];
         (Array.isArray(d.caught) ? d.caught : []).forEach((e) => { if (e && Number.isInteger(e.seed)) { const no = this.make(e.seed, 1).speciesNo; if (no <= 48 && seen.indexOf(no) === -1) seen.push(no); } });   // the secret critter (#49) is a bonus, never counted in the 48
@@ -4667,6 +4683,7 @@ class Component extends Base {
       settingRows: [
         ['music', 'Music', 'Background tunes for each area and battle.'],
         ['arpg', 'Action mode (prototype)', 'Your critter fights live on the map: tap Attack to slash, hold it to pick a move on the wheel. Wild critters roam the grass instead of random encounters.'],
+        ['ctrlcrit', 'Steer your critter (action mode)', 'The joystick moves your critter and you walk behind it, so aiming is where it faces. Needs Action mode and Critter follows you.'],
         ['rtb', 'Real-time battles (beta)', 'Battles run live: tap Attack when its bar is full, swap moves any time. The foe acts on its own clock. Off = classic turns.'],
         ['follow', 'Critter follows you', 'Your lead critter walks behind you in the world.'],
         ['sound', 'Sound effects', 'Chimes for rolls, battles and level-ups.'],
@@ -6826,6 +6843,7 @@ const APP = (() => {
       objState: objState, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
       exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
+      critterLead: () => !!(game && game.state.settings && game.state.settings.arpg && game.state.settings.ctrlcrit && game.state.settings.follow !== false && game.state.caught.length),
       follower: () => {
         const st = game.state; if (!st.caught.length || (st.settings && st.settings.follow === false)) return null;
         const seeds = game.partySeeds(), sd = st.caught.some((e) => e.seed === st.fighter) ? st.fighter : (seeds[0] || st.caught[0].seed), e = st.caught.find((c) => c.seed === sd);
