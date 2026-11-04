@@ -90,6 +90,7 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 #wheel .slot{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;border:3px solid rgba(255,255,255,.75);background:rgba(14,26,56,.88);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:10.5px;font-weight:900;line-height:1.15;padding:4px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
 #wheel .slot small{font-size:9px;font-weight:700;color:#C9D6F2}
 #wheel .slot.on{background:#FFC94D;color:#2A1B00;border-color:#fff;transform:scale(1.15)}#wheel .slot.on small{color:#4A3000}#wheel .slot.cur{border-color:#FFC94D}
+#wheel .slot.sw{border-color:#8FD8EA}#wheel .slot.off{opacity:.45}
 #wheel .dim{position:absolute;inset:0;background:rgba(10,14,30,.35)}
 #act-label{padding:3px 10px;border-radius:999px;background:var(--glass);color:#fff;font-size:12px;font-weight:800;white-space:nowrap}
 #toast{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(170px + env(safe-area-inset-bottom,0px));max-width:min(340px,86vw);padding:12px 16px;border-radius:18px;background:var(--glass);border:1.5px solid var(--glass-line);color:#fff;font-size:15px;font-weight:700;line-height:1.4;text-align:center}
@@ -2950,18 +2951,27 @@ const WORLD = (() => {
 const ACT = (() => {
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const CD = [0.45, 1.1, 1.4, 3.0];            // seconds: quick slash, heavy slash, guard, special
-  let H = null, hero = null, heroKey = '', E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
-  const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0 };
+  let H = null, hero = null, team = {}, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
+  const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null };
   const rand = Math.random;
   function bind(h) { H = h; }
   const enabled = () => !!(H && H.enabled && H.enabled());
   const active = () => on;
   function lead() { return H && H.lead ? H.lead() : null; }
-  function mkHero() {
-    const k = lead(); if (!k) { hero = null; heroKey = ''; return; }
-    const key = k.seed + ':' + k.stage + ':' + (k.lv || 1); if (key === heroKey && hero) return;
-    const keep = hero && heroKey.split(':')[0] === String(k.seed) ? hero.hp / hero.max : 1;
-    hero = H.game().newBattle(k, k, 0).s[0]; hero.label = k.name; hero.hp = Math.max(1, Math.round(hero.max * keep)); heroKey = key;
+  // one battler per party critter, kept while you play (hit points carry over between lead changes and level-ups)
+  function sideFor(k) {
+    const key = k.seed + ':' + k.stage + ':' + (k.lv || 1), c = team[k.seed];
+    if (c && c.key === key) return c.side;
+    const side = H.game().newBattle(k, k, 0).s[0]; side.label = k.name; side.hp = c ? Math.max(0, Math.round(side.max * c.side.hp / c.side.max)) : side.max;
+    team[k.seed] = { key: key, side: side, rev: c ? c.rev : 0 }; return side;
+  }
+  function mkHero() { const k = lead(); hero = k ? sideFor(k) : null; }
+  function benchSides() { return (H.bench ? H.bench() : []).map((k) => sideFor(k)); }
+  // tap-free swap from the wheel: only to a critter that can still fight
+  function swapTo(seed) {
+    if (!on || !hero || st.atk || hero.k.seed === seed) return false;
+    const b = benchSides().find((x) => x.k.seed === seed); if (!b || b.hp <= 0) return false;
+    hero.guard = false; st.guard = 0; st.swapIn = null; H.setLead(seed); st.cd = st.cdTot = 0.8; if (H.sfx) H.sfx('claim'); num(heroPos().x, heroPos().y - 30, 'Go, ' + b.k.name + '!', '#FFFFFF'); return true;
   }
   function dummy() { return { k: hero.k, hp: 9999, max: 9999, burn: 0, weak: 0, daze: 0, sap: 0, fort: 0, guard: false, uses: 9, abUsed: false }; }
   function tileFree(e, x, y) { return !e.solidAt(Math.floor((x - 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor((x + 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor(x / e.TS), Math.floor((y - 5) / e.TS)); }
@@ -2986,7 +2996,7 @@ const ACT = (() => {
   }
   // tap: use the chosen move. Returns false when it is not ready.
   function attack() {
-    if (!on || !lastEnv || !hero || st.down > 0 || st.cd > 0 || st.atk) return false;
+    if (!on || !lastEnv || !hero || hero.hp <= 0 || st.down > 0 || st.swapIn || st.cd > 0 || st.atk) return false;
     const mi = st.sel, mv = hero.k.kit[mi], e = lastEnv; if (!mv) return false;
     let dir = faceVec(e), tg = mv.kind === 'guard' ? null : target(e, dir);
     if (tg) { const o = heroPos(), d = Math.hypot(tg.x - o.x, tg.y - o.y) || 1; dir = [(tg.x - o.x) / d, (tg.y - o.y) / d]; }
@@ -2994,6 +3004,7 @@ const ACT = (() => {
     st.atk = { mi: mi, kind: mv.kind, t: 0, dir: dir, dash: Math.max(0, reach), done: false };
     st.cd = st.cdTot = CD[mi] || 1; st.quiet = 0;
     if (mv.kind === 'guard') { hero.guard = true; st.guard = 1.3; }
+    if (H.sfx) H.sfx(mv.kind === 'guard' ? 'tap' : 'slash');
     return true;
   }
   function strike(e) {
@@ -3007,14 +3018,16 @@ const ACT = (() => {
       const before = m.s.hp, power = a.kind === 'status' ? Math.round(hero.k.kit[0].power * 0.6) : mv.power;
       g.hit(hero, m.s, power, rand); delete m.s.fxHits;
       if (a.kind === 'status') { const key = { burn: 'burn', weaken: 'weak', daze: 'daze', sap: 'sap' }[mv.effect]; if (key) m.s[key] = mv.effect === 'daze' ? 2 : 3; else if (mv.effect === 'heal') { hero.hp = Math.min(hero.max, hero.hp + Math.round(hero.max * 0.28)); } else if (mv.effect === 'fortify') hero.fort = 4; }
-      const dmg = before - m.s.hp; num(m.x, m.y - 26, String(dmg), dmg >= 40 ? '#FFD86B' : '#FFFFFF');
+      const dmg = before - m.s.hp; num(m.x, m.y - 26, String(dmg), dmg >= 40 ? '#FFD86B' : '#FFFFFF'); if (H.sfx && dmg > 0) H.sfx('hit');
       m.flash = 0.16; m.mode = 'chase'; m.t = 0; const d = Math.hypot(m.x - o.x, m.y - o.y) || 1, kb = (heavy ? 1.3 : 0.7) * e.TS; m.kx = (m.x - o.x) / d * kb * 6; m.ky = (m.y - o.y) / d * kb * 6;
       if (m.s.hp <= 0) kill(m, e);
     });
   }
   function kill(m, e) {
     E.splice(E.indexOf(m), 1); for (let i = 0; i < 8; i++) FX.push({ k: 'puff', x: m.x, y: m.y - 10, vx: (rand() - 0.5) * 80, vy: -20 - rand() * 50, t: 0, col: m.k.element.color });
-    if (H.onKo) H.onKo(m.k); spawnT = Math.min(spawnT, 8);
+    spawnT = Math.min(spawnT, 8);
+    const r = H.onKill ? H.onKill(m.k, hero.k) : null;
+    if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); } if (H.sfx) H.sfx('claim'); }
   }
   function walk(m, e, vx, vy, dt) { const nx = m.x + vx * dt, ny = m.y + vy * dt; if (tileFree(e, nx, m.y)) m.x = nx; if (tileFree(e, m.x, ny)) m.y = ny; }
   function step(e) {
@@ -3024,8 +3037,10 @@ const ACT = (() => {
     if (mapId !== e.M.id) reset(e);
     st.cd = Math.max(0, st.cd - dt); st.calm = Math.max(0, st.calm - dt); st.quiet += dt;
     if (st.guard > 0) { st.guard -= dt; if (st.guard <= 0) hero.guard = false; }
-    if (st.down > 0) { st.down -= dt; if (st.down <= 0) { hero.hp = Math.round(hero.max * 0.6); } }
+    if (st.down > 0) { st.down -= dt; if (st.down <= 0) Object.keys(team).forEach((k) => { const sd = team[k].side; sd.hp = Math.max(sd.hp, Math.round(sd.max * 0.5)); }); }
     if (st.quiet > 4 && hero.hp > 0 && st.down <= 0) hero.hp = Math.min(hero.max, hero.hp + hero.max * 0.03 * dt);
+    benchSides().forEach((b) => { const c = team[b.k.seed]; if (b.hp > 0) b.hp = Math.min(b.max, b.hp + b.max * 0.015 * dt); else { c.rev += dt; if (c.rev >= 40) { c.rev = 0; b.hp = Math.round(b.max * 0.25); } } });
+    if (st.swapIn) { st.swapIn.t -= dt; if (st.swapIn.t <= 0) { const sw = st.swapIn.seed; st.swapIn = null; H.setLead(sw); st.cd = st.cdTot = 0.5; if (H.sfx) H.sfx('claim'); } }
     // the swing
     const f = e.FOL, a = st.atk; f.ox = 0; f.oy = 0;
     if (a) {
@@ -3045,7 +3060,8 @@ const ACT = (() => {
         if (near > 9 * e.TS || st.calm > 0 || st.down > 0) { m.mode = 'idle'; return; }
         if (m.tele > 0) { m.tele -= dt; if (m.tele <= 0) { // the swing lands if you are still close
           const d2 = Math.hypot(heroPos().x - m.x, heroPos().y - m.y), d3 = Math.hypot(p.x - m.x, p.y - m.y);
-          if (Math.min(d2, d3) < 1.35 * e.TS && !(m.s.daze > 0 && rand() < 0.45)) { const before = hero.hp; g.hit(m.s, hero, m.k.kit[0].power, rand); delete hero.fxHits; const dmg = Math.round(before - hero.hp); num(heroPos().x, heroPos().y - 30, String(dmg), '#FF8A7A'); st.quiet = 0; hero.__hurt = 0.2; if (hero.hp <= 0) { hero.hp = 0; st.down = 4; st.calm = 4; st.atk = null; if (H.toast) H.toast(hero.k.name + ' was knocked out. It recovers in a moment.'); } }
+          if (Math.min(d2, d3) < 1.35 * e.TS && !(m.s.daze > 0 && rand() < 0.45)) { const before = hero.hp; g.hit(m.s, hero, m.k.kit[0].power, rand); delete hero.fxHits; const dmg = Math.round(before - hero.hp); num(heroPos().x, heroPos().y - 30, String(dmg), '#FF8A7A'); st.quiet = 0; hero.__hurt = 0.2; if (hero.hp <= 0) { hero.hp = 0; st.atk = null; hero.guard = false; st.guard = 0; if (H.sfx) H.sfx('lose'); const alt = benchSides().filter((b) => b.hp > 0).sort((a, b) => b.hp / b.max - a.hp / a.max)[0];
+            if (alt) { st.swapIn = { seed: alt.k.seed, t: 0.9 }; st.calm = 1.6; if (H.toast) H.toast(hero.k.name + ' was knocked out. Go, ' + alt.k.name + '!'); } else { st.down = 4; st.calm = 4; if (H.toast) H.toast('Your party is knocked out. They recover in a moment.'); } } }
         } return; }
         const tx = dh < dp ? hp0.x : p.x, ty = dh < dp ? hp0.y : p.y, d = Math.hypot(tx - m.x, ty - m.y) || 1;
         if (d > 0.95 * e.TS) walk(m, e, (tx - m.x) / d * 58, (ty - m.y) / d * 58, dt);
@@ -3086,11 +3102,11 @@ const ACT = (() => {
     });
   }
   return {
-    bind, step, items, drawFx, active, attack,
+    bind, step, items, drawFx, active, attack, swapTo, spawn: (n) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7); },
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },
     get enemies() { return E; }, moves: () => (hero ? hero.k.kit.map((m, i) => ({ name: m.name, kind: m.kind, sub: m.sub, i: i })) : []),
-    ready: () => on, enabled,
+    ready: () => on, enabled, benchList: () => (on ? benchSides().map((b) => ({ seed: b.k.seed, name: b.k.name, pct: Math.round(100 * b.hp / b.max), ok: b.hp > 0 })) : []),
   };
 })();
 
@@ -3586,6 +3602,7 @@ class Component extends Base {
       titles: Array.isArray(d.titles) ? d.titles.filter((x) => typeof x === 'string') : [],
       title: typeof d.title === 'string' ? d.title : '',
       shinies: Array.isArray(d.shinies) ? d.shinies.filter((n) => Number.isInteger(n)) : [],
+      act: { day: d.act && typeof d.act.day === 'string' ? d.act.day : '', n: d.act ? Math.max(0, d.act.n | 0) : 0 },
       tower: (() => {
         const t = d.tower && typeof d.tower === 'object' ? d.tower : {};
         const r = t.run && typeof t.run === 'object' && Array.isArray(t.run.party) ? { floor: Math.max(1, t.run.floor | 0), party: t.run.party.filter((n) => Number.isInteger(n)).slice(0, 3), hp: t.run.hp && typeof t.run.hp === 'object' ? t.run.hp : {} } : null;
@@ -3621,7 +3638,7 @@ class Component extends Base {
     try {
       // keep fields this build does not know (written by a newer build or another device): merge them under our own fields instead of dropping them
       let keep = {}; try { const old = JSON.parse(window.localStorage.getItem('critter-roll:v2') || '{}'); if (old && typeof old === 'object') keep = old; } catch (e2) {}
-      window.localStorage.setItem('critter-roll:v2', JSON.stringify(Object.assign({}, keep, { caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv })));
+      window.localStorage.setItem('critter-roll:v2', JSON.stringify(Object.assign({}, keep, { caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, act: s.act, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv })));
     } catch (e) {}
   }
 
@@ -3892,7 +3909,7 @@ class Component extends Base {
         tap: [[880, 0.04]], roll: [[523, 0.08], [659, 0.1]], rare: [[659, 0.1], [784, 0.1], [988, 0.16]],
         mythic: [[784, 0.1], [988, 0.1], [1175, 0.1], [1568, 0.3]], hit: [[160, 0.07]],
         win: [[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.28]], lose: [[392, 0.16], [311, 0.24]],
-        level: [[523, 0.08], [784, 0.08], [1047, 0.22]], claim: [[784, 0.07], [1047, 0.14]]
+        slash: [[620, 0.03], [420, 0.05]], level: [[523, 0.08], [784, 0.08], [1047, 0.22]], claim: [[784, 0.07], [1047, 0.14]]
       }[kind];
       if (!seq) return;
       let t = ac.currentTime + 0.01;
@@ -4878,6 +4895,9 @@ const lvNeed = (lv) => 20 + 10 * (lv - 1);
 // real-time battles: how fast the foe acts compared with the cooldown table (1 = same pace as you; tuned with rtsim.py)
 const RT_FOE = 0.9;
 
+// action mode rewards: XP per kill is half of a battle KO (the old formula 8 + 2 x level + 5 x stage), scaled by how the foe's level compares with yours; essence for the first kills each day only
+const ACT_XP = 0.5, ACT_ESS_CAP = 15;
+
 class Game extends Component {
   make(seed, stage, lv) {
     const k = super.make(seed, stage);
@@ -5126,6 +5146,20 @@ class Game extends Component {
       const e = this.state.caught.find((x) => x.seed === s), k = this.make(e.seed, e.stage);
       return this.newBattle(k, foe, 0).s[0];
     });
+  }
+  // action mode: a defeated wild critter pays the lead critter XP (it can level up) and, for the first ACT_ESS_CAP kills each day, essence like a won wild battle
+  actKill(foeK, leadK) {
+    const st = this.state, today = new Date().toDateString(), a = st.act && st.act.day === today ? st.act : { day: today, n: 0 };
+    const caught = st.caught.map((e) => Object.assign({}, e)), e = caught.find((x) => x.seed === leadK.seed);
+    const ratio = Math.max(0.5, Math.min(1.5, (foeK.lv || 1) / Math.max(1, leadK.lv || 1)));
+    const xpGain = Math.max(1, Math.round((8 + 2 * (foeK.lv || 1) + 5 * (foeK.stage || 1)) * ACT_XP * ratio));
+    let lv0 = 0, lv1 = 0;
+    if (e) { lv0 = lv1 = e.lv || 1; let xp = (e.xp || 0) + xpGain; while (lv1 < MAX_LV && xp >= lvNeed(lv1)) { xp -= lvNeed(lv1); lv1 += 1; } if (lv1 >= MAX_LV) xp = 0; e.lv = lv1; e.xp = xp; }
+    let ess = 0;
+    if (a.n < ACT_ESS_CAP) { ess = 1 + (foeK.rarity === 'Rare' ? 1 : 0) + (foeK.rarity === 'Mythic' ? 2 : 0) + (this.beats()[leadK.element.name].indexOf(foeK.element.name) !== -1 ? 1 : 0); }
+    this.update({ caught: caught, essence: st.essence + ess, act: { day: today, n: a.n + 1 } });
+    if (lv1 > lv0) setTimeout(() => this.sfx('level'), 150);
+    return { xp: xpGain, ess: ess, lv: lv1 > lv0 ? lv1 : 0, capped: a.n + 1 >= ACT_ESS_CAP };
   }
   playRound(i) { this.battleAction({ move: i }); }
   awardXp(nb, won, patch) {
@@ -6530,7 +6564,7 @@ const APP = (() => {
     setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
     // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel
     {
-      let leadCache = { key: '', k: null }; const foePool = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');
+      let leadCache = { key: '', k: null }; const foePool = {}, benchCache = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');
       let holdT = null, wheelOn = false, hover = -1, slots = [];
       ACT.bind({
         game: () => game, toast: toast,
@@ -6549,13 +6583,22 @@ const APP = (() => {
           return game.make(pool[Math.floor(Math.random() * pool.length)], lead.stage || 1, lv);
         },
         img: (k) => { const key = k.seed + ':' + k.stage; if (!imgs[key]) { const im = new Image(); im.src = PIX.sprite(k, 'icon'); imgs[key] = im; } return imgs[key]; },
-        onKo: (k) => { toast('Defeated ' + k.name + '.'); }
+        bench: () => {
+          const st = game.state, lead = leadCache.k ? leadCache.k.seed : null;
+          return game.partySeeds().filter((sd) => sd !== lead).slice(0, 2).map((sd) => { const e = st.caught.find((c) => c.seed === sd), key = sd + ':' + e.stage + ':' + (e.lv || 1); if (!benchCache[key]) benchCache[key] = game.make(sd, e.stage, e.lv || 1); return benchCache[key]; });
+        },
+        setLead: (seed) => { game.update({ fighter: seed }); },
+        onKill: (foe, mine) => game.actKill(foe, mine),
+        sfx: (k) => game.sfx(k)
       });
       const ctr = () => { const r = ring.getBoundingClientRect(), w = wheel.getBoundingClientRect(); return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top }; };
       function openWheel() {
-        const mv = ACT.moves(); if (!mv.length) return; wheelOn = true; hover = -1; const c = ctr(), R = 124;
-        slots = mv.map((m, i) => { const a = (180 + i * 32) * Math.PI / 180, x = c.x + Math.cos(a) * R, y = c.y + Math.sin(a) * R; return { x: x, y: y, i: i }; });
-        wheel.innerHTML = '<div class="dim"></div>' + mv.map((m, i) => '<div class="slot' + (i === ACT.sel ? ' cur' : '') + '" data-i="' + i + '" style="left:' + slots[i].x.toFixed(0) + 'px;top:' + slots[i].y.toFixed(0) + 'px">' + esc(m.name) + '<small>' + ({ attack: i === 0 ? 'quick' : 'heavy', guard: 'guard', status: 'special' }[m.kind] || '') + '</small></div>').join('');
+        const mv = ACT.moves(); if (!mv.length) return; wheelOn = true; hover = -1; const c = ctr(), bn = ACT.benchList();
+        const at = (deg, R, i) => ({ x: c.x + Math.cos(deg * Math.PI / 180) * R, y: c.y + Math.sin(deg * Math.PI / 180) * R, i: i });
+        slots = mv.map((m, i) => at(180 + i * 32, 124, i)).concat(bn.map((b, j) => at(200 + j * 40, 205, 4 + j)));
+        const sub = (m, i) => ({ attack: i === 0 ? 'quick' : 'heavy', guard: 'guard', status: 'special' }[m.kind] || '');
+        wheel.innerHTML = '<div class="dim"></div>' + mv.map((m, i) => '<div class="slot' + (i === ACT.sel ? ' cur' : '') + '" data-i="' + i + '" style="left:' + slots[i].x.toFixed(0) + 'px;top:' + slots[i].y.toFixed(0) + 'px">' + esc(m.name) + '<small>' + sub(m, i) + '</small></div>').join('')
+          + bn.map((b, j) => '<div class="slot sw' + (b.ok ? '' : ' off') + '" data-i="' + (4 + j) + '" style="left:' + slots[4 + j].x.toFixed(0) + 'px;top:' + slots[4 + j].y.toFixed(0) + 'px">' + esc(b.name) + '<small>' + (b.ok ? 'swap · ' + b.pct + '%' : 'fainted') + '</small></div>').join('');
         wheel.hidden = false; if (game.buzz) game.buzz([12]);
       }
       function wheelHover(cx, cy) {
@@ -6563,7 +6606,7 @@ const APP = (() => {
         slots.forEach((s) => { const d = Math.hypot(s.x - x, s.y - y); if (d < bd) { bd = d; best = s.i; } });
         if (best !== hover) { hover = best; [].forEach.call(wheel.querySelectorAll('.slot'), (el) => el.classList.toggle('on', +el.dataset.i === hover)); }
       }
-      function closeWheel(pick) { wheelOn = false; wheel.hidden = true; if (pick && hover >= 0) { ACT.setSel(hover); if (game.sfx) game.sfx('tap'); } }
+      function closeWheel(pick) { wheelOn = false; wheel.hidden = true; if (pick && hover >= 0) { if (hover < 4) { ACT.setSel(hover); if (game.sfx) game.sfx('tap'); } else { const b = ACT.benchList()[hover - 4]; if (b) ACT.swapTo(b.seed); } } }
       atk.addEventListener('pointerdown', (e) => { e.preventDefault(); try { atk.setPointerCapture(e.pointerId); } catch (x) {} wheelOn = false; clearTimeout(holdT); holdT = setTimeout(openWheel, 260); });
       atk.addEventListener('pointermove', (e) => { if (wheelOn) wheelHover(e.clientX, e.clientY); });
       atk.addEventListener('pointerup', (e) => { clearTimeout(holdT); if (wheelOn) { wheelHover(e.clientX, e.clientY); closeWheel(true); } else ACT.attack(); });

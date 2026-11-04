@@ -6,18 +6,27 @@
 const ACT = (() => {
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const CD = [0.45, 1.1, 1.4, 3.0];            // seconds: quick slash, heavy slash, guard, special
-  let H = null, hero = null, heroKey = '', E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
-  const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0 };
+  let H = null, hero = null, team = {}, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
+  const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null };
   const rand = Math.random;
   function bind(h) { H = h; }
   const enabled = () => !!(H && H.enabled && H.enabled());
   const active = () => on;
   function lead() { return H && H.lead ? H.lead() : null; }
-  function mkHero() {
-    const k = lead(); if (!k) { hero = null; heroKey = ''; return; }
-    const key = k.seed + ':' + k.stage + ':' + (k.lv || 1); if (key === heroKey && hero) return;
-    const keep = hero && heroKey.split(':')[0] === String(k.seed) ? hero.hp / hero.max : 1;
-    hero = H.game().newBattle(k, k, 0).s[0]; hero.label = k.name; hero.hp = Math.max(1, Math.round(hero.max * keep)); heroKey = key;
+  // one battler per party critter, kept while you play (hit points carry over between lead changes and level-ups)
+  function sideFor(k) {
+    const key = k.seed + ':' + k.stage + ':' + (k.lv || 1), c = team[k.seed];
+    if (c && c.key === key) return c.side;
+    const side = H.game().newBattle(k, k, 0).s[0]; side.label = k.name; side.hp = c ? Math.max(0, Math.round(side.max * c.side.hp / c.side.max)) : side.max;
+    team[k.seed] = { key: key, side: side, rev: c ? c.rev : 0 }; return side;
+  }
+  function mkHero() { const k = lead(); hero = k ? sideFor(k) : null; }
+  function benchSides() { return (H.bench ? H.bench() : []).map((k) => sideFor(k)); }
+  // tap-free swap from the wheel: only to a critter that can still fight
+  function swapTo(seed) {
+    if (!on || !hero || st.atk || hero.k.seed === seed) return false;
+    const b = benchSides().find((x) => x.k.seed === seed); if (!b || b.hp <= 0) return false;
+    hero.guard = false; st.guard = 0; st.swapIn = null; H.setLead(seed); st.cd = st.cdTot = 0.8; if (H.sfx) H.sfx('claim'); num(heroPos().x, heroPos().y - 30, 'Go, ' + b.k.name + '!', '#FFFFFF'); return true;
   }
   function dummy() { return { k: hero.k, hp: 9999, max: 9999, burn: 0, weak: 0, daze: 0, sap: 0, fort: 0, guard: false, uses: 9, abUsed: false }; }
   function tileFree(e, x, y) { return !e.solidAt(Math.floor((x - 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor((x + 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor(x / e.TS), Math.floor((y - 5) / e.TS)); }
@@ -42,7 +51,7 @@ const ACT = (() => {
   }
   // tap: use the chosen move. Returns false when it is not ready.
   function attack() {
-    if (!on || !lastEnv || !hero || st.down > 0 || st.cd > 0 || st.atk) return false;
+    if (!on || !lastEnv || !hero || hero.hp <= 0 || st.down > 0 || st.swapIn || st.cd > 0 || st.atk) return false;
     const mi = st.sel, mv = hero.k.kit[mi], e = lastEnv; if (!mv) return false;
     let dir = faceVec(e), tg = mv.kind === 'guard' ? null : target(e, dir);
     if (tg) { const o = heroPos(), d = Math.hypot(tg.x - o.x, tg.y - o.y) || 1; dir = [(tg.x - o.x) / d, (tg.y - o.y) / d]; }
@@ -50,6 +59,7 @@ const ACT = (() => {
     st.atk = { mi: mi, kind: mv.kind, t: 0, dir: dir, dash: Math.max(0, reach), done: false };
     st.cd = st.cdTot = CD[mi] || 1; st.quiet = 0;
     if (mv.kind === 'guard') { hero.guard = true; st.guard = 1.3; }
+    if (H.sfx) H.sfx(mv.kind === 'guard' ? 'tap' : 'slash');
     return true;
   }
   function strike(e) {
@@ -63,14 +73,16 @@ const ACT = (() => {
       const before = m.s.hp, power = a.kind === 'status' ? Math.round(hero.k.kit[0].power * 0.6) : mv.power;
       g.hit(hero, m.s, power, rand); delete m.s.fxHits;
       if (a.kind === 'status') { const key = { burn: 'burn', weaken: 'weak', daze: 'daze', sap: 'sap' }[mv.effect]; if (key) m.s[key] = mv.effect === 'daze' ? 2 : 3; else if (mv.effect === 'heal') { hero.hp = Math.min(hero.max, hero.hp + Math.round(hero.max * 0.28)); } else if (mv.effect === 'fortify') hero.fort = 4; }
-      const dmg = before - m.s.hp; num(m.x, m.y - 26, String(dmg), dmg >= 40 ? '#FFD86B' : '#FFFFFF');
+      const dmg = before - m.s.hp; num(m.x, m.y - 26, String(dmg), dmg >= 40 ? '#FFD86B' : '#FFFFFF'); if (H.sfx && dmg > 0) H.sfx('hit');
       m.flash = 0.16; m.mode = 'chase'; m.t = 0; const d = Math.hypot(m.x - o.x, m.y - o.y) || 1, kb = (heavy ? 1.3 : 0.7) * e.TS; m.kx = (m.x - o.x) / d * kb * 6; m.ky = (m.y - o.y) / d * kb * 6;
       if (m.s.hp <= 0) kill(m, e);
     });
   }
   function kill(m, e) {
     E.splice(E.indexOf(m), 1); for (let i = 0; i < 8; i++) FX.push({ k: 'puff', x: m.x, y: m.y - 10, vx: (rand() - 0.5) * 80, vy: -20 - rand() * 50, t: 0, col: m.k.element.color });
-    if (H.onKo) H.onKo(m.k); spawnT = Math.min(spawnT, 8);
+    spawnT = Math.min(spawnT, 8);
+    const r = H.onKill ? H.onKill(m.k, hero.k) : null;
+    if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); } if (H.sfx) H.sfx('claim'); }
   }
   function walk(m, e, vx, vy, dt) { const nx = m.x + vx * dt, ny = m.y + vy * dt; if (tileFree(e, nx, m.y)) m.x = nx; if (tileFree(e, m.x, ny)) m.y = ny; }
   function step(e) {
@@ -80,8 +92,10 @@ const ACT = (() => {
     if (mapId !== e.M.id) reset(e);
     st.cd = Math.max(0, st.cd - dt); st.calm = Math.max(0, st.calm - dt); st.quiet += dt;
     if (st.guard > 0) { st.guard -= dt; if (st.guard <= 0) hero.guard = false; }
-    if (st.down > 0) { st.down -= dt; if (st.down <= 0) { hero.hp = Math.round(hero.max * 0.6); } }
+    if (st.down > 0) { st.down -= dt; if (st.down <= 0) Object.keys(team).forEach((k) => { const sd = team[k].side; sd.hp = Math.max(sd.hp, Math.round(sd.max * 0.5)); }); }
     if (st.quiet > 4 && hero.hp > 0 && st.down <= 0) hero.hp = Math.min(hero.max, hero.hp + hero.max * 0.03 * dt);
+    benchSides().forEach((b) => { const c = team[b.k.seed]; if (b.hp > 0) b.hp = Math.min(b.max, b.hp + b.max * 0.015 * dt); else { c.rev += dt; if (c.rev >= 40) { c.rev = 0; b.hp = Math.round(b.max * 0.25); } } });
+    if (st.swapIn) { st.swapIn.t -= dt; if (st.swapIn.t <= 0) { const sw = st.swapIn.seed; st.swapIn = null; H.setLead(sw); st.cd = st.cdTot = 0.5; if (H.sfx) H.sfx('claim'); } }
     // the swing
     const f = e.FOL, a = st.atk; f.ox = 0; f.oy = 0;
     if (a) {
@@ -101,7 +115,8 @@ const ACT = (() => {
         if (near > 9 * e.TS || st.calm > 0 || st.down > 0) { m.mode = 'idle'; return; }
         if (m.tele > 0) { m.tele -= dt; if (m.tele <= 0) { // the swing lands if you are still close
           const d2 = Math.hypot(heroPos().x - m.x, heroPos().y - m.y), d3 = Math.hypot(p.x - m.x, p.y - m.y);
-          if (Math.min(d2, d3) < 1.35 * e.TS && !(m.s.daze > 0 && rand() < 0.45)) { const before = hero.hp; g.hit(m.s, hero, m.k.kit[0].power, rand); delete hero.fxHits; const dmg = Math.round(before - hero.hp); num(heroPos().x, heroPos().y - 30, String(dmg), '#FF8A7A'); st.quiet = 0; hero.__hurt = 0.2; if (hero.hp <= 0) { hero.hp = 0; st.down = 4; st.calm = 4; st.atk = null; if (H.toast) H.toast(hero.k.name + ' was knocked out. It recovers in a moment.'); } }
+          if (Math.min(d2, d3) < 1.35 * e.TS && !(m.s.daze > 0 && rand() < 0.45)) { const before = hero.hp; g.hit(m.s, hero, m.k.kit[0].power, rand); delete hero.fxHits; const dmg = Math.round(before - hero.hp); num(heroPos().x, heroPos().y - 30, String(dmg), '#FF8A7A'); st.quiet = 0; hero.__hurt = 0.2; if (hero.hp <= 0) { hero.hp = 0; st.atk = null; hero.guard = false; st.guard = 0; if (H.sfx) H.sfx('lose'); const alt = benchSides().filter((b) => b.hp > 0).sort((a, b) => b.hp / b.max - a.hp / a.max)[0];
+            if (alt) { st.swapIn = { seed: alt.k.seed, t: 0.9 }; st.calm = 1.6; if (H.toast) H.toast(hero.k.name + ' was knocked out. Go, ' + alt.k.name + '!'); } else { st.down = 4; st.calm = 4; if (H.toast) H.toast('Your party is knocked out. They recover in a moment.'); } } }
         } return; }
         const tx = dh < dp ? hp0.x : p.x, ty = dh < dp ? hp0.y : p.y, d = Math.hypot(tx - m.x, ty - m.y) || 1;
         if (d > 0.95 * e.TS) walk(m, e, (tx - m.x) / d * 58, (ty - m.y) / d * 58, dt);
@@ -142,10 +157,10 @@ const ACT = (() => {
     });
   }
   return {
-    bind, step, items, drawFx, active, attack,
+    bind, step, items, drawFx, active, attack, swapTo, spawn: (n) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7); },
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },
     get enemies() { return E; }, moves: () => (hero ? hero.k.kit.map((m, i) => ({ name: m.name, kind: m.kind, sub: m.sub, i: i })) : []),
-    ready: () => on, enabled,
+    ready: () => on, enabled, benchList: () => (on ? benchSides().map((b) => ({ seed: b.k.seed, name: b.k.name, pct: Math.round(100 * b.hp / b.max), ok: b.hp > 0 })) : []),
   };
 })();

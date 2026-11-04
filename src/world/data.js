@@ -139,3 +139,6 @@ const lvNeed = (lv) => 20 + 10 * (lv - 1);
 
 // real-time battles: how fast the foe acts compared with the cooldown table (1 = same pace as you; tuned with rtsim.py)
 const RT_FOE = 0.9;
+
+// action mode rewards: XP per kill is half of a battle KO (the old formula 8 + 2 x level + 5 x stage), scaled by how the foe's level compares with yours; essence for the first kills each day only
+const ACT_XP = 0.5, ACT_ESS_CAP = 15;

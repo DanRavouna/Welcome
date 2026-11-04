@@ -1068,7 +1068,7 @@ const APP = (() => {
     setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
     // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel
     {
-      let leadCache = { key: '', k: null }; const foePool = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');
+      let leadCache = { key: '', k: null }; const foePool = {}, benchCache = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');
       let holdT = null, wheelOn = false, hover = -1, slots = [];
       ACT.bind({
         game: () => game, toast: toast,
@@ -1087,13 +1087,22 @@ const APP = (() => {
           return game.make(pool[Math.floor(Math.random() * pool.length)], lead.stage || 1, lv);
         },
         img: (k) => { const key = k.seed + ':' + k.stage; if (!imgs[key]) { const im = new Image(); im.src = PIX.sprite(k, 'icon'); imgs[key] = im; } return imgs[key]; },
-        onKo: (k) => { toast('Defeated ' + k.name + '.'); }
+        bench: () => {
+          const st = game.state, lead = leadCache.k ? leadCache.k.seed : null;
+          return game.partySeeds().filter((sd) => sd !== lead).slice(0, 2).map((sd) => { const e = st.caught.find((c) => c.seed === sd), key = sd + ':' + e.stage + ':' + (e.lv || 1); if (!benchCache[key]) benchCache[key] = game.make(sd, e.stage, e.lv || 1); return benchCache[key]; });
+        },
+        setLead: (seed) => { game.update({ fighter: seed }); },
+        onKill: (foe, mine) => game.actKill(foe, mine),
+        sfx: (k) => game.sfx(k)
       });
       const ctr = () => { const r = ring.getBoundingClientRect(), w = wheel.getBoundingClientRect(); return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top }; };
       function openWheel() {
-        const mv = ACT.moves(); if (!mv.length) return; wheelOn = true; hover = -1; const c = ctr(), R = 124;
-        slots = mv.map((m, i) => { const a = (180 + i * 32) * Math.PI / 180, x = c.x + Math.cos(a) * R, y = c.y + Math.sin(a) * R; return { x: x, y: y, i: i }; });
-        wheel.innerHTML = '<div class="dim"></div>' + mv.map((m, i) => '<div class="slot' + (i === ACT.sel ? ' cur' : '') + '" data-i="' + i + '" style="left:' + slots[i].x.toFixed(0) + 'px;top:' + slots[i].y.toFixed(0) + 'px">' + esc(m.name) + '<small>' + ({ attack: i === 0 ? 'quick' : 'heavy', guard: 'guard', status: 'special' }[m.kind] || '') + '</small></div>').join('');
+        const mv = ACT.moves(); if (!mv.length) return; wheelOn = true; hover = -1; const c = ctr(), bn = ACT.benchList();
+        const at = (deg, R, i) => ({ x: c.x + Math.cos(deg * Math.PI / 180) * R, y: c.y + Math.sin(deg * Math.PI / 180) * R, i: i });
+        slots = mv.map((m, i) => at(180 + i * 32, 124, i)).concat(bn.map((b, j) => at(200 + j * 40, 205, 4 + j)));
+        const sub = (m, i) => ({ attack: i === 0 ? 'quick' : 'heavy', guard: 'guard', status: 'special' }[m.kind] || '');
+        wheel.innerHTML = '<div class="dim"></div>' + mv.map((m, i) => '<div class="slot' + (i === ACT.sel ? ' cur' : '') + '" data-i="' + i + '" style="left:' + slots[i].x.toFixed(0) + 'px;top:' + slots[i].y.toFixed(0) + 'px">' + esc(m.name) + '<small>' + sub(m, i) + '</small></div>').join('')
+          + bn.map((b, j) => '<div class="slot sw' + (b.ok ? '' : ' off') + '" data-i="' + (4 + j) + '" style="left:' + slots[4 + j].x.toFixed(0) + 'px;top:' + slots[4 + j].y.toFixed(0) + 'px">' + esc(b.name) + '<small>' + (b.ok ? 'swap · ' + b.pct + '%' : 'fainted') + '</small></div>').join('');
         wheel.hidden = false; if (game.buzz) game.buzz([12]);
       }
       function wheelHover(cx, cy) {
@@ -1101,7 +1110,7 @@ const APP = (() => {
         slots.forEach((s) => { const d = Math.hypot(s.x - x, s.y - y); if (d < bd) { bd = d; best = s.i; } });
         if (best !== hover) { hover = best; [].forEach.call(wheel.querySelectorAll('.slot'), (el) => el.classList.toggle('on', +el.dataset.i === hover)); }
       }
-      function closeWheel(pick) { wheelOn = false; wheel.hidden = true; if (pick && hover >= 0) { ACT.setSel(hover); if (game.sfx) game.sfx('tap'); } }
+      function closeWheel(pick) { wheelOn = false; wheel.hidden = true; if (pick && hover >= 0) { if (hover < 4) { ACT.setSel(hover); if (game.sfx) game.sfx('tap'); } else { const b = ACT.benchList()[hover - 4]; if (b) ACT.swapTo(b.seed); } } }
       atk.addEventListener('pointerdown', (e) => { e.preventDefault(); try { atk.setPointerCapture(e.pointerId); } catch (x) {} wheelOn = false; clearTimeout(holdT); holdT = setTimeout(openWheel, 260); });
       atk.addEventListener('pointermove', (e) => { if (wheelOn) wheelHover(e.clientX, e.clientY); });
       atk.addEventListener('pointerup', (e) => { clearTimeout(holdT); if (wheelOn) { wheelHover(e.clientX, e.clientY); closeWheel(true); } else ACT.attack(); });

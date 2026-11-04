@@ -247,6 +247,20 @@ class Game extends Component {
       return this.newBattle(k, foe, 0).s[0];
     });
   }
+  // action mode: a defeated wild critter pays the lead critter XP (it can level up) and, for the first ACT_ESS_CAP kills each day, essence like a won wild battle
+  actKill(foeK, leadK) {
+    const st = this.state, today = new Date().toDateString(), a = st.act && st.act.day === today ? st.act : { day: today, n: 0 };
+    const caught = st.caught.map((e) => Object.assign({}, e)), e = caught.find((x) => x.seed === leadK.seed);
+    const ratio = Math.max(0.5, Math.min(1.5, (foeK.lv || 1) / Math.max(1, leadK.lv || 1)));
+    const xpGain = Math.max(1, Math.round((8 + 2 * (foeK.lv || 1) + 5 * (foeK.stage || 1)) * ACT_XP * ratio));
+    let lv0 = 0, lv1 = 0;
+    if (e) { lv0 = lv1 = e.lv || 1; let xp = (e.xp || 0) + xpGain; while (lv1 < MAX_LV && xp >= lvNeed(lv1)) { xp -= lvNeed(lv1); lv1 += 1; } if (lv1 >= MAX_LV) xp = 0; e.lv = lv1; e.xp = xp; }
+    let ess = 0;
+    if (a.n < ACT_ESS_CAP) { ess = 1 + (foeK.rarity === 'Rare' ? 1 : 0) + (foeK.rarity === 'Mythic' ? 2 : 0) + (this.beats()[leadK.element.name].indexOf(foeK.element.name) !== -1 ? 1 : 0); }
+    this.update({ caught: caught, essence: st.essence + ess, act: { day: today, n: a.n + 1 } });
+    if (lv1 > lv0) setTimeout(() => this.sfx('level'), 150);
+    return { xp: xpGain, ess: ess, lv: lv1 > lv0 ? lv1 : 0, capped: a.n + 1 >= ACT_ESS_CAP };
+  }
   playRound(i) { this.battleAction({ move: i }); }
   awardXp(nb, won, patch) {
     const caught = (patch.caught || this.state.caught).map((e) => Object.assign({}, e));

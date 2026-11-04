@@ -54,6 +54,7 @@ class Component extends Base {
       titles: Array.isArray(d.titles) ? d.titles.filter((x) => typeof x === 'string') : [],
       title: typeof d.title === 'string' ? d.title : '',
       shinies: Array.isArray(d.shinies) ? d.shinies.filter((n) => Number.isInteger(n)) : [],
+      act: { day: d.act && typeof d.act.day === 'string' ? d.act.day : '', n: d.act ? Math.max(0, d.act.n | 0) : 0 },
       tower: (() => {
         const t = d.tower && typeof d.tower === 'object' ? d.tower : {};
         const r = t.run && typeof t.run === 'object' && Array.isArray(t.run.party) ? { floor: Math.max(1, t.run.floor | 0), party: t.run.party.filter((n) => Number.isInteger(n)).slice(0, 3), hp: t.run.hp && typeof t.run.hp === 'object' ? t.run.hp : {} } : null;
@@ -89,7 +90,7 @@ class Component extends Base {
     try {
       // keep fields this build does not know (written by a newer build or another device): merge them under our own fields instead of dropping them
       let keep = {}; try { const old = JSON.parse(window.localStorage.getItem('critter-roll:v2') || '{}'); if (old && typeof old === 'object') keep = old; } catch (e2) {}
-      window.localStorage.setItem('critter-roll:v2', JSON.stringify(Object.assign({}, keep, { caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv })));
+      window.localStorage.setItem('critter-roll:v2', JSON.stringify(Object.assign({}, keep, { caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, act: s.act, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv })));
     } catch (e) {}
   }
 
@@ -360,7 +361,7 @@ class Component extends Base {
         tap: [[880, 0.04]], roll: [[523, 0.08], [659, 0.1]], rare: [[659, 0.1], [784, 0.1], [988, 0.16]],
         mythic: [[784, 0.1], [988, 0.1], [1175, 0.1], [1568, 0.3]], hit: [[160, 0.07]],
         win: [[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.28]], lose: [[392, 0.16], [311, 0.24]],
-        level: [[523, 0.08], [784, 0.08], [1047, 0.22]], claim: [[784, 0.07], [1047, 0.14]]
+        slash: [[620, 0.03], [420, 0.05]], level: [[523, 0.08], [784, 0.08], [1047, 0.22]], claim: [[784, 0.07], [1047, 0.14]]
       }[kind];
       if (!seq) return;
       let t = ac.currentTime + 0.01;
