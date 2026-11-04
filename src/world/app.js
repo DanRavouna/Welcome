@@ -1116,7 +1116,7 @@ const APP = (() => {
       let holdT = null, wheelOn = false, hover = -1, slots = [];
       ACT.bind({
         game: () => game, toast: toast, calm: () => !!(game && game.state.settings && game.state.settings.calm),
-        enabled: () => !!(game && game.state.settings && game.state.settings.arpg),
+        enabled: () => !!game,
         lead: () => {
           const st = game.state; if (!st.caught.length) return null;
           const seeds = game.partySeeds(), sd = st.caught.some((e) => e.seed === st.fighter) ? st.fighter : (seeds[0] || st.caught[0].seed), e = st.caught.find((c) => c.seed === sd), key = sd + ':' + (e ? e.stage : 1) + ':' + (e ? e.lv || 1 : 1);
@@ -1184,16 +1184,12 @@ const APP = (() => {
         const mv = ACT.moves()[ACT.sel]; const l = $('atk-label'); if (mv && l.textContent !== mv.name) l.textContent = mv.name;
       }, 80);
     }
-    // real-time battles (Settings): the foe and the status ticks run on a clock while the battle screen is open; your attack button is a cooldown
-    setInterval(() => {
-      if (!game || !open || document.hidden || dlg || !game.rtOn()) return;
-      game.rtUpdate(game.rtNow());
-      const f = document.getElementById('rt-fill'); if (f) f.style.transform = 'scaleX(' + game.rtWait().toFixed(3) + ')';
-    }, 60);
     setInterval(() => { if (!document.hidden && game) game.addPlayTime(0.5); }, 30000);
     const comps = { Critter: TPL.compile(document.getElementById('tpl-critter').innerHTML) };
     const screenTpl = TPL.compile(document.getElementById('tpl-screen').innerHTML);
     game = new Game({});
+    // one-time cleanup: the experimental and developer switches were removed from Settings, so turn off what they may have left on this device (Test mode, the dev unlock, level-skip / no-challenge overrides)
+    try { if (!localStorage.getItem('critter-roll:cleanup1')) { DEV.levels = false; DEV.safe = false; devSave(); const s0 = game.state; if (s0.dev || (s0.settings && s0.settings.test)) game.update({ dev: false, settings: Object.assign({}, s0.settings, { test: false }) }); localStorage.setItem('critter-roll:cleanup1', '1'); } } catch (e) {}
     renderScreen = TPL.mount($('screen'), screenTpl, comps, () => game.renderVals());
     game.componentDidMount();
     let saved = null; try { saved = JSON.parse(localStorage.getItem('critter-roll:world') || 'null'); } catch (e) {}
@@ -1203,7 +1199,7 @@ const APP = (() => {
       objState: objState, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
       exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
-      critterLead: () => !!(game && game.state.settings && game.state.settings.arpg && game.state.settings.ctrlcrit && game.state.settings.follow !== false && game.state.caught.length),
+      critterLead: () => !!(game && game.state.settings && game.state.settings.follow !== false && game.state.caught.length),   // you steer the critter; the human walks behind it
       follower: () => {
         const st = game.state; if (!st.caught.length || (st.settings && st.settings.follow === false)) return null;
         const seeds = game.partySeeds(), sd = st.caught.some((e) => e.seed === st.fighter) ? st.fighter : (seeds[0] || st.caught[0].seed), e = st.caught.find((c) => c.seed === sd);
@@ -1313,7 +1309,6 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  function rtAttack() { if (game && game.rtOn()) { game.rtPlayer(Math.min(3, game.state.rtSel || 0)); const f = document.getElementById('rt-fill'); if (f) f.style.transform = 'scaleX(' + game.rtWait().toFixed(3) + ')'; } }
-  return { openPouch, pouchNext, towerFloorStart, rtAttack, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);

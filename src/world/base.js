@@ -12,7 +12,7 @@ class Component extends Base {
       seed: null, previewSeed: null, caught: [], tab: 'roll', selected: null, earned: [],
       seedInput: '', loadError: false, armed: false,
       essence: 0, wins: 0, day: '', used: 0,
-      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { rtb: false, arpg: false, ctrlcrit: false, keepall: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true, bigtext: false, contrast: false }
+      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true, bigtext: false, contrast: false }
     };
   }
 
@@ -61,7 +61,7 @@ class Component extends Base {
         const r = t.run && typeof t.run === 'object' && Array.isArray(t.run.party) ? { floor: Math.max(1, t.run.floor | 0), party: t.run.party.filter((n) => Number.isInteger(n)).slice(0, 3), hp: t.run.hp && typeof t.run.hp === 'object' ? t.run.hp : {} } : null;
         return { best: Math.max(0, t.best | 0), day: typeof t.day === 'string' ? t.day : '', runs: t.runs | 0, clears: t.clears | 0, run: r && r.party.length ? r : null };
       })(),
-      settings: d.settings && typeof d.settings === 'object' ? { rtb: d.settings.rtb === true, arpg: d.settings.arpg === true, ctrlcrit: d.settings.ctrlcrit === true, keepall: d.settings.keepall === true, sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false, bigtext: d.settings.bigtext === true, contrast: d.settings.contrast === true } : { rtb: false, arpg: false, ctrlcrit: false, keepall: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true, bigtext: false, contrast: false },
+      settings: d.settings && typeof d.settings === 'object' ? { sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false, bigtext: d.settings.bigtext === true, contrast: d.settings.contrast === true } : { sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true, bigtext: false, contrast: false },
       seen: (() => {
         const seen = Array.isArray(d.seen) ? d.seen.filter((n) => Number.isInteger(n) && n >= 1 && n <= 48) : [];
         (Array.isArray(d.caught) ? d.caught : []).forEach((e) => { if (e && Number.isInteger(e.seed)) { const no = this.make(e.seed, 1).speciesNo; if (no <= 48 && seen.indexOf(no) === -1) seen.push(no); } });   // the secret critter (#49) is a bonus, never counted in the 48
@@ -738,33 +738,6 @@ class Component extends Base {
     }
   }
 
-  // ---- real-time battles (opt-in setting): the same hit/act code, driven by cooldowns instead of rounds ----
-  // cooldown in ms for side i using move mi: damage per second is the same for every attack (a heavy move is slow, not better), scaled by relative speed
-  rtCooldown(b, i, mi) {
-    const A = b.s[i], mv = A.k.kit[mi], base = A.k.kit[0].power || 1;
-    const sa = A.k.stats[3].value, sb = b.s[1 - i].k.stats[3].value, r = sa / Math.max(1, sa + sb), spd = Math.max(0.75, Math.min(1.3, 1.45 - 0.9 * r));
-    let ms = mv.kind === 'attack' ? 1000 * Math.max(1, (mv.power * mv.acc / 100) / base) : (mv.kind === 'guard' ? 1200 : 1400);
-    return Math.round(ms * spd);
-  }
-  // one action by side i (no round, no counter-action); a guard is used up by the hit it blocks
-  rtStep(b, i, mi, rand) {
-    const D = b.s[1 - i], hp0 = D.hp, g0 = D.guard;
-    this.act(b, i, mi, rand);
-    if (g0 && D.hp < hp0) D.guard = false;
-    this.finish(b);
-    b.round += 1;
-    if (!b.over && b.round > 500) { b.over = true; b.draw = true; b.log.push({ text: 'Both critters are worn out. It\u2019s a draw.' }); }
-    return b;
-  }
-  // one status tick (every ~2.4 s): burn, drain, Drizzle, countdowns; an unused guard fades after two ticks
-  rtTick(b) {
-    this.endRound(b);
-    b.s.forEach((A) => { if (A.guard) { A.gt = (A.gt || 0) + 1; if (A.gt >= 2) { A.guard = false; A.gt = 0; } } else A.gt = 0; });
-    this.finish(b);
-    b.round += 1;
-    return b;
-  }
-
   statusText(A) {
     const out = [];
     if (A.guard) out.push('Guarding');
@@ -1000,10 +973,6 @@ class Component extends Base {
       glowClass: st.reveal && tab === 'roll' && !(st.settings && st.settings.calm) ? (st.reveal % 2 ? 'glow-a' : 'glow-b') : '',
       settingRows: [
         ['music', 'Music', 'Background tunes for each area and battle.'],
-        ['arpg', 'Action mode (prototype)', 'Your critter fights live on the map: tap Attack to slash, hold it to pick a move on the wheel. Wild critters roam the grass instead of random encounters.'],
-        ['ctrlcrit', 'Steer your critter (action mode)', 'The joystick moves your critter and you walk behind it, so aiming is where it faces. Needs Action mode and Critter follows you.'],
-        ['keepall', 'Collect every defeated critter (action mode)', 'Off: only critters of a new species, Rare, Mythic or shiny drop a catch orb. On: every defeated critter does.'],
-        ['rtb', 'Real-time battles (beta)', 'Battles run live: tap Attack when its bar is full, swap moves any time. The foe acts on its own clock. Off = classic turns.'],
         ['follow', 'Critter follows you', 'Your lead critter walks behind you in the world.'],
         ['sound', 'Sound effects', 'Chimes for rolls, battles and level-ups.'],
         ['vibrate', 'Vibration', 'Buzz on Mythic rolls, wins and level-ups (Android).'],

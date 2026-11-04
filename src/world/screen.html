@@ -550,23 +550,6 @@
             </button>
           </sc-for>
           </sc-if>
-          <sc-if value="{{showRt}}" hint-placeholder-val="{{ false }}">
-            <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px">
-              <button id="rt-atk" onClick="{{rtAtk}}" style="position: relative; overflow: hidden; min-height: 76px; padding: 8px 14px; border: 2px solid #FFFFFF; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-family: inherit; cursor: pointer; color: #2A1B00; background: #FFC94D; touch-action: manipulation">
-                <span id="rt-fill" style="position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: rgba(14,26,56,0.55); transform-origin: left center; pointer-events: none"></span>
-                <span style="position: relative; font-size: 18px; font-weight: 900">{{rtLabel}}</span>
-                <span style="position: relative; font-size: 12px; font-weight: 800">{{rtSub}}</span>
-              </button>
-              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
-                <sc-for list="{{rtChips}}" as="ch" hint-placeholder-count="4">
-                  <button onClick="{{ch.pick}}" disabled="{{ch.off}}" aria-pressed="{{ch.on}}" style="min-height: 44px; padding: 4px 10px; border: 1.5px solid {{ch.border}}; border-radius: 14px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; text-align: left; font-family: inherit; cursor: pointer; color: {{ch.fg}}; background: {{ch.bg}}">
-                    <span style="font-size: 13px; font-weight: 900">{{ch.name}}</span>
-                    <span style="font-size: 11px; font-weight: 700; line-height: 1.2">{{ch.sub}}</span>
-                  </button>
-                </sc-for>
-              </div>
-            </div>
-          </sc-if>
           <sc-if value="{{showSwitchList}}" hint-placeholder-val="{{ false }}">
             <sc-for list="{{benchList}}" as="bn" hint-placeholder-count="2">
               <button onClick="{{bn.use}}" disabled="{{bn.off}}" style="min-height: 58px; padding: 6px 14px; border-radius: 18px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left; font-family: inherit; cursor: pointer; backdrop-filter: blur(10px); border: 1.5px solid rgba(255,255,255,0.5); color: {{bn.fg}}; background: {{bn.bg}}">

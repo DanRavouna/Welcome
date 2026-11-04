@@ -4,6 +4,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(viewport={'width':390,'height':844}, device_scale_factor=2, has_touch=True)
     pg=ctx.new_page(); pg.on('pageerror', lambda e: errors.append(str(e))); pg.on('console', lambda m: errors.append(m.text) if m.type=='error' and 'ERR_NAME' not in m.text else None)
     pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1100); pg.evaluate('0')
+    pg.evaluate("APP.game.update({settings:Object.assign({},APP.game.state.settings,{follow:false})})")   # these suites test the turn-based battle screen, which is what the game uses when Critter follows you is off
     pg.evaluate("window.__r=Math.random; Math.random=()=>0.999")
     push = """([dx,dy]) => { for(let i=0;i<90;i++){ WORLD.input.jx=dx; WORLD.input.jy=dy; WORLD.step(1/60);} WORLD.input.jx=0; WORLD.input.jy=0; return WORLD.map.id; }"""
     # gates: real mode, level 1

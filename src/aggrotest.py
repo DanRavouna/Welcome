@@ -11,6 +11,7 @@ def stand(pg):
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1100)
+  pg.evaluate("APP.game.update({settings:Object.assign({},APP.game.state.settings,{follow:false})})")   # these suites test the turn-based battle screen, which is what the game uses when Critter follows you is off
   pg.evaluate("APP.game.update({caught:[{seed:5000,stage:3,lv:20}], party:[5000], fighter:5000, npc:{done:['fern'],beaten:{},cleared:[],seals:[]}}); WORLD.enter('town')")
   stand(pg); print('1st sighting -> dialog:', pg.evaluate("!!APP.dialog && APP.dialog.name"))
   adv(pg); pg.click("#dlg-choices button:has-text('Battle!')"); pg.wait_for_timeout(200)

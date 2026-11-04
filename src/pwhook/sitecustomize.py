@@ -1,6 +1,6 @@
 # Test-only: start older suites as an existing player (intro done, test mode on). Never shipped.
 SEED = """window.__noTransition = true; // test hook: instant map changes (real transition is covered by transitiontest.py)
-(() => { try { if (sessionStorage.getItem("seeded")) return; sessionStorage.setItem("seeded", "1"); try { localStorage.setItem('critter-roll:menu', JSON.stringify(['critters','journey','game'])); } catch (e) {} if (!localStorage.getItem('critter-roll:v2')) localStorage.setItem('critter-roll:v2', JSON.stringify({caught:[],essence:0,wins:0,intro:true,settings:{sound:true,vibrate:true,calm:false,test:true,daynight:true,track:true}})); } catch (e) {} })();"""
+(() => { try { if (sessionStorage.getItem("seeded")) return; sessionStorage.setItem("seeded", "1"); try { localStorage.setItem("critter-roll:cleanup1", "1"); } catch (e) {} try { localStorage.setItem('critter-roll:menu', JSON.stringify(['critters','journey','game'])); } catch (e) {} if (!localStorage.getItem('critter-roll:v2')) localStorage.setItem('critter-roll:v2', JSON.stringify({caught:[],essence:0,wins:0,intro:true,settings:{sound:true,vibrate:true,calm:false,test:true,daynight:true,track:true}})); } catch (e) {} })();"""
 import os
 if os.environ.get('CR_WEATHER'):  # optional: force a weather kind in every test page (e.g. CR_WEATHER=storm bash src/run-tests.sh @world)
     SEED += "\nwindow.__weather = %r;" % os.environ['CR_WEATHER']

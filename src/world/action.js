@@ -1,5 +1,5 @@
 // ---- ACT: action mode (prototype). Your lead critter fights live in the overworld: tap Attack = slash with the chosen move, hold = pick the move on a wheel ----
-// Setting `settings.arpg` (off by default; the turn-based and real-time battles stay as they are). Everything here is memory only: nothing is saved.
+// Active whenever your critter is visible (Settings: Critter follows you) outside interiors; nothing here is saved (the pouch and kept critters live in the game state).
 // Reuses Game.hit() (types, abilities, statuses) and Game.endRound() (burn / drain ticks), so damage rules are the same as in the old battles.
 // Enemies are visible wild critters on maps with tall grass; they replace the random grass encounters while the mode is on.
 // world.js calls: ACT.step(env) every frame, ACT.items(env) (y-sorted drawables), ACT.drawFx(env) (slashes, numbers, bars) and ACT.active() (grass encounters off).

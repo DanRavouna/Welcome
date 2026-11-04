@@ -11,15 +11,14 @@ with sync_playwright() as p:
       pg.evaluate("APP.advance()"); pg.wait_for_timeout(40)
   pg.evaluate("WORLD.enter('moss'); WORLD.setPaused(false)"); pg.wait_for_timeout(1300); finish(); pg.evaluate("WORLD.setPaused(false)")
   box=pg.locator('#atk').bounding_box(); tap=lambda: pg.mouse.click(box['x']+box['width']/2, box['y']+box['height']/2-8)
-  print('default off (only new / rare / shiny drop orbs):', pg.evaluate("APP.game.state.settings.keepall===false"), '| no keep chips in the page any more:', pg.evaluate("!document.getElementById('keepbar')"))
+  print('no keep chips in the page any more:', pg.evaluate("!document.getElementById('keepbar')"))
   def foe(kind):   # kind: 'new' = species not seen, 'seen' = species already seen, 'rare'
-    pg.evaluate("""((kind)=>{const g=APP.game;ACT.enemies.splice(0);ACT.orbs().splice(0);ACT.spawn(1,undefined,kind==='rare');const p=WORLD.followerPos(),m=ACT.enemies[0];
+    pg.evaluate("""((kind)=>{const g=APP.game;ACT.enemies.splice(0);ACT.orbs().splice(0);ACT.spawn(1,undefined,kind==='rare');const p=WORLD.pos(),m=ACT.enemies[0];
       const no=g.make(m.k.seed,1).speciesNo;let seen=(g.state.seen||[]).filter(n=>n!==no);if(kind==='seen')seen.push(no);g.update({seen:seen});
-      m.x=p.x+2;m.y=p.y+62;m.hx=m.x;m.hy=m.y;m.mode="idle";m.cd=99;m.tele=0;m.s.hp=1;window.__k=m.k.seed})(%s)"""%repr(kind)); pg.wait_for_timeout(80)
+      m.x=p.x+2;m.y=p.y+64;m.hx=m.x;m.hy=m.y;m.mode="idle";m.cd=99;m.tele=0;m.s.hp=1;window.__k=m.k.seed})(%s)"""%repr(kind)); pg.wait_for_timeout(80)
   def kill(kind):
     foe(kind); tap(); pg.wait_for_timeout(600)
-  kill('seen'); r=pg.evaluate("[ACT.orbs().length, window.__k, APP.game.make(window.__k,1).rarity, APP.game.make(window.__k,1).shiny]")
-  print('a defeated critter of a species you already know drops no orb (unless rare/shiny):', r[0]==0 or r[2] in ('Rare','Mythic') or r[3], r)
+  kill('seen'); print('every defeated critter you do not own drops an orb (even of a known species):', pg.evaluate("ACT.orbs().length+APP.game.state.pouch.length"))
   kill('new'); print('a defeated critter of a NEW species drops an orb:', pg.evaluate("ACT.orbs().length"), '| the orb carries its type colour:', pg.evaluate("ACT.orbs()[0]&&ACT.orbs()[0].k.element.color"))
   pg.screenshot(path='/tmp/orb.png')
   # collect: stand on it
@@ -47,15 +46,13 @@ with sync_playwright() as p:
   print('no rolls left:', 'Needs' in t, '| keep button disabled:', pg.evaluate("[...document.querySelectorAll('#screen button')].filter(b=>/Needs \\d/.test(b.innerText)).every(b=>b.disabled)")); pg.evaluate("APP.close(); APP.game.update({used:0})")
   # sightings used up costs one more
   print('price with / without free sightings:', pg.evaluate("(()=>{const g=APP.game,k=g.make(5,1);const a=g.actKeepCost(k).cost;g.update({sight:{day:new Date().toDateString(),n:40}});const b=g.actKeepCost(k).cost;g.update({sight:{day:new Date().toDateString(),n:0}});return [a,b]})()"))
-  # rare patch critters always drop one; keepall drops everything
-  pg.evaluate("APP.game.update({pouch:[]})"); foe('rare'); tap(); pg.wait_for_timeout(700); print('a rare critter always drops an orb:', pg.evaluate("[ACT.orbs().length + APP.game.state.pouch.length, APP.game.make(window.__k,1).rarity]"))
-  pg.evaluate("APP.game.update({pouch:[],settings:Object.assign({},APP.game.state.settings,{keepall:true})})"); kill('seen'); print('Collect every defeated critter on: a known species drops one too:', pg.evaluate("ACT.orbs().length + APP.game.state.pouch.length"))
-  pg.evaluate("APP.game.update({pouch:[],settings:Object.assign({},APP.game.state.settings,{keepall:false})})"); kill('seen'); print('and with it off again the same kind drops none (unless rare):', pg.evaluate("[ACT.orbs().length + APP.game.state.pouch.length, APP.game.make(window.__k,1).rarity]"))
+  pg.evaluate("APP.game.update({pouch:[]})"); foe('rare'); tap(); pg.wait_for_timeout(700); print('a rare critter drops one too:', pg.evaluate("[ACT.orbs().length + APP.game.state.pouch.length, APP.game.make(window.__k,1).rarity]"))
+  pg.evaluate("APP.game.update({pouch:[APP.game.state.caught[0].seed]})"); pg.evaluate("(()=>{ACT.enemies.splice(0);ACT.orbs().splice(0);ACT.spawn(1);const m=ACT.enemies[0];window.__own=APP.game.worthyOwned=APP.game.actWorthy({seed:APP.game.state.caught[0].seed})})()"); print('a critter you already keep does not drop one:', not pg.evaluate('window.__own'))
   # expiry, full pouch, map change
   pg.evaluate("ACT.orbs().forEach(o=>o.t=o.life-0.1)"); pg.wait_for_timeout(400); print('uncollected orbs fade away:', pg.evaluate("ACT.orbs().length"))
   pg.evaluate("APP.game.update({pouch:[11,12,13,14,15,16,17,18]})"); kill('new'); pg.evaluate("(()=>{const o=ACT.orbs()[0];if(o)WORLD.setPos(o.x,o.y+4)})()"); pg.wait_for_timeout(500); print('full pouch (8): the orb stays on the ground, pouch', pg.evaluate("[ACT.orbs().length, APP.game.state.pouch.length]"))
   pg.evaluate("WORLD.enter('frost'); WORLD.setPaused(false)"); pg.wait_for_timeout(600); print('changing map clears orbs, the pouch stays:', pg.evaluate("[ACT.orbs().length, APP.game.state.pouch.length]"))
   # saves
   s=pg.evaluate("localStorage.getItem('critter-roll:v2')"); print('save holds the pouch:', '"pouch":[11' in s)
-  pg.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('critter-roll:v2'));delete s.pouch;delete s.settings.keepall;localStorage.setItem('critter-roll:v2',JSON.stringify(s))})()"); pg.reload(); pg.wait_for_timeout(1300); print('old save without pouch loads:', pg.evaluate("[JSON.stringify(APP.game.state.pouch), APP.game.state.settings.keepall]"))
+  pg.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('critter-roll:v2'));delete s.pouch;localStorage.setItem('critter-roll:v2',JSON.stringify(s))})()"); pg.reload(); pg.wait_for_timeout(1300); print('old save without pouch loads:', pg.evaluate("JSON.stringify(APP.game.state.pouch)"))
   print('errors:', errs or 'none'); b.close()
