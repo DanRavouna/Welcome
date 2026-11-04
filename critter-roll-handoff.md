@@ -130,7 +130,7 @@ Attach this file plus `critter-roll-growth-source.tar.gz` (latest source + tests
 - Lessons: verify with numbers, not screenshots alone; test with large values (the Menu overlap only showed with big numbers); repeat flaky tests before trusting them.
 
 ## Watch items
-- Tower titles (floors 10/20) not yet shown anywhere; do it with the titles step. Old cached copies of the page on another device would drop the `tower` save key if they write.
+- Tower titles (floors 10/20) not yet shown anywhere; do it with the titles step. Old cached copies of the page on another device would drop the `tower` save key (and any newer field) if THEY write; this build no longer does that to others (see Save compatibility).
 - Not yet verified on a real phone: touch feel, sound, vibration, Pixelify Sans font, real cloud sync.
 - Early essence may feel slow after the roll rework. Leveling pace assumptions (≈Lv5 at Wren, ≈Lv13 at Coral) are estimates.
 
@@ -231,6 +231,10 @@ Attach this file plus `critter-roll-growth-source.tar.gz` (latest source + tests
 - `walktest.py`: a bot that WALKS with the real collision box (18 x 8 px on 32 px tiles): tile-search path, then frame-by-frame movement through `WORLD.input` / `WORLD.step`. It climbs the Cold Ascent from the south gap to the beacon door, walks the Sealed Arch (statue ring, both chests, crown, Keeper) and runs the whole Lamp Tower by hand (levers pulled with the real action button, through every gate to the great lamp, then every lever flipped back and out the exit). It avoids tall grass (`W`/`Z`) like a careful player and sets `WORLD.map.rate = 0`, because a random encounter pauses the world and would strand the bot (the same reason older tests close encounters).
 - Found and fixed: (1) the Sealed Arch gallery's only way north crossed a glowing-moss patch, so progress needed a wild-encounter chance; the middle lane is now clear (`rect(15, 22, 18, 23, 'W')`). (2) With the Keeper at (13, 3), touching the crown from the natural spot (13, 2) selected the Keeper (people win `nearest()` over objects within 1.45 tiles); he now stands at (13, 4). Rule of thumb: keep an NPC at least 3 tiles from any object the player must use.
 - Cloud: `supatest.py` was run against the live project after the adventure fields existed (sign in/out, restore, lease protection, cleanup all passed). The save syncs as a whole string, so `adv` travels with it; the test does not seed adventure data specifically.
+
+## Save compatibility (done, Nov 2026)
+- `Game.update()` now merges the previously stored `critter-roll:v2` object UNDER our own fields when it writes (`Object.assign({}, keep, {...ours})`), so fields this build does not know (written by a newer build or another device) are preserved instead of dropped. Corrupt stored JSON is replaced cleanly. It cannot protect against an OLDER build overwriting newer fields: that old code is already out there, so after shipping a feature, hard-refresh other devices.
+- Test: `compattest.py` (no seed hook): old save with missing fields loads with safe defaults, unknown fields survive writes and reloads, corrupt value replaced.
 
 ## Housekeeping (done)
 - `app.js` is now four files in build order: `base.js` (Base + Component), `data.js` (constants), `game.js` (Game), `app.js` (APP). Pure split: built output is identical apart from one comment. `weather.js` was added (see weather section below in git history). Tests run by group: `bash src/run-tests.sh @world|@battle|@saves|@ui`.

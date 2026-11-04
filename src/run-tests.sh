@@ -9,14 +9,14 @@ HOOKED="hudcheck wplay p14 p15 p18r ctest ntest ptest ztest jitter perf peaktest
 # Groups: bash src/run-tests.sh @world  (or @battle @saves @ui, several allowed; no argument = everything)
 GROUP_world="walktest wicktest devtest lamptest ascenttest secrettest adventuretest transitiontest flavortest ambienttest landmarkstest wplay ztest jitter perf peaktest citytest routes cities interiors hometest guidetest fishtest weathertest"
 GROUP_battle="abilitytest ntest ptest aggrotest fxtest towertest twisttest itemtest shinytest"
-GROUP_saves="menutest dextest p14 p15 p18r ctest statstest titletest questtest p17"
+GROUP_saves="compattest menutest dextest p14 p15 p18r ctest statstest titletest questtest p17"
 GROUP_ui="evotest a11ytest hudcheck musictest"
 expand() { for a in "$@"; do case "$a" in @*) v="GROUP_${a#@}"; for t in ${!v}; do echo $t.py; done;; *) echo "$a";; esac; done; }
 if [ $# -gt 0 ]; then TESTS="$(expand "$@")"; else TESTS="$(for t in $HOOKED weathertest p17; do echo $t.py; done)"; fi
 cd /tmp
 for t in $TESTS; do
   n="${t%.py}"
-  if [ "$n" = p17 ] || [ "$n" = menutest ] || [ "$n" = transitiontest ] || [ "$n" = devtest ]; then PP=""; else PP="$SRC/pwhook"; fi  # these two run WITHOUT the seed hook (real defaults)
+  if [ "$n" = p17 ] || [ "$n" = menutest ] || [ "$n" = transitiontest ] || [ "$n" = devtest ] || [ "$n" = compattest ]; then PP=""; else PP="$SRC/pwhook"; fi  # these two run WITHOUT the seed hook (real defaults)
   start=$(date +%s)
   PYTHONPATH="$PP" timeout 600 python3 "$SRC/$n.py" > "$LOG/$n.log" 2>&1; rc=$?
   bad=$(grep -ciE "traceback|pageerror|uncaught|errors: \[['\"]" "$LOG/$n.log")
