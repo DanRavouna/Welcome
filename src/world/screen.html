@@ -502,7 +502,7 @@
 
     <sc-if value="{{showEncounterBar}}" hint-placeholder-val="{{ false }}">
       <div style="display: flex; gap: 10px">
-        <button onClick="{{closeScreen}}" style="flex: 1; height: 56px; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #FFFFFF; background: rgba(14,26,56,0.78)">{{leaveLabel}}</button>
+        <button onClick="{{leaveGo}}" style="flex: 1; height: 56px; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #FFFFFF; background: rgba(14,26,56,0.78)">{{leaveLabel}}</button>
         <button onClick="{{keep}}" disabled="{{keepDisabled}}" style="flex: 1.4; height: 56px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid rgba(255,255,255,0.7); border-radius: 999px; font-family: inherit; font-size: 16px; font-weight: 900; cursor: pointer; color: {{encKeepFg}}; background: {{encKeepBg}}; box-shadow: {{encKeepShadow}}">{{keepLabel}}</button>
       </div>
     </sc-if>

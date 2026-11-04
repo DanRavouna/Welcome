@@ -964,6 +964,24 @@ const APP = (() => {
       setTimeout(() => showDialog(KEEPER, ['Your climb ended on floor ' + res.floor + '.', 'Best: floor ' + Math.max(t.best, 0) + ' of ' + TOWER.floors + '. Climbs left today: ' + (g.props.testMode ? 'unlimited' : g.towerRunsLeft()) + '.']), 60);
     }
   }
+  // ---------- the catch pouch (action mode): critters that dropped an orb wait here until you decide ----------
+  function showPouchCard() {
+    const p = game.state.pouch || []; if (!p.length) return false;
+    game.update({ seed: p[0], previewSeed: null, reveal: (game.state.reveal || 0) + 1 });
+    game.setState({ tab: 'roll', selected: null, armed: false, encounter: 'pouch', pouchCard: true });
+    return true;
+  }
+  function openPouch() {
+    if (open || dlg || menuOpen || mapOpen || panel) return;
+    lastOpener = document.activeElement; if (!showPouchCard()) return;
+    open = true; $('screen').hidden = false; $('hud').hidden = true; WORLD.setPaused(true); renderScreen(); game.sfx('tap');
+  }
+  // "Let it go" (drops it from the pouch) or "Next" after keeping: show the next critter, or close
+  function pouchNext(seed, kept) {
+    if (!kept) game.update({ pouch: (game.state.pouch || []).filter((x) => x !== seed) });
+    if ((game.state.pouch || []).length && showPouchCard()) { renderScreen(); return; }
+    close();
+  }
   // an action-mode duel ended: the same follow-ups the battle screen's close() gives
   function duelDone(tr, npc, won, lines) {
     const g = game; musicLoop();
@@ -1000,7 +1018,7 @@ const APP = (() => {
       setTimeout(() => showDialog(n.name, lines), 60);
       return;
     }
-    if (game.state.encounter) game.setState({ encounter: null, reveal: 0 });
+    if (game.state.encounter) game.setState({ encounter: null, reveal: 0, pouchCard: false });
     open = false; $('screen').hidden = true; $('hud').hidden = false; WORLD.setPaused(false);
     if (lastOpener && lastOpener.focus) lastOpener.focus();
   }
@@ -1122,7 +1140,7 @@ const APP = (() => {
         kOf: (sd) => { const e = game.state.caught.find((c) => c.seed === sd); if (!e) return null; const key = sd + ':' + e.stage + ':' + (e.lv || 1); if (!benchCache[key]) benchCache[key] = game.make(sd, e.stage, e.lv || 1); return benchCache[key]; },
         duelDone: (tr, npc, won, lines) => duelDone(tr, npc, won, lines),
         onKill: (foe, mine) => game.actKill(foe, mine),
-        keep: (k) => { const r = game.actKeep(k); if (r.ok) toast('Kept ' + k.name + '!' + (r.species ? ' New species.' : '') + (r.cost ? ' (' + r.cost + (r.cost === 1 ? ' roll' : ' rolls') + ')' : ' (free)')); else if (r.why === 'rolls') toast('Keeping ' + k.name + ' needs ' + r.cost + (r.cost === 1 ? ' roll.' : ' rolls.')); else if (r.why === 'owned') toast('You already have this one.'); return r; },
+        worthy: (k) => game.actWorthy(k), pouchAdd: (sd) => game.actPouchAdd(sd),
         sfx: (k) => game.sfx(k)
       });
       const ctr = () => { const r = ring.getBoundingClientRect(), w = wheel.getBoundingClientRect(); return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top }; };
@@ -1147,13 +1165,13 @@ const APP = (() => {
       atk.addEventListener('pointercancel', () => { clearTimeout(holdT); if (wheelOn) closeWheel(false); });
       atk.addEventListener('contextmenu', (e) => e.preventDefault());
       window.addEventListener('keydown', (e) => { if (e.key === 'j' && !WORLD.paused) ACT.attack(); });
-      const kb = $('keepbar'); let kbSig = '';
-      kb.addEventListener('click', (ev) => { const b = ev.target.closest('button[data-id]'); if (b) ACT.keep(+b.dataset.id); });
+      // the catch pouch: a small icon with a count; tapping it opens the critter card (the same one grass sightings use)
+      const pb = $('pouch'); let pbN = -1;
+      pb.addEventListener('click', () => openPouch());
       setInterval(() => {
-        const offs = ACT.ready() && !WORLD.paused && !open ? ACT.offers() : [], sig = offs.map((o) => o.id).join(',');
-        if (sig !== kbSig) { kbSig = sig; kb.hidden = !offs.length; kb.innerHTML = offs.map((o) => { const c = game.actKeepCost(o.k), owned = game.state.caught.some((e) => e.seed === o.k.seed); return '<button data-id="' + o.id + '"' + (owned ? ' disabled' : '') + '><b>Keep ' + esc(o.k.name) + '</b><span>' + esc(o.k.rarity) + ' · ' + (c.cost ? c.cost + (c.cost === 1 ? ' roll' : ' rolls') : 'free') + ' · joins at Lv 1</span><i></i></button>'; }).join(''); }
-        [].forEach.call(kb.querySelectorAll('button'), (b) => { const o = offs.find((x) => x.id === +b.dataset.id); if (o) b.lastChild.style.width = Math.max(0, 100 * o.t / o.tot).toFixed(0) + '%'; });
-      }, 120);
+        const n = (game.state.pouch || []).length, show = ACT.enabled() && n > 0 && !WORLD.paused && !open;
+        if (pb.hidden === show) pb.hidden = !show; if (show && n !== pbN) { pbN = n; pb.querySelector('b').textContent = n; pb.classList.remove('pop'); void pb.offsetWidth; pb.classList.add('pop'); }
+      }, 150);
       const db = $('duel'); let dbSig = '';
       db.addEventListener('click', (ev) => { if (ev.target.closest('button')) ACT.giveUp(); });
       setInterval(() => {
@@ -1296,6 +1314,6 @@ const APP = (() => {
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
   function rtAttack() { if (game && game.rtOn()) { game.rtPlayer(Math.min(3, game.state.rtSel || 0)); const f = document.getElementById('rt-fill'); if (f) f.style.transform = 'scaleX(' + game.rtWait().toFixed(3) + ')'; } }
-  return { towerFloorStart, rtAttack, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { openPouch, pouchNext, towerFloorStart, rtAttack, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);

@@ -249,6 +249,14 @@ class Game extends Component {
   }
   // action mode: keep a defeated wild critter. Same price as meeting and keeping it in the grass: the keep cost in rolls (shiny = free)
   // plus the sighting (a free one while any are left today, otherwise one roll). It joins at stage 1, level 1, like any kept critter.
+  // action mode: which defeated critters drop a catch orb (Settings: "Collect every defeated critter" = all of them)
+  actWorthy(k) {
+    const st = this.state; if (st.caught.some((e) => e.seed === k.seed) || (st.pouch || []).indexOf(k.seed) !== -1) return false;
+    if (st.settings && st.settings.keepall) return true;
+    return !!k.shiny || k.rarity === 'Rare' || k.rarity === 'Mythic' || (st.seen || []).indexOf(this.make(k.seed, 1).speciesNo) === -1;
+  }
+  // put a collected orb in the pouch (8 at most); returns true, or 'full'
+  actPouchAdd(seed) { const p = (this.state.pouch || []).slice(); if (p.indexOf(seed) !== -1) return true; if (p.length >= 8) return 'full'; p.push(seed); this.update({ pouch: p }); return true; }
   actKeepCost(k) { const free = this.sightingsLeft() > 0; return { cost: (k.shiny ? 0 : (KEEP_COST[k.rarity] || 1)) + (free ? 0 : 1), free: free }; }
   actKeep(k) {
     const st = this.state; if (st.caught.some((e) => e.seed === k.seed)) return { ok: false, why: 'owned' };
@@ -256,7 +264,7 @@ class Game extends Component {
     if (e2.left < c.cost) return { ok: false, why: 'rolls', cost: c.cost };
     const s = st.sight && st.sight.day === today ? st.sight : { day: today, n: 0 }, no = this.make(k.seed, 1).speciesNo, seen = (st.seen || []).slice(), events = [{ t: 'keep' }];
     if (no <= 48 && seen.indexOf(no) === -1) { seen.push(no); events.push({ t: 'species' }); }
-    this.update({ caught: [{ seed: k.seed, stage: 1 }].concat(st.caught), seen: seen, day: e2.today, used: e2.used + c.cost, sight: { day: today, n: s.n + (c.free ? 1 : 0) } }, events);
+    this.update({ caught: [{ seed: k.seed, stage: 1 }].concat(st.caught), seen: seen, day: e2.today, used: e2.used + c.cost, sight: { day: today, n: s.n + (c.free ? 1 : 0) }, pouch: (st.pouch || []).filter((x) => x !== k.seed) }, events);
     this.sfx('claim'); return { ok: true, cost: c.cost, species: events.length > 1 };
   }
   // action mode: a defeated wild critter pays the lead critter XP (it can level up) and, for the first ACT_ESS_CAP kills each day, essence like a won wild battle
@@ -454,11 +462,13 @@ class Game extends Component {
       v.c.lvLine = lv >= MAX_LV ? 'Level ' + lv + ' (max)' : 'Level ' + lv + ' · ' + xp + '/' + lvNeed(lv) + ' XP to level ' + (lv + 1);
       v.c.xpPct = lv >= MAX_LV ? 100 : Math.round(xp / lvNeed(lv) * 100);
     }
+    const pouchMode = !!this.state.pouchCard && enc === 'pouch';
     if (v.showRoll && v.c && !v.kept && !this.state.previewSeed) {
-      const cost = v.c.shiny ? 0 : (KEEP_COST[v.c.rarity] || 1), en = this.energy(), can = en.left >= cost, baseKeep = v.keep;
+      const cost = pouchMode ? this.actKeepCost(v.c).cost : (v.c.shiny ? 0 : (KEEP_COST[v.c.rarity] || 1)), en = this.energy(), can = en.left >= cost, baseKeep = v.keep;
       v.keepLabel = cost === 0 ? 'Keep (free, shiny!)' : (can ? 'Keep (' + cost + (cost === 1 ? ' roll)' : ' rolls)') : 'Needs ' + cost + ' rolls');
       v.keepDisabled = !can;
       v.keep = () => {
+        if (pouchMode) { const r = this.actKeep(v.c); if (r.ok) this.setState({ reveal: 0 }); return; }
         const e2 = this.energy(); if (e2.left < cost || this.state.caught.some((x) => x.seed === v.c.seed)) return;
         this.update({ day: e2.today, used: e2.used + cost });
         baseKeep();
@@ -468,6 +478,13 @@ class Game extends Component {
     const sl = this.sightingsLeft();
     v.encounterNote = enc ? 'Found in the tall grass of ' + enc + '. ' + (this.state.encounterPaid ? 'Your free sightings are used up, so this one cost a roll.' : 'Free sighting: ' + Math.max(0, sl) + ' left today.') : '';
     v.leaveLabel = v.kept ? 'Back to exploring' : 'Let it go';
+    v.leaveGo = v.closeScreen;
+    if (pouchMode && v.c) {
+      const more = (this.state.pouch || []).filter((x) => x !== v.c.seed).length, kc = this.actKeepCost(v.c);
+      v.leaveLabel = v.kept ? (more ? 'Next critter (' + more + ')' : 'Back to exploring') : (more ? 'Let it go, next (' + more + ')' : 'Let it go');
+      v.leaveGo = () => APP.pouchNext(v.c.seed, !!v.kept);
+      v.encounterNote = 'Dropped by a defeated wild critter (it joins at level 1). ' + (kc.free ? 'Keeping uses one of today\u2019s free sightings.' : 'Your free sightings are used up, so keeping costs one extra roll.') + ' It stays in your pouch until you decide.';
+    }
     v.encKeepBg = v.kept ? 'rgba(40,110,60,0.85)' : (v.keepDisabled ? 'rgba(14,26,56,0.6)' : v.primaryBg);
     v.encKeepFg = v.kept ? '#FFFFFF' : (v.keepDisabled ? '#9FB0D0' : '#2A1B00');
     v.encKeepShadow = v.kept || v.keepDisabled ? 'none' : '0 4px 14px rgba(245,185,58,0.45)';

@@ -6,7 +6,7 @@
 const ACT = (() => {
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const CD = [0.45, 1.1, 1.4, 3.0];            // seconds: quick slash, heavy slash, guard, special
-  let GH = [], H = null, hero = null, team = {}, OFF = [], offId = 1, duel = null, armed = false, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
+  let GH = [], H = null, hero = null, team = {}, OFF = [], orbId = 1, duel = null, armed = false, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
   const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null };
   const rand = Math.random;
   function bind(h) { H = h; if (typeof VFX !== 'undefined') VFX.bind(h); }
@@ -90,7 +90,8 @@ const ACT = (() => {
       if (duel.down >= duel.queue.length) endDuel(true); else duel.next = 1.3;
       return;
     }
-    spawnT = Math.min(spawnT, 8); OFF.push({ id: offId++, k: m.k, t: 9, tot: 9 }); if (OFF.length > 2) OFF.shift();
+    spawnT = Math.min(spawnT, 8);
+    if (H.worthy && H.worthy(m.k) && !OFF.some((o) => o.k.seed === m.k.seed)) OFF.push({ id: orbId++, k: m.k, x: m.x, y: m.y, t: 0, life: 30 });   // a catch orb: walk over it to put it in the pouch
     const r = H.onKill ? H.onKill(m.k, hero.k) : null;
     if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); } if (H.sfx) H.sfx('claim'); }
   }
@@ -231,7 +232,13 @@ const ACT = (() => {
       else { if ((!m.duel && near > 9 * e.TS) || st.calm > 0 || st.down > 0) { m.mode = 'idle'; m.tele = 0; m.dash = 0; return; } think(m, e, dt, p, hp0, dp, dh); }
     });
     if (hero.__hurt) hero.__hurt = Math.max(0, hero.__hurt - dt);
-    OFF.forEach((o) => { o.t -= dt; }); OFF = OFF.filter((o) => o.t > 0);
+    { const hp2 = heroPos(); OFF.slice().forEach((o) => { o.t += dt;
+      if (o.t > 0.4 && (Math.hypot(hp2.x - o.x, hp2.y - o.y) < 1.2 * e.TS || Math.hypot(e.P.x - o.x, e.P.y - o.y) < 1.2 * e.TS)) {
+        const r = H.pouchAdd ? H.pouchAdd(o.k.seed) : false;
+        if (r === true) { OFF.splice(OFF.indexOf(o), 1); VFX.burst(o.k.element.name, o.k.element.color, o.x, o.y - 10, 10, 0, 0, 0.8); num(o.x, o.y - 26, '+ ' + o.k.name, '#FFE9A0'); if (H.sfx) H.sfx('claim'); return; }
+        if (r === 'full' && !o.warned) { o.warned = true; num(o.x, o.y - 26, 'Pouch full', '#FF9A8A'); }
+      }
+      if (o.t > o.life) OFF.splice(OFF.indexOf(o), 1); }); }
     PR.slice().forEach((q) => { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; const hp1 = heroPos(); if (rand() < 0.7) VFX.trail(q.m.k.element.name, q.col, q.x, q.y);
       if (q.t > 2.4 || !tileFree(e, q.x, q.y + 12)) { PR.splice(PR.indexOf(q), 1); return; }
       if (Math.min(Math.hypot(hp1.x - q.x, hp1.y - 12 - q.y), Math.hypot(e.P.x - q.x, e.P.y - 12 - q.y)) < 0.6 * e.TS && hero.hp > 0 && st.down <= 0) { PR.splice(PR.indexOf(q), 1); if (q.m && q.m.s.hp > 0) hurtHero(q.m, q.mul); } });
@@ -267,6 +274,15 @@ const ACT = (() => {
       else if (m.kind === 'dash') { c.beginPath(); c.moveTo(mx, my - 8); c.lineTo(e.snap(m.aim.x - e.cx), e.snap(m.aim.y - e.cy) - 8); c.stroke(); }
       else if (m.kind === 'blink') { const bx = e.snap(m.aim.x - e.cx), by = e.snap(m.aim.y - e.cy); c.beginPath(); c.arc(bx, by - 4, 10, 0, 6.3); c.stroke(); }
       c.restore(); });
+    OFF.forEach((o) => {
+      const ox = e.snap(o.x - e.cx), drop = o.t < 0.4 ? Math.sin(o.t / 0.4 * Math.PI) * 14 : 0, oy = e.snap(o.y - e.cy - 8 - drop + Math.sin(e.t * 3 + o.id) * 2);
+      if (ox < -30 || ox > e.vw + 30 || oy < -30 || oy > e.vh + 30) return; if (o.life - o.t < 5 && Math.floor(e.t * 6) % 2) return;   // blinks when about to fade
+      const k = o.k, col = k.element.color, rare = k.rarity === 'Rare' || k.rarity === 'Mythic' || k.shiny, tw = 0.5 + 0.5 * Math.sin(e.t * 5 + o.id);
+      c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(ox - 9, oy + 14, 18, 4);
+      c.save(); c.globalAlpha = 0.38 + 0.14 * tw; c.fillStyle = col; c.beginPath(); c.arc(ox, oy, 21, 0, 6.3); c.fill(); c.globalAlpha = 0.55; c.strokeStyle = '#FFFFFF'; c.lineWidth = 2; c.beginPath(); c.arc(ox, oy, 18, 0, 6.3); c.stroke(); c.restore();
+      c.imageSmoothingEnabled = false; c.drawImage(VFX.orb(k.element.name, col), ox - 18, oy - 18, 36, 36);
+      if (rare) { c.strokeStyle = k.rarity === 'Mythic' || k.shiny ? '#FFD86B' : '#BFD8FF'; c.lineWidth = 2; c.globalAlpha = 0.6 + 0.4 * tw; c.beginPath(); c.arc(ox, oy, 24 + tw * 2, 0, 6.3); c.stroke(); c.globalAlpha = 1; if (k.shiny || k.rarity === 'Mythic') { c.fillStyle = '#FFF3B0'; c.fillRect(ox + 12, oy - 18 - Math.round(tw * 2), 3, 7); c.fillRect(ox + 10, oy - 16 - Math.round(tw * 2), 7, 3); } }
+    });
     PR.forEach((q) => { const qx = e.snap(q.x - e.cx), qy = e.snap(q.y - e.cy); c.imageSmoothingEnabled = false; c.drawImage(VFX.orb(q.m.k.element.name, q.col), qx - 14, qy - 14, 28, 28); });
     VFX.draw(c, e.cx, e.cy, e.snap);
     FX.forEach((f) => {
@@ -279,7 +295,7 @@ const ACT = (() => {
   }
   return {
     bind, step, items, drawFx, active, attack, swapTo, startDuel, giveUp: () => abortDuel('You gave up.'), dueling: () => !!duel, canDuel: () => armed && !duel,
-    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, offers: () => OFF, keep: (id) => { const o = OFF.find((x) => x.id === id); if (!o) return { ok: false, why: 'gone' }; const r = H.keep(o.k); if (r.ok) OFF.splice(OFF.indexOf(o), 1); return r; }, get shots() { return PR; }, BEH,
+    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, orbs: () => OFF, get shots() { return PR; }, BEH,
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },
     get enemies() { return E; }, moves: () => (hero ? hero.k.kit.map((m, i) => ({ name: m.name, kind: m.kind, sub: m.sub, i: i })) : []),

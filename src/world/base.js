@@ -12,7 +12,7 @@ class Component extends Base {
       seed: null, previewSeed: null, caught: [], tab: 'roll', selected: null, earned: [],
       seedInput: '', loadError: false, armed: false,
       essence: 0, wins: 0, day: '', used: 0,
-      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { rtb: false, arpg: false, ctrlcrit: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true, bigtext: false, contrast: false }
+      fighter: null, foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null, reveal: 0, settings: { rtb: false, arpg: false, ctrlcrit: false, keepall: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, weather: true, ambient: true, bigtext: false, contrast: false }
     };
   }
 
@@ -54,13 +54,14 @@ class Component extends Base {
       titles: Array.isArray(d.titles) ? d.titles.filter((x) => typeof x === 'string') : [],
       title: typeof d.title === 'string' ? d.title : '',
       shinies: Array.isArray(d.shinies) ? d.shinies.filter((n) => Number.isInteger(n)) : [],
+      pouch: Array.isArray(d.pouch) ? d.pouch.filter((n) => Number.isInteger(n)).slice(0, 8) : [],
       act: { day: d.act && typeof d.act.day === 'string' ? d.act.day : '', n: d.act ? Math.max(0, d.act.n | 0) : 0 },
       tower: (() => {
         const t = d.tower && typeof d.tower === 'object' ? d.tower : {};
         const r = t.run && typeof t.run === 'object' && Array.isArray(t.run.party) ? { floor: Math.max(1, t.run.floor | 0), party: t.run.party.filter((n) => Number.isInteger(n)).slice(0, 3), hp: t.run.hp && typeof t.run.hp === 'object' ? t.run.hp : {} } : null;
         return { best: Math.max(0, t.best | 0), day: typeof t.day === 'string' ? t.day : '', runs: t.runs | 0, clears: t.clears | 0, run: r && r.party.length ? r : null };
       })(),
-      settings: d.settings && typeof d.settings === 'object' ? { rtb: d.settings.rtb === true, arpg: d.settings.arpg === true, ctrlcrit: d.settings.ctrlcrit === true, sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false, bigtext: d.settings.bigtext === true, contrast: d.settings.contrast === true } : { rtb: false, arpg: false, ctrlcrit: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true, bigtext: false, contrast: false },
+      settings: d.settings && typeof d.settings === 'object' ? { rtb: d.settings.rtb === true, arpg: d.settings.arpg === true, ctrlcrit: d.settings.ctrlcrit === true, keepall: d.settings.keepall === true, sound: d.settings.sound !== false, vibrate: d.settings.vibrate !== false, calm: d.settings.calm === true, test: d.settings.test === true, daynight: d.settings.daynight !== false, track: d.settings.track !== false, music: d.settings.music !== false, follow: d.settings.follow !== false, weather: d.settings.weather !== false, ambient: d.settings.ambient !== false, bigtext: d.settings.bigtext === true, contrast: d.settings.contrast === true } : { rtb: false, arpg: false, ctrlcrit: false, keepall: false, sound: true, vibrate: true, calm: false, test: false, daynight: true, track: true, music: true, follow: true, weather: true, ambient: true, bigtext: false, contrast: false },
       seen: (() => {
         const seen = Array.isArray(d.seen) ? d.seen.filter((n) => Number.isInteger(n) && n >= 1 && n <= 48) : [];
         (Array.isArray(d.caught) ? d.caught : []).forEach((e) => { if (e && Number.isInteger(e.seed)) { const no = this.make(e.seed, 1).speciesNo; if (no <= 48 && seen.indexOf(no) === -1) seen.push(no); } });   // the secret critter (#49) is a bonus, never counted in the 48
@@ -90,7 +91,7 @@ class Component extends Base {
     try {
       // keep fields this build does not know (written by a newer build or another device): merge them under our own fields instead of dropping them
       let keep = {}; try { const old = JSON.parse(window.localStorage.getItem('critter-roll:v2') || '{}'); if (old && typeof old === 'object') keep = old; } catch (e2) {}
-      window.localStorage.setItem('critter-roll:v2', JSON.stringify(Object.assign({}, keep, { caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, act: s.act, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv })));
+      window.localStorage.setItem('critter-roll:v2', JSON.stringify(Object.assign({}, keep, { caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, act: s.act, pouch: s.pouch, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv })));
     } catch (e) {}
   }
 
@@ -1001,6 +1002,7 @@ class Component extends Base {
         ['music', 'Music', 'Background tunes for each area and battle.'],
         ['arpg', 'Action mode (prototype)', 'Your critter fights live on the map: tap Attack to slash, hold it to pick a move on the wheel. Wild critters roam the grass instead of random encounters.'],
         ['ctrlcrit', 'Steer your critter (action mode)', 'The joystick moves your critter and you walk behind it, so aiming is where it faces. Needs Action mode and Critter follows you.'],
+        ['keepall', 'Collect every defeated critter (action mode)', 'Off: only critters of a new species, Rare, Mythic or shiny drop a catch orb. On: every defeated critter does.'],
         ['rtb', 'Real-time battles (beta)', 'Battles run live: tap Attack when its bar is full, swap moves any time. The foe acts on its own clock. Off = classic turns.'],
         ['follow', 'Critter follows you', 'Your lead critter walks behind you in the world.'],
         ['sound', 'Sound effects', 'Chimes for rolls, battles and level-ups.'],

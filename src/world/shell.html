@@ -88,11 +88,10 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 #atk-label{padding:2px 9px;border-radius:999px;background:var(--glass);color:#fff;font-size:11px;font-weight:800;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis}
 #duel{position:absolute;left:50%;transform:translateX(-50%);top:calc(112px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;padding:6px 8px 6px 14px;border-radius:999px;background:var(--glass);border:2px solid #FF8A7A;color:#fff;z-index:5;white-space:nowrap}
 #duel b{font-size:13px;font-weight:900}#duel span{font-size:11px;font-weight:700;color:#C9D6F2}#duel button{border:0;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;font:inherit;font-size:11px;font-weight:800;padding:4px 10px;cursor:pointer}
-#keepbar{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(272px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-end;z-index:5}
-#keepbar button{position:relative;overflow:hidden;border:2px solid #FFC94D;border-radius:14px;padding:6px 12px 9px;background:var(--glass);color:#fff;font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:1px;max-width:230px}
-#keepbar button b{font-size:13px;font-weight:900}#keepbar button span{font-size:11px;font-weight:700;color:#C9D6F2}
-#keepbar button i{position:absolute;left:0;bottom:0;height:4px;background:#FFC94D}
-#keepbar button:disabled{opacity:.5}
+#pouch{position:absolute;right:calc(14px + env(safe-area-inset-right,0px));top:calc(122px + env(safe-area-inset-top,0px));width:50px;height:50px;border-radius:50%;border:2.5px solid #FFC94D;background:radial-gradient(circle at 40% 30%,#3A4A78 0%,#1E2A4A 70%);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:5}
+#pouch b{position:absolute;right:-5px;top:-5px;min-width:20px;height:20px;border-radius:10px;background:#FFC94D;color:#2A1B00;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #fff;padding:0 3px}
+#pouch.pop{animation:pouchpop .45s}@keyframes pouchpop{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){#pouch.pop{animation:none}}
 #wheel{position:absolute;inset:0;pointer-events:none;z-index:6}
 #wheel .slot{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;border:3px solid rgba(255,255,255,.75);background:rgba(14,26,56,.88);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:10.5px;font-weight:900;line-height:1.15;padding:4px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
 #wheel .slot small{font-size:9px;font-weight:700;color:#C9D6F2}
@@ -214,7 +213,7 @@ html.hc .prof{background:#12204A!important;backdrop-filter:none!important}
 html.hc .mgroup{background:#08122A!important}html.hc .mht span{color:#FFFFFF!important}
 html.hc button,html.hc .chip{outline-color:#FFFFFF}
 html.hc :focus-visible{outline:3px solid #FFD86B!important;outline-offset:2px}
-#screen[hidden],#atk[hidden],#wheel[hidden],#keepbar[hidden],#duel[hidden],#toast[hidden],#tip[hidden],#hud[hidden],.dot[hidden]{display:none}
+#screen[hidden],#atk[hidden],#wheel[hidden],#pouch[hidden],#duel[hidden],#toast[hidden],#tip[hidden],#hud[hidden],.dot[hidden]{display:none}
 button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
 </style>
 </head>
@@ -240,7 +239,7 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
     <button id="act" disabled><span class="ring"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg></span><span id="act-label">Walk up to a place</span></button>
     <button id="atk" hidden aria-label="Attack. Hold to choose a move"><span class="ring"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20L18 6M14 4h6v6M7 17l-3 3"></path></svg></span><span id="atk-label">Slash</span></button>
     <div id="wheel" hidden aria-hidden="true"></div>
-    <div id="keepbar" hidden></div>
+    <button id="pouch" hidden aria-label="Open the catch pouch"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8l-1.5 3h-5zM9.5 7C6 9 4.5 12 4.5 15.5 4.5 19 7.5 20.5 12 20.5s7.5-1.5 7.5-5C19.5 12 18 9 14.5 7"></path><circle cx="12" cy="14.5" r="2"></circle></svg><b>0</b></button>
     <div id="duel" hidden></div>
     <div id="toast" role="status" aria-live="polite" hidden></div>
   </div>
