@@ -75,4 +75,21 @@ with sync_playwright() as p:
   # nothing draws a guide; weather and music resolve for the side maps
   print('sky follows the Pass on every side map:', pg.evaluate("['route-mf-gate','route-mf-hollow','route-mf-lookout','route-mf-fork','route-mf-cliff'].every(i=>WEATHER.at(i)!==null)"), '| base:', pg.evaluate("WORLD.MAPS['route-mf-cliff'].base"))
   pg.evaluate("WORLD.enter('route-mf-lookout')"); pg.wait_for_timeout(1800); print('music on a side map follows the Pass (peak track):', pg.evaluate("MUSIC.current"))
+  # mystery by hint, never by telling: odd things to find, one that exists only at night, and wording that never explains or points
+  pg.evaluate("window.__tod='day'; WORLD.enter('route-mf-hollow'); WORLD.setPaused(false)"); pg.wait_for_timeout(900)
+  day=pg.evaluate("(()=>{const o=WORLD.objects.find(x=>x.id==='hp-lantern');return [!!o&&o.hidden,!WORLD.solidAt(o.x,o.y)]})()")
+  pg.evaluate("window.__tod='night'"); pg.wait_for_timeout(900)
+  night=pg.evaluate("(()=>{const o=WORLD.objects.find(x=>x.id==='hp-lantern');return [!!o.hidden,!WORLD.solidAt(o.x,o.y)]})()")
+  print('the lantern is gone by day (hidden, walkable):', day, '| burning at night (shown, solid):', night)
+  pg.evaluate("window.__tod=undefined"); 
+  things=pg.evaluate("Object.values(WORLD.MAPS).filter(m=>m.id.indexOf('route-mf-')===0).flatMap(m=>(m.objects||[]).filter(o=>['lantern','cups','ringstones','doorframe'].includes(o.kind)).map(o=>m.id.replace('route-mf-','')+':'+o.kind))")
+  print('unexplained things placed:', things)
+  texts=pg.evaluate("""(()=>{const out=[];Object.values(WORLD.MAPS).filter(m=>m.id.indexOf('route-mf')===0).forEach(m=>{(m.signs||[]).forEach(x=>out.push(x.text));(m.objects||[]).forEach(o=>o.text&&out.push(o.text))});
+    Object.values(WORLD.allNpcs()).flat().filter(n=>['brandt'].includes(n.id)).forEach(n=>(n.lines||[]).forEach(l=>out.push(l)));return out})()""")
+  bad=[t for t in texts if __import__('re').search(r"secret|hidden|treasure|reward|this way|go (north|south|east|west)|head to|follow the|look for|you should", t, __import__('re').I)]
+  print('no line explains, points or promises (checked', len(texts), 'texts):', not bad, bad or '')
+  pg.evaluate("WORLD.enter('route-mf'); WORLD.setPaused(false)"); pg.wait_for_timeout(300)
+  # touching the door that opens onto nothing
+  pg.evaluate("WORLD.enter('route-mf-gate'); WORLD.setPaused(false)"); pg.wait_for_timeout(300)
+  pg.evaluate("(()=>{const o=WORLD.objects.find(x=>x.id==='hp-door');WORLD.setPos((o.x+0.5)*WORLD.TS,(o.y+1.4)*WORLD.TS);WORLD.step(1/30)})()"); pg.wait_for_timeout(300); pg.click('#act'); pg.wait_for_timeout(300); print('the door:', pg.inner_text('#toast'))
   print('errors:', errs or 'none'); b.close()

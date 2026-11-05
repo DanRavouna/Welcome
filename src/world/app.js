@@ -136,7 +136,7 @@ const APP = (() => {
     if (!(game && game.state.settings && game.state.settings.calm)) p.classList.add('drop');
   }
   // ---------- time of day ----------
-  function timeOfDay(d) { const h = (d || new Date()).getHours(); return h >= 21 || h < 5 ? 'night' : (h < 7 ? 'dawn' : (h >= 18 ? 'dusk' : 'day')); }
+  function timeOfDay(d) { if (typeof window.__tod === 'string') return window.__tod; /* test hook */ const h = (d || new Date()).getHours(); return h >= 21 || h < 5 ? 'night' : (h < 7 ? 'dawn' : (h >= 18 ? 'dusk' : 'day')); }
   // ---------- weather ----------
   const reduceMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
   function weatherAt(id) { // kind for a map, or null indoors / when the setting is off; window.__weather is a test override
@@ -482,7 +482,7 @@ const APP = (() => {
       { lv: 3, id: 'sorrel', name: 'Forager Sorrel', x: 11, y: 11, dir: 'down', kind: 'trainer', trainer: true, pal: { cap: true, c: '#6B8E23', y: '#C9A26A', Y: '#8A6A44' }, types: ['Bloom', 'Volt'], size: 3, stage: 2, pick: 0.5,
         intro: ['Hold on, traveler! Mossbrook greets newcomers with a battle.', 'My critters grew up on forest berries. Ready?'], winLine: 'Ha! You earned your welcome. Here is your reward.', beatenLines: ['Rest up and come back tomorrow. The berries will be ripe again.'] },
       { id: 'fennel', name: 'Fennel', x: 24, y: 15, kind: 'talk', pal: { h: '#E8E8F0', y: '#C0503A', Y: '#8A3A28' },
-        lines: ['Mossbrook was built around the old trees, not the other way around.', 'Elder Wren says a critter that rests well battles well.'] },
+        lines: ['Mossbrook was built around the old trees, not the other way around.', 'Elder Wren says a critter that rests well battles well.', 'Travellers come back from the Pass with the same story and different endings.'] },
       { id: 'bryn', name: 'Bryn', x: 16, y: 16, kind: 'talk', pal: { h: '#8A5A34', y: '#FFD86B', Y: '#E0A830' },
         lines: ['I saw a shiny critter once! It sparkled like the sun on the pond.', 'My mom says they are one in two hundred. I am still looking!'] }
     ];
@@ -497,7 +497,7 @@ const APP = (() => {
       { id: 'tove', name: 'Quartermaster Tove', x: 8, y: 10, kind: 'shop', pal: { h: '#E8E8F0', y: '#4A6A9A', Y: '#2E4A66' }, lines: ['Supplies for the cold road. Same goods as Sproutvale, packed for the snow.'] },
       { lv: 8, id: 'pike', name: 'Skier Pike', x: 15, y: 19, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' }, types: ['Frost', 'Tide'], size: 4, stage: 2, pick: 0.6,
         intro: ['Halt! Nobody enters Frosthold without a snowball fight.', 'Well, a critter battle. Same thing up here.'], winLine: 'Brr, you are tough. Here is your reward.', beatenLines: ['My critters need to thaw out. Tomorrow, rematch!'] },
-      { id: 'hilde', name: 'Hilde', x: 24, y: 15, kind: 'talk', pal: { h: '#E8C07A', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The palisade keeps out the wind, not the critters. They come and go as they like.', 'Glacia trains on the ice every morning. Her critters do not slip.'] },
+      { id: 'hilde', name: 'Hilde', x: 24, y: 15, kind: 'talk', pal: { h: '#E8C07A', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The palisade keeps out the wind, not the critters. They come and go as they like.', 'Some nights there is a light in the pass that is nobody\u2019s.', 'Glacia trains on the ice every morning. Her critters do not slip.'] },
       { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['They say a tower stands on Champion\u2019s Peak, up the trail north of Sproutvale\u2019s plaza.', 'Only trainers with all four Leader Seals may climb it.'] }
     ]);
     city('ember', 'cinderport', 'blaze', 'Welcome to Cinderport. I am Blaze, and this forge is my gym.', [
@@ -530,7 +530,7 @@ const APP = (() => {
     const near = (mapId, propId, dx, dy) => { const p = (M[mapId].props || []).find((q) => q.id === propId); return p ? spot(mapId, p.x + dx, p.y + dy) : spot(mapId, 10, 10); };
     const pers = (id, name, mapId, pos, pal, lines) => { (out[mapId] = out[mapId] || []).push({ id, name, x: pos[0], y: pos[1], dir: 'down', kind: 'talk', pal, lines }); };
     pers('edda', 'Scholar Edda', 'route-mf', near('route-mf', 'ruin', 5, 1), { h: '#3A2A1A', y: '#8E5BC8', Y: '#6B3FA0' }, ['These carvings show a critter of each type around one fire. I count eight.', 'Highland Pass joins Mossbrook and Frosthold. The arch is older than both.']);
-    pers('brandt', 'Hermit Brandt', 'route-mf-cliff', spot('route-mf-cliff', 9, 14), { h: '#BDBDBD', y: '#7A6A52', Y: '#5A4A38' }, ['Few find this ledge. The path does not want to be found, so I never signed it.', 'From down there the Pass looks like one road. It is not. Every road is a rumour somebody walked into being.']);
+    pers('brandt', 'Hermit Brandt', 'route-mf-cliff', spot('route-mf-cliff', 9, 14), { h: '#BDBDBD', y: '#7A6A52', Y: '#5A4A38' }, ['Oh. You came the long way, or the short one.', 'Sit if you like. The second cup is not for you, but it will not mind.']);
     pers('dell', 'Camper Dell', 'route-cm', near('route-cm', 'camp', 4, 1), { h: '#8A5A34', y: '#4FB06D', Y: '#2E6A2C' }, ['Ha, that is my camp! I only left to fill my flask at the well.', 'Ashwood Trail links Cinderport and Mossbrook. Ember and Moss critters roam here.']);
     pers('joss', 'Lamplighter Joss', 'route-fc', near('route-fc', 'lighthouse', 3, 3), { h: '#BDBDBD', y: '#C0503A', Y: '#8A3A28' }, ['I still trim the lamp every dusk. It guides nobody now, but it feels right.', 'Glacier Coast runs between Frosthold and Coralbay. Frost and Tide critters live along it.']);
     pers('neri', 'Beachcomber Neri', 'route-cc', near('route-cc', 'wreck', 5, 2), { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, ['Tide critters nest in the wreck. Do not poke them, they bite!', 'Reef Causeway links Coralbay and Cinderport. Tide and Ember critters share it.']);
@@ -1070,6 +1070,8 @@ const APP = (() => {
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
     setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
+    // things that only exist at certain hours (the lantern in Whisper Hollow burns at night and is gone by day)
+    let lastNight = null; setInterval(() => { if (!game || !WORLD.map) return; const id = WORLD.map.id, night = timeOfDay() === 'night'; if (id === 'route-mf-hollow' && night !== lastNight) { lastNight = night; WORLD.setGate(id, 'night', !night); } else if (id !== 'route-mf-hollow') lastNight = null; }, 500);
     // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel
     {
       let leadCache = { key: '', k: null }; const foePool = {}, benchCache = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');

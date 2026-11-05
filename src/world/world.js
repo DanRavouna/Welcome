@@ -392,13 +392,15 @@ const WORLD = (() => {
   }
   // ---- Highland Pass: Mossbrook -> Gate -> the Pass proper (Kai, the old stones) -> Fork -> Frosthold, with a bypass over Whisper Hollow and the Windy Lookout and a hermit's cliff that has no road to it
   const HP = {
-    gate: buildWild({ id: 'route-mf-gate', base: 'route-mf', name: 'Highland Gate', seed: 5501, types: ['Moss', 'Frost'], hub: [16, 13], grass: 4, doors: [{ edge: 's', a: 16 }, { edge: 'n', a: 16 }, { edge: 'e', a: 12 }] }),
-    hollow: buildWild({ id: 'route-mf-hollow', base: 'route-mf', name: 'Whisper Hollow', seed: 5502, types: ['Moss', 'Frost'], hub: [14, 13], grass: 6, doors: [{ edge: 'w', a: 12 }, { edge: 'n', a: 14 }], nooks: [{ x: 26, y: 21, r: 3 }], rare: 0,
-      objects: [{ id: 'hp-chest1', kind: 'chest', x: 26, y: 22, reward: { potion: 2, essence: 4 }, text: 'A chest, half sunk in the moss.' }] }),
-    lookout: buildWild({ id: 'route-mf-lookout', base: 'route-mf', name: 'Windy Lookout', seed: 5503, types: ['Frost', 'Moss'], hub: [16, 12], grass: 3, doors: [{ edge: 's', a: 8 }, { edge: 's', a: 24 }], nooks: [{ x: 9, y: 6, r: 2 }] }),
+    gate: buildWild({ id: 'route-mf-gate', base: 'route-mf', name: 'Highland Gate', seed: 5501, types: ['Moss', 'Frost'], hub: [16, 13], grass: 4, doors: [{ edge: 's', a: 16 }, { edge: 'n', a: 16 }, { edge: 'e', a: 12 }], nooks: [{ x: 26, y: 6, r: 2 }],
+      objects: [{ id: 'hp-door', kind: 'doorframe', x: 26, y: 6, text: 'A door with nothing behind it. It does not open.' }] }),
+    hollow: buildWild({ id: 'route-mf-hollow', base: 'route-mf', name: 'Whisper Hollow', seed: 5502, types: ['Moss', 'Frost'], hub: [14, 13], grass: 6, doors: [{ edge: 'w', a: 12 }, { edge: 'n', a: 14 }], nooks: [{ x: 26, y: 21, r: 3 }, { x: 7, y: 6, r: 2 }], rare: 0,
+      objects: [{ id: 'hp-chest1', kind: 'chest', x: 26, y: 22, reward: { potion: 2, essence: 4 }, text: 'A chest, half sunk in the moss.' }, { id: 'hp-lantern', kind: 'lantern', gate: 'night', x: 7, y: 6, text: 'It is warm.' }] }),
+    lookout: buildWild({ id: 'route-mf-lookout', base: 'route-mf', name: 'Windy Lookout', seed: 5503, types: ['Frost', 'Moss'], hub: [16, 12], grass: 3, doors: [{ edge: 's', a: 8 }, { edge: 's', a: 24 }], nooks: [{ x: 9, y: 6, r: 2 }],
+      objects: [{ id: 'hp-ring', kind: 'ringstones', x: 9, y: 6, text: 'Stones, set in a circle by someone who was not in a hurry.' }] }),
     fork: buildWild({ id: 'route-mf-fork', base: 'route-mf', name: 'Frost Fork', seed: 5504, types: ['Frost', 'Moss'], hub: [17, 13], grass: 5, doors: [{ edge: 'w', a: 13 }, { edge: 'n', a: 24 }, { edge: 'e', a: 13 }] }),
     cliff: buildWild({ id: 'route-mf-cliff', base: 'route-mf', name: 'Hermit\u2019s Cliff', seed: 5505, types: ['Frost', 'Dusk'], hub: [20, 14], grass: 3, doors: [{ edge: 'e', a: 20 }], nooks: [{ x: 8, y: 13, r: 3 }, { x: 10, y: 22, r: 2 }], rare: 0,
-      objects: [{ id: 'hp-chest2', kind: 'chest', x: 8, y: 16, reward: { charm: 1, essence: 8 }, text: 'A small chest under the overhang.' }] })
+      objects: [{ id: 'hp-chest2', kind: 'chest', x: 8, y: 16, reward: { charm: 1, essence: 8 }, text: 'A small chest under the overhang.' }, { id: 'hp-cups', kind: 'cups', x: 6, y: 12, text: 'Two cups.' }] })
   };
   Object.keys(HP).forEach((k) => { const Mp = HP[k]; MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES['route-mf']; if (PXW.PAL['route-mf']) PXW.PAL[Mp.id] = PXW.PAL['route-mf']; });
   { const R = MAPS['route-mf'], cityN = MAPS.mossbrook, cityE = MAPS.frosthold;
@@ -412,10 +414,10 @@ const WORLD = (() => {
     connect(R, 'w', 20, HP.cliff, 'e', 20);                                // a way off the Pass into the cliff, with nothing pointing to it
     connect(HP.fork, 'e', 13, cityE, 'w', 13, null, [1.4, 14.2]);          // Frost Fork -> Frosthold's west door
     R.spawn = R.arriveFrom['route-mf-gate'];
-    addProp(HP.gate, 'cairn', [25, 7], 'Three notches are cut into the cairn: one east, one north, and one that somebody scratched out.');
-    addProp(HP.hollow, 'well', [20, 8], 'A moss-furred well. The water is cold and tastes faintly of snow.');
-    addProp(HP.lookout, 'cairn', [10, 7], 'From here the whole pass lies below you. The roads look neater from above than they ever do on foot.');
-    addProp(HP.cliff, 'cairn', [14, 10], 'Someone stacks a new stone on this cairn every season. There is no road to explain why.');
+    addProp(HP.gate, 'cairn', [25, 7], 'Notches in the stone. They were not all cut by the same hand.');
+    addProp(HP.hollow, 'well', [20, 8], 'A moss-furred well. The rope is new.');
+    addProp(HP.lookout, 'cairn', [10, 7], 'From here the pass lies below you like an open hand. You count the roads twice.');
+    addProp(HP.cliff, 'cairn', [14, 10], 'A new stone on the top. It is still dark from the rain.');
     const post = (Mp, edge, a, text) => { const [x, y] = { n: [a + 2, 1], s: [a + 2, Mp.H - 2], w: [1, a - 1], e: [Mp.W - 2, a - 1] }[edge]; Mp.grid[y][x] = 'G'; Mp.signs.push({ x: x, y: y, text: text }); };
     post(cityN, 'n', 32, 'North: the Highland Pass (Moss and Frost critters), the road to Frosthold.');
     post(cityE, 'w', 13, 'West: the Highland Pass (Moss and Frost critters), the road to Mossbrook.');

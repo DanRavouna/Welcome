@@ -1370,6 +1370,28 @@ const ADV = (() => {
     if (Math.sin(t * 5 + ph * 2) > 0.5) R(g, x + (big ? 8 : 5), y - h1 - 6, 2, 2, '#FFD86B');
   };
   const ART = {
+    // a lantern on a leaning post: lit, warm, and nobody near it
+    lantern(g, x, y, st, t, o) {
+      R(g, x + 8, y + 28, 16, 3, 'rgba(0,0,0,0.22)'); R(g, x + 15, y + 8, 3, 21, '#5A4A38'); R(g, x + 15, y + 8, 1, 21, '#7A664C'); R(g, x + 15, y + 8, 10, 3, '#5A4A38');
+      const f = 0.5 + 0.5 * Math.sin(t * 7 + o.x), gl = g.createRadialGradient(x + 23, y + 17, 1, x + 23, y + 17, 26 + f * 4); gl.addColorStop(0, 'rgba(255,214,120,0.55)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 6, y - 8, 58, 52);
+      R(g, x + 20, y + 11, 8, 11, OL); R(g, x + 21, y + 12, 6, 9, '#FFD27A'); R(g, x + 23, y + 14, 2, 5, '#FFF6D0'); R(g, x + 20, y + 10, 8, 2, OL);
+    },
+    // two cups on a flat stone; one still has steam
+    cups(g, x, y, st, t, o) {
+      R(g, x + 6, y + 26, 20, 3, 'rgba(0,0,0,0.22)'); R(g, x + 5, y + 20, 22, 7, OL); R(g, x + 6, y + 21, 20, 5, '#8E98AD'); R(g, x + 6, y + 21, 20, 2, '#B7BFCF');
+      R(g, x + 8, y + 14, 6, 7, OL); R(g, x + 9, y + 15, 4, 5, '#C9A26A'); R(g, x + 18, y + 14, 6, 7, OL); R(g, x + 19, y + 15, 4, 5, '#C9A26A');
+      const w = Math.sin(t * 2.2 + o.y); R(g, x + 20 + Math.round(w), y + 9, 1, 3, 'rgba(255,255,255,0.55)'); R(g, x + 21 - Math.round(w), y + 5, 1, 3, 'rgba(255,255,255,0.35)');
+    },
+    // a ring of small stones set by someone who was not in a hurry
+    ringstones(g, x, y) {
+      R(g, x + 2, y + 18, 28, 12, 'rgba(60,140,70,0.35)');
+      [[6, 20], [11, 17], [18, 17], [24, 20], [24, 26], [18, 29], [11, 29], [6, 26]].forEach(([a, b], i) => { R(g, x + a, y + b - 3, 5, 5, OL); R(g, x + a + 1, y + b - 2, 3, 3, i % 2 ? '#A8B2C6' : '#C9D0DE'); });
+    },
+    // a door standing alone, with nothing behind it
+    doorframe(g, x, y) {
+      R(g, x + 4, y + 28, 24, 3, 'rgba(0,0,0,0.22)'); R(g, x + 5, y - 14, 4, 43, OL); R(g, x + 23, y - 14, 4, 43, OL); R(g, x + 5, y - 15, 22, 4, OL);
+      R(g, x + 6, y - 13, 2, 41, '#8A6A44'); R(g, x + 24, y - 13, 2, 41, '#8A6A44'); R(g, x + 6, y - 14, 20, 2, '#A07E54'); R(g, x + 9, y - 10, 14, 38, 'rgba(120,160,200,0.10)');
+    },
     chest(g, x, y, st) {
       R(g, x + 3, y + 28, 26, 3, 'rgba(0,0,0,0.25)');
       R(g, x + 4, y + 14, 24, 14, OL); R(g, x + 6, y + 16, 20, 10, '#9A6330'); R(g, x + 6, y + 16, 20, 3, '#B8793C'); R(g, x + 6, y + 24, 20, 2, '#6E4420');
@@ -2351,13 +2373,15 @@ const WORLD = (() => {
   }
   // ---- Highland Pass: Mossbrook -> Gate -> the Pass proper (Kai, the old stones) -> Fork -> Frosthold, with a bypass over Whisper Hollow and the Windy Lookout and a hermit's cliff that has no road to it
   const HP = {
-    gate: buildWild({ id: 'route-mf-gate', base: 'route-mf', name: 'Highland Gate', seed: 5501, types: ['Moss', 'Frost'], hub: [16, 13], grass: 4, doors: [{ edge: 's', a: 16 }, { edge: 'n', a: 16 }, { edge: 'e', a: 12 }] }),
-    hollow: buildWild({ id: 'route-mf-hollow', base: 'route-mf', name: 'Whisper Hollow', seed: 5502, types: ['Moss', 'Frost'], hub: [14, 13], grass: 6, doors: [{ edge: 'w', a: 12 }, { edge: 'n', a: 14 }], nooks: [{ x: 26, y: 21, r: 3 }], rare: 0,
-      objects: [{ id: 'hp-chest1', kind: 'chest', x: 26, y: 22, reward: { potion: 2, essence: 4 }, text: 'A chest, half sunk in the moss.' }] }),
-    lookout: buildWild({ id: 'route-mf-lookout', base: 'route-mf', name: 'Windy Lookout', seed: 5503, types: ['Frost', 'Moss'], hub: [16, 12], grass: 3, doors: [{ edge: 's', a: 8 }, { edge: 's', a: 24 }], nooks: [{ x: 9, y: 6, r: 2 }] }),
+    gate: buildWild({ id: 'route-mf-gate', base: 'route-mf', name: 'Highland Gate', seed: 5501, types: ['Moss', 'Frost'], hub: [16, 13], grass: 4, doors: [{ edge: 's', a: 16 }, { edge: 'n', a: 16 }, { edge: 'e', a: 12 }], nooks: [{ x: 26, y: 6, r: 2 }],
+      objects: [{ id: 'hp-door', kind: 'doorframe', x: 26, y: 6, text: 'A door with nothing behind it. It does not open.' }] }),
+    hollow: buildWild({ id: 'route-mf-hollow', base: 'route-mf', name: 'Whisper Hollow', seed: 5502, types: ['Moss', 'Frost'], hub: [14, 13], grass: 6, doors: [{ edge: 'w', a: 12 }, { edge: 'n', a: 14 }], nooks: [{ x: 26, y: 21, r: 3 }, { x: 7, y: 6, r: 2 }], rare: 0,
+      objects: [{ id: 'hp-chest1', kind: 'chest', x: 26, y: 22, reward: { potion: 2, essence: 4 }, text: 'A chest, half sunk in the moss.' }, { id: 'hp-lantern', kind: 'lantern', gate: 'night', x: 7, y: 6, text: 'It is warm.' }] }),
+    lookout: buildWild({ id: 'route-mf-lookout', base: 'route-mf', name: 'Windy Lookout', seed: 5503, types: ['Frost', 'Moss'], hub: [16, 12], grass: 3, doors: [{ edge: 's', a: 8 }, { edge: 's', a: 24 }], nooks: [{ x: 9, y: 6, r: 2 }],
+      objects: [{ id: 'hp-ring', kind: 'ringstones', x: 9, y: 6, text: 'Stones, set in a circle by someone who was not in a hurry.' }] }),
     fork: buildWild({ id: 'route-mf-fork', base: 'route-mf', name: 'Frost Fork', seed: 5504, types: ['Frost', 'Moss'], hub: [17, 13], grass: 5, doors: [{ edge: 'w', a: 13 }, { edge: 'n', a: 24 }, { edge: 'e', a: 13 }] }),
     cliff: buildWild({ id: 'route-mf-cliff', base: 'route-mf', name: 'Hermit\u2019s Cliff', seed: 5505, types: ['Frost', 'Dusk'], hub: [20, 14], grass: 3, doors: [{ edge: 'e', a: 20 }], nooks: [{ x: 8, y: 13, r: 3 }, { x: 10, y: 22, r: 2 }], rare: 0,
-      objects: [{ id: 'hp-chest2', kind: 'chest', x: 8, y: 16, reward: { charm: 1, essence: 8 }, text: 'A small chest under the overhang.' }] })
+      objects: [{ id: 'hp-chest2', kind: 'chest', x: 8, y: 16, reward: { charm: 1, essence: 8 }, text: 'A small chest under the overhang.' }, { id: 'hp-cups', kind: 'cups', x: 6, y: 12, text: 'Two cups.' }] })
   };
   Object.keys(HP).forEach((k) => { const Mp = HP[k]; MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES['route-mf']; if (PXW.PAL['route-mf']) PXW.PAL[Mp.id] = PXW.PAL['route-mf']; });
   { const R = MAPS['route-mf'], cityN = MAPS.mossbrook, cityE = MAPS.frosthold;
@@ -2371,10 +2395,10 @@ const WORLD = (() => {
     connect(R, 'w', 20, HP.cliff, 'e', 20);                                // a way off the Pass into the cliff, with nothing pointing to it
     connect(HP.fork, 'e', 13, cityE, 'w', 13, null, [1.4, 14.2]);          // Frost Fork -> Frosthold's west door
     R.spawn = R.arriveFrom['route-mf-gate'];
-    addProp(HP.gate, 'cairn', [25, 7], 'Three notches are cut into the cairn: one east, one north, and one that somebody scratched out.');
-    addProp(HP.hollow, 'well', [20, 8], 'A moss-furred well. The water is cold and tastes faintly of snow.');
-    addProp(HP.lookout, 'cairn', [10, 7], 'From here the whole pass lies below you. The roads look neater from above than they ever do on foot.');
-    addProp(HP.cliff, 'cairn', [14, 10], 'Someone stacks a new stone on this cairn every season. There is no road to explain why.');
+    addProp(HP.gate, 'cairn', [25, 7], 'Notches in the stone. They were not all cut by the same hand.');
+    addProp(HP.hollow, 'well', [20, 8], 'A moss-furred well. The rope is new.');
+    addProp(HP.lookout, 'cairn', [10, 7], 'From here the pass lies below you like an open hand. You count the roads twice.');
+    addProp(HP.cliff, 'cairn', [14, 10], 'A new stone on the top. It is still dark from the rain.');
     const post = (Mp, edge, a, text) => { const [x, y] = { n: [a + 2, 1], s: [a + 2, Mp.H - 2], w: [1, a - 1], e: [Mp.W - 2, a - 1] }[edge]; Mp.grid[y][x] = 'G'; Mp.signs.push({ x: x, y: y, text: text }); };
     post(cityN, 'n', 32, 'North: the Highland Pass (Moss and Frost critters), the road to Frosthold.');
     post(cityE, 'w', 13, 'West: the Highland Pass (Moss and Frost critters), the road to Mossbrook.');
@@ -5918,7 +5942,7 @@ const APP = (() => {
     if (!(game && game.state.settings && game.state.settings.calm)) p.classList.add('drop');
   }
   // ---------- time of day ----------
-  function timeOfDay(d) { const h = (d || new Date()).getHours(); return h >= 21 || h < 5 ? 'night' : (h < 7 ? 'dawn' : (h >= 18 ? 'dusk' : 'day')); }
+  function timeOfDay(d) { if (typeof window.__tod === 'string') return window.__tod; /* test hook */ const h = (d || new Date()).getHours(); return h >= 21 || h < 5 ? 'night' : (h < 7 ? 'dawn' : (h >= 18 ? 'dusk' : 'day')); }
   // ---------- weather ----------
   const reduceMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
   function weatherAt(id) { // kind for a map, or null indoors / when the setting is off; window.__weather is a test override
@@ -6264,7 +6288,7 @@ const APP = (() => {
       { lv: 3, id: 'sorrel', name: 'Forager Sorrel', x: 11, y: 11, dir: 'down', kind: 'trainer', trainer: true, pal: { cap: true, c: '#6B8E23', y: '#C9A26A', Y: '#8A6A44' }, types: ['Bloom', 'Volt'], size: 3, stage: 2, pick: 0.5,
         intro: ['Hold on, traveler! Mossbrook greets newcomers with a battle.', 'My critters grew up on forest berries. Ready?'], winLine: 'Ha! You earned your welcome. Here is your reward.', beatenLines: ['Rest up and come back tomorrow. The berries will be ripe again.'] },
       { id: 'fennel', name: 'Fennel', x: 24, y: 15, kind: 'talk', pal: { h: '#E8E8F0', y: '#C0503A', Y: '#8A3A28' },
-        lines: ['Mossbrook was built around the old trees, not the other way around.', 'Elder Wren says a critter that rests well battles well.'] },
+        lines: ['Mossbrook was built around the old trees, not the other way around.', 'Elder Wren says a critter that rests well battles well.', 'Travellers come back from the Pass with the same story and different endings.'] },
       { id: 'bryn', name: 'Bryn', x: 16, y: 16, kind: 'talk', pal: { h: '#8A5A34', y: '#FFD86B', Y: '#E0A830' },
         lines: ['I saw a shiny critter once! It sparkled like the sun on the pond.', 'My mom says they are one in two hundred. I am still looking!'] }
     ];
@@ -6279,7 +6303,7 @@ const APP = (() => {
       { id: 'tove', name: 'Quartermaster Tove', x: 8, y: 10, kind: 'shop', pal: { h: '#E8E8F0', y: '#4A6A9A', Y: '#2E4A66' }, lines: ['Supplies for the cold road. Same goods as Sproutvale, packed for the snow.'] },
       { lv: 8, id: 'pike', name: 'Skier Pike', x: 15, y: 19, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' }, types: ['Frost', 'Tide'], size: 4, stage: 2, pick: 0.6,
         intro: ['Halt! Nobody enters Frosthold without a snowball fight.', 'Well, a critter battle. Same thing up here.'], winLine: 'Brr, you are tough. Here is your reward.', beatenLines: ['My critters need to thaw out. Tomorrow, rematch!'] },
-      { id: 'hilde', name: 'Hilde', x: 24, y: 15, kind: 'talk', pal: { h: '#E8C07A', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The palisade keeps out the wind, not the critters. They come and go as they like.', 'Glacia trains on the ice every morning. Her critters do not slip.'] },
+      { id: 'hilde', name: 'Hilde', x: 24, y: 15, kind: 'talk', pal: { h: '#E8C07A', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The palisade keeps out the wind, not the critters. They come and go as they like.', 'Some nights there is a light in the pass that is nobody\u2019s.', 'Glacia trains on the ice every morning. Her critters do not slip.'] },
       { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['They say a tower stands on Champion\u2019s Peak, up the trail north of Sproutvale\u2019s plaza.', 'Only trainers with all four Leader Seals may climb it.'] }
     ]);
     city('ember', 'cinderport', 'blaze', 'Welcome to Cinderport. I am Blaze, and this forge is my gym.', [
@@ -6312,7 +6336,7 @@ const APP = (() => {
     const near = (mapId, propId, dx, dy) => { const p = (M[mapId].props || []).find((q) => q.id === propId); return p ? spot(mapId, p.x + dx, p.y + dy) : spot(mapId, 10, 10); };
     const pers = (id, name, mapId, pos, pal, lines) => { (out[mapId] = out[mapId] || []).push({ id, name, x: pos[0], y: pos[1], dir: 'down', kind: 'talk', pal, lines }); };
     pers('edda', 'Scholar Edda', 'route-mf', near('route-mf', 'ruin', 5, 1), { h: '#3A2A1A', y: '#8E5BC8', Y: '#6B3FA0' }, ['These carvings show a critter of each type around one fire. I count eight.', 'Highland Pass joins Mossbrook and Frosthold. The arch is older than both.']);
-    pers('brandt', 'Hermit Brandt', 'route-mf-cliff', spot('route-mf-cliff', 9, 14), { h: '#BDBDBD', y: '#7A6A52', Y: '#5A4A38' }, ['Few find this ledge. The path does not want to be found, so I never signed it.', 'From down there the Pass looks like one road. It is not. Every road is a rumour somebody walked into being.']);
+    pers('brandt', 'Hermit Brandt', 'route-mf-cliff', spot('route-mf-cliff', 9, 14), { h: '#BDBDBD', y: '#7A6A52', Y: '#5A4A38' }, ['Oh. You came the long way, or the short one.', 'Sit if you like. The second cup is not for you, but it will not mind.']);
     pers('dell', 'Camper Dell', 'route-cm', near('route-cm', 'camp', 4, 1), { h: '#8A5A34', y: '#4FB06D', Y: '#2E6A2C' }, ['Ha, that is my camp! I only left to fill my flask at the well.', 'Ashwood Trail links Cinderport and Mossbrook. Ember and Moss critters roam here.']);
     pers('joss', 'Lamplighter Joss', 'route-fc', near('route-fc', 'lighthouse', 3, 3), { h: '#BDBDBD', y: '#C0503A', Y: '#8A3A28' }, ['I still trim the lamp every dusk. It guides nobody now, but it feels right.', 'Glacier Coast runs between Frosthold and Coralbay. Frost and Tide critters live along it.']);
     pers('neri', 'Beachcomber Neri', 'route-cc', near('route-cc', 'wreck', 5, 2), { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, ['Tide critters nest in the wreck. Do not poke them, they bite!', 'Reef Causeway links Coralbay and Cinderport. Tide and Ember critters share it.']);
@@ -6852,6 +6876,8 @@ const APP = (() => {
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
     setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
+    // things that only exist at certain hours (the lantern in Whisper Hollow burns at night and is gone by day)
+    let lastNight = null; setInterval(() => { if (!game || !WORLD.map) return; const id = WORLD.map.id, night = timeOfDay() === 'night'; if (id === 'route-mf-hollow' && night !== lastNight) { lastNight = night; WORLD.setGate(id, 'night', !night); } else if (id !== 'route-mf-hollow') lastNight = null; }, 500);
     // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel
     {
       let leadCache = { key: '', k: null }; const foePool = {}, benchCache = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');

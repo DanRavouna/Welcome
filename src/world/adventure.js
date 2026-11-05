@@ -108,6 +108,28 @@ const ADV = (() => {
     if (Math.sin(t * 5 + ph * 2) > 0.5) R(g, x + (big ? 8 : 5), y - h1 - 6, 2, 2, '#FFD86B');
   };
   const ART = {
+    // a lantern on a leaning post: lit, warm, and nobody near it
+    lantern(g, x, y, st, t, o) {
+      R(g, x + 8, y + 28, 16, 3, 'rgba(0,0,0,0.22)'); R(g, x + 15, y + 8, 3, 21, '#5A4A38'); R(g, x + 15, y + 8, 1, 21, '#7A664C'); R(g, x + 15, y + 8, 10, 3, '#5A4A38');
+      const f = 0.5 + 0.5 * Math.sin(t * 7 + o.x), gl = g.createRadialGradient(x + 23, y + 17, 1, x + 23, y + 17, 26 + f * 4); gl.addColorStop(0, 'rgba(255,214,120,0.55)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 6, y - 8, 58, 52);
+      R(g, x + 20, y + 11, 8, 11, OL); R(g, x + 21, y + 12, 6, 9, '#FFD27A'); R(g, x + 23, y + 14, 2, 5, '#FFF6D0'); R(g, x + 20, y + 10, 8, 2, OL);
+    },
+    // two cups on a flat stone; one still has steam
+    cups(g, x, y, st, t, o) {
+      R(g, x + 6, y + 26, 20, 3, 'rgba(0,0,0,0.22)'); R(g, x + 5, y + 20, 22, 7, OL); R(g, x + 6, y + 21, 20, 5, '#8E98AD'); R(g, x + 6, y + 21, 20, 2, '#B7BFCF');
+      R(g, x + 8, y + 14, 6, 7, OL); R(g, x + 9, y + 15, 4, 5, '#C9A26A'); R(g, x + 18, y + 14, 6, 7, OL); R(g, x + 19, y + 15, 4, 5, '#C9A26A');
+      const w = Math.sin(t * 2.2 + o.y); R(g, x + 20 + Math.round(w), y + 9, 1, 3, 'rgba(255,255,255,0.55)'); R(g, x + 21 - Math.round(w), y + 5, 1, 3, 'rgba(255,255,255,0.35)');
+    },
+    // a ring of small stones set by someone who was not in a hurry
+    ringstones(g, x, y) {
+      R(g, x + 2, y + 18, 28, 12, 'rgba(60,140,70,0.35)');
+      [[6, 20], [11, 17], [18, 17], [24, 20], [24, 26], [18, 29], [11, 29], [6, 26]].forEach(([a, b], i) => { R(g, x + a, y + b - 3, 5, 5, OL); R(g, x + a + 1, y + b - 2, 3, 3, i % 2 ? '#A8B2C6' : '#C9D0DE'); });
+    },
+    // a door standing alone, with nothing behind it
+    doorframe(g, x, y) {
+      R(g, x + 4, y + 28, 24, 3, 'rgba(0,0,0,0.22)'); R(g, x + 5, y - 14, 4, 43, OL); R(g, x + 23, y - 14, 4, 43, OL); R(g, x + 5, y - 15, 22, 4, OL);
+      R(g, x + 6, y - 13, 2, 41, '#8A6A44'); R(g, x + 24, y - 13, 2, 41, '#8A6A44'); R(g, x + 6, y - 14, 20, 2, '#A07E54'); R(g, x + 9, y - 10, 14, 38, 'rgba(120,160,200,0.10)');
+    },
     chest(g, x, y, st) {
       R(g, x + 3, y + 28, 26, 3, 'rgba(0,0,0,0.25)');
       R(g, x + 4, y + 14, 24, 14, OL); R(g, x + 6, y + 16, 20, 10, '#9A6330'); R(g, x + 6, y + 16, 20, 3, '#B8793C'); R(g, x + 6, y + 24, 20, 2, '#6E4420');
