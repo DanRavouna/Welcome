@@ -388,15 +388,15 @@ const WORLD = (() => {
   // a trail of lantern posts along the road between two doors (Meaning: the road is kept open by people you never meet). Only the posts are placed here; the app lights the one just ahead of you at dusk and night.
   function addTrail(M, fromEdge, toEdge, o) {
     o = o || {}; const kind = o.kind || 'postlamp', step = o.step || 7, start = o.start || 6;
-    const W = M.W, H = M.H, g = M.grid, ex = (edge) => M.exits.find((e) => e.edge === edge); const ea = ex(fromEdge), eb = ex(toEdge); if (!ea || !eb) return;
-    const cell = (e) => e.edge === 's' ? [e.a, H - 2] : e.edge === 'n' ? [e.a, 1] : e.edge === 'w' ? [1, e.a] : [W - 2, e.a], A = cell(ea), B = cell(eb), key = (x, y) => y * W + x;
+    const W = M.W, H = M.H, g = M.grid, ex = (edge) => M.exits.find((e) => e.edge === edge); const ea = ex(fromEdge), eb = typeof toEdge === 'string' ? ex(toEdge) : { point: toEdge }; if (!ea || !eb) return;
+    const cell = (e) => e.point ? (() => { let bc = null, bd = 1e9; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === '=') { const d = (x - e.point[0]) ** 2 + (y - e.point[1]) ** 2; if (d < bd) { bd = d; bc = [x, y]; } } return bc; })() : e.edge === 's' ? [e.a, H - 2] : e.edge === 'n' ? [e.a, 1] : e.edge === 'w' ? [1, e.a] : [W - 2, e.a], A = cell(ea), B = cell(eb), key = (x, y) => y * W + x;
     const prev = new Map([[key(A[0], A[1]), null]]), q = [A]; let found = null;
     while (q.length && !found) { const [x, y] = q.shift(); if (x === B[0] && y === B[1]) { found = [x, y]; break; } [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || prev.has(key(nx, ny)) || g[ny][nx] !== '=') return; prev.set(key(nx, ny), [x, y]); q.push([nx, ny]); }); }
     if (!found) return; const cells = []; for (let c = found; c; c = prev.get(key(c[0], c[1]))) cells.push(c); cells.reverse();
     const lamps = []; for (let i = start; i < cells.length - 5; i += step) {
       const [x, y] = cells[i]; let put = null;
       [[0, -2], [-2, 0], [0, 2], [2, 0], [-1, -2], [1, -2], [-2, -1], [-2, 1]].forEach(([dx, dy]) => { if (put) return; const nx = x + dx, ny = y + dy; if (nx < 3 || ny < 3 || nx > W - 4 || ny > H - 4) return; if (['.', ',', 'T'].indexOf(g[ny][nx]) === -1) return; for (let yy = ny - 1; yy <= ny + 1; yy++) for (let xx = nx - 1; xx <= nx + 1; xx++) if (g[yy][xx] === 'O' || g[yy][xx] === 'G') return; put = [nx, ny]; });
-      if (!put) continue; g[put[1]][put[0]] = 'O'; (M.objects = M.objects || []).push(Object.assign({ id: (kind === 'postlamp' ? 'post-' : kind + '-') + M.id + '-' + lamps.length, kind: kind, x: put[0], y: put[1], reach: 1.7, text: o.text || 'A lantern on a post.', trail: i }, o.wave ? { wave: { i: lamps.length, n: 0 } } : {})); lamps.push(i);
+      if (!put) continue; g[put[1]][put[0]] = 'O'; (M.objects = M.objects || []).push(Object.assign({ id: (kind === 'postlamp' ? 'post-' : kind + '-') + M.id + '-' + lamps.length, kind: kind, x: put[0], y: put[1], reach: 1.7, text: o.text || 'A lantern on a post.', trail: i }, o.wave ? { wave: { i: lamps.length, n: 0 } } : {}, o.own ? { own: true } : {})); lamps.push(i);
     }
     if (o.wave) M.objects.forEach((q) => { if (q.wave) q.wave.n = lamps.length; });
     if (!o.kind && !o.wave) M.trail = { cells: cells, lamps: lamps }; else (M.chains = M.chains || []).push({ kind: kind, count: lamps.length });
@@ -500,6 +500,12 @@ const WORLD = (() => {
     props: [['route-cc-pier', 'cairn', [24, 9], 'Shells in a spiral. Someone counted.'], ['route-cc-shoals', 'cairn', [10, 9], 'The tide line is higher on this side than it should be.'], ['route-cc-steam', 'cairn', [10, 20], 'Warm to the touch, in the middle of a cold hour.'], ['route-cc-drowned', 'cairn', [22, 9], 'Fruit trees, standing in the water. They are in blossom.']],
     posts: [['coralbay', 's', 28, 'South: the Reef Causeway (Tide and Ember critters), the road to Cinderport.'], ['cinderport', 'e', 13, 'East: the Reef Causeway (Tide and Ember critters), the road to Coralbay.']] });
   NETS.forEach(buildNet);
+  addTrail(MAPS.ascent, 's', [14, 10], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
+  addTrail(MAPS.descent, 'n', [14, 62], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
+  addSpot(MAPS.mossbrook, { id: 'c-growth', kind: 'growthpost', text: 'Notches, each a little higher than the last.' }, 19, 10, false);
+  addSpot(MAPS.frosthold, { id: 'c-kettle', kind: 'kettle', text: 'The kettle is hot. Two cups.' }, 29, 9, false);
+  addSpot(MAPS.cinderport, { id: 'c-bench', kind: 'workbench', text: 'Tools, laid out for the morning.' }, 21, 11, false);
+  addSpot(MAPS.coralbay, { id: 'c-lamp', kind: 'harborlamp', text: 'Left on.' }, 26, 16, false);
   addSpot(MAPS.moss, { id: 'z-sprouts', kind: 'sprouts', text: 'Rows of young plants. The soil is turned.' }, 9, 6, false);
   addSpot(MAPS.frost, { id: 'z-icelamp', kind: 'icelamp', text: 'A flame, held in the ice.' }, 26, 19, false);
   addSpot(MAPS.ember, { id: 'z-hearth', kind: 'hearth', text: 'Fresh logs.' }, 10, 20, false);

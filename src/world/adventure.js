@@ -199,6 +199,30 @@ const ADV = (() => {
       if (st.lit) { const gl = g.createRadialGradient(x + 5, y + 10, 1, x + 5, y + 10, 24); gl.addColorStop(0, 'rgba(255,214,120,0.6)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 20, y - 14, 50, 48); R(g, x + 2, y + 6, 6, 6, '#FFD27A'); } else R(g, x + 2, y + 6, 6, 6, '#3A3340');
       R(g, x + 1, y + 5, 8, 1, OL);
     },
+    // a post with notches cut at growing heights, one more for each seal you hold (st.n 1 to 5)
+    growthpost(g, x, y, st, t, o) {
+      const n = Math.max(1, Math.min(5, st.n | 0));
+      R(g, x + 8, y + 27, 16, 3, 'rgba(0,0,0,0.22)'); R(g, x + 12, y + 2, 8, 26, OL); R(g, x + 13, y + 3, 6, 24, '#A07E54'); R(g, x + 13, y + 3, 1, 24, '#C0985E');
+      for (let i = 0; i < n; i++) { R(g, x + 12 - (i % 2 ? 2 : 0), y + 24 - i * 4 - (i > 2 ? 1 : 0), 10, 2, OL); }
+    },
+    // a stove with a kettle that is steaming, and two cups
+    kettle(g, x, y, st, t, o) {
+      R(g, x + 3, y + 27, 26, 3, 'rgba(0,0,0,0.22)'); R(g, x + 6, y + 16, 20, 12, OL); R(g, x + 7, y + 17, 18, 10, '#6E6A66'); R(g, x + 10, y + 22, 12, 5, '#2A2420'); R(g, x + 14, y + 23, 4, 4, '#FFA03A');
+      R(g, x + 11, y + 9, 10, 8, OL); R(g, x + 12, y + 10, 8, 6, '#C9B088'); R(g, x + 20, y + 11, 4, 2, OL); const w = Math.round(Math.sin(t * 2) * 1);
+      R(g, x + 15 + w, y + 4, 2, 4, 'rgba(255,255,255,0.55)'); R(g, x + 14 - w, y + 0, 2, 4, 'rgba(255,255,255,0.35)'); R(g, x + 1, y + 21, 4, 5, OL); R(g, x + 2, y + 22, 2, 3, '#E8E0D0'); R(g, x + 27, y + 21, 4, 5, OL); R(g, x + 28, y + 22, 2, 3, '#E8E0D0');
+    },
+    // a bench with tools laid in a row and an apron on a peg
+    workbench(g, x, y, st, t, o) {
+      R(g, x + 2, y + 27, 28, 3, 'rgba(0,0,0,0.22)'); R(g, x + 3, y + 16, 26, 4, OL); R(g, x + 4, y + 17, 24, 2, '#A07E54'); R(g, x + 5, y + 20, 3, 8, OL); R(g, x + 24, y + 20, 3, 8, OL);
+      R(g, x + 6, y + 13, 8, 3, OL); R(g, x + 7, y + 14, 6, 1, '#8E98AD'); R(g, x + 16, y + 11, 2, 5, OL); R(g, x + 14, y + 11, 6, 2, OL); R(g, x + 22, y + 12, 5, 4, '#6E5030');
+      R(g, x + 27, y + 4, 2, 8, '#5A4A38'); R(g, x + 24, y + 8, 7, 9, OL); R(g, x + 25, y + 9, 5, 7, '#C0503A');
+    },
+    // a lamp left on at the harbour, lit at dusk and night (st.lit)
+    harborlamp(g, x, y, st, t, o) {
+      R(g, x + 9, y + 28, 14, 3, 'rgba(0,0,0,0.22)'); R(g, x + 14, y + 6, 4, 22, '#4A5878'); R(g, x + 11, y + 4, 10, 3, '#4A5878'); R(g, x + 11, y + 6, 10, 10, OL);
+      if (st.lit) { const gl = g.createRadialGradient(x + 16, y + 11, 1, x + 16, y + 11, 26); gl.addColorStop(0, 'rgba(255,214,120,0.6)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 12, y - 14, 56, 52); }
+      R(g, x + 12, y + 7, 8, 8, st.lit ? '#FFD27A' : '#3A3340');
+    },
     // two cups on a flat stone; one still has steam
     cups(g, x, y, st, t, o) {
       R(g, x + 6, y + 26, 20, 3, 'rgba(0,0,0,0.22)'); R(g, x + 5, y + 20, 22, 7, OL); R(g, x + 6, y + 21, 20, 5, '#8E98AD'); R(g, x + 6, y + 21, 20, 2, '#B7BFCF');
