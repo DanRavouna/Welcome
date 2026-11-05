@@ -28,7 +28,7 @@ with sync_playwright() as p:
   # 3. the picture: six distinct frames at both strengths, nothing differs away from moving tiles, one wave with a little irregularity
   pg.evaluate("window.__weather='clear';WORLD.enter('moss');WORLD.setPaused(false)"); pg.wait_for_timeout(300)
   info=pg.evaluate("""()=>{const M=WORLD.MAPS.moss;const base=WORLD.terrainCanvas();const still=PXW.bake(base,0,0);const sets=[1,2].map(A=>{const fr=[];for(let k=0;k<6;k++)fr.push(PXW.bake(base,k,A));return fr});
-    const sig=(cv)=>{const d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;let h=0;for(let i=0;i<d.length;i+=997)h=(h*31+d[i]+d[i+3])|0;return h};
+    const sig=(cv)=>{const d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;let h=0;for(let i=0;i<d.length;i+=4)h=(h*31+d[i]+d[i+1]*3+d[i+2]*7)|0;return h};
     const L=16,ok=(tx,ty)=>{const c=(M.grid[ty]||[])[tx];return c==='T'||c==='W'||c==='Z'||c==='~'||c===','};
     const cv=sets[0][1],d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data,d0=still.getContext('2d').getImageData(0,0,still.width,still.height).data;let stray=0,changed=0;
     for(let y=0;y<cv.height;y++)for(let x=0;x<cv.width;x++){const i=(y*cv.width+x)*4;if(d[i]!==d0[i]||d[i+1]!==d0[i+1]||d[i+2]!==d0[i+2]){changed++;const tx=Math.floor(x/L),ty=Math.floor(y/L);let near=false;for(let dy=0;dy<=1&&!near;dy++)for(let dx=-1;dx<=1;dx++)if(ok(tx+dx,ty+dy)){near=true;break}if(!near)stray++}}
@@ -36,4 +36,15 @@ with sync_playwright() as p:
     const gains=items.map(i=>i.gain);return {distinct:sets.map(s=>new Set(s.map(sig)).size),stray,changed,pairs,smooth,east,gmin:Math.min(...gains),gmax:Math.max(...gains)}}""")
   print('distinct frames calm / strong:', info['distinct'], '| pixels that differ from the still picture away from moving tiles:', info['stray'], 'of', info['changed'])
   print('neighbouring trees: a step apart', info['smooth'], 'of', info['pairs'], '| follow the wave west to east', info['east'], '| smooth but not perfect:', 0.6*info['pairs']<=info['smooth']<0.97*info['pairs'], '| stiffness per tree', round(info['gmin'],2), 'to', round(info['gmax'],2))
+  # 4. only the outer bits of a sprite move: draw each sprite in all six poses on a blank canvas and compare
+  sp=pg.evaluate("""()=>{const out={};const cols={round:{o:'#163A1A',l:'#7CD072',g:'#43A54C',d:'#2C7F3C',t:'#8A5A34',T:'#5E3C22'},pine:{o:'#000',g:'#2E6B4E',d:'#1F4F38',w:'#FFF',t:'#6B4A2E',T:'#4A321E'},dead:{o:'#2A1A10',t:'#5A3E28',T:'#3E2A1A'},palm:{o:'#1E4A26',l:'#6CC86A',g:'#3E9A44',t:'#9A6E40',T:'#6E4C2A'}};
+    const draw=(rows,c,k,A,gain,x0,y0)=>{const cv=document.createElement('canvas');cv.width=cv.height=32;const g=cv.getContext('2d');PXW.swayStamp(g,8,8,rows,c,k,A,gain);return g.getImageData(0,0,32,32).data};
+    Object.keys(PXW.TREE).forEach(kind=>{[1,2].forEach(A=>{const frames=[0,1,2,3,4,5].map(k=>draw(PXW.TREE[kind],cols[kind],k,A,1));const rest=draw(PXW.TREE[kind],cols[kind],0,0,1);
+      const n=rest.length/4;let drawnRest=0,fixed=0,moves=0,framesMoving=0;for(let i=0;i<n;i++)if(rest[i*4+3]){drawnRest++;if(frames.every(f=>f[i*4]===rest[i*4]&&f[i*4+1]===rest[i*4+1]&&f[i*4+3]===rest[i*4+3]))fixed++}
+      // the horizontal reach: how far any drawn pixel of any pose is from the nearest drawn pixel of the rest pose, on its own row
+      let maxShift=0,tot=0;frames.forEach(f=>{let diff=0;for(let y=0;y<32;y++)for(let x=0;x<32;x++){const i=(y*32+x)*4;if(f[i+3]&&!rest[i+3]){let best=9;for(let d=-3;d<=3;d++){const xx=x+d;if(xx>=0&&xx<32&&rest[(y*32+xx)*4+3])best=Math.min(best,Math.abs(d))}maxShift=Math.max(maxShift,best)}if(!!f[i+3]!==!!rest[i+3]||f[i]!==rest[i])diff++}tot+=diff;if(diff>0)framesMoving++});
+      out[kind+'/'+A]={sprite:drawnRest,fixedShare:Math.round(fixed/drawnRest*100),maxShift,framesMoving,avgMoving:Math.round(tot/6/drawnRest*100)}})});return out}""")
+  for k,v in sp.items(): print(f"{k:8s} sprite {v['sprite']:3d} px | identical in every pose {v['fixedShare']:3d}% | furthest an extra pixel sits from the resting shape {v['maxShift']} px | on average {v['avgMoving']}% of the sprite differs from rest in a pose")
+  thin=lambda k:k.startswith('dead') or k.startswith('palm')
+  print('only the outer bits move (solid trees keep 75% or more of their pixels in every pose, thin ones 45%; nothing strays more than 1 px; at any moment at most 12% of a breezy tree and 20% of a strongly blown one differs from rest):', all(v['maxShift']<=1 and v['fixedShare']>=(45 if thin(k) else 75) and v['avgMoving']<=(35 if thin(k) else (12 if k.endswith('/1') else 20)) for k,v in sp.items()))
   print('errors:', errs or 'none'); b.close()

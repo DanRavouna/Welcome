@@ -974,7 +974,7 @@ const WORLD = (() => {
     if ((opts.tint ? opts.tint() : 'day') === 'night') s *= 0.6;   // the night is calmer
     if (performance.now() < gustUntil) s = 1;
     const prev = windClass, cls = s < (prev === 0 ? 0.14 : 0.1) ? 0 : (s >= (prev === 2 ? 0.66 : 0.74) ? 2 : 1); windClass = cls;   // a little hysteresis, so a strength hovering at a threshold does not flicker
-    return { A: cls, fps: 2.5 + 2.5 * s, s: s };
+    return { A: cls, fps: 1.5 + 1.5 * s, s: s };
   }
   function draw() {
     if (!terrain || terrainFor !== M.id) return;
