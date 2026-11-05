@@ -8,13 +8,13 @@ with sync_playwright() as p:
     # map in real mode at level 3
     pg.evaluate("APP.game.update({settings:Object.assign({},APP.game.state.settings,{test:false}), xp:200})")
     pg.click('#b-menu'); pg.wait_for_timeout(150); pg.click('[data-tile="map"]'); pg.wait_for_timeout(200)
-    nodes=pg.locator('.mnode').all_inner_texts(); print('map nodes:'); [print('  ', n.replace('\n',' | ')) for n in nodes]
+    print('map cards:'); [print('  ', pg.evaluate("(id)=>{APP.mapSelect(id);return document.getElementById('wm-info').innerText.replace(/\\n/g,' | ')}", i)) for i in ['town','moss','frost','ember','tide']]
     pg.screenshot(path='/tmp/m_map.png')
-    print('travel buttons:', pg.locator('[data-travel]').evaluate_all("els=>els.map(e=>e.dataset.travel)"))
+    pg.evaluate("APP.mapSelect('frost')"); print('travel button in card:', pg.locator('#wm-info [data-travel]').evaluate_all("els=>els.map(e=>e.dataset.travel)"))
     pg.click('[data-travel="frost"]'); pg.wait_for_timeout(200); print('after travel:', pg.evaluate("WORLD.map.id"), '|', pg.inner_text('#loc-name'), '| toast:', pg.inner_text('#toast'))
     pg.click('#b-menu'); pg.click('[data-tile="map"]'); pg.wait_for_timeout(150)
-    print('here marker on frost:', 'You are here' in pg.locator('.mnode.n').inner_text(), '| moss travel from frost ->', end=' ')
-    pg.click('[data-travel="moss"]'); pg.wait_for_timeout(150); print(pg.evaluate("WORLD.map.id"))
+    print('here marker on frost:', 'You are here' in pg.evaluate("document.getElementById('wm-info').innerText"), '| moss travel from frost ->', end=' ')
+    pg.evaluate("APP.mapSelect('moss')"); pg.click('[data-travel="moss"]'); pg.wait_for_timeout(150); print(pg.evaluate("WORLD.map.id"))
     # gates now 3/6/9
     print('gates:', pg.evaluate("[6,9].map(()=>0) && (()=>{ const r=[]; for (const lv of [5,6,8,9]) { r.push(lv+':'+['ember','tide'].map(z=>z+(APP.game.levelInfo(0) && true ? '' : '')).join()); } return 'see map texts'; })()"))
     # day/night via faked clock

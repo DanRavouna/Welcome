@@ -157,13 +157,8 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .wm-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}.wm-head h2{margin:0;font-size:20px;font-weight:900}
 .wm-head button{width:44px;height:44px;border-radius:50%;border:0;background:#1E2A4A;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .wm-tod{margin:0 0 10px;font-size:13px;font-weight:800;color:#3A4868}
-.wm-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.mnode{display:flex;flex-direction:column;gap:3px;padding:8px;border-radius:14px;background:#fff;border:2px solid #1E2A4A;font-size:11px;font-weight:700;color:#3A4868;line-height:1.25;min-height:96px}
-.mnode b{font-size:13px;font-weight:900;color:#1E2A4A}
-.mnode.c{background:#FFF4C7}.mnode.locked{background:#E3E9F4;border-style:dashed}
-.mnode.here{border-color:#E0A830;box-shadow:0 0 0 3px #FFD86B}
-.mnode .wx{color:#2C5E9E;font-weight:800}.mnode .lk{color:#8A3A10;font-weight:900}.mnode .you{color:#8A6510;font-weight:900}
-.mnode button{margin-top:auto;min-height:36px;border:0;border-radius:999px;background:#1E2A4A;color:#fff;font:inherit;font-size:12px;font-weight:900;cursor:pointer}
+.wm-canvas,#wm-canvas{width:100%;display:block;border-radius:14px;background:#3B8BD0;margin:6px 0;touch-action:manipulation;border:2px solid #1E2A4A}#wm-canvas:focus-visible{outline:3px solid #FFD233;outline-offset:2px}
+.wm-info{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 12px;border-radius:14px;background:#fff;border:2px solid #1E2A4A;min-height:64px;margin-bottom:6px}.wmi-text{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:700;color:#3A4868;min-width:0}.wmi-text b{font-size:15px;font-weight:900;color:#1E2A4A}.wmi-text .wx{color:#2C5E9E;font-weight:800}.wmi-text .lk{color:#8A3A10;font-weight:900}.wmi-text .you{color:#8A6510;font-weight:900}.wm-info button{flex:none;min-height:44px;padding:0 16px;border:0;border-radius:999px;background:#1E2A4A;color:#fff;font:inherit;font-size:14px;font-weight:900;cursor:pointer}
 .bk-p{margin:6px 0;font-size:13px;font-weight:700;line-height:1.4;color:#3A4868}
 .bk-l{display:block;margin:10px 0 4px;font-size:14px;font-weight:900}
 #bk textarea{width:100%;box-sizing:border-box;border:2px solid #1E2A4A;border-radius:12px;padding:8px;font:12px ui-monospace,monospace;color:#1E2A4A;background:#fff;resize:none;word-break:break-all}
@@ -283,7 +278,9 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
     <div class="wm-panel">
       <div class="wm-head"><h2 id="wm-title">World map</h2><button id="wm-close" aria-label="Close map"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
       <p id="wm-tod" class="wm-tod"></p>
-      <div class="wm-grid" id="wm-grid"></div>
+      <canvas id="wm-canvas" tabindex="0" role="application" aria-label="World map"></canvas>
+      <div class="wm-info" id="wm-info" aria-live="polite"></div>
+      <p id="wm-count" class="wm-tod"></p>
     </div>
   </div>
   <div id="dev" role="dialog" aria-modal="true" aria-labelledby="dev-title" hidden>

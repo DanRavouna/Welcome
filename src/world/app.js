@@ -160,32 +160,124 @@ const APP = (() => {
     else { el.removeAttribute('role'); el.removeAttribute('aria-label'); el.removeAttribute('title'); }
     if (show && game.state.intro && game.state.caught.length) setTimeout(() => hint('weather', WEATHER.KINDS[k].label + ' in ' + mapName(id) + ': ' + WEATHER.KINDS[k].note + ' more often. Weather changes every 6 hours, and the Map shows each area\u2019s sky.'), 1600);
   }
-  // ---------- world map ----------
-  let mapOpen = false;
-  function renderMap() {
-    const st = game.state, lv = game.levelInfo(st.xp || 0).level, here = WORLD.map.id, test = game.props.noGates;
-    const seals = (st.npc && st.npc.seals) || [], seen = st.seen || [];
-    const TYPES = ['Ember', 'Tide', 'Moss', 'Volt', 'Frost', 'Dusk', 'Stone', 'Bloom'];
-    const zoneTypes = { frost: ['Frost', 'Stone'], ember: ['Ember', 'Volt'], moss: ['Moss', 'Bloom'], tide: ['Tide', 'Dusk'] };
-    const found = (z) => zoneTypes[z].reduce((n, t) => { const ti = TYPES.indexOf(t); return n + seen.filter((no) => Math.floor((no - 1) / 6) === ti).length; }, 0);
-    const card = (id) => {
-      if (id === 'town') return { id, name: 'Sproutvale', sub: 'Home, Lab, Shrine, Arena', open: true, lockTxt: '', seal: '', found: '', wx: weatherText(weatherAt('town')) };
+  // ---------- world map: one painted overview, with fast travel built in (tap a place, then Travel) ----------
+  let mapOpen = false, mapSel = null;
+  const ZTYPES = ['Ember', 'Tide', 'Moss', 'Volt', 'Frost', 'Dusk', 'Stone', 'Bloom'];
+  const ZONE_TYPES = { frost: ['Frost', 'Stone'], ember: ['Ember', 'Volt'], moss: ['Moss', 'Bloom'], tide: ['Tide', 'Dusk'] };
+  const CITY = { mossbrook: ['Mossbrook', 'past Moss Forest, to the west', 'Elder Wren’s gym'], frosthold: ['Frosthold', 'past Frost Peaks, to the north', 'Glacia’s gym'], cinderport: ['Cinderport', 'past Ember Fields, to the south', 'Blaze’s gym'], coralbay: ['Coralbay', 'past Tide Shore, to the east', 'Admiral Coral’s gym'], peak: ["Champion's Peak", 'up the trail north of the plaza', 'The Tower'], ascent: ['The Cold Ascent', 'through the north gate of Frosthold', 'A climb to an old beacon'], descent: ['The Cinder Descent', 'through the south gate of Cinderport', 'A descent to a buried forge'] };
+  // what the card under the map says about a place, and whether you can fast travel there
+  function placeCard(id) {
+    const st = game.state, lv = game.levelInfo(st.xp || 0).level, here = WORLD.map && WORLD.map.id, test = game.props.noGates, vis = st.visited || [];
+    const seals = (st.npc && st.npc.seals) || [], seen = st.seen || [], known = knownMaps();
+    const c = { id: id, name: '', lines: [], wx: weatherAt(id) ? weatherText(weatherAt(id)) : '', travel: false, status: '' };
+    if (id === 'town') { c.name = 'Sproutvale'; c.lines = ['Home, Lab, Shrine, Arena']; c.travel = true; }
+    else if (ZONE_NAMES[id]) {
       const L = LEADERS.find((x) => x.zone === id), open = test || lv >= GATES[id];
-      return { id, name: ZONE_NAMES[id], sub: zoneTypes[id].join(' and ') + ' critters', open, lockTxt: open ? '' : 'Opens at level ' + GATES[id], wx: weatherText(weatherAt(id)),
-        seal: L.name + (seals.indexOf(L.id) !== -1 ? ': seal earned' : ': not yet beaten'), found: found(id) + '/12 species found' };
-    };
-    const node = (id, cls) => { const c = card(id), isHere = here === id;
-      return '<div class="mnode ' + cls + (c.open ? '' : ' locked') + (isHere ? ' here' : '') + '"><b>' + c.name + '</b><span>' + c.sub + '</span>' +
-        (c.wx ? '<span class="wx">' + c.wx + '</span>' : '') + (c.found ? '<span>' + c.found + '</span>' : '') + (c.seal ? '<span>' + c.seal + '</span>' : '') + (c.lockTxt ? '<span class="lk">' + c.lockTxt + '</span>' : '') +
-        (isHere ? '<span class="you">You are here</span>' : (c.open ? '<button data-travel="' + id + '">Travel here</button>' : '')) + '</div>'; };
-    const vis = st.visited || [], CITY = [['mossbrook', 'Mossbrook', 'past Moss Forest, to the west', 'Elder Wren\u2019s gym'], ['frosthold', 'Frosthold', 'past Frost Peaks, to the north', 'Glacia\u2019s gym'], ['cinderport', 'Cinderport', 'past Ember Fields, to the south', 'Blaze\u2019s gym'], ['coralbay', 'Coralbay', 'past Tide Shore, to the east', 'Admiral Coral\u2019s gym'], ['peak', "Champion's Peak", 'up the trail north of the plaza', 'The Tower'], ['ascent', 'The Cold Ascent', 'through the north gate of Frosthold', 'A climb to an old beacon'], ['descent', 'The Cinder Descent', 'through the south gate of Cinderport', 'A descent to a buried forge']];
-    const cnode = ([id, name, where, what]) => { const v = test || vis.indexOf(id) !== -1, isHere = here === id;
-      return '<div class="mnode' + (v ? '' : ' locked') + (isHere ? ' here' : '') + '" style="min-width: 0; overflow-wrap: break-word"><b>' + (v ? name : 'Undiscovered') + '</b><span>' + (v ? what : 'Somewhere ' + where) + '</span>' + (v && weatherAt(id) ? '<span class="wx">' + weatherText(weatherAt(id)) + '</span>' : '') + (isHere ? '<span class="you">You are here</span>' : (v ? '<button data-travel="' + id + '">Travel here</button>' : '<span class="lk">Find it on foot first</span>')) + '</div>'; };
-    $('wm-grid').innerHTML = '<div></div>' + node('frost', 'n') + '<div></div>' + node('moss', 'w') + node('town', 'c') + node('tide', 'e') + '<div></div>' + node('ember', 's') + '<div></div>' +
-      '<div style="grid-column: 1 / -1; font-weight: 900; margin-top: 6px">Cities and the Peak</div>' + '<div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: inherit">' + CITY.map(cnode).join('') + '</div>';
+      const found = ZONE_TYPES[id].reduce((n, t) => { const ti = ZTYPES.indexOf(t); return n + seen.filter((no) => Math.floor((no - 1) / 6) === ti).length; }, 0);
+      c.name = ZONE_NAMES[id]; c.lines = [ZONE_TYPES[id].join(' and ') + ' critters', found + '/12 species found', L.name + (seals.indexOf(L.id) !== -1 ? ': seal earned' : ': not yet beaten')];
+      if (open) c.travel = true; else c.status = 'Opens at level ' + GATES[id];
+    } else if (CITY[id]) {
+      const v = test || vis.indexOf(id) !== -1;
+      if (v) { c.name = CITY[id][0]; c.lines = [CITY[id][2]]; c.travel = true; } else { c.name = 'Undiscovered'; c.lines = ['Somewhere ' + CITY[id][1]]; c.status = 'Find it on foot first'; c.wx = ''; }
+    } else {
+      const M = WORLD.MAPS[id], v = known.has(id);
+      if (v) { c.name = M ? M.name : id; c.lines = [MAP_LAYOUT[id] && MAP_LAYOUT[id][3] ? 'A place few people know' : 'A path between places']; c.status = 'Reach it on foot'; } else { c.name = 'Undiscovered'; c.lines = ['A path you have not walked yet']; c.wx = ''; }
+    }
+    if (here === id) { c.travel = false; c.status = 'You are here'; }
+    return c;
+  }
+  function renderCard() {
+    const c = placeCard(mapSel);
+    $('wm-info').innerHTML = '<div class="wmi-text"><b>' + c.name + '</b>' + c.lines.map((l) => '<span>' + l + '</span>').join('') + (c.wx ? '<span class="wx">' + c.wx + '</span>' : '') + (c.status && !c.travel ? '<span class="' + (c.status === 'You are here' ? 'you' : 'lk') + '">' + c.status + '</span>' : '') + '</div>' +
+      (c.travel ? '<button data-travel="' + mapSel + '">Travel here</button>' : '');
+  }
+  function mapSelect(id) { mapSel = id; renderLayout(); renderCard(); }
+  function renderMap() {
+    const here = WORLD.map && WORLD.map.id; if (!mapSel || !MAP_LAYOUT[mapSel]) mapSel = MAP_LAYOUT[here] ? here : 'town';
+    renderLayout(); renderCard();
     $('wm-tod').textContent = { night: 'Night: Dusk critters roam every zone.', dawn: 'Dawn', dusk: 'Dusk', day: 'Daytime' }[timeOfDay()] + (weatherAt('town') ? ' The weather changes at ' + String(WEATHER.nextChange().getHours()).padStart(2, '0') + ':00.' : '');
   }
-  function openMap() { closeMenu(true); mapOpen = true; renderMap(); $('wmap').hidden = false; $('hud').hidden = true; WORLD.setPaused(true); $('wm-close').focus(); }
+  // ---------- the overview: every regular place greyed out until you have been there; secret places only appear once found ----------
+  // which maps count as visited: the ones recorded, plus what the save implies for older saves (Sproutvale, and a zone whose trainer or leader you have beaten)
+  function knownMaps() {
+    const st = game.state, set = new Set(st.visited || []), npc = st.npc || {}, cleared = npc.cleared || [], seals = npc.seals || [];
+    set.add('town'); if (WORLD.map && !WORLD.map.interior) set.add(WORLD.map.id);
+    [['moss', 'ivy', 'wren'], ['frost', 'bram', 'glacia'], ['ember', 'kiki', 'blaze'], ['tide', 'marlo', 'coral']].forEach((z) => { if (cleared.indexOf(z[1]) !== -1 || seals.indexOf(z[2]) !== -1) set.add(z[0]); });
+    return set;
+  }
+  // the overview as data (also used by tests): nodes with a state, and the links between them
+  function layoutInfo() {
+    const known = knownMaps(), nodes = [], by = {};
+    Object.keys(MAP_LAYOUT).forEach((id) => { const L = MAP_LAYOUT[id], M = WORLD.MAPS[id]; if (!M) return; const lit = known.has(id), secret = !!L[3], state = lit ? 'lit' : (secret ? 'hidden' : 'grey'); const n = { id: id, x: L[0], y: L[1], size: L[2], secret: secret, state: state, name: M.name }; nodes.push(n); by[id] = n; });
+    const links = [], seen = {};
+    nodes.forEach((n) => { WORLD.MAPS[n.id].exits.forEach((e) => { const o = by[e.to]; if (!o) return; const k = [n.id, o.id].sort().join('|'); if (seen[k]) return; seen[k] = 1; if (n.state === 'hidden' || o.state === 'hidden') return; links.push({ a: n.id, b: o.id, state: n.state === 'lit' && o.state === 'lit' ? 'lit' : 'grey' }); }); });
+    return { nodes: nodes, links: links };
+  }
+  // the painted overview: sea, land, orange routes, coloured places. Visited = colour, not yet = grey, secrets = not drawn.
+  const LAND = { town: '#92CF68', moss: '#6DB551', frost: '#D6EAF5', ember: '#DE9A62', tide: '#EBDB9F', route: '#9CD170', mossbrook: '#80C45E', frosthold: '#D6EAF5', cinderport: '#DE9A62', coralbay: '#EBDB9F', peak: '#B9B0C8', ascent: '#D6EAF5', descent: '#DE9A62', dg: '#A99C86' };
+  const ICOL = { town: '#E0524A', moss: '#2F8A3C', frost: '#7DB8E0', ember: '#E0652A', tide: '#2D7FD0', mossbrook: '#3E8E3E', frosthold: '#5AA7D6', cinderport: '#C8502A', coralbay: '#1E9AA8', peak: '#7A6F96', ascent: '#5AA7D6', descent: '#C8502A' };
+  const kindOf = (id) => id === 'town' ? 'town' : ZONE_NAMES[id] ? 'zone' : id === 'peak' ? 'peak' : id === 'ascent' || id === 'descent' ? 'mark' : CITY[id] ? 'city' : id.indexOf('dg-') === 0 ? 'dg' : 'route';
+  const landOf = (id) => LAND[id] || (id.indexOf('dg-') === 0 ? LAND.dg : LAND.route);
+  function renderLayout() {
+    const cv = $('wm-canvas'), info = layoutInfo(), U = 40, CW = 12 * U, CH = 13 * U, dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = CW * dpr; cv.height = CH * dpr; cv.style.aspectRatio = CW + ' / ' + CH; const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const sea = c.createLinearGradient(0, 0, 0, CH); sea.addColorStop(0, '#58B2EA'); sea.addColorStop(1, '#3B8BD0'); c.fillStyle = sea; c.fillRect(0, 0, CW, CH);
+    c.strokeStyle = 'rgba(255,255,255,.22)'; c.lineWidth = 1.5; c.lineCap = 'round';
+    for (let x = 0; x < 12; x++) for (let y = 0; y < 13; y++) { const px = x * U + 8 + (y % 2) * 14, py = y * U + 22; c.beginPath(); c.moveTo(px, py); c.quadraticCurveTo(px + 5, py - 4, px + 10, py); c.quadraticCurveTo(px + 15, py + 4, px + 20, py); c.stroke(); }
+    const by = {}; info.nodes.forEach((n) => { by[n.id] = n; });
+    const vis = info.nodes.filter((n) => n.state !== 'hidden'), rad = (n) => { const k = kindOf(n.id); return (k === 'route' ? 0.9 : k === 'dg' ? 0.7 : k === 'mark' ? 0.8 : 1.2) * U; };
+    // land: a wide shallows ring, a sand ring, then the ground itself (grey until visited)
+    const paint = (extra, colN, colL) => {
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      info.links.forEach((l) => { const a = by[l.a], b = by[l.b]; c.beginPath(); c.moveTo(a.x * U, a.y * U); c.lineTo(b.x * U, b.y * U); c.lineWidth = 1.5 * U + extra; c.strokeStyle = colL(l); c.stroke(); });
+      vis.forEach((n) => { c.beginPath(); c.arc(n.x * U, n.y * U, rad(n) + extra / 2, 0, 7); c.fillStyle = colN(n); c.fill(); });
+    };
+    paint(30, () => 'rgba(150,215,245,.55)', () => 'rgba(150,215,245,.55)');
+    paint(12, (n) => n.state === 'lit' ? '#F6EBBE' : '#E4E6EB', (l) => l.state === 'lit' ? '#F6EBBE' : '#E4E6EB');
+    paint(0, (n) => n.state === 'lit' ? landOf(n.id) : '#BCC2CD', (l) => l.state === 'lit' ? LAND.route : '#BCC2CD');
+    // routes: orange where walked, thin grey where not
+    info.links.forEach((l) => { const a = by[l.a], b = by[l.b]; c.beginPath(); c.moveTo(a.x * U, a.y * U); c.lineTo(b.x * U, b.y * U); c.lineCap = 'round';
+      if (l.state === 'lit') { c.lineWidth = 8; c.strokeStyle = '#A85A14'; c.stroke(); c.lineWidth = 5; c.strokeStyle = '#F7A641'; c.stroke(); } else { c.lineWidth = 4; c.strokeStyle = '#8E95A3'; c.stroke(); } });
+    const here = WORLD.map && WORLD.map.id;
+    const glyph = (k, id, x, y, lit) => { c.fillStyle = c.strokeStyle = lit ? '#FFFFFF' : '#EEF0F3'; c.lineWidth = 2; c.lineCap = 'round';
+      if (k === 'town' || k === 'city') { c.fillRect(x - 6, y - 2, 12, 8); c.beginPath(); c.moveTo(x - 8, y - 2); c.lineTo(x, y - 9); c.lineTo(x + 8, y - 2); c.closePath(); c.fill(); }
+      else if (id === 'moss') { c.beginPath(); c.moveTo(x, y - 9); c.lineTo(x - 7, y + 3); c.lineTo(x + 7, y + 3); c.closePath(); c.fill(); c.fillRect(x - 1.5, y + 3, 3, 5); }
+      else if (id === 'frost') { for (let a = 0; a < 3; a++) { const t = a * Math.PI / 3; c.beginPath(); c.moveTo(x - Math.cos(t) * 8, y - Math.sin(t) * 8); c.lineTo(x + Math.cos(t) * 8, y + Math.sin(t) * 8); c.stroke(); } }
+      else if (id === 'ember') { c.beginPath(); c.moveTo(x, y - 9); c.quadraticCurveTo(x + 9, y + 1, x + 4, y + 7); c.lineTo(x - 4, y + 7); c.quadraticCurveTo(x - 9, y + 1, x, y - 9); c.fill(); }
+      else if (id === 'tide') { c.beginPath(); c.moveTo(x - 8, y - 2); c.quadraticCurveTo(x - 4, y - 7, x, y - 2); c.quadraticCurveTo(x + 4, y + 3, x + 8, y - 2); c.stroke(); c.beginPath(); c.moveTo(x - 8, y + 4); c.quadraticCurveTo(x - 4, y - 1, x, y + 4); c.quadraticCurveTo(x + 4, y + 9, x + 8, y + 4); c.stroke(); }
+      else if (k === 'peak') { c.beginPath(); c.moveTo(x - 11, y + 8); c.lineTo(x - 2, y - 8); c.lineTo(x + 4, y + 2); c.lineTo(x + 8, y - 4); c.lineTo(x + 13, y + 8); c.closePath(); c.fill(); }
+      else if (k === 'mark') { c.beginPath(); const d = id === 'ascent' ? -1 : 1; c.moveTo(x, y + d * 6); c.lineTo(x - 6, y - d * 5); c.lineTo(x + 6, y - d * 5); c.closePath(); c.fill(); } };
+    vis.forEach((n) => {
+      const k = kindOf(n.id), lit = n.state === 'lit', x = n.x * U, y = n.y * U, sel = n.id === mapSel;
+      let r = k === 'town' ? 17 : k === 'route' || k === 'dg' ? 7.5 : k === 'mark' ? 11 : k === 'peak' ? 16 : 15;
+      c.beginPath();
+      if (k === 'city' || k === 'town') { const s = r * 2 - 2; if (c.roundRect) c.roundRect(x - s / 2, y - s / 2, s, s, 5); else c.rect(x - s / 2, y - s / 2, s, s); } else c.arc(x, y, r, 0, 7);
+      c.fillStyle = lit ? (k === 'route' ? '#F7A641' : k === 'dg' ? '#7C6A52' : ICOL[n.id] || '#F7A641') : '#9AA1AE'; c.shadowColor = 'rgba(0,0,0,.3)'; c.shadowBlur = 4; c.shadowOffsetY = 2; c.fill(); c.shadowColor = 'transparent';
+      c.lineWidth = 3; c.strokeStyle = lit ? '#FFFFFF' : '#D5D9E0'; c.stroke();
+      glyph(k, n.id, x, y, lit);
+      if (sel) { c.beginPath(); c.arc(x, y, r + 7, 0, 7); c.lineWidth = 3; c.setLineDash([5, 4]); c.strokeStyle = '#1E2A4A'; c.stroke(); c.setLineDash([]); }
+      const named = k === 'town' || k === 'zone' || (lit && (k === 'city' || k === 'peak' || k === 'mark'));
+      if (named) { c.font = '800 11px system-ui,sans-serif'; c.textAlign = 'center'; c.lineWidth = 3.5; c.lineJoin = 'round'; c.strokeStyle = lit ? '#1E3A5F' : '#5B6577'; c.fillStyle = '#FFFFFF'; const ty = n.y > 12 ? y - r - 6 : y + r + 14; c.strokeText(n.name, x, ty); c.fillText(n.name, x, ty); }
+      if (n.id === here) { c.beginPath(); c.moveTo(x, y - r - 3); c.lineTo(x - 7, y - r - 14); c.lineTo(x + 7, y - r - 14); c.closePath(); c.fillStyle = '#FFD233'; c.lineWidth = 2.5; c.strokeStyle = '#7A4A00'; c.stroke(); c.fill(); }
+    });
+    const tot = info.nodes.filter((n) => !n.secret).length, got = info.nodes.filter((n) => n.state === 'lit' && !n.secret).length;
+    $('wm-count').textContent = 'Explored ' + got + ' of ' + tot + ' places. Tap a place to see it and travel.';
+    cv.setAttribute('aria-label', 'World map. ' + $('wm-count').textContent);
+    cv._nodes = info.nodes.filter((n) => n.state !== 'hidden');
+  }
+  function mapPick(x, y) { let best = null, bd = 0.85; (($('wm-canvas')._nodes) || []).forEach((n) => { const d = Math.hypot(n.x - x, n.y - y); if (d < bd) { bd = d; best = n; } }); return best; }
+  $('wm-canvas').addEventListener('click', (ev) => { const r = ev.currentTarget.getBoundingClientRect(), n = mapPick((ev.clientX - r.left) / r.width * 12, (ev.clientY - r.top) / r.height * 13); if (n) mapSelect(n.id); });
+  // keyboard: arrows move the selection to the nearest place in that direction, Enter travels
+  $('wm-canvas').addEventListener('keydown', (ev) => {
+    const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[ev.key];
+    if (ev.key === 'Enter') { const c = placeCard(mapSel); if (c.travel) travel(mapSel); ev.preventDefault(); return; }
+    if (!dir) return; ev.preventDefault();
+    const cur = ($('wm-canvas')._nodes || []).find((n) => n.id === mapSel); if (!cur) return; let best = null, bs = 1e9;
+    $('wm-canvas')._nodes.forEach((n) => { if (n === cur) return; const dx = n.x - cur.x, dy = n.y - cur.y, along = dx * dir[0] + dy * dir[1], across = Math.abs(dx * dir[1] - dy * dir[0]); if (along <= 0.2) return; const s = along + across * 1.6; if (s < bs) { bs = s; best = n; } });
+    if (best) mapSelect(best.id);
+  });
+  $('wm-info').addEventListener('click', (e) => { const t = e.target.closest('[data-travel]'); if (t) travel(t.dataset.travel); });
+  function openMap() { closeMenu(true); mapOpen = true; mapSel = null; renderMap(); $('wmap').hidden = false; $('hud').hidden = true; WORLD.setPaused(true); $('wm-close').focus(); }
   function closeMap() { mapOpen = false; $('wmap').hidden = true; $('hud').hidden = false; WORLD.setPaused(false); }
   function travel(id) {
     closeMap();
@@ -1178,7 +1270,7 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); applyLamp(); applyForge(); renderWeather(); if (game && (m.city || m.id === 'peak' || m.id === 'ascent' || m.id === 'descent') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
+      onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map
     });
@@ -1194,7 +1286,6 @@ const APP = (() => {
     });
     $('bg-list').addEventListener('click', (e) => { const u = e.target.closest('[data-use]'); if (u) useItem(u.dataset.use); });
     $('sh-list').addEventListener('click', (e) => { const u = e.target.closest('[data-buy]'); if (u) buy(u.dataset.buy); });
-    $('wm-grid').addEventListener('click', (e) => { const t = e.target.closest('[data-travel]'); if (t) travel(t.dataset.travel); });
     $('bk-close').addEventListener('click', closeBackup);
     $('bk-sync-now').addEventListener('click', () => { CLOUD.reconcile(); });
     wireAccount();
@@ -1274,6 +1365,6 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
