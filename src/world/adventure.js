@@ -157,6 +157,22 @@ const ADV = (() => {
       if (k > 0.02) { const f = 0.5 + 0.5 * Math.sin(t * 6 + o.x), gl = g.createRadialGradient(x + 17, y + 17, 1, x + 17, y + 17, (22 + f * 3) * (0.4 + 0.6 * k)); gl.addColorStop(0, 'rgba(255,214,120,' + (0.6 * k).toFixed(2) + ')'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 10, y - 10, 56, 56); }
       R(g, x + 14, y + 11, 8, 11, OL); R(g, x + 15, y + 12, 6, 9, k > 0.5 ? '#FFD27A' : '#3A3340'); if (k > 0.5) R(g, x + 17, y + 14, 2, 5, '#FFF6D0'); R(g, x + 14, y + 10, 8, 2, OL);
     },
+    // a camp fire on stones with a stack of split logs: nobody here, the stones are warm
+    camp(g, x, y, st, t, o) {
+      const dark = !!st.dark, f = Math.round(Math.sin(t * 8 + o.x) * 2) * 2;
+      R(g, x + 3, y + 27, 26, 3, 'rgba(0,0,0,0.22)'); R(g, x + 4, y + 18, 24, 10, OL); R(g, x + 5, y + 19, 22, 8, '#8E8A86'); R(g, x + 9, y + 21, 14, 5, '#3A3330');
+      R(g, x + 22, y + 10, 8, 10, OL); R(g, x + 23, y + 11, 6, 8, '#A87A48'); R(g, x + 23, y + 14, 6, 1, '#7A5230'); R(g, x + 23, y + 17, 6, 1, '#7A5230');
+      const gl = g.createRadialGradient(x + 14, y + 18, 1, x + 14, y + 18, dark ? 30 : 16); gl.addColorStop(0, 'rgba(255,150,60,' + (dark ? 0.5 : 0.22) + ')'); gl.addColorStop(1, 'rgba(255,150,60,0)'); g.fillStyle = gl; g.fillRect(x - 18, y - 12, 64, 56);
+      R(g, x + 10, y + 12 - f / 2, 8, 10 + f / 2, '#E8552A'); R(g, x + 12, y + 14 - f / 2, 4, 8 + f / 2, '#FFB03A'); R(g, x + 13, y + 18, 2, 4, '#FFE08A');
+    },
+    // things set down in a neat row on the shore: a sandal, a cup, a toy boat, a comb
+    returned(g, x, y, st, t, o) {
+      R(g, x + 6, y + 26, 20, 3, 'rgba(0,0,0,0.2)'); R(g, x + 8, y + 22, 16, 5, OL); R(g, x + 9, y + 23, 14, 3, '#9AA3B5');
+      if (o.v === 'sandal') { R(g, x + 9, y + 16, 5, 7, OL); R(g, x + 10, y + 17, 3, 5, '#B8793C'); R(g, x + 17, y + 16, 5, 7, OL); R(g, x + 18, y + 17, 3, 5, '#B8793C'); }
+      else if (o.v === 'cup') { R(g, x + 12, y + 14, 8, 9, OL); R(g, x + 13, y + 15, 6, 7, '#E8E0D0'); R(g, x + 20, y + 16, 3, 4, OL); R(g, x + 13, y + 15, 6, 1, '#8A7A6A'); }
+      else if (o.v === 'boat') { R(g, x + 9, y + 19, 14, 4, OL); R(g, x + 10, y + 20, 12, 2, '#C0503A'); R(g, x + 15, y + 12, 2, 8, OL); R(g, x + 17, y + 13, 5, 5, '#F4F6FA'); }
+      else { R(g, x + 9, y + 18, 14, 5, OL); R(g, x + 10, y + 19, 12, 3, '#E8C07A'); for (let i = 0; i < 6; i++) R(g, x + 10 + i * 2, y + 22, 1, 2, '#E8C07A'); }
+    },
     // two cups on a flat stone; one still has steam
     cups(g, x, y, st, t, o) {
       R(g, x + 6, y + 26, 20, 3, 'rgba(0,0,0,0.22)'); R(g, x + 5, y + 20, 22, 7, OL); R(g, x + 6, y + 21, 20, 5, '#8E98AD'); R(g, x + 6, y + 21, 20, 2, '#B7BFCF');

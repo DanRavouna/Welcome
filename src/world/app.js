@@ -763,6 +763,7 @@ const APP = (() => {
     const M = WORLD.map, tr = M && M.trail, now = performance.now(); if (now - lampStamp > 5) { lampDt = Math.min(0.1, (now - lampStamp) / 1000); lampStamp = now; } const dt = lampDt; let want = 0;
     const tod = timeOfDay(), dark = tod === 'night' || tod === 'dusk';
     if (o.always) want = dark ? 1 : 0;
+    else if (o.wave) want = dark && (Math.floor(now / 1100) % (o.wave.n + 3) === o.wave.i || Math.floor(now / 1100) % (o.wave.n + 3) === o.wave.i + 1) ? 1 : 0;
     else if (tr && dark) {
       const P = WORLD.pos(), px = P.x / 32, py = P.y / 32; let pi = 0, bd = 1e9; tr.cells.forEach((c, i) => { const d = (c[0] - px) * (c[0] - px) + (c[1] - py) * (c[1] - py); if (d < bd) { bd = d; pi = i; } });
       if (trailDir[M.id] === undefined) trailDir[M.id] = pi < tr.cells.length / 2 ? 1 : -1;
@@ -771,7 +772,7 @@ const APP = (() => {
     }
     const k = lampK[o.id] === undefined ? want : lampK[o.id]; lampK[o.id] = k + Math.sign(want - k) * Math.min(Math.abs(want - k), dt * 1.6); return { k: lampK[o.id] };
   }
-  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -1200,7 +1201,7 @@ const APP = (() => {
   function start2() {
     setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
     // things that only exist at certain hours (a lantern at night, ribbons at dusk, a boat at dawn, a light in the water at night): [gate id, true while the thing is GONE]
-    const WILD_RULES = { 'route-mf-hollow': [['night', (t) => t !== 'night']], 'route-cm-crossing': [['dusk', (t) => t !== 'dusk']], 'route-fc-skerry': [['dawn', (t) => t !== 'dawn']], 'route-cc-drowned': [['night', (t) => t !== 'night']] };
+    const WILD_RULES = { 'route-mf-hollow': [['night', (t) => t !== 'night']], 'route-cm-crossing': [['dusk', (t) => t !== 'dusk']], 'route-fc-skerry': [['dawn', (t) => t !== 'dawn']], 'route-cc-drowned': [['night', (t) => t !== 'night']], 'route-fc': [['dawn', (t) => t !== 'dawn']] };
     let ruleState = {}; const applyRules = () => { if (!game || !WORLD.map) return; const id = WORLD.map.id, rules = WILD_RULES[id]; if (!rules) { ruleState = {}; return; } const t = timeOfDay(); rules.forEach((r) => { const gone = !!r[1](t); if (ruleState[id + r[0]] !== gone) { ruleState[id + r[0]] = gone; WORLD.setGate(id, r[0], gone); } }); };
     setInterval(applyRules, 500);
     // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel

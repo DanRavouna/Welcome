@@ -386,18 +386,33 @@ const WORLD = (() => {
   const NETS = [];
   const NET_META = [];
   // a trail of lantern posts along the road between two doors (Meaning: the road is kept open by people you never meet). Only the posts are placed here; the app lights the one just ahead of you at dusk and night.
-  function addTrail(M, fromEdge, toEdge) {
+  function addTrail(M, fromEdge, toEdge, o) {
+    o = o || {}; const kind = o.kind || 'postlamp', step = o.step || 7, start = o.start || 6;
     const W = M.W, H = M.H, g = M.grid, ex = (edge) => M.exits.find((e) => e.edge === edge); const ea = ex(fromEdge), eb = ex(toEdge); if (!ea || !eb) return;
     const cell = (e) => e.edge === 's' ? [e.a, H - 2] : e.edge === 'n' ? [e.a, 1] : e.edge === 'w' ? [1, e.a] : [W - 2, e.a], A = cell(ea), B = cell(eb), key = (x, y) => y * W + x;
     const prev = new Map([[key(A[0], A[1]), null]]), q = [A]; let found = null;
     while (q.length && !found) { const [x, y] = q.shift(); if (x === B[0] && y === B[1]) { found = [x, y]; break; } [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || prev.has(key(nx, ny)) || g[ny][nx] !== '=') return; prev.set(key(nx, ny), [x, y]); q.push([nx, ny]); }); }
     if (!found) return; const cells = []; for (let c = found; c; c = prev.get(key(c[0], c[1]))) cells.push(c); cells.reverse();
-    const lamps = []; for (let i = 6; i < cells.length - 5; i += 7) {
+    const lamps = []; for (let i = start; i < cells.length - 5; i += step) {
       const [x, y] = cells[i]; let put = null;
       [[0, -2], [-2, 0], [0, 2], [2, 0], [-1, -2], [1, -2], [-2, -1], [-2, 1]].forEach(([dx, dy]) => { if (put) return; const nx = x + dx, ny = y + dy; if (nx < 3 || ny < 3 || nx > W - 4 || ny > H - 4) return; if (['.', ',', 'T'].indexOf(g[ny][nx]) === -1) return; for (let yy = ny - 1; yy <= ny + 1; yy++) for (let xx = nx - 1; xx <= nx + 1; xx++) if (g[yy][xx] === 'O' || g[yy][xx] === 'G') return; put = [nx, ny]; });
-      if (!put) continue; g[put[1]][put[0]] = 'O'; (M.objects = M.objects || []).push({ id: 'post-' + M.id + '-' + lamps.length, kind: 'postlamp', x: put[0], y: put[1], reach: 1.7, text: 'A lantern on a post.', trail: i }); lamps.push(i);
+      if (!put) continue; g[put[1]][put[0]] = 'O'; (M.objects = M.objects || []).push(Object.assign({ id: (kind === 'postlamp' ? 'post-' : kind + '-') + M.id + '-' + lamps.length, kind: kind, x: put[0], y: put[1], reach: 1.7, text: o.text || 'A lantern on a post.', trail: i }, o.wave ? { wave: { i: lamps.length, n: 0 } } : {})); lamps.push(i);
     }
-    M.trail = { cells: cells, lamps: lamps };
+    if (o.wave) M.objects.forEach((q) => { if (q.wave) q.wave.n = lamps.length; });
+    if (!o.kind && !o.wave) M.trail = { cells: cells, lamps: lamps }; else (M.chains = M.chains || []).push({ kind: kind, count: lamps.length });
+  }
+  // Glacier Coast: a neat row of small returned things beside the water at dawn, and an empty chair facing them (Meaning: what the sea gives back, and someone who tidies it before you wake)
+  function addShore(M) {
+    const W = M.W, H = M.H, g = M.grid, ok = (x, y) => x > 3 && y > 3 && x < W - 4 && y < H - 4 && ['.', ','].indexOf(g[y][x]) !== -1; let best = null;
+    const water = []; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === '~') water.push([x, y]);
+    for (let y = 4; y < H - 4; y++) for (let x = 4; x < W - 14; x++) {
+      let good = true; for (let k = 0; k < 10 && good; k++) for (let dy = -1; dy <= 1; dy++) if (!ok(x + k, y + dy)) good = false; if (!good) continue;
+      let near = false; for (let yy = y - 1; yy <= y + 1 && !near; yy++) for (let xx = x - 1; xx <= x + 10; xx++) if (g[yy] && g[yy][xx] === '=') near = true; if (near) continue;
+      const d = water.length ? Math.min.apply(null, water.map((w) => Math.abs(w[0] - (x + 5)) + Math.abs(w[1] - y))) : 0; if (!best || d < best.d) best = { x: x, y: y, d: d };
+    }
+    if (!best) return; const items = [['sandal', 'One sandal, set down heels together.'], ['cup', 'A cup, the right way up.'], ['boat', 'A toy boat, dry.'], ['comb', 'A comb. The teeth are all there.']];
+    items.forEach((it, i) => { const x = best.x + i * 2, y = best.y; g[y][x] = 'O'; (M.objects = M.objects || []).push({ id: 'shore-' + i, kind: 'returned', v: it[0], gate: 'dawn', x: x, y: y, reach: 1.7, text: it[1] }); });
+    g[best.y][best.x + 9] = 'O'; M.objects.push({ id: 'shore-chair', kind: 'chair', x: best.x + 9, y: best.y, reach: 1.7, text: 'An empty chair. It faces the row.' });
   }
   function buildNet(net) {
     net.maps.forEach((sp) => { sp.keep = (net.props || []).filter((pr) => pr[0] === sp.id).map((pr) => pr[2]); const Mp = buildWild(sp); MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES[sp.base]; if (PXW.PAL[sp.base]) PXW.PAL[Mp.id] = PXW.PAL[sp.base]; });
@@ -405,7 +420,8 @@ const WORLD = (() => {
     net.links.forEach((l) => connect(MAPS[l[0]], l[1], l[2], MAPS[l[3]], l[4], l[5], l[6] || null, l[7] || null));
     main.spawn = main.arriveFrom[net.spawnFrom];
     (net.props || []).forEach((pr) => addProp(MAPS[pr[0]], pr[1], pr[2], pr[3]));
-    (net.trail || []).forEach((t) => addTrail(MAPS[t[0]], t[1], t[2]));
+    (net.trail || []).forEach((t) => addTrail(MAPS[t[0]], t[1], t[2], t[3]));
+    if (net.shore) addShore(MAPS[net.shore]);
     const post = (Mp, edge, a, text) => { const xy = { n: [a + 2, 1], s: [a + 2, Mp.H - 2], w: [1, a - 1], e: [Mp.W - 2, a - 1] }[edge]; Mp.grid[xy[1]][xy[0]] = 'G'; Mp.signs.push({ x: xy[0], y: xy[1], text: text }); };
     (net.posts || []).forEach((pt) => post(MAPS[pt[0]], pt[1], pt[2], pt[3]));
     NET_META.push({ base: net.base, main: net.main, cityA: net.cityA, cityB: net.cityB, ids: [net.main].concat(net.maps.map((m) => m.id)) });
@@ -429,7 +445,7 @@ const WORLD = (() => {
       ['route-mf-lookout', 'cairn', [10, 9], 'From here the pass lies below you like an open hand. You count the roads twice.'], ['route-mf-cliff', 'cairn', [14, 10], 'A new stone on the top. It is still dark from the rain.']],
     posts: [['mossbrook', 'n', 32, 'North: the Highland Pass (Moss and Frost critters), the road to Frosthold.'], ['frosthold', 'w', 13, 'West: the Highland Pass (Moss and Frost critters), the road to Mossbrook.']] });
   // ---- Ashwood Trail: Cinderport -> Cinder Edge -> the trail proper (Elm, the camp) -> Mossroot Crossing -> Mossbrook; a bypass through Smoulder Wood; Charred Hollow is a dead end south of the trail
-  NETS.push({ base: 'route-cm', main: 'route-cm', cityA: 'cinderport', cityB: 'mossbrook', spawnFrom: 'route-cm-edge',
+  NETS.push({ base: 'route-cm', main: 'route-cm', cityA: 'cinderport', cityB: 'mossbrook', spawnFrom: 'route-cm-edge', trail: [['route-cm-edge', 'e', 'w', { kind: 'camp', step: 14, start: 9, text: 'The stones are warm.' }], ['route-cm', 'e', 'n', { kind: 'camp', step: 14, start: 9, text: 'The stones are warm.' }], ['route-cm-crossing', 's', 'n', { kind: 'camp', step: 14, start: 9, text: 'The stones are warm.' }]],
     maps: [
       { id: 'route-cm-edge', base: 'route-cm', name: 'Cinder Edge', seed: 6601, types: ['Ember', 'Moss'], hub: [17, 13], grass: 4, doors: [{ edge: 'e', a: 13 }, { edge: 'w', a: 13 }, { edge: 'n', a: 14 }] },
       { id: 'route-cm-smoulder', base: 'route-cm', name: 'Smoulder Wood', seed: 6602, types: ['Ember', 'Moss'], hub: [15, 14], grass: 5, doors: [{ edge: 's', a: 14 }, { edge: 'e', a: 12 }], nooks: [{ x: 8, y: 7, r: 2 }, { x: 25, y: 20, r: 3 }], rare: 1,
@@ -444,7 +460,7 @@ const WORLD = (() => {
     props: [['route-cm-edge', 'cairn', [24, 8], 'Soot on one side only.'], ['route-cm-smoulder', 'well', [18, 8], 'A well with no bucket and no rope.'], ['route-cm-crossing', 'cairn', [8, 20], 'Stones balanced so lightly that the wind should have won.'], ['route-cm-hollow', 'cairn', [22, 18], 'Ash, and one footprint pressed into it that has not filled in.']],
     posts: [['cinderport', 'w', 13, 'West: the Ashwood Trail (Ember and Moss critters), the road to Mossbrook.'], ['mossbrook', 's', 22, 'South: the Ashwood Trail (Ember and Moss critters), the road to Cinderport.']] });
   // ---- Glacier Coast: Frosthold -> Frozen Shelf -> the coast proper (Signe, the lighthouse) -> Gull Landing -> Coralbay; a bypass along Rime Strand; the Skerry is a dead end off the coast
-  NETS.push({ base: 'route-fc', main: 'route-fc', cityA: 'frosthold', cityB: 'coralbay', spawnFrom: 'route-fc-shelf',
+  NETS.push({ base: 'route-fc', main: 'route-fc', cityA: 'frosthold', cityB: 'coralbay', spawnFrom: 'route-fc-shelf', shore: 'route-fc',
     maps: [
       { id: 'route-fc-shelf', base: 'route-fc', name: 'Frozen Shelf', seed: 7701, types: ['Frost', 'Tide'], hub: [16, 13], grass: 4, doors: [{ edge: 'w', a: 13 }, { edge: 'e', a: 13 }, { edge: 's', a: 12 }] },
       { id: 'route-fc-strand', base: 'route-fc', name: 'Rime Strand', seed: 7702, types: ['Tide', 'Frost'], hub: [15, 14], grass: 5, doors: [{ edge: 'n', a: 12 }, { edge: 'e', a: 12 }], nooks: [{ x: 8, y: 20, r: 3 }], rare: 0,
@@ -458,7 +474,7 @@ const WORLD = (() => {
     props: [['route-fc-shelf', 'cairn', [24, 8], 'Frost on the south face. Dry on the north.'], ['route-fc-strand', 'cairn', [20, 9], 'Shells set in a line, smallest to largest. The last place is empty.'], ['route-fc-skerry', 'cairn', [12, 8], 'Something was weighed against these stones and taken away.']],
     posts: [['frosthold', 'e', 13, 'East: the Glacier Coast (Frost and Tide critters), the road to Coralbay.'], ['coralbay', 'n', 28, 'North: the Glacier Coast (Frost and Tide critters), the road to Frosthold.']] });
   // ---- Reef Causeway: Coralbay -> Pier Road -> the causeway proper (Mako, the wreck) -> Steamvent Flats -> Cinderport; a bypass over the Low Shoals; the Drowned Orchard is a dead end south of the causeway
-  NETS.push({ base: 'route-cc', main: 'route-cc', cityA: 'coralbay', cityB: 'cinderport', spawnFrom: 'route-cc-pier',
+  NETS.push({ base: 'route-cc', main: 'route-cc', cityA: 'coralbay', cityB: 'cinderport', spawnFrom: 'route-cc-pier', trail: [['route-cc-pier', 'n', 's', { wave: true, step: 6, start: 5 }], ['route-cc', 'n', 'w', { wave: true, step: 6, start: 5 }], ['route-cc-steam', 'e', 'w', { wave: true, step: 6, start: 5 }]],
     maps: [
       { id: 'route-cc-pier', base: 'route-cc', name: 'Pier Road', seed: 8801, types: ['Tide', 'Ember'], hub: [16, 13], grass: 4, doors: [{ edge: 'n', a: 16 }, { edge: 's', a: 16 }, { edge: 'e', a: 12 }] },
       { id: 'route-cc-shoals', base: 'route-cc', name: 'Low Shoals', seed: 8802, types: ['Tide', 'Ember'], hub: [15, 14], grass: 5, doors: [{ edge: 'w', a: 12 }, { edge: 's', a: 20 }], nooks: [{ x: 26, y: 8, r: 3 }], rare: 0,
