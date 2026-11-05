@@ -540,7 +540,7 @@ const APP = (() => {
     };
     zone('frost', [
       { lv: 5, id: 'glacia', name: 'Glacia', at: 'leader', kind: 'leader', leader: true, pal: { h: '#DCEBFF', y: '#8FD8EA', Y: '#5E97AE', p: '#2E4A66' }, types: ['Frost', 'Stone'], size: 4, stage: 2, pick: 0.75, firstReward: 25, needs: 'bram',
-        intro: ['I am Glacia, leader of Frost Peaks.', 'My critters were born in the snow. They do not melt easily.'], winLine: 'You thawed my whole team. The Frost Seal is yours.', sealLine: 'Carry the Frost Seal with pride. Ember Fields awaits at level 6.', beatenLines: ['Rest by the fire, trainer. We can battle again tomorrow.'] },
+        intro: ['I am Glacia, leader of Frost Peaks.', 'My critters were born in the snow. They do not melt easily.'], winLine: 'The cold keeps what it is given. Take the Frost Seal. It will keep.', sealLine: 'The Frost Seal is quiet. Quiet fires last longest. Ember Fields awaits at level 6.', beatenLines: ['Rest by the fire, trainer. We can battle again tomorrow.'] },
       { lv: 9, id: 'bram', name: 'Hiker Bram', at: 'trainer', kind: 'trainer', trainer: true, pal: { cap: true, c: '#C0392B', y: '#8A5A34', Y: '#6B4626' }, types: ['Frost', 'Stone'], size: 4, stage: 2, pick: 0.5,
         intro: ['These peaks make critters tough.', 'Think yours can handle the cold?'], winLine: 'You climbed right over me! Well earned.', beatenLines: ['My critters need a rest. Tomorrow, then!'] },
       { id: 'sola', name: 'Sola', at: 'entrance', kind: 'request', pal: { h: '#F5D36A', y: '#9CC9D9', Y: '#5E97AE' }, need: 'stone', reward: 6,
@@ -549,7 +549,7 @@ const APP = (() => {
     ]);
     zone('ember', [
       { lv: 15, id: 'blaze', name: 'Blaze', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#1E1A2A', y: '#FF7A45', Y: '#C2410C' }, types: ['Ember', 'Volt'], size: 4, stage: 3, pick: 0.55, firstReward: 30, needs: 'kiki',
-        intro: ['So you made it to the heart of Ember Fields.', 'I am Blaze. My team burns at full power. Ready?'], winLine: 'Unreal. You put out every flame. Take the Ember Seal.', sealLine: 'The Ember Seal suits you. Tide Shore opens at level 9.', beatenLines: ['My flames need to rekindle. Come back tomorrow!'] },
+        intro: ['So you made it to the heart of Ember Fields.', 'I am Blaze. My team burns at full power. Ready?'], winLine: 'You did not put it out. You fed it. Take the Ember Seal.', sealLine: 'This one wants feeding every day. Tide Shore opens at level 9.', beatenLines: ['My flames need to rekindle. Come back tomorrow!'] },
       { lv: 10, id: 'kiki', name: 'Kiki', at: 'trainer', kind: 'trainer', trainer: true, pal: { h: '#F28C28', y: '#D8574A', Y: '#A8382E' }, types: ['Ember', 'Volt'], size: 3, stage: 2, pick: 0.55,
         intro: ['It is hot out here, and so are my critters!', 'Ready to feel the heat?'], winLine: 'Okay, okay, you win. That was electric!', beatenLines: ['My team is still cooling down. Come back tomorrow!'] },
       { id: 'dax', name: 'Dax', at: 'entrance', kind: 'request', pal: { cap: true, c: '#F5C542', y: '#4A5878', Y: '#2B3555' }, need: 'evolved', reward: 8,
@@ -558,7 +558,7 @@ const APP = (() => {
     ]);
     zone('moss', [
       { lv: 11, id: 'wren', name: 'Elder Wren', at: 'leader', kind: 'leader', leader: true, pal: { h: '#E8E8F0', y: '#4E6B19', Y: '#2E4210', p: '#4A3424' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.6, firstReward: 20, needs: 'ivy',
-        intro: ['Welcome, young trainer. I am Elder Wren, leader of Moss Forest.', 'Show me that you and your critters grow together.'], winLine: 'You have grown strong. The Moss Seal is yours.', sealLine: 'The Moss Seal marks your first step. Frost Peaks opens at level 3.', beatenLines: ['The forest needs rest. Visit me again tomorrow.'] },
+        intro: ['Welcome, young trainer. I am Elder Wren, leader of Moss Forest.', 'Show me that you and your critters grow together.'], winLine: 'It grows because someone stays beside it. Stay a while. The Moss Seal.', sealLine: 'The first fire is the easiest to keep. Frost Peaks opens at level 3.', beatenLines: ['The forest needs rest. Visit me again tomorrow.'] },
       { lv: 4, id: 'ivy', name: 'Ivy', at: 'trainer', kind: 'trainer', trainer: true, pal: { h: '#2E7D32', y: '#F5A3D0', Y: '#D86BA6' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.3,
         intro: ['Shh, the forest is listening.', 'Let us give it a battle worth hearing.'], winLine: 'Beautifully done. The forest approves.', beatenLines: ['Let the forest rest today. Tomorrow we can battle again.'] },
       { id: 'oak', name: 'Old Oak', at: 'talk', kind: 'talk', pal: { h: '#BDBDBD', y: '#6B8E23', Y: '#4E6B19' },
@@ -566,7 +566,7 @@ const APP = (() => {
     ]);
     zone('tide', [
       { lv: 14, id: 'coral', name: 'Admiral Coral', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#F8F8F8', y: '#1E2A4A', Y: '#0E1A38', p: '#1E2A4A' }, types: ['Tide', 'Dusk'], size: 5, stage: 3, pick: 0.75, firstReward: 35, needs: 'marlo',
-        intro: ['Admiral Coral, leader of Tide Shore. Five critters, every one a veteran of the storm.', 'Beat me, and you hold every seal in the land.'], winLine: 'A perfect voyage. The Tide Seal is yours, champion.', sealLine: 'With the Tide Seal, your journey is complete.', beatenLines: ['My fleet is in the harbor. Challenge me again tomorrow.'] },
+        intro: ['Admiral Coral, leader of Tide Shore. Five critters, every one a veteran of the storm.', 'Win, and you will have tended every fire in the land.'], winLine: 'The sea gives back what it is given. The Tide Seal is yours.', sealLine: 'Four fires. Someone left a light on for you. Perhaps they still do. The trail north of Sproutvale is open.', beatenLines: ['My fleet is in the harbor. Challenge me again tomorrow.'] },
       { lv: 19, id: 'marlo', name: 'Captain Marlo', at: 'trainer', kind: 'trainer', trainer: true, pal: { cap: true, c: '#1E2A4A', y: '#FFFFFF', Y: '#C9D3E6' }, types: ['Tide', 'Dusk'], size: 4, stage: 3, pick: 0.4,
         intro: ['Ahoy! Four critters, one captain.', 'Can your crew weather all of them?'], winLine: 'You sailed through my whole crew! A fine captain you would make.', beatenLines: ['My crew is resting below deck. Tomorrow, sailor!'] },
       { id: 'nell', name: 'Nell', at: 'entrance', kind: 'request', pal: { h: '#6B3E1E', y: '#3C95DC', Y: '#2A6FB0' }, need: 'rare', reward: 8,
