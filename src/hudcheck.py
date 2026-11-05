@@ -2,7 +2,7 @@
 from playwright.sync_api import sync_playwright
 import sys
 JS = """() => {
-  const sel = { plank: '#plank', goal: '#goal', rolls: '#c-rolls', essence: '#c-ess', level: '#c-lv', menu: '#b-menu', joystick: '#stick', action: '#act' };
+  const sel = { plank: '#plank', rolls: '#c-rolls', essence: '#c-ess', level: '#c-lv', menu: '#b-menu', joystick: '#stick', action: '#act' };
   const R = {}; for (const k in sel) { let el = document.querySelector(sel[k]); if (!el) continue; if (el.closest('.chip')) el = el.closest('.chip'); if (el.closest('[hidden]')) continue; const r = el.getBoundingClientRect(); if (r.width) R[k] = r; }
   const out = [], keys = Object.keys(R), W = innerWidth;
   for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) { const a = R[keys[i]], b = R[keys[j]];

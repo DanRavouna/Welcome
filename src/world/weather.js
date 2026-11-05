@@ -26,7 +26,7 @@ const WEATHER = (() => {
   Object.keys(ROUTE_MIX).forEach((r) => { const c = {}; ROUTE_MIX[r].forEach((k) => { const w = CLIMATE[k]; Object.keys(w).forEach((x) => { c[x] = (c[x] || 0) + w[x] / 2; }); }); CLIMATE[r] = c; });
   // cities share the sky of the zone next to them
   const REGION = { descent: 'ember', ascent: 'peak', town: 'town', peak: 'peak', moss: 'moss', mossbrook: 'moss', frost: 'frost', frosthold: 'frost', ember: 'ember', cinderport: 'ember', tide: 'tide', coralbay: 'tide' };
-  function region(mapId) { return REGION[mapId] || (CLIMATE[mapId] ? mapId : null); }
+  function region(mapId) { return REGION[mapId] || (CLIMATE[mapId] ? mapId : null) || (typeof mapId === 'string' && mapId.indexOf('route-') === 0 && mapId.length > 8 ? region(mapId.slice(0, 8)) : null); }   // a route's side maps share its sky
   function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13; return (h >>> 0) / 4294967296; }
   function blockOf(d) { return Math.floor(d.getHours() / BLOCK_H); }
   function key(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + '#' + blockOf(d); }

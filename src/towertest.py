@@ -22,7 +22,6 @@ with sync_playwright() as p:
   print('near:', pg.inner_text('#act-label'))
   pg.click('#act'); print('locked toast:', pg.inner_text('#toast'))
   pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{seals:['wren','glacia','blaze','coral']})})")
-  print('goal:', pg.inner_text('#goal-text'))
   pg.click('#act'); pg.wait_for_timeout(50); print('lobby:', pg.evaluate("APP.dialog.lines.join(' / ')"))
   adv(pg); pg.click('#dlg-choices button >> nth=0'); pg.wait_for_timeout(200)
   print('title:', pg.evaluate("APP.game.renderVals().screenTitle"), '| note:', pg.evaluate("APP.game.renderVals().matchupNote"))
@@ -37,7 +36,7 @@ with sync_playwright() as p:
   pg.evaluate("APP.close()"); pg.wait_for_timeout(120); print('after dialog:', pg.evaluate("APP.dialog && APP.dialog.lines.join(' / ')"))
   # reload keeps run
   pg.reload(); pg.wait_for_timeout(1100)
-  print('after reload run:', pg.evaluate("JSON.stringify(APP.game.state.tower)"), '| goal:', pg.inner_text('#goal-text'))
+  print('after reload run:', pg.evaluate("JSON.stringify(APP.game.state.tower)"))
   # pause mid battle keeps HP, resets foes
   pg.evaluate("WORLD.enter('peak'); WORLD.setPos(12.9*WORLD.TS, 9.4*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(100)
   print('dbg', pg.evaluate("JSON.stringify([WORLD.nearest()&&WORLD.nearest().kind, !!APP.dialog, document.getElementById('hud').hidden, document.getElementById('act').disabled, document.getElementById('act-label').textContent, document.getElementById('tip').hidden])")); pg.click('#act', timeout=3000); pg.wait_for_timeout(50)

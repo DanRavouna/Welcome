@@ -189,9 +189,6 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .bk-file{display:flex;align-items:center;justify-content:center;box-sizing:border-box;background:#fff!important;color:#1E2A4A!important;border:2px solid #1E2A4A!important}
 .bk-file:focus-within,#bk-file:focus-visible+*{outline:3px solid #FFD86B}
 .lcol{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;flex:1 1 auto;max-width:190px}
-.goal{display:flex;align-items:center;gap:6px;max-width:100%;min-height:44px;box-sizing:border-box;padding:5px 10px 5px 8px;border-radius:10px;border:1.5px solid rgba(255,255,255,.55);background:rgba(14,26,56,.8);color:#fff;font:inherit;font-size:12px;font-weight:800;line-height:1.25;text-align:left;cursor:pointer}
-.goal[aria-pressed="false"]{opacity:.7}.goal[aria-pressed="false"] svg{opacity:.4}
-.goal svg{flex-shrink:0}
 .slist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}
 .scard{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px;border-radius:14px;background:#fff;border:1.5px solid #D5DEEE;text-align:center}
 .scard img{width:100%;height:auto;max-width:120px;image-rendering:pixelated;background:linear-gradient(180deg,#4F8FE0 0 58%,#74C25C 58%);border-radius:10px}
@@ -224,7 +221,7 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
   <div id="hud">
     <div class="top">
       <div class="lcol"><div class="plank" id="plank"><b id="loc-name">Sproutvale</b><span id="loc-wx" class="wx"></span></div>
-      <button class="goal" id="goal" aria-pressed="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFD86B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg><span id="goal-text"></span></button></div>
+</div>
       <div class="rcol">
       <div class="chips">
         <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A7F04A" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"></path></svg><span id="c-rolls"></span></span>

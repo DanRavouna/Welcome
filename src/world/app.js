@@ -17,7 +17,7 @@ const APP = (() => {
     $('c-lv').textContent = 'Lv ' + lv.level;
     const ready = (game.questsFor(st).items || []).filter((q) => !q.claimed && q.progress >= game.questDefs()[q.key].target).length;
     $('b-menu-dot').hidden = ready === 0;
-    renderGoal(); checkHints();
+    checkHints();
     if (open) renderScreen();
   }
   function showScreen() {
@@ -287,37 +287,8 @@ const APP = (() => {
   let pendingImport = null;
   function openBackup() { cloudStatus(); closeMenu(true); $('bk').hidden = false; $('hud').hidden = true; WORLD.setPaused(true); $('bk-out').value = exportCode(); $('bk-in').value = ''; $('bk-msg').textContent = ''; $('bk-restore').textContent = 'Check code'; pendingImport = null; $('bk-close').focus(); }
   function closeBackup() { $('bk').hidden = true; $('hud').hidden = false; WORLD.setPaused(false); }
-  // ---------- guidance: next objective, hints, first-time intro ----------
+  // ---------- guidance: next hints, first-time intro ----------
   const npcAt = (map, id) => { const n = (WORLD.allNpcs()[map] || []).find((x) => x.id === id); return n ? { map: map, x: n.x, y: n.y } : null; };
-  function objective() {
-    const st = game.state, lv = game.levelInfo(st.xp || 0).level, npc = st.npc || {}, cleared = npc.cleared || [], seals = npc.seals || [], done = npc.done || [];
-    const seen = (st.seen || []).length, n = st.caught.length, test = game.props.testMode;
-    if (!n) return { text: 'Choose your first critter with Professor Fern', target: npcAt('town', 'fern') };
-    if (n < 3) return { text: 'Find critters in the tall grass (' + n + '/3)', target: { grass: true } };
-    if (game.partySeeds().length < Math.min(3, n)) return { text: 'Add critters to your party: Menu, then Party', target: null };
-    if (cleared.indexOf('rowan') === -1) return { text: 'Beat Rowan in Sproutvale', target: npcAt('town', 'rowan') };
-    if (done.indexOf('fern') === -1) return seen >= 5 ? { text: 'Show Professor Fern your 5 species', target: npcAt('town', 'fern') } : { text: 'Discover 5 species for Professor Fern (' + seen + '/5)', target: { grass: true } };
-    const ZT = { moss: ['ivy', 'Ivy', 'wren', 'Elder Wren'], frost: ['bram', 'Hiker Bram', 'glacia', 'Glacia'], ember: ['kiki', 'Kiki', 'blaze', 'Blaze'], tide: ['marlo', 'Captain Marlo', 'coral', 'Admiral Coral'] };
-    for (const z of ['moss', 'frost', 'ember', 'tide']) {
-      const [tid, tname, lid, lname] = ZT[z];
-      if (seals.indexOf(lid) !== -1) continue;
-      if (!test && lv < GATES[z]) return { text: 'Reach trainer level ' + GATES[z] + ' to open ' + ZONE_NAMES[z] + ' (now ' + lv + ')', target: { grass: true } };
-      if (cleared.indexOf(tid) === -1) return { text: 'Beat ' + tname + ' in ' + ZONE_NAMES[z], target: npcAt(z, tid) };
-      const lh = npcHome(lid) || z; return { text: 'Challenge ' + lname + ' in ' + mapName(lh), target: npcAt(lh, lid) };
-    }
-    const tw = game.towerState();
-    if (tw.run) return { text: 'Continue your Tower climb (floor ' + tw.run.floor + '/' + TOWER.floors + ')', target: { map: 'peak', x: 12.5, y: 8.6 } };
-    if (tw.best < TOWER.floors) return { text: 'Climb the Champion\u2019s Tower (best ' + tw.best + '/' + TOWER.floors + ')', target: { map: 'peak', x: 12.5, y: 8.6 } };
-    if (seen < 48) return { text: 'Champion! Complete the species list (' + seen + '/48)', target: { grass: true } };
-    return { text: 'You have done it all. Daily quests and rematches await!', target: null };
-  }
-  let lastGoal = '';
-  function renderGoal() {
-    const o = objective();
-    if (o.text !== lastGoal) { $('goal-text').textContent = o.text; lastGoal = o.text; }
-    $('goal').removeAttribute('aria-pressed');
-    $('goal').setAttribute('aria-label', 'Next goal: ' + o.text + '. Tap for a hint.');
-  }
   const hintQueue = []; let hintBusy = false;
   function hint(id, text) {
     const hs = game.state.hints || [];
@@ -359,7 +330,7 @@ const APP = (() => {
     game.update({ caught: [{ seed: s, stage: 1 }], party: [s], fighter: s, intro: true, seen: [k.speciesNo] }, [{ t: 'keep' }, { t: 'species' }]);
     game.sfx('claim');
     $('starter').hidden = true;
-    showDialog('Professor Fern', ['A wonderful choice! ' + k.name + ' will be a loyal partner.', 'The line under the sign at the top always shows your next goal, and the gold arrow points the way.', 'Start by finding more critters in the tall grass. Good luck!'], null, () => { renderGoal(); });
+    showDialog('Professor Fern', ['A wonderful choice! ' + k.name + ' will be a loyal partner.', 'The world is yours to explore. Start by finding more critters in the tall grass, and talk to people: they know more than the signs do. Good luck!'], null);
   }
   // ---------- party, bag, shop ----------
   const ITEMS = {
@@ -559,6 +530,7 @@ const APP = (() => {
     const near = (mapId, propId, dx, dy) => { const p = (M[mapId].props || []).find((q) => q.id === propId); return p ? spot(mapId, p.x + dx, p.y + dy) : spot(mapId, 10, 10); };
     const pers = (id, name, mapId, pos, pal, lines) => { (out[mapId] = out[mapId] || []).push({ id, name, x: pos[0], y: pos[1], dir: 'down', kind: 'talk', pal, lines }); };
     pers('edda', 'Scholar Edda', 'route-mf', near('route-mf', 'ruin', 5, 1), { h: '#3A2A1A', y: '#8E5BC8', Y: '#6B3FA0' }, ['These carvings show a critter of each type around one fire. I count eight.', 'Highland Pass joins Mossbrook and Frosthold. The arch is older than both.']);
+    pers('brandt', 'Hermit Brandt', 'route-mf-cliff', spot('route-mf-cliff', 9, 14), { h: '#BDBDBD', y: '#7A6A52', Y: '#5A4A38' }, ['Few find this ledge. The path does not want to be found, so I never signed it.', 'From down there the Pass looks like one road. It is not. Every road is a rumour somebody walked into being.']);
     pers('dell', 'Camper Dell', 'route-cm', near('route-cm', 'camp', 4, 1), { h: '#8A5A34', y: '#4FB06D', Y: '#2E6A2C' }, ['Ha, that is my camp! I only left to fill my flask at the well.', 'Ashwood Trail links Cinderport and Mossbrook. Ember and Moss critters roam here.']);
     pers('joss', 'Lamplighter Joss', 'route-fc', near('route-fc', 'lighthouse', 3, 3), { h: '#BDBDBD', y: '#C0503A', Y: '#8A3A28' }, ['I still trim the lamp every dusk. It guides nobody now, but it feels right.', 'Glacier Coast runs between Frosthold and Coralbay. Frost and Tide critters live along it.']);
     pers('neri', 'Beachcomber Neri', 'route-cc', near('route-cc', 'wreck', 5, 2), { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, ['Tide critters nest in the wreck. Do not poke them, they bite!', 'Reef Causeway links Coralbay and Cinderport. Tide and Ember critters share it.']);
@@ -857,7 +829,7 @@ const APP = (() => {
       showDialog(n.name, [n.lines[0], 'Could you do me a favor today? Please ' + Q.q.txt + '.', 'Progress: ' + Q.n + '/' + Q.q.n + '. Come back to me when it is done. I have a new favor every day.']); return;
     }
     if (n.kind === 'talk') {
-      const fl = n.id === 'pip' ? null : flavorLine(n), lines = n.id === 'pip' ? ['Need a pointer? Here is what I would do next.', wayHint()] : (fl ? [fl].concat(n.lines) : n.lines), clue = ADV.CLUES.find((c) => c.npc === n.id);
+      const fl = n.id === 'pip' ? null : flavorLine(n), lines = fl ? [fl].concat(n.lines) : n.lines, clue = ADV.CLUES.find((c) => c.npc === n.id);
       if (clue && advOf().clues.indexOf(clue.id) === -1) { showDialog(n.name, lines.concat(clue.lines), null, () => gainClue(clue)); return; }   // the first talk also teaches a clue about the Sealed Arch
       showDialog(n.name, lines); return;
     }
@@ -1087,25 +1059,13 @@ const APP = (() => {
     }, wait);
   }
   const ROUTE = { wren: ['Elder Wren', 'Mossbrook', 'west', 'Moss Forest'], glacia: ['Glacia', 'Frosthold', 'north', 'Frost Peaks'], blaze: ['Blaze', 'Cinderport', 'south', 'Ember Fields'], coral: ['Admiral Coral', 'Coralbay', 'east', 'Tide Shore'] };
-  function wayHint() {
-    const o = objective(), t = o.text || '', st = game.state, seals = (st.npc && st.npc.seals) || [];
-    const lid = Object.keys(ROUTE).find((id) => t.indexOf(ROUTE[id][0]) !== -1 && seals.indexOf(id) === -1);
-    if (lid) { const [, city, dir, zone] = ROUTE[lid]; return ROUTE[lid][0] + ' keeps a gym in ' + city + '. Take the ' + dir + ' trail out of Sproutvale, cross ' + zone + ' and keep heading ' + dir + '. Signposts mark the way.'; }
-    const zt = { 'Moss Forest': 'west', 'Frost Peaks': 'north', 'Ember Fields': 'south', 'Tide Shore': 'east' }, zk = Object.keys(zt).find((z) => t.indexOf(z) !== -1);
-    if (zk) return zk + ' is through the ' + zt[zk] + ' trail out of Sproutvale. Its trainers watch the paths.';
-    if (t.indexOf('Tower') !== -1) return "Champion's Peak is up the trail just north-east of Sproutvale's plaza, past the signpost. The Tower stands at the summit.";
-    if (t.indexOf('Fern') !== -1) return 'Professor Fern works in the Lab on the east side of Sproutvale.';
-    if (t.indexOf('Rowan') !== -1) return 'Rowan trains near the south side of Sproutvale. He watches the path, so he will find you.';
-    if (t.indexOf('grass') !== -1 || t.indexOf('species') !== -1) return 'Tall grass grows in every zone around Sproutvale, and a little in town too. Each zone has its own types.';
-    return t ? t + '.' : 'Explore! Signposts at every trail say where it leads.';
-  }
   function musicTrack() {
     const st = game.state;
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
     { const di = ACT.duelInfo(); if (di && !open) return di.boss || di.tower ? 'boss' : 'battle'; }
     if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
-    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { descent: 'ember', ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
+    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : (WORLD.map.base || WORLD.map.id)), alias = { descent: 'ember', ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
@@ -1213,7 +1173,6 @@ const APP = (() => {
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
       onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); applyLamp(); applyForge(); renderWeather(); if (game && (m.city || m.id === 'peak' || m.id === 'ascent' || m.id === 'descent') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
-      objective: () => null, // no guide arrow or marker: signposts, paths and townsfolk lead the way
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map
     });
     setNear(WORLD.nearest());
@@ -1290,7 +1249,6 @@ const APP = (() => {
       devTaps += 1; clearTimeout(devTimer); devTimer = setTimeout(() => { devTaps = 0; }, 1500);
       if (devTaps >= 5 && !game.state.dev) { devTaps = 0; game.update({ dev: true }); renderMenu(); toast('Developer tools unlocked: open Menu, Game, Dev tools. Test mode is also in Settings.'); }
     });
-    $('goal').addEventListener('click', () => toast(wayHint()));
     $('st-list').addEventListener('click', (e) => { const b = e.target.closest('[data-start]'); if (b) chooseStarter(+b.dataset.start); });
     $('tip').hidden = true;
     $('tip-close').addEventListener('click', () => { $('tip').hidden = true; try { localStorage.setItem('critter-roll:tip', '1'); } catch (e) {} });
@@ -1309,6 +1267,6 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);

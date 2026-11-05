@@ -189,9 +189,6 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .bk-file{display:flex;align-items:center;justify-content:center;box-sizing:border-box;background:#fff!important;color:#1E2A4A!important;border:2px solid #1E2A4A!important}
 .bk-file:focus-within,#bk-file:focus-visible+*{outline:3px solid #FFD86B}
 .lcol{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;flex:1 1 auto;max-width:190px}
-.goal{display:flex;align-items:center;gap:6px;max-width:100%;min-height:44px;box-sizing:border-box;padding:5px 10px 5px 8px;border-radius:10px;border:1.5px solid rgba(255,255,255,.55);background:rgba(14,26,56,.8);color:#fff;font:inherit;font-size:12px;font-weight:800;line-height:1.25;text-align:left;cursor:pointer}
-.goal[aria-pressed="false"]{opacity:.7}.goal[aria-pressed="false"] svg{opacity:.4}
-.goal svg{flex-shrink:0}
 .slist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}
 .scard{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px;border-radius:14px;background:#fff;border:1.5px solid #D5DEEE;text-align:center}
 .scard img{width:100%;height:auto;max-width:120px;image-rendering:pixelated;background:linear-gradient(180deg,#4F8FE0 0 58%,#74C25C 58%);border-radius:10px}
@@ -224,7 +221,7 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
   <div id="hud">
     <div class="top">
       <div class="lcol"><div class="plank" id="plank"><b id="loc-name">Sproutvale</b><span id="loc-wx" class="wx"></span></div>
-      <button class="goal" id="goal" aria-pressed="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFD86B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg><span id="goal-text"></span></button></div>
+</div>
       <div class="rcol">
       <div class="chips">
         <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A7F04A" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"></path></svg><span id="c-rolls"></span></span>
@@ -1755,7 +1752,7 @@ const WEATHER = (() => {
   Object.keys(ROUTE_MIX).forEach((r) => { const c = {}; ROUTE_MIX[r].forEach((k) => { const w = CLIMATE[k]; Object.keys(w).forEach((x) => { c[x] = (c[x] || 0) + w[x] / 2; }); }); CLIMATE[r] = c; });
   // cities share the sky of the zone next to them
   const REGION = { descent: 'ember', ascent: 'peak', town: 'town', peak: 'peak', moss: 'moss', mossbrook: 'moss', frost: 'frost', frosthold: 'frost', ember: 'ember', cinderport: 'ember', tide: 'tide', coralbay: 'tide' };
-  function region(mapId) { return REGION[mapId] || (CLIMATE[mapId] ? mapId : null); }
+  function region(mapId) { return REGION[mapId] || (CLIMATE[mapId] ? mapId : null) || (typeof mapId === 'string' && mapId.indexOf('route-') === 0 && mapId.length > 8 ? region(mapId.slice(0, 8)) : null); }   // a route's side maps share its sky
   function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13; return (h >>> 0) / 4294967296; }
   function blockOf(d) { return Math.floor(d.getHours() / BLOCK_H); }
   function key(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + '#' + blockOf(d); }
@@ -2258,7 +2255,6 @@ const WORLD = (() => {
   linkEdge(MAPS.tide, 'e', 14, 'coralbay', [MAPS.tide.W - 1.4, 15.2]); MAPS.tide.grid[12][24] = 'G'; MAPS.tide.signs.push({ x: 24, y: 12, to: 'coralbay', text: "East, along the boardwalk: Coralbay harbor. Admiral Coral's gym is there." });
   // the loop: each route's back exit leads to one city, a second exit (carved after the zone build) to the next
   const ROUTE_LINKS = [
-    ['route-mf', 'mossbrook', 'n', 32, [32.9, 1.4], 'e', 'frosthold', 'w', 13, [1.4, 14.2]],
     ['route-cm', 'cinderport', 'w', 13, [1.4, 14.2], 'n', 'mossbrook', 's', 22, [22.9, 26.6]],
     ['route-fc', 'frosthold', 'e', 13, [34.6, 14.2], 's', 'coralbay', 'n', 28, [28.9, 1.4]],
     ['route-cc', 'coralbay', 's', 28, [28.9, 26.6], 'w', 'cinderport', 'e', 13, [34.6, 14.2]]
@@ -2308,6 +2304,81 @@ const WORLD = (() => {
     post(MAPS[cityB], edgeB, aB, dirWord[edgeB] + ': ' + R.name + ' (' + R.types.join(' and ') + ' critters), the road to ' + MAPS[cityA].name + '.');
     post(R, rEdgeB, mid, dirWord[rEdgeB] + ': ' + MAPS[cityB].name + '.');
   });
+  // ---------- wild networks: a route made of several maps with forks, loops and dead ends (no guide arrows: the player explores) ----------
+  // buildWild(spec): { id, base (the route it belongs to: climate, music, palette, level gate), name, W, H, seed, types, hub:[x,y], doors:[{edge,a}], nooks:[{x,y,r,from?}],
+  //   rare: nook index (a 3x3 rare patch in that clearing), grass: blobs, rate, objects:[{id,kind,x,y,reward,text}], signs:[{x,y,text}], talk? }
+  // Every door gets a winding 2-wide path to the hub and every nook a path to the hub or to `from`, so all doors and nooks are connected. Doors are linked with connect().
+  function buildWild(spec) {
+    const W = spec.W || 34, H = spec.H || 28, r = rng(spec.seed * 7919), th = THEMES[spec.base], m = [];
+    for (let y = 0; y < H; y++) m.push(new Array(W).fill('.'));
+    const set = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < H) m[y][x] = c; }, get = (x, y) => (x >= 0 && y >= 0 && x < W && y < H ? m[y][x] : 'T');
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const e = Math.min(x, y, W - 1 - x, H - 1 - y); if (e < 2 || (e < 3 && r() < 0.55)) set(x, y, 'T'); }
+    const hub = spec.hub || [Math.floor(W / 2), Math.floor(H / 2)];
+    const brush = (x, y) => { set(x, y, '='); set(x + 1, y, '='); set(x, y + 1, '='); set(x + 1, y + 1, '='); };
+    const path = (x0, y0, x1, y1) => { let x = x0, y = y0; while (x !== x1 || y !== y1) { brush(x, y); if (x !== x1 && (y === y1 || r() < 0.45)) x += x1 > x ? 1 : -1; else if (y !== y1) y += y1 > y ? 1 : -1; } brush(x1, y1); };
+    const way = (x0, y0, x1, y1) => { const wx = Math.max(5, Math.min(W - 7, Math.round((x0 + x1) / 2 + (r() - 0.5) * 12))), wy = Math.max(5, Math.min(H - 7, Math.round((y0 + y1) / 2 + (r() - 0.5) * 12))); path(x0, y0, wx, wy); path(wx, wy, x1, y1); };   // a path bends through a random waypoint
+    const nooks = spec.nooks || [];
+    nooks.forEach((n) => { for (let y = n.y - n.r; y <= n.y + n.r; y++) for (let x = n.x - n.r; x <= n.x + n.r; x++) if ((x - n.x) ** 2 + (y - n.y) ** 2 <= n.r * n.r + 1) set(x, y, '.'); });
+    (spec.doors || []).forEach((d) => { const [sx, sy] = d.edge === 'n' ? [d.a, 0] : d.edge === 's' ? [d.a, H - 2] : d.edge === 'w' ? [0, d.a] : [W - 2, d.a]; way(sx, sy, hub[0], hub[1]); });
+    nooks.forEach((n) => { const f = n.from || hub; way(f[0], f[1], n.x, n.y); });
+    for (let i = 0; i < (spec.grass == null ? 5 : spec.grass); i++) {
+      const bx = 6 + Math.floor(r() * (W - 12)), by = 6 + Math.floor(r() * (H - 12)), rw = 2 + Math.floor(r() * 2), rh = 2 + Math.floor(r() * 2);
+      for (let y = by - rh; y <= by + rh; y++) for (let x = bx - rw; x <= bx + rw; x++) { const dx = (x - bx) / (rw + 0.5), dy = (y - by) / (rh + 0.5); if (dx * dx + dy * dy <= 1 && get(x, y) === '.') set(x, y, 'W'); }
+    }
+    if (spec.rare != null && nooks[spec.rare]) { const n = nooks[spec.rare]; for (let y = n.y - 3; y <= n.y - 1; y++) for (let x = n.x - 1; x <= n.x + 1; x++) if (get(x, y) !== '=') set(x, y, 'Z'); }
+    const dens = th.dense ? 0.16 : 0.08;
+    for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) {
+      if (get(x, y) !== '.') continue;
+      let near = false; for (let yy = y - 1; yy <= y + 1; yy++) for (let xx = x - 1; xx <= x + 1; xx++) if (['=', 'Z'].indexOf(get(xx, yy)) !== -1) near = true;
+      const inNook = nooks.some((n) => (x - n.x) ** 2 + (y - n.y) ** 2 <= (n.r + 1) ** 2), v = r();
+      if (!near && !inNook && v < dens) set(x, y, 'T'); else if (!near && !inNook && v < dens + 0.03) set(x, y, 'R'); else if (v < dens + 0.13) set(x, y, ',');
+    }
+    const objects = (spec.objects || []).map((o) => { set(o.x, o.y, 'O'); return Object.assign({ reach: 1.7 }, o); });
+    const signs = (spec.signs || []).map((sg) => { set(sg.x, sg.y, 'G'); return sg; });
+    return { id: spec.id, base: spec.base, name: spec.name, theme: th, grid: m, W, H, places: [], signs: signs, types: spec.types, rate: spec.rate == null ? 0.12 : spec.rate, exits: [], arriveFrom: {}, arrive: {}, spawn: [hub[0] + 0.5, hub[1] + 0.5], objects: objects };
+  }
+  // where you stand after arriving through a door on `edge` at position `a`
+  const edgeArrival = (M, edge, a) => ({ n: [a + 0.9, 1.4], s: [a + 0.9, M.H - 1.4], w: [1.4, a + 1.2], e: [M.W - 1.4, a + 1.2] }[edge]);
+  // link two maps through doors (each door carves its gap and records where you arrive); `arrA` / `arrB` override the arrival spot (the older city doors have their own)
+  function doorWild(M, edge, a, to, arrive) {   // a wild map's door: its own path already reaches the border, so only the gap, the exit and the arrival spot are needed
+    const W = M.W, H = M.H, g = M.grid;
+    for (let k = 0; k < 4; k++) { const cells = edge === 'w' ? [[k, a], [k, a + 1]] : edge === 'e' ? [[W - 1 - k, a], [W - 1 - k, a + 1]] : edge === 'n' ? [[a, k], [a + 1, k]] : [[a, H - 1 - k], [a + 1, H - 1 - k]]; cells.forEach(([x, y]) => { g[y][x] = '='; }); }
+    M.exits.push({ edge: edge, a: a, b: a + 1, to: to }); M.arriveFrom = Object.assign({}, M.arriveFrom, { [to]: arrive });
+  }
+  function connect(MA, edgeA, aA, MB, edgeB, aB, arrA, arrB) {
+    (MA.base ? doorWild : linkEdge)(MA, edgeA, aA, MB.id, arrA || edgeArrival(MA, edgeA, aA));
+    (MB.base ? doorWild : linkEdge)(MB, edgeB, aB, MA.id, arrB || edgeArrival(MB, edgeB, aB));
+  }
+  // ---- Highland Pass: Mossbrook -> Gate -> the Pass proper (Kai, the old stones) -> Fork -> Frosthold, with a bypass over Whisper Hollow and the Windy Lookout and a hermit's cliff that has no road to it
+  const HP = {
+    gate: buildWild({ id: 'route-mf-gate', base: 'route-mf', name: 'Highland Gate', seed: 5501, types: ['Moss', 'Frost'], hub: [16, 13], grass: 4, doors: [{ edge: 's', a: 16 }, { edge: 'n', a: 16 }, { edge: 'e', a: 12 }] }),
+    hollow: buildWild({ id: 'route-mf-hollow', base: 'route-mf', name: 'Whisper Hollow', seed: 5502, types: ['Moss', 'Frost'], hub: [14, 13], grass: 6, doors: [{ edge: 'w', a: 12 }, { edge: 'n', a: 14 }], nooks: [{ x: 26, y: 21, r: 3 }], rare: 0,
+      objects: [{ id: 'hp-chest1', kind: 'chest', x: 26, y: 22, reward: { potion: 2, essence: 4 }, text: 'A chest, half sunk in the moss.' }] }),
+    lookout: buildWild({ id: 'route-mf-lookout', base: 'route-mf', name: 'Windy Lookout', seed: 5503, types: ['Frost', 'Moss'], hub: [16, 12], grass: 3, doors: [{ edge: 's', a: 8 }, { edge: 's', a: 24 }], nooks: [{ x: 9, y: 6, r: 2 }] }),
+    fork: buildWild({ id: 'route-mf-fork', base: 'route-mf', name: 'Frost Fork', seed: 5504, types: ['Frost', 'Moss'], hub: [17, 13], grass: 5, doors: [{ edge: 'w', a: 13 }, { edge: 'n', a: 24 }, { edge: 'e', a: 13 }] }),
+    cliff: buildWild({ id: 'route-mf-cliff', base: 'route-mf', name: 'Hermit\u2019s Cliff', seed: 5505, types: ['Frost', 'Dusk'], hub: [20, 14], grass: 3, doors: [{ edge: 'e', a: 20 }], nooks: [{ x: 8, y: 13, r: 3 }, { x: 10, y: 22, r: 2 }], rare: 0,
+      objects: [{ id: 'hp-chest2', kind: 'chest', x: 8, y: 16, reward: { charm: 1, essence: 8 }, text: 'A small chest under the overhang.' }] })
+  };
+  Object.keys(HP).forEach((k) => { const Mp = HP[k]; MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES['route-mf']; if (PXW.PAL['route-mf']) PXW.PAL[Mp.id] = PXW.PAL['route-mf']; });
+  { const R = MAPS['route-mf'], cityN = MAPS.mossbrook, cityE = MAPS.frosthold;
+    R.exits = []; R.arriveFrom = {}; R.arrive = {};
+    connect(cityN, 'n', 32, HP.gate, 's', 16, [32.9, 1.4], null);          // Mossbrook's north door -> the Gate
+    connect(HP.gate, 'n', 16, R, 's', 17, null, [17.9, R.H - 1.4]);        // the Gate -> the Pass proper (its old south entrance)
+    connect(HP.gate, 'e', 12, HP.hollow, 'w', 12);                         // the Gate -> Whisper Hollow (the bypass)
+    connect(HP.hollow, 'n', 14, HP.lookout, 's', 8);                       // Whisper Hollow -> the Windy Lookout
+    connect(HP.lookout, 's', 24, HP.fork, 'n', 24);                        // the Lookout -> Frost Fork (the other end of the bypass)
+    connect(R, 'e', 13, HP.fork, 'w', 13);                                 // the Pass proper -> Frost Fork
+    connect(R, 'w', 20, HP.cliff, 'e', 20);                                // a way off the Pass into the cliff, with nothing pointing to it
+    connect(HP.fork, 'e', 13, cityE, 'w', 13, null, [1.4, 14.2]);          // Frost Fork -> Frosthold's west door
+    R.spawn = R.arriveFrom['route-mf-gate'];
+    addProp(HP.gate, 'cairn', [25, 7], 'Three notches are cut into the cairn: one east, one north, and one that somebody scratched out.');
+    addProp(HP.hollow, 'well', [20, 8], 'A moss-furred well. The water is cold and tastes faintly of snow.');
+    addProp(HP.lookout, 'cairn', [10, 7], 'From here the whole pass lies below you. The roads look neater from above than they ever do on foot.');
+    addProp(HP.cliff, 'cairn', [14, 10], 'Someone stacks a new stone on this cairn every season. There is no road to explain why.');
+    const post = (Mp, edge, a, text) => { const [x, y] = { n: [a + 2, 1], s: [a + 2, Mp.H - 2], w: [1, a - 1], e: [Mp.W - 2, a - 1] }[edge]; Mp.grid[y][x] = 'G'; Mp.signs.push({ x: x, y: y, text: text }); };
+    post(cityN, 'n', 32, 'North: the Highland Pass (Moss and Frost critters), the road to Frosthold.');
+    post(cityE, 'w', 13, 'West: the Highland Pass (Moss and Frost critters), the road to Mossbrook.');
+  }
   // ---------- the Cold Ascent: five switchback ledges up the peaks above Frosthold, ending under the beacon tower ----------
   // Ledges are rectangles joined by 4-wide ramps through the cliff rows between them; a packed-snow trail zig-zags up, so trainers beside it
   // see you cross. Wild snow patches (W), a glacier river with a log bridge, a rare patch near the top, and a summit plateau with the beacon.
@@ -2538,27 +2609,6 @@ const WORLD = (() => {
   }) && (bump(M.exits.find((e) => locked(e) && (((e.edge === 'n' && ty === 1) || (e.edge === 's' && ty === M.H - 2)) && tx >= e.a && tx <= e.b || ((e.edge === 'w' && tx === 1) || (e.edge === 'e' && tx === M.W - 2)) && ty >= e.a && ty <= e.b))), true);
   let lastBump = -Infinity;
   function bump(e) { const t = performance.now(); if (t - lastBump > 2500 && opts.onLocked) { lastBump = t; opts.onLocked(e); } }
-  // where the objective lies on the current map: the target itself, the trail toward it, or the nearest tall grass
-  let grassCache = { t: 0, p: null, map: null };
-  function goalPoint(o) {
-    if (!o) return null;
-    if (o.grass) {
-      const now = performance.now();
-      if (grassCache.map !== M.id || now - grassCache.t > 600) {
-        const tx = P.x / TS, ty = P.y / TS; let best = null, bd = 1e9;
-        for (let y = 0; y < M.H; y++) for (let x = 0; x < M.W; x++) { const t = M.grid[y][x]; if (t !== 'W' && t !== 'Z') continue; const d = (x + 0.5 - tx) ** 2 + (y + 0.5 - ty) ** 2; if (d < bd) { bd = d; best = { x: x + 0.5, y: y + 0.5 }; } }
-        grassCache = { t: now, p: best, map: M.id };
-      }
-      if (!grassCache.p) return null;
-      const onGrass = (() => { const t = M.grid[Math.floor(P.y / TS)] && M.grid[Math.floor(P.y / TS)][Math.floor(P.x / TS)]; return t === 'W' || t === 'Z'; })();
-      return onGrass ? null : { x: grassCache.p.x, y: grassCache.p.y, marker: false };
-    }
-    if (o.map === M.id) return { x: o.x + 0.5, y: o.y + 0.6, marker: true };
-    const hop = nextHop(M.id, o.map), e = M.exits.find((x) => x.to === hop) || M.exits.find((x) => x.to === 'town');
-    if (!e) return null;
-    const mid = (e.a + e.b + 1) / 2;
-    return e.edge === 'n' ? { x: mid, y: 0.5 } : e.edge === 's' ? { x: mid, y: M.H - 0.5 } : e.edge === 'w' ? { x: 0.5, y: mid } : { x: M.W - 0.5, y: mid };
-  }
   function nextHop(from, to) { // breadth-first over map exits
     if (!MAPS[to] || from === to) return to;
     const prev = { [from]: null }, q = [from];
@@ -2854,29 +2904,6 @@ const WORLD = (() => {
       const bx = snap((fishAt.x + 0.5) * TS - cx), by = snap((fishAt.y + 0.55) * TS - cy + Math.sin(tAnim * (fishAt.bite ? 22 : 4)) * (fishAt.bite ? 3 : 1.5));
       ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(bx - 8, by + 3, 16, 2);
       ctx.fillStyle = '#1E2A4A'; ctx.fillRect(bx - 4, by - 6, 8, 10); ctx.fillStyle = '#D8574A'; ctx.fillRect(bx - 3, by - 5, 6, 4); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(bx - 3, by - 1, 6, 4);
-    }
-    // objective: gold marker over the target, or an arrow around the player pointing the way
-    const goal = opts.objective ? goalPoint(opts.objective()) : null;
-    if (goal) {
-      const gx = snap(goal.x * TS - cx), gy = snap(goal.y * TS - cy), px = pxs - cx, py = pys - cy - 18;
-      const dx = gx - px, dy = gy - py, dist = Math.hypot(dx, dy);
-      const bob = Math.round(Math.sin(tAnim * 5) * 2) * 2;
-      if (gx > 8 && gx < vw - 8 && gy > 30 && gy < vh - 8 && goal.marker) {
-        const mx = gx, my = gy - 62 + bob;
-        const rows = [[-14, 14], [-12, 12], [-10, 10], [-8, 8], [-6, 6], [-4, 4], [-2, 2]];
-        rows.forEach(([l, r], i) => { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(mx + l - 2, my + i * 3 - 2, r - l + 4, 5); });
-        rows.forEach(([l, r], i) => { ctx.fillStyle = i < 2 ? '#8A6510' : '#FFD86B'; ctx.fillRect(mx + l, my + i * 3, r - l, 3); });
-        ctx.fillStyle = '#8A6510'; ctx.fillRect(mx - 14, my, 28, 2);
-      }
-      if (dist > 70) {
-        const ux = dx / dist, uy = dy / dist, ax = px + ux * (48 + bob), ay = py + uy * (48 + bob);
-        ctx.save(); ctx.translate(Math.round(ax), Math.round(ay)); ctx.rotate(Math.atan2(uy, ux));
-        ctx.lineJoin = 'round';
-        ctx.beginPath(); ctx.moveTo(21, 0); ctx.lineTo(-12, -16); ctx.lineTo(-4, 0); ctx.lineTo(-12, 16); ctx.closePath();
-        ctx.fillStyle = '#FFD86B'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#5A3E08'; ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(-15, -20); ctx.lineTo(-6, 0); ctx.lineTo(-15, 20); ctx.closePath(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.stroke();
-        ctx.restore();
-      }
     }
     // the Sealed Arch's open doorway: a swirling glow between the pillars
     (M.objects || []).forEach((o) => { if (!o.portal || !(opts.objState && (opts.objState(o) || {}).open)) return;
@@ -5110,7 +5137,7 @@ const CITY_QUESTS = {
   coralbay: { giver: 'pearl', list: [{ k: 'see', map: 'route-cc', n: 5, txt: 'spot 5 wild critters on Reef Causeway' }, { k: 'keep', types: ['Tide', 'Dusk'], n: 1, txt: 'keep a Tide or Dusk critter' }, { k: 'beat', id: 'mako', n: 1, txt: 'beat Diver Mako on Reef Causeway' }] }
 };
 const CQ_REWARD = 4;
-const ROUTE_GATES = { 'route-mf': 3, 'route-cm': 6, 'route-fc': 9, 'route-cc': 9, ascent: 11, descent: 13 };
+const ROUTE_GATES = { 'route-mf': 3, 'route-mf-gate': 3, 'route-mf-fork': 3, 'route-cm': 6, 'route-fc': 9, 'route-cc': 9, ascent: 11, descent: 13 };
 const LEADERS = [
   { id: 'wren', zone: 'moss', name: 'Elder Wren', color: '#4FB06D' },
   { id: 'glacia', zone: 'frost', name: 'Glacia', color: '#8FD8EA' },
@@ -5772,7 +5799,7 @@ const APP = (() => {
     $('c-lv').textContent = 'Lv ' + lv.level;
     const ready = (game.questsFor(st).items || []).filter((q) => !q.claimed && q.progress >= game.questDefs()[q.key].target).length;
     $('b-menu-dot').hidden = ready === 0;
-    renderGoal(); checkHints();
+    checkHints();
     if (open) renderScreen();
   }
   function showScreen() {
@@ -6042,37 +6069,8 @@ const APP = (() => {
   let pendingImport = null;
   function openBackup() { cloudStatus(); closeMenu(true); $('bk').hidden = false; $('hud').hidden = true; WORLD.setPaused(true); $('bk-out').value = exportCode(); $('bk-in').value = ''; $('bk-msg').textContent = ''; $('bk-restore').textContent = 'Check code'; pendingImport = null; $('bk-close').focus(); }
   function closeBackup() { $('bk').hidden = true; $('hud').hidden = false; WORLD.setPaused(false); }
-  // ---------- guidance: next objective, hints, first-time intro ----------
+  // ---------- guidance: next hints, first-time intro ----------
   const npcAt = (map, id) => { const n = (WORLD.allNpcs()[map] || []).find((x) => x.id === id); return n ? { map: map, x: n.x, y: n.y } : null; };
-  function objective() {
-    const st = game.state, lv = game.levelInfo(st.xp || 0).level, npc = st.npc || {}, cleared = npc.cleared || [], seals = npc.seals || [], done = npc.done || [];
-    const seen = (st.seen || []).length, n = st.caught.length, test = game.props.testMode;
-    if (!n) return { text: 'Choose your first critter with Professor Fern', target: npcAt('town', 'fern') };
-    if (n < 3) return { text: 'Find critters in the tall grass (' + n + '/3)', target: { grass: true } };
-    if (game.partySeeds().length < Math.min(3, n)) return { text: 'Add critters to your party: Menu, then Party', target: null };
-    if (cleared.indexOf('rowan') === -1) return { text: 'Beat Rowan in Sproutvale', target: npcAt('town', 'rowan') };
-    if (done.indexOf('fern') === -1) return seen >= 5 ? { text: 'Show Professor Fern your 5 species', target: npcAt('town', 'fern') } : { text: 'Discover 5 species for Professor Fern (' + seen + '/5)', target: { grass: true } };
-    const ZT = { moss: ['ivy', 'Ivy', 'wren', 'Elder Wren'], frost: ['bram', 'Hiker Bram', 'glacia', 'Glacia'], ember: ['kiki', 'Kiki', 'blaze', 'Blaze'], tide: ['marlo', 'Captain Marlo', 'coral', 'Admiral Coral'] };
-    for (const z of ['moss', 'frost', 'ember', 'tide']) {
-      const [tid, tname, lid, lname] = ZT[z];
-      if (seals.indexOf(lid) !== -1) continue;
-      if (!test && lv < GATES[z]) return { text: 'Reach trainer level ' + GATES[z] + ' to open ' + ZONE_NAMES[z] + ' (now ' + lv + ')', target: { grass: true } };
-      if (cleared.indexOf(tid) === -1) return { text: 'Beat ' + tname + ' in ' + ZONE_NAMES[z], target: npcAt(z, tid) };
-      const lh = npcHome(lid) || z; return { text: 'Challenge ' + lname + ' in ' + mapName(lh), target: npcAt(lh, lid) };
-    }
-    const tw = game.towerState();
-    if (tw.run) return { text: 'Continue your Tower climb (floor ' + tw.run.floor + '/' + TOWER.floors + ')', target: { map: 'peak', x: 12.5, y: 8.6 } };
-    if (tw.best < TOWER.floors) return { text: 'Climb the Champion\u2019s Tower (best ' + tw.best + '/' + TOWER.floors + ')', target: { map: 'peak', x: 12.5, y: 8.6 } };
-    if (seen < 48) return { text: 'Champion! Complete the species list (' + seen + '/48)', target: { grass: true } };
-    return { text: 'You have done it all. Daily quests and rematches await!', target: null };
-  }
-  let lastGoal = '';
-  function renderGoal() {
-    const o = objective();
-    if (o.text !== lastGoal) { $('goal-text').textContent = o.text; lastGoal = o.text; }
-    $('goal').removeAttribute('aria-pressed');
-    $('goal').setAttribute('aria-label', 'Next goal: ' + o.text + '. Tap for a hint.');
-  }
   const hintQueue = []; let hintBusy = false;
   function hint(id, text) {
     const hs = game.state.hints || [];
@@ -6114,7 +6112,7 @@ const APP = (() => {
     game.update({ caught: [{ seed: s, stage: 1 }], party: [s], fighter: s, intro: true, seen: [k.speciesNo] }, [{ t: 'keep' }, { t: 'species' }]);
     game.sfx('claim');
     $('starter').hidden = true;
-    showDialog('Professor Fern', ['A wonderful choice! ' + k.name + ' will be a loyal partner.', 'The line under the sign at the top always shows your next goal, and the gold arrow points the way.', 'Start by finding more critters in the tall grass. Good luck!'], null, () => { renderGoal(); });
+    showDialog('Professor Fern', ['A wonderful choice! ' + k.name + ' will be a loyal partner.', 'The world is yours to explore. Start by finding more critters in the tall grass, and talk to people: they know more than the signs do. Good luck!'], null);
   }
   // ---------- party, bag, shop ----------
   const ITEMS = {
@@ -6314,6 +6312,7 @@ const APP = (() => {
     const near = (mapId, propId, dx, dy) => { const p = (M[mapId].props || []).find((q) => q.id === propId); return p ? spot(mapId, p.x + dx, p.y + dy) : spot(mapId, 10, 10); };
     const pers = (id, name, mapId, pos, pal, lines) => { (out[mapId] = out[mapId] || []).push({ id, name, x: pos[0], y: pos[1], dir: 'down', kind: 'talk', pal, lines }); };
     pers('edda', 'Scholar Edda', 'route-mf', near('route-mf', 'ruin', 5, 1), { h: '#3A2A1A', y: '#8E5BC8', Y: '#6B3FA0' }, ['These carvings show a critter of each type around one fire. I count eight.', 'Highland Pass joins Mossbrook and Frosthold. The arch is older than both.']);
+    pers('brandt', 'Hermit Brandt', 'route-mf-cliff', spot('route-mf-cliff', 9, 14), { h: '#BDBDBD', y: '#7A6A52', Y: '#5A4A38' }, ['Few find this ledge. The path does not want to be found, so I never signed it.', 'From down there the Pass looks like one road. It is not. Every road is a rumour somebody walked into being.']);
     pers('dell', 'Camper Dell', 'route-cm', near('route-cm', 'camp', 4, 1), { h: '#8A5A34', y: '#4FB06D', Y: '#2E6A2C' }, ['Ha, that is my camp! I only left to fill my flask at the well.', 'Ashwood Trail links Cinderport and Mossbrook. Ember and Moss critters roam here.']);
     pers('joss', 'Lamplighter Joss', 'route-fc', near('route-fc', 'lighthouse', 3, 3), { h: '#BDBDBD', y: '#C0503A', Y: '#8A3A28' }, ['I still trim the lamp every dusk. It guides nobody now, but it feels right.', 'Glacier Coast runs between Frosthold and Coralbay. Frost and Tide critters live along it.']);
     pers('neri', 'Beachcomber Neri', 'route-cc', near('route-cc', 'wreck', 5, 2), { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, ['Tide critters nest in the wreck. Do not poke them, they bite!', 'Reef Causeway links Coralbay and Cinderport. Tide and Ember critters share it.']);
@@ -6612,7 +6611,7 @@ const APP = (() => {
       showDialog(n.name, [n.lines[0], 'Could you do me a favor today? Please ' + Q.q.txt + '.', 'Progress: ' + Q.n + '/' + Q.q.n + '. Come back to me when it is done. I have a new favor every day.']); return;
     }
     if (n.kind === 'talk') {
-      const fl = n.id === 'pip' ? null : flavorLine(n), lines = n.id === 'pip' ? ['Need a pointer? Here is what I would do next.', wayHint()] : (fl ? [fl].concat(n.lines) : n.lines), clue = ADV.CLUES.find((c) => c.npc === n.id);
+      const fl = n.id === 'pip' ? null : flavorLine(n), lines = fl ? [fl].concat(n.lines) : n.lines, clue = ADV.CLUES.find((c) => c.npc === n.id);
       if (clue && advOf().clues.indexOf(clue.id) === -1) { showDialog(n.name, lines.concat(clue.lines), null, () => gainClue(clue)); return; }   // the first talk also teaches a clue about the Sealed Arch
       showDialog(n.name, lines); return;
     }
@@ -6842,25 +6841,13 @@ const APP = (() => {
     }, wait);
   }
   const ROUTE = { wren: ['Elder Wren', 'Mossbrook', 'west', 'Moss Forest'], glacia: ['Glacia', 'Frosthold', 'north', 'Frost Peaks'], blaze: ['Blaze', 'Cinderport', 'south', 'Ember Fields'], coral: ['Admiral Coral', 'Coralbay', 'east', 'Tide Shore'] };
-  function wayHint() {
-    const o = objective(), t = o.text || '', st = game.state, seals = (st.npc && st.npc.seals) || [];
-    const lid = Object.keys(ROUTE).find((id) => t.indexOf(ROUTE[id][0]) !== -1 && seals.indexOf(id) === -1);
-    if (lid) { const [, city, dir, zone] = ROUTE[lid]; return ROUTE[lid][0] + ' keeps a gym in ' + city + '. Take the ' + dir + ' trail out of Sproutvale, cross ' + zone + ' and keep heading ' + dir + '. Signposts mark the way.'; }
-    const zt = { 'Moss Forest': 'west', 'Frost Peaks': 'north', 'Ember Fields': 'south', 'Tide Shore': 'east' }, zk = Object.keys(zt).find((z) => t.indexOf(z) !== -1);
-    if (zk) return zk + ' is through the ' + zt[zk] + ' trail out of Sproutvale. Its trainers watch the paths.';
-    if (t.indexOf('Tower') !== -1) return "Champion's Peak is up the trail just north-east of Sproutvale's plaza, past the signpost. The Tower stands at the summit.";
-    if (t.indexOf('Fern') !== -1) return 'Professor Fern works in the Lab on the east side of Sproutvale.';
-    if (t.indexOf('Rowan') !== -1) return 'Rowan trains near the south side of Sproutvale. He watches the path, so he will find you.';
-    if (t.indexOf('grass') !== -1 || t.indexOf('species') !== -1) return 'Tall grass grows in every zone around Sproutvale, and a little in town too. Each zone has its own types.';
-    return t ? t + '.' : 'Explore! Signposts at every trail say where it leads.';
-  }
   function musicTrack() {
     const st = game.state;
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
     { const di = ACT.duelInfo(); if (di && !open) return di.boss || di.tower ? 'boss' : 'battle'; }
     if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
-    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : WORLD.map.id), alias = { descent: 'ember', ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
+    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : (WORLD.map.base || WORLD.map.id)), alias = { descent: 'ember', ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
@@ -6968,7 +6955,6 @@ const APP = (() => {
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
       onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); applyLamp(); applyForge(); renderWeather(); if (game && (m.city || m.id === 'peak' || m.id === 'ascent' || m.id === 'descent') && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
-      objective: () => null, // no guide arrow or marker: signposts, paths and townsfolk lead the way
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map
     });
     setNear(WORLD.nearest());
@@ -7045,7 +7031,6 @@ const APP = (() => {
       devTaps += 1; clearTimeout(devTimer); devTimer = setTimeout(() => { devTaps = 0; }, 1500);
       if (devTaps >= 5 && !game.state.dev) { devTaps = 0; game.update({ dev: true }); renderMenu(); toast('Developer tools unlocked: open Menu, Game, Dev tools. Test mode is also in Settings.'); }
     });
-    $('goal').addEventListener('click', () => toast(wayHint()));
     $('st-list').addEventListener('click', (e) => { const b = e.target.closest('[data-start]'); if (b) chooseStarter(+b.dataset.start); });
     $('tip').hidden = true;
     $('tip-close').addEventListener('click', () => { $('tip').hidden = true; try { localStorage.setItem('critter-roll:tip', '1'); } catch (e) {} });
@@ -7064,7 +7049,7 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, objective, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
 

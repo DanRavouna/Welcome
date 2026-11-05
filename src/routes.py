@@ -11,7 +11,8 @@ def reach(g, start):
   return seen
 def edgecell(e,W,H): return {'n':(e['a'],0),'s':(e['a'],H-1),'w':(0,e['a']),'e':(W-1,e['a'])}[e['edge']]
 errs=[]
-R={'route-mf':('mossbrook','frosthold',3),'route-cm':('cinderport','mossbrook',6),'route-fc':('frosthold','coralbay',9),'route-cc':('coralbay','cinderport',9)}
+# Highland Pass (route-mf) is a network of maps now: wildtest.py covers it. These are the three single-map routes.
+R={'route-cm':('cinderport','mossbrook',6),'route-fc':('frosthold','coralbay',9),'route-cc':('coralbay','cinderport',9)}
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
@@ -35,10 +36,10 @@ with sync_playwright() as p:
       print(f"   walk {frm} -> {pg.evaluate('WORLD.map.id')} (expected {to})")
   # gates: level 1, real mode, at Mossbrook north door
   pg.evaluate("APP.game.update({settings:Object.assign({},APP.game.state.settings,{test:false}), xp:0})")
-  C=get('mossbrook'); e=[x for x in C['ex'] if x['to']=='route-mf'][0]
+  C=get('mossbrook'); e=[x for x in C['ex'] if x['to']=='route-mf-gate'][0]
   pg.evaluate(f"WORLD.enter('mossbrook'); WORLD.setPos({e['a']+0.9}*WORLD.TS, 2.3*WORLD.TS)")
   for _ in range(30): pg.evaluate("WORLD.input.jy=-1; WORLD.step(1/30)")
-  pg.evaluate("WORLD.input.jy=0"); print('lv1 at Highland Pass door -> map:', pg.evaluate("WORLD.map.id"), '| toast:', pg.inner_text('#toast'))
+  pg.evaluate("WORLD.input.jy=0"); print('lv1 at the Highland Gate door -> map:', pg.evaluate("WORLD.map.id"), '| toast:', pg.inner_text('#toast'))
   pg.evaluate("APP.game.update({xp:99999})")
   for _ in range(30): pg.evaluate("WORLD.input.jy=-1; WORLD.step(1/30)")
   pg.evaluate("WORLD.input.jy=0"); print('high level -> map:', pg.evaluate("WORLD.map.id"))

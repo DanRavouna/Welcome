@@ -296,7 +296,6 @@ const WORLD = (() => {
   linkEdge(MAPS.tide, 'e', 14, 'coralbay', [MAPS.tide.W - 1.4, 15.2]); MAPS.tide.grid[12][24] = 'G'; MAPS.tide.signs.push({ x: 24, y: 12, to: 'coralbay', text: "East, along the boardwalk: Coralbay harbor. Admiral Coral's gym is there." });
   // the loop: each route's back exit leads to one city, a second exit (carved after the zone build) to the next
   const ROUTE_LINKS = [
-    ['route-mf', 'mossbrook', 'n', 32, [32.9, 1.4], 'e', 'frosthold', 'w', 13, [1.4, 14.2]],
     ['route-cm', 'cinderport', 'w', 13, [1.4, 14.2], 'n', 'mossbrook', 's', 22, [22.9, 26.6]],
     ['route-fc', 'frosthold', 'e', 13, [34.6, 14.2], 's', 'coralbay', 'n', 28, [28.9, 1.4]],
     ['route-cc', 'coralbay', 's', 28, [28.9, 26.6], 'w', 'cinderport', 'e', 13, [34.6, 14.2]]
@@ -346,6 +345,81 @@ const WORLD = (() => {
     post(MAPS[cityB], edgeB, aB, dirWord[edgeB] + ': ' + R.name + ' (' + R.types.join(' and ') + ' critters), the road to ' + MAPS[cityA].name + '.');
     post(R, rEdgeB, mid, dirWord[rEdgeB] + ': ' + MAPS[cityB].name + '.');
   });
+  // ---------- wild networks: a route made of several maps with forks, loops and dead ends (no guide arrows: the player explores) ----------
+  // buildWild(spec): { id, base (the route it belongs to: climate, music, palette, level gate), name, W, H, seed, types, hub:[x,y], doors:[{edge,a}], nooks:[{x,y,r,from?}],
+  //   rare: nook index (a 3x3 rare patch in that clearing), grass: blobs, rate, objects:[{id,kind,x,y,reward,text}], signs:[{x,y,text}], talk? }
+  // Every door gets a winding 2-wide path to the hub and every nook a path to the hub or to `from`, so all doors and nooks are connected. Doors are linked with connect().
+  function buildWild(spec) {
+    const W = spec.W || 34, H = spec.H || 28, r = rng(spec.seed * 7919), th = THEMES[spec.base], m = [];
+    for (let y = 0; y < H; y++) m.push(new Array(W).fill('.'));
+    const set = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < H) m[y][x] = c; }, get = (x, y) => (x >= 0 && y >= 0 && x < W && y < H ? m[y][x] : 'T');
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const e = Math.min(x, y, W - 1 - x, H - 1 - y); if (e < 2 || (e < 3 && r() < 0.55)) set(x, y, 'T'); }
+    const hub = spec.hub || [Math.floor(W / 2), Math.floor(H / 2)];
+    const brush = (x, y) => { set(x, y, '='); set(x + 1, y, '='); set(x, y + 1, '='); set(x + 1, y + 1, '='); };
+    const path = (x0, y0, x1, y1) => { let x = x0, y = y0; while (x !== x1 || y !== y1) { brush(x, y); if (x !== x1 && (y === y1 || r() < 0.45)) x += x1 > x ? 1 : -1; else if (y !== y1) y += y1 > y ? 1 : -1; } brush(x1, y1); };
+    const way = (x0, y0, x1, y1) => { const wx = Math.max(5, Math.min(W - 7, Math.round((x0 + x1) / 2 + (r() - 0.5) * 12))), wy = Math.max(5, Math.min(H - 7, Math.round((y0 + y1) / 2 + (r() - 0.5) * 12))); path(x0, y0, wx, wy); path(wx, wy, x1, y1); };   // a path bends through a random waypoint
+    const nooks = spec.nooks || [];
+    nooks.forEach((n) => { for (let y = n.y - n.r; y <= n.y + n.r; y++) for (let x = n.x - n.r; x <= n.x + n.r; x++) if ((x - n.x) ** 2 + (y - n.y) ** 2 <= n.r * n.r + 1) set(x, y, '.'); });
+    (spec.doors || []).forEach((d) => { const [sx, sy] = d.edge === 'n' ? [d.a, 0] : d.edge === 's' ? [d.a, H - 2] : d.edge === 'w' ? [0, d.a] : [W - 2, d.a]; way(sx, sy, hub[0], hub[1]); });
+    nooks.forEach((n) => { const f = n.from || hub; way(f[0], f[1], n.x, n.y); });
+    for (let i = 0; i < (spec.grass == null ? 5 : spec.grass); i++) {
+      const bx = 6 + Math.floor(r() * (W - 12)), by = 6 + Math.floor(r() * (H - 12)), rw = 2 + Math.floor(r() * 2), rh = 2 + Math.floor(r() * 2);
+      for (let y = by - rh; y <= by + rh; y++) for (let x = bx - rw; x <= bx + rw; x++) { const dx = (x - bx) / (rw + 0.5), dy = (y - by) / (rh + 0.5); if (dx * dx + dy * dy <= 1 && get(x, y) === '.') set(x, y, 'W'); }
+    }
+    if (spec.rare != null && nooks[spec.rare]) { const n = nooks[spec.rare]; for (let y = n.y - 3; y <= n.y - 1; y++) for (let x = n.x - 1; x <= n.x + 1; x++) if (get(x, y) !== '=') set(x, y, 'Z'); }
+    const dens = th.dense ? 0.16 : 0.08;
+    for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) {
+      if (get(x, y) !== '.') continue;
+      let near = false; for (let yy = y - 1; yy <= y + 1; yy++) for (let xx = x - 1; xx <= x + 1; xx++) if (['=', 'Z'].indexOf(get(xx, yy)) !== -1) near = true;
+      const inNook = nooks.some((n) => (x - n.x) ** 2 + (y - n.y) ** 2 <= (n.r + 1) ** 2), v = r();
+      if (!near && !inNook && v < dens) set(x, y, 'T'); else if (!near && !inNook && v < dens + 0.03) set(x, y, 'R'); else if (v < dens + 0.13) set(x, y, ',');
+    }
+    const objects = (spec.objects || []).map((o) => { set(o.x, o.y, 'O'); return Object.assign({ reach: 1.7 }, o); });
+    const signs = (spec.signs || []).map((sg) => { set(sg.x, sg.y, 'G'); return sg; });
+    return { id: spec.id, base: spec.base, name: spec.name, theme: th, grid: m, W, H, places: [], signs: signs, types: spec.types, rate: spec.rate == null ? 0.12 : spec.rate, exits: [], arriveFrom: {}, arrive: {}, spawn: [hub[0] + 0.5, hub[1] + 0.5], objects: objects };
+  }
+  // where you stand after arriving through a door on `edge` at position `a`
+  const edgeArrival = (M, edge, a) => ({ n: [a + 0.9, 1.4], s: [a + 0.9, M.H - 1.4], w: [1.4, a + 1.2], e: [M.W - 1.4, a + 1.2] }[edge]);
+  // link two maps through doors (each door carves its gap and records where you arrive); `arrA` / `arrB` override the arrival spot (the older city doors have their own)
+  function doorWild(M, edge, a, to, arrive) {   // a wild map's door: its own path already reaches the border, so only the gap, the exit and the arrival spot are needed
+    const W = M.W, H = M.H, g = M.grid;
+    for (let k = 0; k < 4; k++) { const cells = edge === 'w' ? [[k, a], [k, a + 1]] : edge === 'e' ? [[W - 1 - k, a], [W - 1 - k, a + 1]] : edge === 'n' ? [[a, k], [a + 1, k]] : [[a, H - 1 - k], [a + 1, H - 1 - k]]; cells.forEach(([x, y]) => { g[y][x] = '='; }); }
+    M.exits.push({ edge: edge, a: a, b: a + 1, to: to }); M.arriveFrom = Object.assign({}, M.arriveFrom, { [to]: arrive });
+  }
+  function connect(MA, edgeA, aA, MB, edgeB, aB, arrA, arrB) {
+    (MA.base ? doorWild : linkEdge)(MA, edgeA, aA, MB.id, arrA || edgeArrival(MA, edgeA, aA));
+    (MB.base ? doorWild : linkEdge)(MB, edgeB, aB, MA.id, arrB || edgeArrival(MB, edgeB, aB));
+  }
+  // ---- Highland Pass: Mossbrook -> Gate -> the Pass proper (Kai, the old stones) -> Fork -> Frosthold, with a bypass over Whisper Hollow and the Windy Lookout and a hermit's cliff that has no road to it
+  const HP = {
+    gate: buildWild({ id: 'route-mf-gate', base: 'route-mf', name: 'Highland Gate', seed: 5501, types: ['Moss', 'Frost'], hub: [16, 13], grass: 4, doors: [{ edge: 's', a: 16 }, { edge: 'n', a: 16 }, { edge: 'e', a: 12 }] }),
+    hollow: buildWild({ id: 'route-mf-hollow', base: 'route-mf', name: 'Whisper Hollow', seed: 5502, types: ['Moss', 'Frost'], hub: [14, 13], grass: 6, doors: [{ edge: 'w', a: 12 }, { edge: 'n', a: 14 }], nooks: [{ x: 26, y: 21, r: 3 }], rare: 0,
+      objects: [{ id: 'hp-chest1', kind: 'chest', x: 26, y: 22, reward: { potion: 2, essence: 4 }, text: 'A chest, half sunk in the moss.' }] }),
+    lookout: buildWild({ id: 'route-mf-lookout', base: 'route-mf', name: 'Windy Lookout', seed: 5503, types: ['Frost', 'Moss'], hub: [16, 12], grass: 3, doors: [{ edge: 's', a: 8 }, { edge: 's', a: 24 }], nooks: [{ x: 9, y: 6, r: 2 }] }),
+    fork: buildWild({ id: 'route-mf-fork', base: 'route-mf', name: 'Frost Fork', seed: 5504, types: ['Frost', 'Moss'], hub: [17, 13], grass: 5, doors: [{ edge: 'w', a: 13 }, { edge: 'n', a: 24 }, { edge: 'e', a: 13 }] }),
+    cliff: buildWild({ id: 'route-mf-cliff', base: 'route-mf', name: 'Hermit\u2019s Cliff', seed: 5505, types: ['Frost', 'Dusk'], hub: [20, 14], grass: 3, doors: [{ edge: 'e', a: 20 }], nooks: [{ x: 8, y: 13, r: 3 }, { x: 10, y: 22, r: 2 }], rare: 0,
+      objects: [{ id: 'hp-chest2', kind: 'chest', x: 8, y: 16, reward: { charm: 1, essence: 8 }, text: 'A small chest under the overhang.' }] })
+  };
+  Object.keys(HP).forEach((k) => { const Mp = HP[k]; MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES['route-mf']; if (PXW.PAL['route-mf']) PXW.PAL[Mp.id] = PXW.PAL['route-mf']; });
+  { const R = MAPS['route-mf'], cityN = MAPS.mossbrook, cityE = MAPS.frosthold;
+    R.exits = []; R.arriveFrom = {}; R.arrive = {};
+    connect(cityN, 'n', 32, HP.gate, 's', 16, [32.9, 1.4], null);          // Mossbrook's north door -> the Gate
+    connect(HP.gate, 'n', 16, R, 's', 17, null, [17.9, R.H - 1.4]);        // the Gate -> the Pass proper (its old south entrance)
+    connect(HP.gate, 'e', 12, HP.hollow, 'w', 12);                         // the Gate -> Whisper Hollow (the bypass)
+    connect(HP.hollow, 'n', 14, HP.lookout, 's', 8);                       // Whisper Hollow -> the Windy Lookout
+    connect(HP.lookout, 's', 24, HP.fork, 'n', 24);                        // the Lookout -> Frost Fork (the other end of the bypass)
+    connect(R, 'e', 13, HP.fork, 'w', 13);                                 // the Pass proper -> Frost Fork
+    connect(R, 'w', 20, HP.cliff, 'e', 20);                                // a way off the Pass into the cliff, with nothing pointing to it
+    connect(HP.fork, 'e', 13, cityE, 'w', 13, null, [1.4, 14.2]);          // Frost Fork -> Frosthold's west door
+    R.spawn = R.arriveFrom['route-mf-gate'];
+    addProp(HP.gate, 'cairn', [25, 7], 'Three notches are cut into the cairn: one east, one north, and one that somebody scratched out.');
+    addProp(HP.hollow, 'well', [20, 8], 'A moss-furred well. The water is cold and tastes faintly of snow.');
+    addProp(HP.lookout, 'cairn', [10, 7], 'From here the whole pass lies below you. The roads look neater from above than they ever do on foot.');
+    addProp(HP.cliff, 'cairn', [14, 10], 'Someone stacks a new stone on this cairn every season. There is no road to explain why.');
+    const post = (Mp, edge, a, text) => { const [x, y] = { n: [a + 2, 1], s: [a + 2, Mp.H - 2], w: [1, a - 1], e: [Mp.W - 2, a - 1] }[edge]; Mp.grid[y][x] = 'G'; Mp.signs.push({ x: x, y: y, text: text }); };
+    post(cityN, 'n', 32, 'North: the Highland Pass (Moss and Frost critters), the road to Frosthold.');
+    post(cityE, 'w', 13, 'West: the Highland Pass (Moss and Frost critters), the road to Mossbrook.');
+  }
   // ---------- the Cold Ascent: five switchback ledges up the peaks above Frosthold, ending under the beacon tower ----------
   // Ledges are rectangles joined by 4-wide ramps through the cliff rows between them; a packed-snow trail zig-zags up, so trainers beside it
   // see you cross. Wild snow patches (W), a glacier river with a log bridge, a rare patch near the top, and a summit plateau with the beacon.
@@ -576,27 +650,6 @@ const WORLD = (() => {
   }) && (bump(M.exits.find((e) => locked(e) && (((e.edge === 'n' && ty === 1) || (e.edge === 's' && ty === M.H - 2)) && tx >= e.a && tx <= e.b || ((e.edge === 'w' && tx === 1) || (e.edge === 'e' && tx === M.W - 2)) && ty >= e.a && ty <= e.b))), true);
   let lastBump = -Infinity;
   function bump(e) { const t = performance.now(); if (t - lastBump > 2500 && opts.onLocked) { lastBump = t; opts.onLocked(e); } }
-  // where the objective lies on the current map: the target itself, the trail toward it, or the nearest tall grass
-  let grassCache = { t: 0, p: null, map: null };
-  function goalPoint(o) {
-    if (!o) return null;
-    if (o.grass) {
-      const now = performance.now();
-      if (grassCache.map !== M.id || now - grassCache.t > 600) {
-        const tx = P.x / TS, ty = P.y / TS; let best = null, bd = 1e9;
-        for (let y = 0; y < M.H; y++) for (let x = 0; x < M.W; x++) { const t = M.grid[y][x]; if (t !== 'W' && t !== 'Z') continue; const d = (x + 0.5 - tx) ** 2 + (y + 0.5 - ty) ** 2; if (d < bd) { bd = d; best = { x: x + 0.5, y: y + 0.5 }; } }
-        grassCache = { t: now, p: best, map: M.id };
-      }
-      if (!grassCache.p) return null;
-      const onGrass = (() => { const t = M.grid[Math.floor(P.y / TS)] && M.grid[Math.floor(P.y / TS)][Math.floor(P.x / TS)]; return t === 'W' || t === 'Z'; })();
-      return onGrass ? null : { x: grassCache.p.x, y: grassCache.p.y, marker: false };
-    }
-    if (o.map === M.id) return { x: o.x + 0.5, y: o.y + 0.6, marker: true };
-    const hop = nextHop(M.id, o.map), e = M.exits.find((x) => x.to === hop) || M.exits.find((x) => x.to === 'town');
-    if (!e) return null;
-    const mid = (e.a + e.b + 1) / 2;
-    return e.edge === 'n' ? { x: mid, y: 0.5 } : e.edge === 's' ? { x: mid, y: M.H - 0.5 } : e.edge === 'w' ? { x: 0.5, y: mid } : { x: M.W - 0.5, y: mid };
-  }
   function nextHop(from, to) { // breadth-first over map exits
     if (!MAPS[to] || from === to) return to;
     const prev = { [from]: null }, q = [from];
@@ -892,29 +945,6 @@ const WORLD = (() => {
       const bx = snap((fishAt.x + 0.5) * TS - cx), by = snap((fishAt.y + 0.55) * TS - cy + Math.sin(tAnim * (fishAt.bite ? 22 : 4)) * (fishAt.bite ? 3 : 1.5));
       ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(bx - 8, by + 3, 16, 2);
       ctx.fillStyle = '#1E2A4A'; ctx.fillRect(bx - 4, by - 6, 8, 10); ctx.fillStyle = '#D8574A'; ctx.fillRect(bx - 3, by - 5, 6, 4); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(bx - 3, by - 1, 6, 4);
-    }
-    // objective: gold marker over the target, or an arrow around the player pointing the way
-    const goal = opts.objective ? goalPoint(opts.objective()) : null;
-    if (goal) {
-      const gx = snap(goal.x * TS - cx), gy = snap(goal.y * TS - cy), px = pxs - cx, py = pys - cy - 18;
-      const dx = gx - px, dy = gy - py, dist = Math.hypot(dx, dy);
-      const bob = Math.round(Math.sin(tAnim * 5) * 2) * 2;
-      if (gx > 8 && gx < vw - 8 && gy > 30 && gy < vh - 8 && goal.marker) {
-        const mx = gx, my = gy - 62 + bob;
-        const rows = [[-14, 14], [-12, 12], [-10, 10], [-8, 8], [-6, 6], [-4, 4], [-2, 2]];
-        rows.forEach(([l, r], i) => { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(mx + l - 2, my + i * 3 - 2, r - l + 4, 5); });
-        rows.forEach(([l, r], i) => { ctx.fillStyle = i < 2 ? '#8A6510' : '#FFD86B'; ctx.fillRect(mx + l, my + i * 3, r - l, 3); });
-        ctx.fillStyle = '#8A6510'; ctx.fillRect(mx - 14, my, 28, 2);
-      }
-      if (dist > 70) {
-        const ux = dx / dist, uy = dy / dist, ax = px + ux * (48 + bob), ay = py + uy * (48 + bob);
-        ctx.save(); ctx.translate(Math.round(ax), Math.round(ay)); ctx.rotate(Math.atan2(uy, ux));
-        ctx.lineJoin = 'round';
-        ctx.beginPath(); ctx.moveTo(21, 0); ctx.lineTo(-12, -16); ctx.lineTo(-4, 0); ctx.lineTo(-12, 16); ctx.closePath();
-        ctx.fillStyle = '#FFD86B'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#5A3E08'; ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(-15, -20); ctx.lineTo(-6, 0); ctx.lineTo(-15, 20); ctx.closePath(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.stroke();
-        ctx.restore();
-      }
     }
     // the Sealed Arch's open doorway: a swirling glow between the pillars
     (M.objects || []).forEach((o) => { if (!o.portal || !(opts.objState && (opts.objState(o) || {}).open)) return;

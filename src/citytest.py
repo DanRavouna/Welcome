@@ -28,7 +28,6 @@ with sync_playwright() as p:
   # objective with ivy cleared -> challenge wren in Mossbrook, arrow routes
   pg.evaluate("(()=>{const g=APP.game; const seeds=[5000,5001,5002]; g.update({caught:seeds.map(s=>({seed:s,stage:2,lv:8})), party:seeds, fighter:5000, seen:[1,2,3,4,5], npc:{done:['fern'],beaten:{},cleared:['rowan','ivy'],seals:[]}, xp:2000});})()")
   pg.evaluate("WORLD.enter('town'); WORLD.setPos(21.9*WORLD.TS, 23.6*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(200)
-  print('goal:', pg.inner_text('#goal-text'))
   # gym door -> Wren dialog; house -> toast; herb hut -> shop
   pg.evaluate("WORLD.enter('mossbrook'); WORLD.setPos(17.9*WORLD.TS, 8.3*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(80)
   print('near gym/wren label:', pg.inner_text('#act-label')); pg.click('#act'); pg.wait_for_timeout(100); print('dialog:', pg.evaluate("APP.dialog && APP.dialog.name"), '|', pg.evaluate("APP.dialog && APP.dialog.lines[0]"))

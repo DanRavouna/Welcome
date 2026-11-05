@@ -26,7 +26,7 @@ with sync_playwright() as p:
   pos=pg.evaluate("[WORLD.map.id, +(WORLD.pos().x/WORLD.TS).toFixed(1), +(WORLD.pos().y/WORLD.TS).toFixed(1)]") if pg.evaluate("typeof WORLD.pos==='function'") else pg.evaluate("WORLD.map.id")
   print('4 seals -> map:', pos)
   pg.evaluate("WORLD.input.jy=0; WORLD.setPos(12.9*WORLD.TS, 9.4*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(50)
-  print('tower door label:', pg.inner_text('#act-label'), '| goal:', pg.inner_text('#goal-text'))
+  print('tower door label:', pg.inner_text('#act-label'))
   pg.mouse.click(200,400); pg.wait_for_timeout(900); print('peak music:', pg.evaluate("MUSIC.current"))
   pg.evaluate("WORLD.setPos(12.9*WORLD.TS, 22.5*WORLD.TS)")
   for _ in range(30): pg.evaluate("WORLD.input.jy=1; WORLD.step(1/30)")
