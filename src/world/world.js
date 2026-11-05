@@ -72,9 +72,9 @@ const WORLD = (() => {
       { x: 41, y: 19, to: 'tide', text: 'East: Tide Shore (Tide and Dusk critters). Follow the boardwalk past the shore to reach Admiral Coral in Coralbay.' }
     ];
     signs.forEach((s) => set(s.x, s.y, 'G'));
-    // trail north to Champion's Peak: stamped after the decor pass so the seeded scatter (and every other tile) is unchanged
+    // trail north to Vigil Peak: stamped after the decor pass so the seeded scatter (and every other tile) is unchanged
     for (let y = 0; y <= 11; y++) { set(26, y, '='); set(27, y, '='); }
-    set(28, 10, 'G'); signs.push({ x: 28, y: 10, to: 'peak', text: "North: Champion's Peak. The trail opens to trainers holding all 4 Leader Seals." });
+    set(28, 10, 'G'); signs.push({ x: 28, y: 10, to: 'peak', text: "North: Vigil Peak. The trail opens to trainers holding all 4 Leader Seals." });
     places.forEach((p) => { const [dx, dy] = p.door; [[dx, dy + 1], [dx + 1, dy + 1]].forEach(([x, y]) => set(x, y, '=')); });
     return {
       id: 'town', name: 'Sproutvale', theme: THEMES.town, grid: m, W, H, places, signs, types: ALL_TYPES, rate: 0.08,
@@ -151,7 +151,7 @@ const WORLD = (() => {
       arrive: { [back]: arriveAt }, spawn: arriveAt
     };
   }
-  // ---------- Champion's Peak: the Tower's own zone (no wild critters) ----------
+  // ---------- Vigil Peak: the Tower's own zone (no wild critters) ----------
   function buildPeak() {
     const W = 26, H = 24, r = rng(9091);
     const m = []; for (let y = 0; y < H; y++) m.push(new Array(W).fill('.'));
@@ -162,13 +162,13 @@ const WORLD = (() => {
     [[5, 15], [19, 14], [6, 19], [20, 19], [17, 17]].forEach(([x, y]) => set(x, y, 'R'));     // boulders
     for (let y = 13; y <= 15; y++) for (let x = 3; x <= 7; x++) { const dx = (x - 5) / 2.4, dy = (y - 14) / 1.4; if (dx * dx + dy * dy <= 1 && m[y][x] === '.') set(x, y, '~'); } // tarn
     for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) { if (m[y][x] !== '.') continue; const v = r(); if (v < 0.06 && (x < 9 || x > 16)) set(x, y, 'T'); else if (v < 0.2) set(x, y, ','); }
-    const tower = { id: 'tower', name: "Champion's Tower", x: 10, y: 3, w: 6, h: 6, kind: 'tower', door: [12, 8], open: 'tower' };
+    const tower = { id: 'tower', name: "The Long Watch", x: 10, y: 3, w: 6, h: 6, kind: 'tower', door: [12, 8], open: 'tower' };
     for (let y = 2; y < 9; y++) for (let x = 9; x <= 16; x++) set(x, y, y >= 3 && x >= 10 && x <= 15 ? 'X' : (m[y][x] === 'T' || m[y][x] === 'R' ? '.' : m[y][x]));
     for (let k = 0; k < 4; k++) { set(12, H - 1 - k, '='); set(13, H - 1 - k, '='); }
     set(15, 20, 'G');
     return {
-      id: 'peak', name: "Champion's Peak", theme: THEMES.peak, grid: m, W, H, places: [tower],
-      signs: [{ x: 15, y: 20, text: "Champion's Peak. The Tower at the summit tests your party floor after floor." }],
+      id: 'peak', name: "Vigil Peak", theme: THEMES.peak, grid: m, W, H, places: [tower],
+      signs: [{ x: 15, y: 20, text: "Vigil Peak. The Tower at the summit tests your party floor after floor." }],
       types: [], rate: 0,
       exits: [{ edge: 's', a: 12, b: 13, to: 'town' }],
       arrive: { s: [12.9, H - 1.4] }, spawn: [12.9, H - 1.4]

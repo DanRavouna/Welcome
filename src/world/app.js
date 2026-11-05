@@ -164,7 +164,7 @@ const APP = (() => {
   let mapOpen = false, mapSel = null;
   const ZTYPES = ['Ember', 'Tide', 'Moss', 'Volt', 'Frost', 'Dusk', 'Stone', 'Bloom'];
   const ZONE_TYPES = { frost: ['Frost', 'Stone'], ember: ['Ember', 'Volt'], moss: ['Moss', 'Bloom'], tide: ['Tide', 'Dusk'] };
-  const CITY = { mossbrook: ['Mossbrook', 'past Moss Forest, to the west', 'Elder Wren’s gym'], frosthold: ['Frosthold', 'past Frost Peaks, to the north', 'Glacia’s gym'], cinderport: ['Cinderport', 'past Ember Fields, to the south', 'Blaze’s gym'], coralbay: ['Coralbay', 'past Tide Shore, to the east', 'Admiral Coral’s gym'], peak: ["Champion's Peak", 'up the trail north of the plaza', 'The Tower'], ascent: ['The Cold Ascent', 'through the north gate of Frosthold', 'A climb to an old beacon'], descent: ['The Cinder Descent', 'through the south gate of Cinderport', 'A descent to a buried forge'] };
+  const CITY = { mossbrook: ['Mossbrook', 'past Moss Forest, to the west', 'Elder Wren’s gym'], frosthold: ['Frosthold', 'past Frost Peaks, to the north', 'Glacia’s gym'], cinderport: ['Cinderport', 'past Ember Fields, to the south', 'Blaze’s gym'], coralbay: ['Coralbay', 'past Tide Shore, to the east', 'Admiral Coral’s gym'], peak: ["Vigil Peak", 'up the trail north of the plaza', 'The Tower'], ascent: ['The Cold Ascent', 'through the north gate of Frosthold', 'A climb to an old beacon'], descent: ['The Cinder Descent', 'through the south gate of Cinderport', 'A descent to a buried forge'] };
   // what the card under the map says about a place, and whether you can fast travel there
   function placeCard(id) {
     const st = game.state, lv = game.levelInfo(st.xp || 0).level, here = WORLD.map && WORLD.map.id, test = game.props.noGates, vis = st.visited || [];
@@ -599,7 +599,7 @@ const APP = (() => {
       { lv: 8, id: 'pike', name: 'Skier Pike', x: 15, y: 19, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' }, types: ['Frost', 'Tide'], size: 4, stage: 2, pick: 0.6,
         intro: ['Halt! Nobody enters Frosthold without a snowball fight.', 'Well, a critter battle. Same thing up here.'], winLine: 'Brr, you are tough. Here is your reward.', beatenLines: ['My critters need to thaw out. Tomorrow, rematch!'] },
       { id: 'hilde', name: 'Hilde', x: 24, y: 15, kind: 'talk', pal: { h: '#E8C07A', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The palisade keeps out the wind, not the critters. They come and go as they like.', 'Some nights there is a light in the pass that is nobody\u2019s.', 'Glacia trains on the ice every morning. Her critters do not slip.'] },
-      { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['They say a tower stands on Champion\u2019s Peak, up the trail north of Sproutvale\u2019s plaza.', 'Only trainers with all four Leader Seals may climb it.', 'Before first light the shore gives back things the sea took.'] }
+      { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['They say a tower stands on Vigil Peak, up the trail north of Sproutvale\u2019s plaza.', 'Only trainers with all four Leader Seals may climb it.', 'Before first light the shore gives back things the sea took.'] }
     ]);
     city('ember', 'cinderport', 'blaze', 'Welcome to Cinderport. I am Blaze, and this forge is my gym.', [
       { id: 'bea', name: 'Bellows Bea', x: 8, y: 10, kind: 'shop', pal: { h: '#3A2A1A', y: '#8A4A2A', Y: '#6A3A2A' }, lines: ['Forge Market! Same remedies as Mira\u2019s, kept warm by the furnace.'] },
@@ -988,7 +988,7 @@ const APP = (() => {
     game.setState({ trainer: tr, battle: null });
     openScreen('battle');
   }
-  // ---------- Champion's Tower ----------
+  // ---------- The Long Watch ----------
   const KEEPER = 'Tower Keeper';
   function partyLine() {
     return game.towerParty().map((x) => game.make(x.seed, (game.state.caught.find((e) => e.seed === x.seed) || {}).stage || 1).name + ' ' + x.hp + '/' + x.max).join(', ');
@@ -1007,7 +1007,7 @@ const APP = (() => {
   }
   function towerLobby() {
     const g = game, t = g.towerState(), seals = ((g.state.npc && g.state.npc.seals) || []).length;
-    if (seals < 4 && !g.props.noGates) { toast("The Champion's Tower opens to trainers with all 4 Leader Seals. You hold " + seals + '.'); return; }
+    if (seals < 4 && !g.props.noGates) { toast("The Long Watch opens to trainers with all 4 Leader Seals. You hold " + seals + '.'); return; }
     if (t.run) {
       if (!g.towerParty().some((x) => x.hp > 0)) { g.endTowerRun(); towerLobby(); return; }
       showDialog(KEEPER, ['Your climb is waiting on floor ' + t.run.floor + ' of ' + TOWER.floors + '.', 'Your party: ' + partyLine() + '.'], [
@@ -1018,7 +1018,7 @@ const APP = (() => {
       return;
     }
     const left = g.towerRunsLeft(), party = (g.partySeeds().length ? g.partySeeds() : [g.state.caught[0].seed]).map((sd) => g.make(sd, g.state.caught.find((e) => e.seed === sd).stage).name);
-    const intro = [t.best ? 'Back again, Champion. Your best is floor ' + t.best + ' of ' + TOWER.floors + '.' : 'Welcome, Champion. ' + TOWER.floors + ' floors of trainers stand between you and the top.',
+    const intro = [t.best ? 'Back again. Your longest watch reached floor ' + t.best + ' of ' + TOWER.floors + '.' : 'Welcome. ' + TOWER.floors + ' floors. Each one is a night, and each night someone comes to the door.',
       'Your party fights every floor in a row. HP carries over between floors. Essence is paid only for floors above your best.', 'This week: ' + g.towerTwist().name + '. ' + g.towerTwist().text];
     if (!left) { showDialog(KEEPER, intro.slice(0, 1).concat(['You have used today\u2019s ' + TOWER.runsPerDay + ' climbs. Come back tomorrow.'])); return; }
     showDialog(KEEPER, intro.concat(['Climbs left today: ' + (g.props.testMode ? 'unlimited (test mode)' : left) + '. You will bring ' + party.join(', ') + '.']), [
@@ -1036,7 +1036,7 @@ const APP = (() => {
         { label: 'Rest outside', fn: () => { endDialog(); toast('Your climb is saved on floor ' + (res.floor + 1) + '.'); } }
       ]), 60);
     } else if (res.kind === 'top') {
-      setTimeout(() => showDialog(KEEPER, ['You reached the top of the Champion\u2019s Tower!' + (res.reward ? ' +' + res.reward + ' essence.' : ''), res.first ? 'No trainer in Sproutvale has climbed higher. The summit is yours.' : 'Summit reached again: ' + t.clears + ' times now.']), 60);
+      setTimeout(() => showDialog(KEEPER, ['You kept the watch to the top!' + (res.reward ? ' +' + res.reward + ' essence.' : ''), res.first ? 'Nobody in Sproutvale has kept it longer. The lamp is yours until morning.' : 'Kept to the top again: ' + t.clears + ' times now.']), 60);
     } else {
       setTimeout(() => showDialog(KEEPER, ['Your climb ended on floor ' + res.floor + '.', 'Best: floor ' + Math.max(t.best, 0) + ' of ' + TOWER.floors + '. Climbs left today: ' + (g.props.testMode ? 'unlimited' : g.towerRunsLeft()) + '.']), 60);
     }
@@ -1069,7 +1069,7 @@ const APP = (() => {
       g.setState({ justSealed: null });
       const n = Object.values(WORLD.allNpcs()).flat().find((x) => x.id === sealed) || npc, count = ((g.state.npc && g.state.npc.seals) || []).length;
       const ls = [n.sealLine, 'You now hold ' + count + ' of 4 Leader Seals.'];
-      if (count === 4) ls.push('Every leader in the land has fallen to you. You are the Champion of Sproutvale!');
+      if (count === 4) ls.push('You have tended every fire in the land. Nobody in Sproutvale has tended so many.');
       setTimeout(() => showDialog(n.name, [tr.winLine].concat(ls)), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 4200); return;
     }
     if (won) { setTimeout(() => showDialog(tr.name, [tr.winLine, 'You earned ' + tr.reward + ' essence.'].filter((x) => x && !/^You earned 0 /.test(x))), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 3500); }
@@ -1090,7 +1090,7 @@ const APP = (() => {
       const n = Object.values(WORLD.allNpcs()).flat().find((x) => x.id === sealed);
       const count = ((game.state.npc && game.state.npc.seals) || []).length;
       const lines = [n.sealLine, 'You now hold ' + count + ' of 4 Leader Seals.'];
-      if (count === 4) lines.push('Every leader in the land has fallen to you. You are the Champion of Sproutvale!');
+      if (count === 4) lines.push('You have tended every fire in the land. Nobody in Sproutvale has tended so many.');
       open = false; $('screen').hidden = true;
       setTimeout(() => showDialog(n.name, lines), 60);
       return;
@@ -1276,7 +1276,7 @@ const APP = (() => {
         if (!folCache || folCache.key !== key) { const k = game.make(sd, e ? e.stage : 1), img = new Image(); img.src = PIX.sprite(k, 'icon'); folCache = { key: key, img: img, shiny: !!k.shiny }; }
         return folCache;
       },
-      onLocked: (e) => ROUTE_GATES[e.to] ? toast(mapName(e.to) + ' opens at trainer level ' + ROUTE_GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.') : e.to === 'peak' ? toast("The trail to Champion's Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.') : toast(ZONE_NAMES[e.to] + ' opens at trainer level ' + GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.'),
+      onLocked: (e) => ROUTE_GATES[e.to] ? toast(mapName(e.to) + ' opens at trainer level ' + ROUTE_GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.') : e.to === 'peak' ? toast("The trail to Vigil Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.') : toast(ZONE_NAMES[e.to] + ' opens at trainer level ' + GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.'),
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },

@@ -25,7 +25,7 @@ with sync_playwright() as p:
   pg.evaluate("APP.open('badges')"); pg.wait_for_timeout(300)
   pg.click("button:has-text('Critter Master')", timeout=2000) if False else None
   pg.click("button:has-text('Shiny Hunter')"); pg.wait_for_timeout(150)
-  print('wearing:', pg.evaluate("APP.game.titleName()"), '| locked button disabled:', pg.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Summit Champion')).disabled"))
+  print('wearing:', pg.evaluate("APP.game.titleName()"), '| locked button disabled:', pg.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Watchkeeper')).disabled"))
   sec=pg.locator("text=Titles").first; sec.scroll_into_view_if_needed(); pg.wait_for_timeout(200)
   box=pg.locator("text=Titles").first.bounding_box(); pg.screenshot(path='/tmp/titles.png', clip={'x':0,'y':max(0,box['y']-20),'width':320,'height':330})
   pg.evaluate("APP.close()"); pg.evaluate("APP.openMenu()"); pg.wait_for_timeout(300)
