@@ -2,6 +2,23 @@
 
 Attach this file plus `critter-roll-growth-source.tar.gz` (latest source + tests) to the new chat, and say: "Continue Critter Roll from this handoff. Extract the archive first."
 
+## Meaning (read this first; Dan, Nov 2026)
+Humans read in metaphor. The game is the greater meaning; the quest is inside it; each level is inside the quest. Dan confirmed this reading of the existing text (he did not write the theme himself, so refine it with him rather than treat it as fixed).
+- **The game (theme): home is something someone keeps lit for you, and the journey ends when you become the one who keeps it.** You start looked after (Mom, the Lab, a gifted partner), cross a land full of keepers who tend dormant things for a successor, and end by lighting the lamp and taking the ninth seat, which is the one the world left out. Evidence already in the text: eight statues and an empty ninth seat with an unclaimed crown; Keeper Orlen "Eight were enough for the world, they said. The ninth was kept here, asleep"; Veilcrown (Dusk, Last Light) and Wickling (Guiding Light); Warden Maren, Forgemaster Hale and Keeper Orlen each keep something dark or cold until someone proves they can carry it; Old Marta "Four fires and one lamp, and the whole country knew where home was"; Joss: the lighthouse lamp points inland at the arch, "whoever built it wanted the door found"; and the unexplained route props (new rope, second cup, warm lantern, new stone, new ribbon, polished runners, wet skiff, empty chair) all say someone tends this for someone not yet arrived.
+- **The quest:** the four seals are four fires you are trusted to tend (not trophies); the three side places are the three things that must be kept (the seat: who is counted; the light: the way home; the fire: the work); the Peak is the long watch. Lighting the lamp is the answer to the question the game asks from the first minute.
+- **Known contradictions to resolve in the revamp:** the spine is written as conquest ("Champion", "beat me and you hold every seal"); the Tower is a floor counter with no meaning; weather lines are type trivia; the four cities and zones mean only their element; the four clue-givers are plot devices; the deep layer (keepers, ninth seat) is reachable only through side content, and Dan's first three days (about 2.5 h, level 6, two seals, no Tower, no secrets) were all on the conquest spine.
+- **DRAFT meaning of each place (refine with Dan):**
+  - Sproutvale: where you are kept. The lit window; the Shrine is the first thing that gives without being asked.
+  - Moss Forest / Mossbrook: being tended while you grow (Elder Wren: "grow together"); first seal = first fire.
+  - Frost Peaks / Frosthold: what is kept by being kept cold; waiting preserved.
+  - Ember Fields / Cinderport: the fire that has to be fed; work; the forge below is where it began.
+  - Tide Shore / Coralbay: what the sea gives back; return; the last fire, where the road home begins.
+  - The routes: the roads between the fires, kept walkable by people you mostly never meet; every route holds one sign of someone tending.
+  - The Sealed Arch / Lamp Tower / Forge Below: the seat, the light, the fire.
+  - Champion's Peak and the Tower: unresolved (a conquest ladder today). Candidate: the long watch, where the floors are nights kept, not rivals beaten.
+  - Open question for Dan: is the ending "you keep the light", or "you make room for the one who was left out"? Probably both, but he decides the emphasis.
+- Revamp order proposed: (1) this section and the CLAUDE.md rule (done); (2) re-word the spine and the seals from conquest to tending without changing mechanics; (3) give every route, zone and city one meaning-bearing hand-built place instead of terrain noise; (4) decide the Tower; (5) put the deep layer on the main path in a way you can feel without being told.
+
 ## Project
 - Original creature-collector web game, built and played entirely from Dan's phone. Critters are original (no Pokémon assets); style inspired by GBA-era pixel art + glassy modern menus.
 - Live: https://claude.ai/artifact/W9Ta3mH9hfZQixkzJkpfyD (republish to this URL; omit `capabilities` to keep them; they are `{db:{}, downloads:true, user:{}}`).

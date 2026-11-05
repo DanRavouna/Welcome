@@ -2,6 +2,12 @@
 
 These rules apply to every task in this repository.
 
+## Meaning comes first (Dan, Nov 2026: "humans function in metaphors and symbolics")
+The game has a greater meaning, the quest sits inside it, and every place sits inside the quest. Nothing is built, changed or reviewed as a map with props: it is built as a statement of its piece of the meaning, expressed by layout, what it lets you see, what it hides and what it asks of you, never by text that explains it (hint, never tell).
+- Before building or changing any level, zone, route, NPC line, quest or reward, write ONE sentence in the handoff's "Meaning" section saying what it means inside the quest. If you cannot, do not build it yet.
+- Every review of existing content starts with "what does this mean?" before layout, balance or polish.
+- The working theme, quest and the draft meaning of each place are the first section of `critter-roll-handoff.md`. Dan confirmed the theme; the per-place meanings are drafts to refine with him.
+
 1. **Read the handoff before changing anything.** Read `critter-roll-handoff.md` first. It covers the architecture, systems, balance numbers, tests and watch items.
 2. **Test every change.** Run the full suite at the end of each phase.
 3. **Keep old saves loading and never break existing progress.** Save keys such as `critter-roll:v2`, `critter-roll:world` and `critter-roll:id` must keep loading. New fields need safe defaults, and no change may drop existing fields.
