@@ -6269,7 +6269,16 @@ const APP = (() => {
   // ---------- guidance: next hints, first-time intro ----------
   const npcAt = (map, id) => { const n = (WORLD.allNpcs()[map] || []).find((x) => x.id === id); return n ? { map: map, x: n.x, y: n.y } : null; };
   const hintQueue = []; let hintBusy = false;
+  // the help that leaves as you grow (Meaning: you no longer need it kept for you). Each seal you hold retires one kind of help: the first quiets the tips, the second changes Mira's welcome, the third and fourth change what Mom says. Words only; no price, reward or rule changes.
+  const sealCount = () => ((game.state.npc && game.state.npc.seals) || []).length;
+  const SCAFFOLD = {
+    pip: [[1, ['You know all of this already.', 'I just like standing here.']]],
+    mira: [[2, ['Take what you need.']]],
+    mom: [[2, ['You are home. Good.', 'I stopped tidying the desk. You know where things are.']], [3, ['You did not ask what is for dinner.', 'The lamp in the window is on. I did not light it.']], [4, ['You do not have to tell me where you are going.', 'The door stays open. It always did.']]]
+  };
+  const scaffoldLines = (n) => { const rows = SCAFFOLD[n.id]; if (!rows) return null; const c = sealCount(); let out = null; rows.forEach((r) => { if (c >= r[0]) out = r[1]; }); return out; };
   function hint(id, text) {
+    if (sealCount() >= 1 && id !== 'online') return;   // with a seal in hand the tips go quiet
     const hs = game.state.hints || [];
     if (hs.indexOf(id) !== -1 || hintQueue.some((q) => q.id === id)) return;
     game.update({ hints: hs.concat([id]) });
@@ -6802,6 +6811,7 @@ const APP = (() => {
   }
   function talk(n) {
     WORLD.facePlayer(n);
+    const sc = scaffoldLines(n); if (sc) n = Object.assign({}, n, { lines: sc });
     const g = game, done = (g.state.npc && g.state.npc.done) || [];
     const qcity = Object.keys(CITY_QUESTS).find((c) => CITY_QUESTS[c].giver === n.id);
     if (qcity) {

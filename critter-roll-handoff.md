@@ -19,6 +19,11 @@ Humans read in metaphor. The game is the greater meaning; the quest is inside it
   - Emphasis question settled by Dan (see theme): independence, you no longer need it kept for you.
 - Revamp order proposed: (1) this section and the CLAUDE.md rule (done); (2) re-word the spine and the seals from conquest to tending without changing mechanics; (3) give every route, zone and city one meaning-bearing hand-built place instead of terrain noise; (4) decide the Tower; (5) put the deep layer on the main path in a way you can feel without being told.
 
+## The help that leaves (first revamp step built, Nov 2026)
+- Meaning: each seal you hold retires one kind of help, because you have learned to do it yourself; home stays warm. Words and tips only: no price, reward, rule or balance changed. In app.js: `SCAFFOLD` (per NPC id, `[seals needed, lines]`, last matching row wins) and `scaffoldLines(n)` applied at the top of `talk()`; `hint()` returns early once you hold one seal (except the `online` save tip, which is about saves, not play).
+- Seal 1: tips go quiet, Pip says "You know all of this already. I just like standing here." Seal 2: Mira says "Take what you need." (shop unchanged). Seal 2 Mom: stopped tidying the desk. Seal 3 Mom: "The lamp in the window is on. I did not light it." Seal 4 Mom: "The door stays open. It always did."
+- Not done: the other scaffolding (Fern, Remy, the Dex hints, the city quests), the conquest wording of the seals and Champion, the Tower, hand-built meaning places. Test: `scaffoldtest.py` (prints every line at 0 to 4 seals and the tip rule). Not verified: whether the withdrawal reads as intended to a player, or just as odd lines.
+
 ## Project
 - Original creature-collector web game, built and played entirely from Dan's phone. Critters are original (no Pokémon assets); style inspired by GBA-era pixel art + glassy modern menus.
 - Live: https://claude.ai/artifact/W9Ta3mH9hfZQixkzJkpfyD (republish to this URL; omit `capabilities` to keep them; they are `{db:{}, downloads:true, user:{}}`).
