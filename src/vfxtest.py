@@ -33,4 +33,9 @@ with sync_playwright() as p:
   box=pg.locator('#atk').bounding_box(); pg.mouse.click(box['x']+box['width']/2, box['y']+box['height']/2-8); pg.wait_for_timeout(200)
   print('attack spawned effects:', pg.evaluate("VFX.count")>3, '| enemy was hit:', pg.evaluate("ACT.enemies[0].s.hp<ACT.enemies[0].s.max"))
   pg.wait_for_timeout(1500); print('effects drain after the blow:', pg.evaluate("VFX.count")<5)
+  # a blow's shake must fade even where no combat runs (a city after a duel): it once kept shaking the whole screen
+  pg.evaluate("WORLD.enter('mossbrook'); WORLD.setPaused(false); VFX.shake(1,0,9)"); pg.wait_for_timeout(1200)
+  cams=[]
+  for i in range(8): cams.append(pg.evaluate("JSON.stringify(WORLD.debug().cam)")); pg.wait_for_timeout(30)
+  print('shake fades in a city (camera still afterwards):', len(set(cams))==1, '| shake value:', pg.evaluate("JSON.stringify(VFX.shakeNow(performance.now()/1000))"))
   print('errors:', errs or 'none'); b.close()

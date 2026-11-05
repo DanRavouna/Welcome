@@ -196,9 +196,9 @@ const ACT = (() => {
   function step(e) {
     on = false; lastEnv = e;
     armed = false;
-    if (!enabled() || !e.fol || e.M.interior) { if (duel) abortDuel(''); if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; VFX.clear(); } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
+    if (!enabled() || !e.fol || e.M.interior) { VFX.clear(); if (duel) abortDuel(''); if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; VFX.clear(); } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
     mkHero(); if (!hero) return; armed = true;
-    if (!wildOk(e) && !duel) { if (E.length) { E = []; FX = []; PR = []; OFF = []; } mapId = ''; if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }   // a quiet place (city, cave): nothing roams here
+    if (!wildOk(e) && !duel) { VFX.clear(); if (E.length) { E = []; FX = []; PR = []; OFF = []; } mapId = ''; if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }   // a quiet place (city, cave): nothing roams here
     on = true; const dt = e.dt, g = H.game();
     if (mapId !== e.M.id) reset(e);
     if (VFX.freeze(dt)) return;   // hit-stop: a blow freezes the fight for a few frames

@@ -109,10 +109,10 @@ const VFX = (() => {
   function step(dt) {
     FXL.forEach((f) => { f.t += dt; }); FXL = FXL.filter((f) => f.t < f.set.dur);
     PT.forEach((p) => { p.t += dt; p.vy += p.g * dt; p.x += (p.vx + (p.drift ? Math.sin(p.t * 7 + p.ph) * 18 : 0)) * dt; p.y += p.vy * dt; p.vx *= 0.97; }); PT = PT.filter((p) => p.t < p.life);
-    shakeA = Math.max(0, shakeA - dt * 38);
   }
-  function shakeNow(t) { if (shakeA <= 0.1) return { x: 0, y: 0 }; const k = shakeA * Math.sin(t * 90); return { x: Math.round(shakeX * k + Math.sin(t * 131) * shakeA * 0.25), y: Math.round(shakeY * k + Math.cos(t * 117) * shakeA * 0.25) }; }
-  function clear() { FXL = []; PT = []; shakeA = 0; freezeT = 0; }
+  let lastShakeT = null;
+  function shakeNow(t) { if (shakeA > 0) { if (lastShakeT !== null && t > lastShakeT) shakeA = Math.max(0, shakeA - (t - lastShakeT) * 38); lastShakeT = t; } else lastShakeT = null; if (shakeA <= 0.1) { shakeA = 0; return { x: 0, y: 0 }; } const k = shakeA * Math.sin(t * 90); return { x: Math.round(shakeX * k + Math.sin(t * 131) * shakeA * 0.25), y: Math.round(shakeY * k + Math.cos(t * 117) * shakeA * 0.25) }; }
+  function clear() { FXL = []; PT = []; shakeA = 0; freezeT = 0; lastShakeT = null; }
   // draw all effects (world coordinates minus the camera; 1 art pixel = 2 screen pixels)
   function draw(c, cx, cy, snap) {
     c.imageSmoothingEnabled = false;
