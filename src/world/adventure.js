@@ -150,6 +150,13 @@ const ADV = (() => {
       const f = 0.5 + 0.5 * Math.sin(t * 7 + o.x), gl = g.createRadialGradient(x + 23, y + 17, 1, x + 23, y + 17, 26 + f * 4); gl.addColorStop(0, 'rgba(255,214,120,0.55)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 6, y - 8, 58, 52);
       R(g, x + 20, y + 11, 8, 11, OL); R(g, x + 21, y + 12, 6, 9, '#FFD27A'); R(g, x + 23, y + 14, 2, 5, '#FFF6D0'); R(g, x + 20, y + 10, 8, 2, OL);
     },
+    // a lantern on a post along a road; st.k (0 to 1) is how lit it is (the app eases it, so a lamp warms up as if someone had just lit it)
+    postlamp(g, x, y, st, t, o) {
+      const k = st.k || 0;
+      R(g, x + 10, y + 28, 12, 3, 'rgba(0,0,0,0.22)'); R(g, x + 15, y + 8, 3, 21, '#5A4A38'); R(g, x + 15, y + 8, 1, 21, '#7A664C'); R(g, x + 12, y + 8, 12, 3, '#5A4A38');
+      if (k > 0.02) { const f = 0.5 + 0.5 * Math.sin(t * 6 + o.x), gl = g.createRadialGradient(x + 17, y + 17, 1, x + 17, y + 17, (22 + f * 3) * (0.4 + 0.6 * k)); gl.addColorStop(0, 'rgba(255,214,120,' + (0.6 * k).toFixed(2) + ')'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 10, y - 10, 56, 56); }
+      R(g, x + 14, y + 11, 8, 11, OL); R(g, x + 15, y + 12, 6, 9, k > 0.5 ? '#FFD27A' : '#3A3340'); if (k > 0.5) R(g, x + 17, y + 14, 2, 5, '#FFF6D0'); R(g, x + 14, y + 10, 8, 2, OL);
+    },
     // two cups on a flat stone; one still has steam
     cups(g, x, y, st, t, o) {
       R(g, x + 6, y + 26, 20, 3, 'rgba(0,0,0,0.22)'); R(g, x + 5, y + 20, 22, 7, OL); R(g, x + 6, y + 21, 20, 5, '#8E98AD'); R(g, x + 6, y + 21, 20, 2, '#B7BFCF');

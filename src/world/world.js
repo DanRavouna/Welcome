@@ -385,18 +385,33 @@ const WORLD = (() => {
   // Every network: a road between two cities, a bypass loop, at least one dead end, a few unexplained things, and nothing that points the way.
   const NETS = [];
   const NET_META = [];
+  // a trail of lantern posts along the road between two doors (Meaning: the road is kept open by people you never meet). Only the posts are placed here; the app lights the one just ahead of you at dusk and night.
+  function addTrail(M, fromEdge, toEdge) {
+    const W = M.W, H = M.H, g = M.grid, ex = (edge) => M.exits.find((e) => e.edge === edge); const ea = ex(fromEdge), eb = ex(toEdge); if (!ea || !eb) return;
+    const cell = (e) => e.edge === 's' ? [e.a, H - 2] : e.edge === 'n' ? [e.a, 1] : e.edge === 'w' ? [1, e.a] : [W - 2, e.a], A = cell(ea), B = cell(eb), key = (x, y) => y * W + x;
+    const prev = new Map([[key(A[0], A[1]), null]]), q = [A]; let found = null;
+    while (q.length && !found) { const [x, y] = q.shift(); if (x === B[0] && y === B[1]) { found = [x, y]; break; } [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || prev.has(key(nx, ny)) || g[ny][nx] !== '=') return; prev.set(key(nx, ny), [x, y]); q.push([nx, ny]); }); }
+    if (!found) return; const cells = []; for (let c = found; c; c = prev.get(key(c[0], c[1]))) cells.push(c); cells.reverse();
+    const lamps = []; for (let i = 6; i < cells.length - 5; i += 7) {
+      const [x, y] = cells[i]; let put = null;
+      [[0, -2], [-2, 0], [0, 2], [2, 0], [-1, -2], [1, -2], [-2, -1], [-2, 1]].forEach(([dx, dy]) => { if (put) return; const nx = x + dx, ny = y + dy; if (nx < 3 || ny < 3 || nx > W - 4 || ny > H - 4) return; if (['.', ',', 'T'].indexOf(g[ny][nx]) === -1) return; for (let yy = ny - 1; yy <= ny + 1; yy++) for (let xx = nx - 1; xx <= nx + 1; xx++) if (g[yy][xx] === 'O' || g[yy][xx] === 'G') return; put = [nx, ny]; });
+      if (!put) continue; g[put[1]][put[0]] = 'O'; (M.objects = M.objects || []).push({ id: 'post-' + M.id + '-' + lamps.length, kind: 'postlamp', x: put[0], y: put[1], reach: 1.7, text: 'A lantern on a post.', trail: i }); lamps.push(i);
+    }
+    M.trail = { cells: cells, lamps: lamps };
+  }
   function buildNet(net) {
     net.maps.forEach((sp) => { sp.keep = (net.props || []).filter((pr) => pr[0] === sp.id).map((pr) => pr[2]); const Mp = buildWild(sp); MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES[sp.base]; if (PXW.PAL[sp.base]) PXW.PAL[Mp.id] = PXW.PAL[sp.base]; });
     const main = MAPS[net.main]; main.exits = []; main.arriveFrom = {}; main.arrive = {};
     net.links.forEach((l) => connect(MAPS[l[0]], l[1], l[2], MAPS[l[3]], l[4], l[5], l[6] || null, l[7] || null));
     main.spawn = main.arriveFrom[net.spawnFrom];
     (net.props || []).forEach((pr) => addProp(MAPS[pr[0]], pr[1], pr[2], pr[3]));
+    (net.trail || []).forEach((t) => addTrail(MAPS[t[0]], t[1], t[2]));
     const post = (Mp, edge, a, text) => { const xy = { n: [a + 2, 1], s: [a + 2, Mp.H - 2], w: [1, a - 1], e: [Mp.W - 2, a - 1] }[edge]; Mp.grid[xy[1]][xy[0]] = 'G'; Mp.signs.push({ x: xy[0], y: xy[1], text: text }); };
     (net.posts || []).forEach((pt) => post(MAPS[pt[0]], pt[1], pt[2], pt[3]));
     NET_META.push({ base: net.base, main: net.main, cityA: net.cityA, cityB: net.cityB, ids: [net.main].concat(net.maps.map((m) => m.id)) });
   }
   // ---- Highland Pass: Mossbrook -> Highland Gate -> the Pass proper (Kai, the old stones) -> Frost Fork -> Frosthold; a bypass over Whisper Hollow and the Windy Lookout; Hermit's Cliff has no road to it
-  NETS.push({ base: 'route-mf', main: 'route-mf', cityA: 'mossbrook', cityB: 'frosthold', spawnFrom: 'route-mf-gate',
+  NETS.push({ base: 'route-mf', main: 'route-mf', cityA: 'mossbrook', cityB: 'frosthold', spawnFrom: 'route-mf-gate', trail: [['route-mf-gate', 's', 'n'], ['route-mf', 's', 'e'], ['route-mf-fork', 'w', 'e']],
     maps: [
       { id: 'route-mf-gate', base: 'route-mf', name: 'Highland Gate', seed: 5501, types: ['Moss', 'Frost'], hub: [16, 13], grass: 4, doors: [{ edge: 's', a: 16 }, { edge: 'n', a: 16 }, { edge: 'e', a: 12 }], nooks: [{ x: 26, y: 6, r: 2 }],
         objects: [{ id: 'hp-door', kind: 'doorframe', x: 26, y: 6, text: 'A door with nothing behind it. It does not open.' }] },
@@ -406,7 +421,7 @@ const WORLD = (() => {
         objects: [{ id: 'hp-ring', kind: 'ringstones', x: 9, y: 6, text: 'Stones, set in a circle by someone who was not in a hurry.' }] },
       { id: 'route-mf-fork', base: 'route-mf', name: 'Frost Fork', seed: 5504, types: ['Frost', 'Moss'], hub: [17, 13], grass: 5, doors: [{ edge: 'w', a: 13 }, { edge: 'n', a: 24 }, { edge: 'e', a: 13 }] },
       { id: 'route-mf-cliff', base: 'route-mf', name: 'Hermit\u2019s Cliff', seed: 5505, types: ['Frost', 'Dusk'], hub: [20, 14], grass: 3, doors: [{ edge: 'e', a: 20 }], nooks: [{ x: 8, y: 13, r: 3 }, { x: 10, y: 22, r: 2 }], rare: 0,
-        objects: [{ id: 'hp-chest2', kind: 'chest', x: 8, y: 16, reward: { charm: 1, essence: 8 }, text: 'A small chest under the overhang.' }, { id: 'hp-cups', kind: 'cups', x: 6, y: 12, text: 'Two cups.' }] }
+        objects: [{ id: 'hp-chest2', kind: 'chest', x: 8, y: 16, reward: { charm: 1, essence: 8 }, text: 'A small chest under the overhang.' }, { id: 'hp-cups', kind: 'cups', x: 6, y: 12, text: 'Two cups.' }, { id: 'hp-postlamp', kind: 'postlamp', always: true, x: 28, y: 17, text: 'A lantern on a post.' }] }
     ],
     links: [['mossbrook', 'n', 32, 'route-mf-gate', 's', 16, [32.9, 1.4]], ['route-mf-gate', 'n', 16, 'route-mf', 's', 17], ['route-mf-gate', 'e', 12, 'route-mf-hollow', 'w', 12], ['route-mf-hollow', 'n', 14, 'route-mf-lookout', 's', 8],
       ['route-mf-lookout', 's', 24, 'route-mf-fork', 'n', 24], ['route-mf', 'e', 13, 'route-mf-fork', 'w', 13], ['route-mf', 'w', 20, 'route-mf-cliff', 'e', 20], ['route-mf-fork', 'e', 13, 'frosthold', 'w', 13, null, [1.4, 14.2]]],

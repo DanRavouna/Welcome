@@ -757,7 +757,21 @@ const APP = (() => {
   // ---------- adventure: clues, objects, the Sealed Arch (content in adventure.js) ----------
   const advOf = () => { const a = (game && game.state.adv) || {}; return { clues: a.clues || [], open: a.open || {}, flags: a.flags || {} }; };
   function advSave(mut) { const a = advOf(), n = { clues: a.clues.slice(), open: Object.assign({}, a.open), flags: Object.assign({}, a.flags) }; mut(n); game.update({ adv: n }); try { setNear(WORLD.nearest()); } catch (e) {} }   // refresh the action label (e.g. Examine -> Enter)
-  function objState(o) { const a = advOf(); if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  // the lantern road (Meaning: the road is kept open by people you never meet): at dusk and night the post just ahead of you is lit, and when you reach it the next one is; the ones behind go dark. Posts ease in and out, so it looks lit by someone.
+  const lampK = {}; let trailDir = {}; let lampStamp = 0, lampDt = 0;
+  function lampState(o) {
+    const M = WORLD.map, tr = M && M.trail, now = performance.now(); if (now - lampStamp > 5) { lampDt = Math.min(0.1, (now - lampStamp) / 1000); lampStamp = now; } const dt = lampDt; let want = 0;
+    const tod = timeOfDay(), dark = tod === 'night' || tod === 'dusk';
+    if (o.always) want = dark ? 1 : 0;
+    else if (tr && dark) {
+      const P = WORLD.pos(), px = P.x / 32, py = P.y / 32; let pi = 0, bd = 1e9; tr.cells.forEach((c, i) => { const d = (c[0] - px) * (c[0] - px) + (c[1] - py) * (c[1] - py); if (d < bd) { bd = d; pi = i; } });
+      if (trailDir[M.id] === undefined) trailDir[M.id] = pi < tr.cells.length / 2 ? 1 : -1;
+      const dir = trailDir[M.id]; let next = null; tr.lamps.forEach((li) => { const ahead = (li - pi) * dir; if (ahead > 2 && (next === null || ahead < (next - pi) * dir)) next = li; });
+      want = next === o.trail ? 1 : 0;
+    }
+    const k = lampK[o.id] === undefined ? want : lampK[o.id]; lampK[o.id] = k + Math.sign(want - k) * Math.min(Math.abs(want - k), dt * 1.6); return { k: lampK[o.id] };
+  }
+  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -1290,7 +1304,7 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { plank(m.name); setNear(null); applyDungeon(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
+      onMap: (m) => { trailDir = {}; plank(m.name); setNear(null); applyDungeon(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map
     });
@@ -1385,6 +1399,6 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
