@@ -1370,6 +1370,42 @@ const ADV = (() => {
     if (Math.sin(t * 5 + ph * 2) > 0.5) R(g, x + (big ? 8 : 5), y - h1 - 6, 2, 2, '#FFD86B');
   };
   const ART = {
+    // a bench, facing the trees; the seat is worn smooth
+    bench(g, x, y) {
+      R(g, x + 3, y + 27, 26, 3, 'rgba(0,0,0,0.22)'); R(g, x + 4, y + 14, 24, 4, OL); R(g, x + 5, y + 15, 22, 2, '#A07E54'); R(g, x + 4, y + 19, 24, 5, OL); R(g, x + 5, y + 20, 22, 3, '#8A6A44'); R(g, x + 5, y + 20, 22, 1, '#B8935F');
+      R(g, x + 6, y + 24, 3, 5, OL); R(g, x + 23, y + 24, 3, 5, OL); R(g, x + 7, y + 24, 1, 4, '#6E5030'); R(g, x + 24, y + 24, 1, 4, '#6E5030');
+    },
+    // a small bell on a bent branch
+    bell(g, x, y, st, t, o) {
+      R(g, x + 15, y + 2, 2, 12, '#5A4A38'); R(g, x + 8, y + 2, 16, 2, '#5A4A38'); const sw = Math.round(Math.sin(t * 1.3 + o.x) * 1);
+      R(g, x + 12 + sw, y + 14, 8, 9, OL); R(g, x + 13 + sw, y + 15, 6, 7, '#D9B24A'); R(g, x + 13 + sw, y + 15, 2, 7, '#F2D27A'); R(g, x + 15 + sw, y + 23, 3, 3, OL); R(g, x + 15 + sw, y + 23, 2, 2, '#D9B24A');
+    },
+    // a row of stakes with ribbons; the ribbons move though nothing else does
+    stakes(g, x, y, st, t) {
+      R(g, x + 2, y + 28, 28, 3, 'rgba(0,0,0,0.2)');
+      [[6, '#C0503A'], [13, '#E8C07A'], [20, '#8E5BC8'], [26, '#FFFFFF']].forEach(([a, c], i) => { R(g, x + a, y + 8, 2, 20, '#6E5030'); const w = Math.round(Math.sin(t * 3 + i * 1.7) * 2); R(g, x + a + 2, y + 9, 5 + w, 3, c); R(g, x + a + 2, y + 12, 3 + w, 2, c); });
+    },
+    // an overturned sled, half in the snow
+    sled(g, x, y) {
+      R(g, x + 3, y + 26, 26, 3, 'rgba(0,0,0,0.2)'); R(g, x + 4, y + 20, 24, 3, OL); R(g, x + 5, y + 21, 22, 1, '#DCE2EE'); R(g, x + 6, y + 14, 20, 6, OL); R(g, x + 7, y + 15, 18, 4, '#9A6330'); R(g, x + 7, y + 15, 18, 1, '#B8793C');
+      R(g, x + 3, y + 22, 6, 2, OL); R(g, x + 23, y + 22, 6, 2, OL); R(g, x + 2, y + 27, 28, 2, '#F4F6FA');
+    },
+    // a small boat pulled up on the shore
+    skiff(g, x, y) {
+      R(g, x + 1, y + 26, 30, 4, 'rgba(0,0,0,0.2)'); R(g, x + 2, y + 17, 28, 9, OL); R(g, x + 3, y + 18, 26, 6, '#8A5A32'); R(g, x + 3, y + 18, 26, 2, '#B07A46'); R(g, x + 2, y + 17, 3, 3, OL); R(g, x + 27, y + 17, 3, 3, OL);
+      R(g, x + 6, y + 24, 20, 2, 'rgba(120,170,220,0.55)'); R(g, x + 4, y + 27, 24, 2, 'rgba(120,170,220,0.4)');
+    },
+    // a chair set out facing the water, with nobody in it
+    chair(g, x, y) {
+      R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.22)'); R(g, x + 8, y + 6, 3, 22, OL); R(g, x + 9, y + 7, 1, 20, '#A07E54'); R(g, x + 8, y + 6, 15, 3, OL); R(g, x + 9, y + 7, 13, 1, '#A07E54');
+      R(g, x + 8, y + 18, 16, 4, OL); R(g, x + 9, y + 19, 14, 2, '#8A6A44'); R(g, x + 21, y + 18, 3, 10, OL); R(g, x + 22, y + 19, 1, 8, '#6E5030');
+    },
+    // water that is lit from below
+    tidelight(g, x, y, st, t, o) {
+      const f = 0.5 + 0.5 * Math.sin(t * 2 + o.x); R(g, x + 3, y + 14, 26, 14, OL); R(g, x + 4, y + 15, 24, 12, '#2A6FB0');
+      const gl = g.createRadialGradient(x + 16, y + 21, 1, x + 16, y + 21, 22); gl.addColorStop(0, 'rgba(160,240,255,' + (0.55 + 0.2 * f) + ')'); gl.addColorStop(1, 'rgba(160,240,255,0)'); g.fillStyle = gl; g.fillRect(x - 6, y + 4, 44, 34);
+      R(g, x + 8, y + 19, 6, 2, 'rgba(255,255,255,0.7)'); R(g, x + 17, y + 22, 7, 2, 'rgba(255,255,255,0.5)');
+    },
     // a lantern on a leaning post: lit, warm, and nobody near it
     lantern(g, x, y, st, t, o) {
       R(g, x + 8, y + 28, 16, 3, 'rgba(0,0,0,0.22)'); R(g, x + 15, y + 8, 3, 21, '#5A4A38'); R(g, x + 15, y + 8, 1, 21, '#7A664C'); R(g, x + 15, y + 8, 10, 3, '#5A4A38');
@@ -2275,12 +2311,6 @@ const WORLD = (() => {
   linkEdge(MAPS.frost, 'n', 17, 'frosthold', [17.9, 1.2]); MAPS.frost.grid[3][20] = 'G'; MAPS.frost.signs.push({ x: 20, y: 3, to: 'frosthold', text: "North: Frosthold, the fort town. Glacia's gym is there." });
   linkEdge(MAPS.ember, 's', 17, 'cinderport', [17.9, MAPS.ember.H - 1.4]); MAPS.ember.grid[MAPS.ember.H - 4][20] = 'G'; MAPS.ember.signs.push({ x: 20, y: MAPS.ember.H - 4, to: 'cinderport', text: "South: Cinderport, the forge town. Blaze's gym is there." });
   linkEdge(MAPS.tide, 'e', 14, 'coralbay', [MAPS.tide.W - 1.4, 15.2]); MAPS.tide.grid[12][24] = 'G'; MAPS.tide.signs.push({ x: 24, y: 12, to: 'coralbay', text: "East, along the boardwalk: Coralbay harbor. Admiral Coral's gym is there." });
-  // the loop: each route's back exit leads to one city, a second exit (carved after the zone build) to the next
-  const ROUTE_LINKS = [
-    ['route-cm', 'cinderport', 'w', 13, [1.4, 14.2], 'n', 'mossbrook', 's', 22, [22.9, 26.6]],
-    ['route-fc', 'frosthold', 'e', 13, [34.6, 14.2], 's', 'coralbay', 'n', 28, [28.9, 1.4]],
-    ['route-cc', 'coralbay', 's', 28, [28.9, 26.6], 'w', 'cinderport', 'e', 13, [34.6, 14.2]]
-  ];
   // ---------- props: reusable landmarks (defs in landmarks.js) ----------
   // addProp(map, id, [x, y], text?) puts a landmark near the hint spot: the nearest legal place (clear ground, off paths, grass and water,
   // away from the borders and the reserved rectangle) gets the solid footprint, plus a signpost with the lore line just below it.
@@ -2310,22 +2340,6 @@ const WORLD = (() => {
   };
   const PROP_RESERVED = [[13, 3, 19, 11]]; // the route trainer's stand and sight line (routes only)
   Object.keys(PROPS).forEach((mid) => PROPS[mid].forEach(([id, hint, text]) => addProp(MAPS[mid], id, hint, text === '' ? null : text, mid.indexOf('route-') === 0 ? PROP_RESERVED : [])));
-  ROUTE_LINKS.forEach(([rid, cityA, edgeA, aA, arrA, rEdgeB, cityB, edgeB, aB, arrB]) => {
-    const R = MAPS[rid], back = R.exits[0];
-    back.to = cityA; R.arriveFrom = { [cityA]: R.arrive[back.edge] };
-    linkEdge(MAPS[cityA], edgeA, aA, rid, arrA);                        // city A side door onto the route
-    const mid = Math.floor((rEdgeB === 'n' || rEdgeB === 's' ? R.W : R.H) / 2) - 1;
-    const rArr = { n: [mid + 0.9, 1.4], s: [mid + 0.9, R.H - 1.4], w: [1.4, mid + 1.2], e: [R.W - 1.4, mid + 1.2] }[rEdgeB];
-    linkEdge(R, rEdgeB, mid, cityB, rArr);                             // route's far end
-    linkEdge(MAPS[cityB], edgeB, aB, rid, arrB);                        // city B side door onto the route
-    R.signs[0].text = R.name + ': ' + R.types.join(' and ') + ' critters. This route links ' + MAPS[cityA].name + ' and ' + MAPS[cityB].name + '.';
-    // signposts beside every new door (on the border, where a tree would stand, so they never block a street)
-    const post = (Mp, edge, a, text) => { const [x, y] = { n: [a + 2, 1], s: [a + 2, Mp.H - 2], w: [1, a - 1], e: [Mp.W - 2, a - 1] }[edge]; Mp.grid[y][x] = 'G'; Mp.signs.push({ x: x, y: y, text: text }); };
-    const dirWord = { n: 'North', s: 'South', w: 'West', e: 'East' };
-    post(MAPS[cityA], edgeA, aA, dirWord[edgeA] + ': ' + R.name + ' (' + R.types.join(' and ') + ' critters), the road to ' + MAPS[cityB].name + '.');
-    post(MAPS[cityB], edgeB, aB, dirWord[edgeB] + ': ' + R.name + ' (' + R.types.join(' and ') + ' critters), the road to ' + MAPS[cityA].name + '.');
-    post(R, rEdgeB, mid, dirWord[rEdgeB] + ': ' + MAPS[cityB].name + '.');
-  });
   // ---------- wild networks: a route made of several maps with forks, loops and dead ends (no guide arrows: the player explores) ----------
   // buildWild(spec): { id, base (the route it belongs to: climate, music, palette, level gate), name, W, H, seed, types, hub:[x,y], doors:[{edge,a}], nooks:[{x,y,r,from?}],
   //   rare: nook index (a 3x3 rare patch in that clearing), grass: blobs, rate, objects:[{id,kind,x,y,reward,text}], signs:[{x,y,text}], talk? }
@@ -2371,38 +2385,82 @@ const WORLD = (() => {
     (MA.base ? doorWild : linkEdge)(MA, edgeA, aA, MB.id, arrA || edgeArrival(MA, edgeA, aA));
     (MB.base ? doorWild : linkEdge)(MB, edgeB, aB, MA.id, arrB || edgeArrival(MB, edgeB, aB));
   }
-  // ---- Highland Pass: Mossbrook -> Gate -> the Pass proper (Kai, the old stones) -> Fork -> Frosthold, with a bypass over Whisper Hollow and the Windy Lookout and a hermit's cliff that has no road to it
-  const HP = {
-    gate: buildWild({ id: 'route-mf-gate', base: 'route-mf', name: 'Highland Gate', seed: 5501, types: ['Moss', 'Frost'], hub: [16, 13], grass: 4, doors: [{ edge: 's', a: 16 }, { edge: 'n', a: 16 }, { edge: 'e', a: 12 }], nooks: [{ x: 26, y: 6, r: 2 }],
-      objects: [{ id: 'hp-door', kind: 'doorframe', x: 26, y: 6, text: 'A door with nothing behind it. It does not open.' }] }),
-    hollow: buildWild({ id: 'route-mf-hollow', base: 'route-mf', name: 'Whisper Hollow', seed: 5502, types: ['Moss', 'Frost'], hub: [14, 13], grass: 6, doors: [{ edge: 'w', a: 12 }, { edge: 'n', a: 14 }], nooks: [{ x: 26, y: 21, r: 3 }, { x: 7, y: 6, r: 2 }], rare: 0,
-      objects: [{ id: 'hp-chest1', kind: 'chest', x: 26, y: 22, reward: { potion: 2, essence: 4 }, text: 'A chest, half sunk in the moss.' }, { id: 'hp-lantern', kind: 'lantern', gate: 'night', x: 7, y: 6, text: 'It is warm.' }] }),
-    lookout: buildWild({ id: 'route-mf-lookout', base: 'route-mf', name: 'Windy Lookout', seed: 5503, types: ['Frost', 'Moss'], hub: [16, 12], grass: 3, doors: [{ edge: 's', a: 8 }, { edge: 's', a: 24 }], nooks: [{ x: 9, y: 6, r: 2 }],
-      objects: [{ id: 'hp-ring', kind: 'ringstones', x: 9, y: 6, text: 'Stones, set in a circle by someone who was not in a hurry.' }] }),
-    fork: buildWild({ id: 'route-mf-fork', base: 'route-mf', name: 'Frost Fork', seed: 5504, types: ['Frost', 'Moss'], hub: [17, 13], grass: 5, doors: [{ edge: 'w', a: 13 }, { edge: 'n', a: 24 }, { edge: 'e', a: 13 }] }),
-    cliff: buildWild({ id: 'route-mf-cliff', base: 'route-mf', name: 'Hermit\u2019s Cliff', seed: 5505, types: ['Frost', 'Dusk'], hub: [20, 14], grass: 3, doors: [{ edge: 'e', a: 20 }], nooks: [{ x: 8, y: 13, r: 3 }, { x: 10, y: 22, r: 2 }], rare: 0,
-      objects: [{ id: 'hp-chest2', kind: 'chest', x: 8, y: 16, reward: { charm: 1, essence: 8 }, text: 'A small chest under the overhang.' }, { id: 'hp-cups', kind: 'cups', x: 6, y: 12, text: 'Two cups.' }] })
-  };
-  Object.keys(HP).forEach((k) => { const Mp = HP[k]; MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES['route-mf']; if (PXW.PAL['route-mf']) PXW.PAL[Mp.id] = PXW.PAL['route-mf']; });
-  { const R = MAPS['route-mf'], cityN = MAPS.mossbrook, cityE = MAPS.frosthold;
-    R.exits = []; R.arriveFrom = {}; R.arrive = {};
-    connect(cityN, 'n', 32, HP.gate, 's', 16, [32.9, 1.4], null);          // Mossbrook's north door -> the Gate
-    connect(HP.gate, 'n', 16, R, 's', 17, null, [17.9, R.H - 1.4]);        // the Gate -> the Pass proper (its old south entrance)
-    connect(HP.gate, 'e', 12, HP.hollow, 'w', 12);                         // the Gate -> Whisper Hollow (the bypass)
-    connect(HP.hollow, 'n', 14, HP.lookout, 's', 8);                       // Whisper Hollow -> the Windy Lookout
-    connect(HP.lookout, 's', 24, HP.fork, 'n', 24);                        // the Lookout -> Frost Fork (the other end of the bypass)
-    connect(R, 'e', 13, HP.fork, 'w', 13);                                 // the Pass proper -> Frost Fork
-    connect(R, 'w', 20, HP.cliff, 'e', 20);                                // a way off the Pass into the cliff, with nothing pointing to it
-    connect(HP.fork, 'e', 13, cityE, 'w', 13, null, [1.4, 14.2]);          // Frost Fork -> Frosthold's west door
-    R.spawn = R.arriveFrom['route-mf-gate'];
-    addProp(HP.gate, 'cairn', [25, 7], 'Notches in the stone. They were not all cut by the same hand.');
-    addProp(HP.hollow, 'well', [20, 8], 'A moss-furred well. The rope is new.');
-    addProp(HP.lookout, 'cairn', [10, 7], 'From here the pass lies below you like an open hand. You count the roads twice.');
-    addProp(HP.cliff, 'cairn', [14, 10], 'A new stone on the top. It is still dark from the rain.');
-    const post = (Mp, edge, a, text) => { const [x, y] = { n: [a + 2, 1], s: [a + 2, Mp.H - 2], w: [1, a - 1], e: [Mp.W - 2, a - 1] }[edge]; Mp.grid[y][x] = 'G'; Mp.signs.push({ x: x, y: y, text: text }); };
-    post(cityN, 'n', 32, 'North: the Highland Pass (Moss and Frost critters), the road to Frosthold.');
-    post(cityE, 'w', 13, 'West: the Highland Pass (Moss and Frost critters), the road to Mossbrook.');
+  // ---- route networks (data). maps: buildWild specs; links: [mapA, edgeA, aA, mapB, edgeB, aB, arrivalInA?, arrivalInB?]; the city doors keep the arrival spots they always had.
+  // Every network: a road between two cities, a bypass loop, at least one dead end, a few unexplained things, and nothing that points the way.
+  const NETS = [];
+  const NET_META = [];
+  function buildNet(net) {
+    net.maps.forEach((sp) => { const Mp = buildWild(sp); MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES[sp.base]; if (PXW.PAL[sp.base]) PXW.PAL[Mp.id] = PXW.PAL[sp.base]; });
+    const main = MAPS[net.main]; main.exits = []; main.arriveFrom = {}; main.arrive = {};
+    net.links.forEach((l) => connect(MAPS[l[0]], l[1], l[2], MAPS[l[3]], l[4], l[5], l[6] || null, l[7] || null));
+    main.spawn = main.arriveFrom[net.spawnFrom];
+    (net.props || []).forEach((pr) => addProp(MAPS[pr[0]], pr[1], pr[2], pr[3]));
+    const post = (Mp, edge, a, text) => { const xy = { n: [a + 2, 1], s: [a + 2, Mp.H - 2], w: [1, a - 1], e: [Mp.W - 2, a - 1] }[edge]; Mp.grid[xy[1]][xy[0]] = 'G'; Mp.signs.push({ x: xy[0], y: xy[1], text: text }); };
+    (net.posts || []).forEach((pt) => post(MAPS[pt[0]], pt[1], pt[2], pt[3]));
+    NET_META.push({ base: net.base, main: net.main, cityA: net.cityA, cityB: net.cityB, ids: [net.main].concat(net.maps.map((m) => m.id)) });
   }
+  // ---- Highland Pass: Mossbrook -> Highland Gate -> the Pass proper (Kai, the old stones) -> Frost Fork -> Frosthold; a bypass over Whisper Hollow and the Windy Lookout; Hermit's Cliff has no road to it
+  NETS.push({ base: 'route-mf', main: 'route-mf', cityA: 'mossbrook', cityB: 'frosthold', spawnFrom: 'route-mf-gate',
+    maps: [
+      { id: 'route-mf-gate', base: 'route-mf', name: 'Highland Gate', seed: 5501, types: ['Moss', 'Frost'], hub: [16, 13], grass: 4, doors: [{ edge: 's', a: 16 }, { edge: 'n', a: 16 }, { edge: 'e', a: 12 }], nooks: [{ x: 26, y: 6, r: 2 }],
+        objects: [{ id: 'hp-door', kind: 'doorframe', x: 26, y: 6, text: 'A door with nothing behind it. It does not open.' }] },
+      { id: 'route-mf-hollow', base: 'route-mf', name: 'Whisper Hollow', seed: 5502, types: ['Moss', 'Frost'], hub: [14, 13], grass: 6, doors: [{ edge: 'w', a: 12 }, { edge: 'n', a: 14 }], nooks: [{ x: 26, y: 21, r: 3 }, { x: 7, y: 6, r: 2 }], rare: 0,
+        objects: [{ id: 'hp-chest1', kind: 'chest', x: 26, y: 22, reward: { potion: 2, essence: 4 }, text: 'A chest, half sunk in the moss.' }, { id: 'hp-lantern', kind: 'lantern', gate: 'night', x: 7, y: 6, text: 'It is warm.' }] },
+      { id: 'route-mf-lookout', base: 'route-mf', name: 'Windy Lookout', seed: 5503, types: ['Frost', 'Moss'], hub: [16, 12], grass: 3, doors: [{ edge: 's', a: 8 }, { edge: 's', a: 24 }], nooks: [{ x: 9, y: 6, r: 2 }],
+        objects: [{ id: 'hp-ring', kind: 'ringstones', x: 9, y: 6, text: 'Stones, set in a circle by someone who was not in a hurry.' }] },
+      { id: 'route-mf-fork', base: 'route-mf', name: 'Frost Fork', seed: 5504, types: ['Frost', 'Moss'], hub: [17, 13], grass: 5, doors: [{ edge: 'w', a: 13 }, { edge: 'n', a: 24 }, { edge: 'e', a: 13 }] },
+      { id: 'route-mf-cliff', base: 'route-mf', name: 'Hermit\u2019s Cliff', seed: 5505, types: ['Frost', 'Dusk'], hub: [20, 14], grass: 3, doors: [{ edge: 'e', a: 20 }], nooks: [{ x: 8, y: 13, r: 3 }, { x: 10, y: 22, r: 2 }], rare: 0,
+        objects: [{ id: 'hp-chest2', kind: 'chest', x: 8, y: 16, reward: { charm: 1, essence: 8 }, text: 'A small chest under the overhang.' }, { id: 'hp-cups', kind: 'cups', x: 6, y: 12, text: 'Two cups.' }] }
+    ],
+    links: [['mossbrook', 'n', 32, 'route-mf-gate', 's', 16, [32.9, 1.4]], ['route-mf-gate', 'n', 16, 'route-mf', 's', 17], ['route-mf-gate', 'e', 12, 'route-mf-hollow', 'w', 12], ['route-mf-hollow', 'n', 14, 'route-mf-lookout', 's', 8],
+      ['route-mf-lookout', 's', 24, 'route-mf-fork', 'n', 24], ['route-mf', 'e', 13, 'route-mf-fork', 'w', 13], ['route-mf', 'w', 20, 'route-mf-cliff', 'e', 20], ['route-mf-fork', 'e', 13, 'frosthold', 'w', 13, null, [1.4, 14.2]]],
+    props: [['route-mf-gate', 'cairn', [25, 10], 'Notches in the stone. They were not all cut by the same hand.'], ['route-mf-hollow', 'well', [20, 8], 'A moss-furred well. The rope is new.'],
+      ['route-mf-lookout', 'cairn', [10, 9], 'From here the pass lies below you like an open hand. You count the roads twice.'], ['route-mf-cliff', 'cairn', [14, 10], 'A new stone on the top. It is still dark from the rain.']],
+    posts: [['mossbrook', 'n', 32, 'North: the Highland Pass (Moss and Frost critters), the road to Frosthold.'], ['frosthold', 'w', 13, 'West: the Highland Pass (Moss and Frost critters), the road to Mossbrook.']] });
+  // ---- Ashwood Trail: Cinderport -> Cinder Edge -> the trail proper (Elm, the camp) -> Mossroot Crossing -> Mossbrook; a bypass through Smoulder Wood; Charred Hollow is a dead end south of the trail
+  NETS.push({ base: 'route-cm', main: 'route-cm', cityA: 'cinderport', cityB: 'mossbrook', spawnFrom: 'route-cm-edge',
+    maps: [
+      { id: 'route-cm-edge', base: 'route-cm', name: 'Cinder Edge', seed: 6601, types: ['Ember', 'Moss'], hub: [17, 13], grass: 4, doors: [{ edge: 'e', a: 13 }, { edge: 'w', a: 13 }, { edge: 'n', a: 14 }] },
+      { id: 'route-cm-smoulder', base: 'route-cm', name: 'Smoulder Wood', seed: 6602, types: ['Ember', 'Moss'], hub: [15, 14], grass: 5, doors: [{ edge: 's', a: 14 }, { edge: 'e', a: 12 }], nooks: [{ x: 8, y: 7, r: 2 }, { x: 25, y: 20, r: 3 }], rare: 1,
+        objects: [{ id: 'cm-bell', kind: 'bell', x: 8, y: 7, text: 'It rings once, softly. Nothing answers.' }, { id: 'cm-chest1', kind: 'chest', x: 25, y: 21, reward: { super: 1, essence: 5 }, text: 'A chest, blackened on one side only.' }] },
+      { id: 'route-cm-crossing', base: 'route-cm', name: 'Mossroot Crossing', seed: 6603, types: ['Moss', 'Ember'], hub: [16, 13], grass: 4, doors: [{ edge: 'w', a: 12 }, { edge: 's', a: 16 }, { edge: 'n', a: 22 }], nooks: [{ x: 26, y: 20, r: 2 }],
+        objects: [{ id: 'cm-stakes', kind: 'stakes', gate: 'dusk', x: 26, y: 20, text: 'Ribbons on stakes, faded different colours. One is new.' }] },
+      { id: 'route-cm-hollow', base: 'route-cm', name: 'Charred Hollow', seed: 6604, types: ['Ember', 'Dusk'], hub: [17, 11], grass: 2, doors: [{ edge: 'n', a: 17 }], nooks: [{ x: 9, y: 17, r: 3 }],
+        objects: [{ id: 'cm-bench', kind: 'bench', x: 9, y: 17, text: 'The wood is smooth where hands have rested.' }] }
+    ],
+    links: [['cinderport', 'w', 13, 'route-cm-edge', 'e', 13, [1.4, 14.2]], ['route-cm-edge', 'w', 13, 'route-cm', 'e', 14], ['route-cm-edge', 'n', 14, 'route-cm-smoulder', 's', 14], ['route-cm-smoulder', 'e', 12, 'route-cm-crossing', 'w', 12],
+      ['route-cm', 'n', 16, 'route-cm-crossing', 's', 16], ['route-cm', 's', 17, 'route-cm-hollow', 'n', 17], ['route-cm-crossing', 'n', 22, 'mossbrook', 's', 22, null, [22.9, 26.6]]],
+    props: [['route-cm-edge', 'cairn', [24, 8], 'Soot on one side only.'], ['route-cm-smoulder', 'well', [18, 8], 'A well with no bucket and no rope.'], ['route-cm-crossing', 'cairn', [8, 20], 'Stones balanced so lightly that the wind should have won.'], ['route-cm-hollow', 'cairn', [22, 18], 'Ash, and one footprint pressed into it that has not filled in.']],
+    posts: [['cinderport', 'w', 13, 'West: the Ashwood Trail (Ember and Moss critters), the road to Mossbrook.'], ['mossbrook', 's', 22, 'South: the Ashwood Trail (Ember and Moss critters), the road to Cinderport.']] });
+  // ---- Glacier Coast: Frosthold -> Frozen Shelf -> the coast proper (Signe, the lighthouse) -> Gull Landing -> Coralbay; a bypass along Rime Strand; the Skerry is a dead end off the coast
+  NETS.push({ base: 'route-fc', main: 'route-fc', cityA: 'frosthold', cityB: 'coralbay', spawnFrom: 'route-fc-shelf',
+    maps: [
+      { id: 'route-fc-shelf', base: 'route-fc', name: 'Frozen Shelf', seed: 7701, types: ['Frost', 'Tide'], hub: [16, 13], grass: 4, doors: [{ edge: 'w', a: 13 }, { edge: 'e', a: 13 }, { edge: 's', a: 12 }] },
+      { id: 'route-fc-strand', base: 'route-fc', name: 'Rime Strand', seed: 7702, types: ['Tide', 'Frost'], hub: [15, 14], grass: 5, doors: [{ edge: 'n', a: 12 }, { edge: 'e', a: 12 }], nooks: [{ x: 8, y: 20, r: 3 }], rare: 0,
+        objects: [{ id: 'fc-sled', kind: 'sled', x: 8, y: 21, text: 'The runners are polished.' }, { id: 'fc-chest1', kind: 'chest', x: 8, y: 17, reward: { ticket: 1, essence: 5 }, text: 'A chest, rimed over. The lid gives easily.' }] },
+      { id: 'route-fc-landing', base: 'route-fc', name: 'Gull Landing', seed: 7703, types: ['Tide', 'Frost'], hub: [17, 13], grass: 4, doors: [{ edge: 'n', a: 16 }, { edge: 'w', a: 12 }, { edge: 's', a: 28 }] },
+      { id: 'route-fc-skerry', base: 'route-fc', name: 'The Skerry', seed: 7704, types: ['Tide', 'Dusk'], hub: [20, 13], grass: 2, doors: [{ edge: 'w', a: 12 }], nooks: [{ x: 26, y: 8, r: 3 }, { x: 24, y: 21, r: 2 }],
+        objects: [{ id: 'fc-skiff', kind: 'skiff', gate: 'dawn', x: 26, y: 9, text: 'Wet. The tide is hours away.' }, { id: 'fc-chair', kind: 'chair', x: 24, y: 21, text: 'An empty chair, facing the water.' }] }
+    ],
+    links: [['frosthold', 'e', 13, 'route-fc-shelf', 'w', 13, [34.6, 14.2]], ['route-fc-shelf', 'e', 13, 'route-fc', 'w', 14], ['route-fc-shelf', 's', 12, 'route-fc-strand', 'n', 12], ['route-fc-strand', 'e', 12, 'route-fc-landing', 'w', 12],
+      ['route-fc', 's', 16, 'route-fc-landing', 'n', 16], ['route-fc', 'e', 12, 'route-fc-skerry', 'w', 12], ['route-fc-landing', 's', 28, 'coralbay', 'n', 28, null, [28.9, 1.4]]],
+    props: [['route-fc-shelf', 'cairn', [24, 8], 'Frost on the south face. Dry on the north.'], ['route-fc-strand', 'cairn', [20, 9], 'Shells set in a line, smallest to largest. The last place is empty.'], ['route-fc-skerry', 'cairn', [12, 8], 'Something was weighed against these stones and taken away.']],
+    posts: [['frosthold', 'e', 13, 'East: the Glacier Coast (Frost and Tide critters), the road to Coralbay.'], ['coralbay', 'n', 28, 'North: the Glacier Coast (Frost and Tide critters), the road to Frosthold.']] });
+  // ---- Reef Causeway: Coralbay -> Pier Road -> the causeway proper (Mako, the wreck) -> Steamvent Flats -> Cinderport; a bypass over the Low Shoals; the Drowned Orchard is a dead end south of the causeway
+  NETS.push({ base: 'route-cc', main: 'route-cc', cityA: 'coralbay', cityB: 'cinderport', spawnFrom: 'route-cc-pier',
+    maps: [
+      { id: 'route-cc-pier', base: 'route-cc', name: 'Pier Road', seed: 8801, types: ['Tide', 'Ember'], hub: [16, 13], grass: 4, doors: [{ edge: 'n', a: 16 }, { edge: 's', a: 16 }, { edge: 'e', a: 12 }] },
+      { id: 'route-cc-shoals', base: 'route-cc', name: 'Low Shoals', seed: 8802, types: ['Tide', 'Ember'], hub: [15, 14], grass: 5, doors: [{ edge: 'w', a: 12 }, { edge: 's', a: 20 }], nooks: [{ x: 26, y: 8, r: 3 }], rare: 0,
+        objects: [{ id: 'cc-chest1', kind: 'chest', x: 26, y: 9, reward: { potion: 1, essence: 5 }, text: 'A chest, crusted with salt. Someone has oiled the hinges.' }] },
+      { id: 'route-cc-steam', base: 'route-cc', name: 'Steamvent Flats', seed: 8803, types: ['Ember', 'Tide'], hub: [17, 13], grass: 4, doors: [{ edge: 'e', a: 13 }, { edge: 'n', a: 20 }, { edge: 'w', a: 13 }] },
+      { id: 'route-cc-drowned', base: 'route-cc', name: 'Drowned Orchard', seed: 8804, types: ['Tide', 'Dusk'], hub: [17, 11], grass: 2, doors: [{ edge: 'n', a: 17 }], nooks: [{ x: 9, y: 17, r: 3 }, { x: 25, y: 20, r: 2 }], rare: 0,
+        objects: [{ id: 'cc-glow', kind: 'tidelight', gate: 'night', x: 9, y: 17, text: 'The water is lit from below.' }, { id: 'cc-chest2', kind: 'chest', x: 25, y: 21, reward: { charm: 1, essence: 7 }, text: 'A chest, wet inside and out.' }] }
+    ],
+    links: [['coralbay', 's', 28, 'route-cc-pier', 'n', 16, [28.9, 26.6]], ['route-cc-pier', 's', 16, 'route-cc', 'n', 17], ['route-cc-pier', 'e', 12, 'route-cc-shoals', 'w', 12], ['route-cc-shoals', 's', 20, 'route-cc-steam', 'n', 20],
+      ['route-cc', 'w', 13, 'route-cc-steam', 'e', 13], ['route-cc', 's', 17, 'route-cc-drowned', 'n', 17], ['route-cc-steam', 'w', 13, 'cinderport', 'e', 13, null, [34.6, 14.2]]],
+    props: [['route-cc-pier', 'cairn', [24, 9], 'Shells in a spiral. Someone counted.'], ['route-cc-shoals', 'cairn', [10, 9], 'The tide line is higher on this side than it should be.'], ['route-cc-steam', 'cairn', [10, 20], 'Warm to the touch, in the middle of a cold hour.'], ['route-cc-drowned', 'cairn', [22, 9], 'Fruit trees, standing in the water. They are in blossom.']],
+    posts: [['coralbay', 's', 28, 'South: the Reef Causeway (Tide and Ember critters), the road to Cinderport.'], ['cinderport', 'e', 13, 'East: the Reef Causeway (Tide and Ember critters), the road to Coralbay.']] });
+  NETS.forEach(buildNet);
   // ---------- the Cold Ascent: five switchback ledges up the peaks above Frosthold, ending under the beacon tower ----------
   // Ledges are rectangles joined by 4-wide ramps through the cliff rows between them; a packed-snow trail zig-zags up, so trainers beside it
   // see you cross. Wild snow patches (W), a glacier river with a log bridge, a rare patch near the top, and a summit plateau with the beacon.
@@ -2989,7 +3047,7 @@ const WORLD = (() => {
     requestAnimationFrame(frame);
   }
   return {
-    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, get objects() { return M.objects || []; },
+    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, NETS: NET_META, get objects() { return M.objects || []; },
     // clear tiles (and the objects standing on them) of a map, e.g. rubble after the rite; redraws the ground if it is the current map
     // open or close a gate (all objects with `gate: id`): hidden + walkable when open, solid when closed
     setGate: (mapId, gateId, open) => { const m = MAPS[mapId]; if (!m) return; (m.objects || []).forEach((o) => { if (o.gate !== gateId) return; o.hidden = !!open; m.grid[o.y][o.x] = open ? '.' : 'O'; }); },
@@ -5161,7 +5219,7 @@ const CITY_QUESTS = {
   coralbay: { giver: 'pearl', list: [{ k: 'see', map: 'route-cc', n: 5, txt: 'spot 5 wild critters on Reef Causeway' }, { k: 'keep', types: ['Tide', 'Dusk'], n: 1, txt: 'keep a Tide or Dusk critter' }, { k: 'beat', id: 'mako', n: 1, txt: 'beat Diver Mako on Reef Causeway' }] }
 };
 const CQ_REWARD = 4;
-const ROUTE_GATES = { 'route-mf': 3, 'route-mf-gate': 3, 'route-mf-fork': 3, 'route-cm': 6, 'route-fc': 9, 'route-cc': 9, ascent: 11, descent: 13 };
+const ROUTE_GATES = { 'route-mf': 3, 'route-mf-gate': 3, 'route-mf-fork': 3, 'route-cm': 6, 'route-cm-edge': 6, 'route-cm-crossing': 6, 'route-fc': 9, 'route-fc-shelf': 9, 'route-fc-landing': 9, 'route-cc': 9, 'route-cc-pier': 9, 'route-cc-steam': 9, ascent: 11, descent: 13 };
 const LEADERS = [
   { id: 'wren', zone: 'moss', name: 'Elder Wren', color: '#4FB06D' },
   { id: 'glacia', zone: 'frost', name: 'Glacia', color: '#8FD8EA' },
@@ -6290,7 +6348,7 @@ const APP = (() => {
       { id: 'fennel', name: 'Fennel', x: 24, y: 15, kind: 'talk', pal: { h: '#E8E8F0', y: '#C0503A', Y: '#8A3A28' },
         lines: ['Mossbrook was built around the old trees, not the other way around.', 'Elder Wren says a critter that rests well battles well.', 'Travellers come back from the Pass with the same story and different endings.'] },
       { id: 'bryn', name: 'Bryn', x: 16, y: 16, kind: 'talk', pal: { h: '#8A5A34', y: '#FFD86B', Y: '#E0A830' },
-        lines: ['I saw a shiny critter once! It sparkled like the sun on the pond.', 'My mom says they are one in two hundred. I am still looking!'] }
+        lines: ['I saw a shiny critter once! It sparkled like the sun on the pond.', 'My mom says they are one in two hundred. I am still looking!', 'My uncle walked the Ashwood twice and came out two different ways. He says it was the same way.'] }
     ];
     // Frosthold, Cinderport, Coralbay (cities): leaders move into their gyms
     const city = (zoneId, cityId, leaderId, intro0, people) => {
@@ -6304,20 +6362,20 @@ const APP = (() => {
       { lv: 8, id: 'pike', name: 'Skier Pike', x: 15, y: 19, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' }, types: ['Frost', 'Tide'], size: 4, stage: 2, pick: 0.6,
         intro: ['Halt! Nobody enters Frosthold without a snowball fight.', 'Well, a critter battle. Same thing up here.'], winLine: 'Brr, you are tough. Here is your reward.', beatenLines: ['My critters need to thaw out. Tomorrow, rematch!'] },
       { id: 'hilde', name: 'Hilde', x: 24, y: 15, kind: 'talk', pal: { h: '#E8C07A', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The palisade keeps out the wind, not the critters. They come and go as they like.', 'Some nights there is a light in the pass that is nobody\u2019s.', 'Glacia trains on the ice every morning. Her critters do not slip.'] },
-      { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['They say a tower stands on Champion\u2019s Peak, up the trail north of Sproutvale\u2019s plaza.', 'Only trainers with all four Leader Seals may climb it.'] }
+      { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['They say a tower stands on Champion\u2019s Peak, up the trail north of Sproutvale\u2019s plaza.', 'Only trainers with all four Leader Seals may climb it.', 'Before first light the shore gives back things the sea took.'] }
     ]);
     city('ember', 'cinderport', 'blaze', 'Welcome to Cinderport. I am Blaze, and this forge is my gym.', [
       { id: 'bea', name: 'Bellows Bea', x: 8, y: 10, kind: 'shop', pal: { h: '#3A2A1A', y: '#8A4A2A', Y: '#6A3A2A' }, lines: ['Forge Market! Same remedies as Mira\u2019s, kept warm by the furnace.'] },
       { lv: 12, id: 'tamsin', name: 'Smith Tamsin', x: 30, y: 6, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#5A4A4A', y: '#FF7A45', Y: '#B83A10' }, types: ['Ember', 'Stone'], size: 4, stage: 2, pick: 0.5,
         intro: ['You walked down the forge road. That means you face my anvil first!', 'Let us see if your critters are tempered.'], winLine: 'Forged in fire! You earned this reward.', beatenLines: ['The forge needs to cool. Come back tomorrow.'] },
-      { id: 'cole', name: 'Cole', x: 24, y: 15, kind: 'talk', pal: { h: '#2A1A10', y: '#C0503A', Y: '#8A3A28' }, lines: ['Do not touch the lava pool. Ember critters swim in it. You cannot.', 'Blaze says a burn wears down even the toughest critter.'] },
+      { id: 'cole', name: 'Cole', x: 24, y: 15, kind: 'talk', pal: { h: '#2A1A10', y: '#C0503A', Y: '#8A3A28' }, lines: ['Do not touch the lava pool. Ember critters swim in it. You cannot.', 'Blaze says a burn wears down even the toughest critter.', 'The woods west of here are never quiet at dusk, and never loud either.'] },
       { id: 'ruby', name: 'Ruby', x: 16, y: 16, kind: 'talk', pal: { h: '#C0392B', y: '#FFD86B', Y: '#E0A830' }, lines: ['The miners found a shiny rock critter last week! Shinies are rare, but they show up anywhere.', 'Admiral Coral\u2019s harbor is east, past Tide Shore. The boardwalk starts by the water.'] }
     ]);
     city('tide', 'coralbay', 'coral', 'Welcome aboard in Coralbay. I am Admiral Coral, leader of this gym.', [
       { id: 'marina', name: 'Marina', x: 8, y: 10, kind: 'shop', pal: { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, lines: ['Harbor Market! Same goods as Sproutvale, shipped in fresh.'] },
       { lv: 15, id: 'rafe', name: 'Deckhand Rafe', x: 27, y: 6, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#2A5A9A', y: '#FFFFFF', Y: '#C9D3E6' }, types: ['Tide', 'Volt'], size: 4, stage: 3, pick: 0.55,
         intro: ['Ahoy! Nobody walks my pier without a battle.', 'Storm-tested critters, ready to sail.'], winLine: 'Blow me down! A fine battle. Here is your reward.', beatenLines: ['My crew needs a rest. Come back with tomorrow\u2019s tide.'] },
-      { id: 'finn', name: 'Finn', x: 24, y: 15, kind: 'talk', pal: { h: '#8A5A34', y: '#4A9A8A', Y: '#2A6A6A' }, lines: ['Coral was the youngest admiral the harbor ever had. Her critters never lose their footing.', 'After her seal, climb the Tower. It is up the trail north of Sproutvale.'] },
+      { id: 'finn', name: 'Finn', x: 24, y: 15, kind: 'talk', pal: { h: '#8A5A34', y: '#4A9A8A', Y: '#2A6A6A' }, lines: ['Coral was the youngest admiral the harbor ever had. Her critters never lose their footing.', 'Count the waves on the causeway at night. Everyone gets a different number.', 'After her seal, climb the Tower. It is up the trail north of Sproutvale.'] },
       { id: 'pearl', name: 'Pearl', x: 16, y: 16, kind: 'talk', pal: { h: '#F4EAD6', y: '#E0A0B8', Y: '#C07898' }, lines: ['I collect shells. My brother collects critter species. He has all 48!', 'Well, he says he does.'] }
     ]);
     // route trainers (one per route; tuned with lbal5.py against the gate's party model)
@@ -6336,6 +6394,9 @@ const APP = (() => {
     const near = (mapId, propId, dx, dy) => { const p = (M[mapId].props || []).find((q) => q.id === propId); return p ? spot(mapId, p.x + dx, p.y + dy) : spot(mapId, 10, 10); };
     const pers = (id, name, mapId, pos, pal, lines) => { (out[mapId] = out[mapId] || []).push({ id, name, x: pos[0], y: pos[1], dir: 'down', kind: 'talk', pal, lines }); };
     pers('edda', 'Scholar Edda', 'route-mf', near('route-mf', 'ruin', 5, 1), { h: '#3A2A1A', y: '#8E5BC8', Y: '#6B3FA0' }, ['These carvings show a critter of each type around one fire. I count eight.', 'Highland Pass joins Mossbrook and Frosthold. The arch is older than both.']);
+    pers('hob', 'Charcoal Burner Hob', 'route-cm-crossing', spot('route-cm-crossing', 24, 22), { h: '#2A2A2A', y: '#6A5A48', Y: '#4A3A2A' }, ['The fire does what it likes. I only keep it company.', 'People ask whether the wood is dying. I ask whether they are.']);
+    pers('isla', 'Net Mender Isla', 'route-fc-skerry', spot('route-fc-skerry', 22, 22), { h: '#C9D0DE', y: '#3A6A9A', Y: '#2A4A7A' }, ['I mend the same net every winter. It has never held a fish. It holds other things.', 'Do not mind the chair. It is not mine.']);
+    pers('orrin', 'Tide Reader Orrin', 'route-cc-drowned', spot('route-cc-drowned', 11, 18), { h: '#6A5A3A', y: '#3A8A8A', Y: '#2A6A6A' }, ['I count the waves. Last night I lost count at a number I had not reached.', 'The blossoms are early this year. Or the sea is late.']);
     pers('brandt', 'Hermit Brandt', 'route-mf-cliff', spot('route-mf-cliff', 9, 14), { h: '#BDBDBD', y: '#7A6A52', Y: '#5A4A38' }, ['Oh. You came the long way, or the short one.', 'Sit if you like. The second cup is not for you, but it will not mind.']);
     pers('dell', 'Camper Dell', 'route-cm', near('route-cm', 'camp', 4, 1), { h: '#8A5A34', y: '#4FB06D', Y: '#2E6A2C' }, ['Ha, that is my camp! I only left to fill my flask at the well.', 'Ashwood Trail links Cinderport and Mossbrook. Ember and Moss critters roam here.']);
     pers('joss', 'Lamplighter Joss', 'route-fc', near('route-fc', 'lighthouse', 3, 3), { h: '#BDBDBD', y: '#C0503A', Y: '#8A3A28' }, ['I still trim the lamp every dusk. It guides nobody now, but it feels right.', 'Glacier Coast runs between Frosthold and Coralbay. Frost and Tide critters live along it.']);
@@ -6876,8 +6937,10 @@ const APP = (() => {
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
     setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
-    // things that only exist at certain hours (the lantern in Whisper Hollow burns at night and is gone by day)
-    let lastNight = null; setInterval(() => { if (!game || !WORLD.map) return; const id = WORLD.map.id, night = timeOfDay() === 'night'; if (id === 'route-mf-hollow' && night !== lastNight) { lastNight = night; WORLD.setGate(id, 'night', !night); } else if (id !== 'route-mf-hollow') lastNight = null; }, 500);
+    // things that only exist at certain hours (a lantern at night, ribbons at dusk, a boat at dawn, a light in the water at night): [gate id, true while the thing is GONE]
+    const WILD_RULES = { 'route-mf-hollow': [['night', (t) => t !== 'night']], 'route-cm-crossing': [['dusk', (t) => t !== 'dusk']], 'route-fc-skerry': [['dawn', (t) => t !== 'dawn']], 'route-cc-drowned': [['night', (t) => t !== 'night']] };
+    let ruleState = {}; const applyRules = () => { if (!game || !WORLD.map) return; const id = WORLD.map.id, rules = WILD_RULES[id]; if (!rules) { ruleState = {}; return; } const t = timeOfDay(); rules.forEach((r) => { const gone = !!r[1](t); if (ruleState[id + r[0]] !== gone) { ruleState[id + r[0]] = gone; WORLD.setGate(id, r[0], gone); } }); };
+    setInterval(applyRules, 500);
     // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel
     {
       let leadCache = { key: '', k: null }; const foePool = {}, benchCache = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');

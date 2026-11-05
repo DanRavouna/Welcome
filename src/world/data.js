@@ -95,7 +95,7 @@ const CITY_QUESTS = {
   coralbay: { giver: 'pearl', list: [{ k: 'see', map: 'route-cc', n: 5, txt: 'spot 5 wild critters on Reef Causeway' }, { k: 'keep', types: ['Tide', 'Dusk'], n: 1, txt: 'keep a Tide or Dusk critter' }, { k: 'beat', id: 'mako', n: 1, txt: 'beat Diver Mako on Reef Causeway' }] }
 };
 const CQ_REWARD = 4;
-const ROUTE_GATES = { 'route-mf': 3, 'route-mf-gate': 3, 'route-mf-fork': 3, 'route-cm': 6, 'route-fc': 9, 'route-cc': 9, ascent: 11, descent: 13 };
+const ROUTE_GATES = { 'route-mf': 3, 'route-mf-gate': 3, 'route-mf-fork': 3, 'route-cm': 6, 'route-cm-edge': 6, 'route-cm-crossing': 6, 'route-fc': 9, 'route-fc-shelf': 9, 'route-fc-landing': 9, 'route-cc': 9, 'route-cc-pier': 9, 'route-cc-steam': 9, ascent: 11, descent: 13 };
 const LEADERS = [
   { id: 'wren', zone: 'moss', name: 'Elder Wren', color: '#4FB06D' },
   { id: 'glacia', zone: 'frost', name: 'Glacia', color: '#8FD8EA' },

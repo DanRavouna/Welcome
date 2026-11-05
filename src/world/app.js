@@ -484,7 +484,7 @@ const APP = (() => {
       { id: 'fennel', name: 'Fennel', x: 24, y: 15, kind: 'talk', pal: { h: '#E8E8F0', y: '#C0503A', Y: '#8A3A28' },
         lines: ['Mossbrook was built around the old trees, not the other way around.', 'Elder Wren says a critter that rests well battles well.', 'Travellers come back from the Pass with the same story and different endings.'] },
       { id: 'bryn', name: 'Bryn', x: 16, y: 16, kind: 'talk', pal: { h: '#8A5A34', y: '#FFD86B', Y: '#E0A830' },
-        lines: ['I saw a shiny critter once! It sparkled like the sun on the pond.', 'My mom says they are one in two hundred. I am still looking!'] }
+        lines: ['I saw a shiny critter once! It sparkled like the sun on the pond.', 'My mom says they are one in two hundred. I am still looking!', 'My uncle walked the Ashwood twice and came out two different ways. He says it was the same way.'] }
     ];
     // Frosthold, Cinderport, Coralbay (cities): leaders move into their gyms
     const city = (zoneId, cityId, leaderId, intro0, people) => {
@@ -498,20 +498,20 @@ const APP = (() => {
       { lv: 8, id: 'pike', name: 'Skier Pike', x: 15, y: 19, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' }, types: ['Frost', 'Tide'], size: 4, stage: 2, pick: 0.6,
         intro: ['Halt! Nobody enters Frosthold without a snowball fight.', 'Well, a critter battle. Same thing up here.'], winLine: 'Brr, you are tough. Here is your reward.', beatenLines: ['My critters need to thaw out. Tomorrow, rematch!'] },
       { id: 'hilde', name: 'Hilde', x: 24, y: 15, kind: 'talk', pal: { h: '#E8C07A', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The palisade keeps out the wind, not the critters. They come and go as they like.', 'Some nights there is a light in the pass that is nobody\u2019s.', 'Glacia trains on the ice every morning. Her critters do not slip.'] },
-      { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['They say a tower stands on Champion\u2019s Peak, up the trail north of Sproutvale\u2019s plaza.', 'Only trainers with all four Leader Seals may climb it.'] }
+      { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['They say a tower stands on Champion\u2019s Peak, up the trail north of Sproutvale\u2019s plaza.', 'Only trainers with all four Leader Seals may climb it.', 'Before first light the shore gives back things the sea took.'] }
     ]);
     city('ember', 'cinderport', 'blaze', 'Welcome to Cinderport. I am Blaze, and this forge is my gym.', [
       { id: 'bea', name: 'Bellows Bea', x: 8, y: 10, kind: 'shop', pal: { h: '#3A2A1A', y: '#8A4A2A', Y: '#6A3A2A' }, lines: ['Forge Market! Same remedies as Mira\u2019s, kept warm by the furnace.'] },
       { lv: 12, id: 'tamsin', name: 'Smith Tamsin', x: 30, y: 6, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#5A4A4A', y: '#FF7A45', Y: '#B83A10' }, types: ['Ember', 'Stone'], size: 4, stage: 2, pick: 0.5,
         intro: ['You walked down the forge road. That means you face my anvil first!', 'Let us see if your critters are tempered.'], winLine: 'Forged in fire! You earned this reward.', beatenLines: ['The forge needs to cool. Come back tomorrow.'] },
-      { id: 'cole', name: 'Cole', x: 24, y: 15, kind: 'talk', pal: { h: '#2A1A10', y: '#C0503A', Y: '#8A3A28' }, lines: ['Do not touch the lava pool. Ember critters swim in it. You cannot.', 'Blaze says a burn wears down even the toughest critter.'] },
+      { id: 'cole', name: 'Cole', x: 24, y: 15, kind: 'talk', pal: { h: '#2A1A10', y: '#C0503A', Y: '#8A3A28' }, lines: ['Do not touch the lava pool. Ember critters swim in it. You cannot.', 'Blaze says a burn wears down even the toughest critter.', 'The woods west of here are never quiet at dusk, and never loud either.'] },
       { id: 'ruby', name: 'Ruby', x: 16, y: 16, kind: 'talk', pal: { h: '#C0392B', y: '#FFD86B', Y: '#E0A830' }, lines: ['The miners found a shiny rock critter last week! Shinies are rare, but they show up anywhere.', 'Admiral Coral\u2019s harbor is east, past Tide Shore. The boardwalk starts by the water.'] }
     ]);
     city('tide', 'coralbay', 'coral', 'Welcome aboard in Coralbay. I am Admiral Coral, leader of this gym.', [
       { id: 'marina', name: 'Marina', x: 8, y: 10, kind: 'shop', pal: { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, lines: ['Harbor Market! Same goods as Sproutvale, shipped in fresh.'] },
       { lv: 15, id: 'rafe', name: 'Deckhand Rafe', x: 27, y: 6, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#2A5A9A', y: '#FFFFFF', Y: '#C9D3E6' }, types: ['Tide', 'Volt'], size: 4, stage: 3, pick: 0.55,
         intro: ['Ahoy! Nobody walks my pier without a battle.', 'Storm-tested critters, ready to sail.'], winLine: 'Blow me down! A fine battle. Here is your reward.', beatenLines: ['My crew needs a rest. Come back with tomorrow\u2019s tide.'] },
-      { id: 'finn', name: 'Finn', x: 24, y: 15, kind: 'talk', pal: { h: '#8A5A34', y: '#4A9A8A', Y: '#2A6A6A' }, lines: ['Coral was the youngest admiral the harbor ever had. Her critters never lose their footing.', 'After her seal, climb the Tower. It is up the trail north of Sproutvale.'] },
+      { id: 'finn', name: 'Finn', x: 24, y: 15, kind: 'talk', pal: { h: '#8A5A34', y: '#4A9A8A', Y: '#2A6A6A' }, lines: ['Coral was the youngest admiral the harbor ever had. Her critters never lose their footing.', 'Count the waves on the causeway at night. Everyone gets a different number.', 'After her seal, climb the Tower. It is up the trail north of Sproutvale.'] },
       { id: 'pearl', name: 'Pearl', x: 16, y: 16, kind: 'talk', pal: { h: '#F4EAD6', y: '#E0A0B8', Y: '#C07898' }, lines: ['I collect shells. My brother collects critter species. He has all 48!', 'Well, he says he does.'] }
     ]);
     // route trainers (one per route; tuned with lbal5.py against the gate's party model)
@@ -530,6 +530,9 @@ const APP = (() => {
     const near = (mapId, propId, dx, dy) => { const p = (M[mapId].props || []).find((q) => q.id === propId); return p ? spot(mapId, p.x + dx, p.y + dy) : spot(mapId, 10, 10); };
     const pers = (id, name, mapId, pos, pal, lines) => { (out[mapId] = out[mapId] || []).push({ id, name, x: pos[0], y: pos[1], dir: 'down', kind: 'talk', pal, lines }); };
     pers('edda', 'Scholar Edda', 'route-mf', near('route-mf', 'ruin', 5, 1), { h: '#3A2A1A', y: '#8E5BC8', Y: '#6B3FA0' }, ['These carvings show a critter of each type around one fire. I count eight.', 'Highland Pass joins Mossbrook and Frosthold. The arch is older than both.']);
+    pers('hob', 'Charcoal Burner Hob', 'route-cm-crossing', spot('route-cm-crossing', 24, 22), { h: '#2A2A2A', y: '#6A5A48', Y: '#4A3A2A' }, ['The fire does what it likes. I only keep it company.', 'People ask whether the wood is dying. I ask whether they are.']);
+    pers('isla', 'Net Mender Isla', 'route-fc-skerry', spot('route-fc-skerry', 22, 22), { h: '#C9D0DE', y: '#3A6A9A', Y: '#2A4A7A' }, ['I mend the same net every winter. It has never held a fish. It holds other things.', 'Do not mind the chair. It is not mine.']);
+    pers('orrin', 'Tide Reader Orrin', 'route-cc-drowned', spot('route-cc-drowned', 11, 18), { h: '#6A5A3A', y: '#3A8A8A', Y: '#2A6A6A' }, ['I count the waves. Last night I lost count at a number I had not reached.', 'The blossoms are early this year. Or the sea is late.']);
     pers('brandt', 'Hermit Brandt', 'route-mf-cliff', spot('route-mf-cliff', 9, 14), { h: '#BDBDBD', y: '#7A6A52', Y: '#5A4A38' }, ['Oh. You came the long way, or the short one.', 'Sit if you like. The second cup is not for you, but it will not mind.']);
     pers('dell', 'Camper Dell', 'route-cm', near('route-cm', 'camp', 4, 1), { h: '#8A5A34', y: '#4FB06D', Y: '#2E6A2C' }, ['Ha, that is my camp! I only left to fill my flask at the well.', 'Ashwood Trail links Cinderport and Mossbrook. Ember and Moss critters roam here.']);
     pers('joss', 'Lamplighter Joss', 'route-fc', near('route-fc', 'lighthouse', 3, 3), { h: '#BDBDBD', y: '#C0503A', Y: '#8A3A28' }, ['I still trim the lamp every dusk. It guides nobody now, but it feels right.', 'Glacier Coast runs between Frosthold and Coralbay. Frost and Tide critters live along it.']);
@@ -1070,8 +1073,10 @@ const APP = (() => {
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
     setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
-    // things that only exist at certain hours (the lantern in Whisper Hollow burns at night and is gone by day)
-    let lastNight = null; setInterval(() => { if (!game || !WORLD.map) return; const id = WORLD.map.id, night = timeOfDay() === 'night'; if (id === 'route-mf-hollow' && night !== lastNight) { lastNight = night; WORLD.setGate(id, 'night', !night); } else if (id !== 'route-mf-hollow') lastNight = null; }, 500);
+    // things that only exist at certain hours (a lantern at night, ribbons at dusk, a boat at dawn, a light in the water at night): [gate id, true while the thing is GONE]
+    const WILD_RULES = { 'route-mf-hollow': [['night', (t) => t !== 'night']], 'route-cm-crossing': [['dusk', (t) => t !== 'dusk']], 'route-fc-skerry': [['dawn', (t) => t !== 'dawn']], 'route-cc-drowned': [['night', (t) => t !== 'night']] };
+    let ruleState = {}; const applyRules = () => { if (!game || !WORLD.map) return; const id = WORLD.map.id, rules = WILD_RULES[id]; if (!rules) { ruleState = {}; return; } const t = timeOfDay(); rules.forEach((r) => { const gone = !!r[1](t); if (ruleState[id + r[0]] !== gone) { ruleState[id + r[0]] = gone; WORLD.setGate(id, r[0], gone); } }); };
+    setInterval(applyRules, 500);
     // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel
     {
       let leadCache = { key: '', k: null }; const foePool = {}, benchCache = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');

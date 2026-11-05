@@ -108,6 +108,42 @@ const ADV = (() => {
     if (Math.sin(t * 5 + ph * 2) > 0.5) R(g, x + (big ? 8 : 5), y - h1 - 6, 2, 2, '#FFD86B');
   };
   const ART = {
+    // a bench, facing the trees; the seat is worn smooth
+    bench(g, x, y) {
+      R(g, x + 3, y + 27, 26, 3, 'rgba(0,0,0,0.22)'); R(g, x + 4, y + 14, 24, 4, OL); R(g, x + 5, y + 15, 22, 2, '#A07E54'); R(g, x + 4, y + 19, 24, 5, OL); R(g, x + 5, y + 20, 22, 3, '#8A6A44'); R(g, x + 5, y + 20, 22, 1, '#B8935F');
+      R(g, x + 6, y + 24, 3, 5, OL); R(g, x + 23, y + 24, 3, 5, OL); R(g, x + 7, y + 24, 1, 4, '#6E5030'); R(g, x + 24, y + 24, 1, 4, '#6E5030');
+    },
+    // a small bell on a bent branch
+    bell(g, x, y, st, t, o) {
+      R(g, x + 15, y + 2, 2, 12, '#5A4A38'); R(g, x + 8, y + 2, 16, 2, '#5A4A38'); const sw = Math.round(Math.sin(t * 1.3 + o.x) * 1);
+      R(g, x + 12 + sw, y + 14, 8, 9, OL); R(g, x + 13 + sw, y + 15, 6, 7, '#D9B24A'); R(g, x + 13 + sw, y + 15, 2, 7, '#F2D27A'); R(g, x + 15 + sw, y + 23, 3, 3, OL); R(g, x + 15 + sw, y + 23, 2, 2, '#D9B24A');
+    },
+    // a row of stakes with ribbons; the ribbons move though nothing else does
+    stakes(g, x, y, st, t) {
+      R(g, x + 2, y + 28, 28, 3, 'rgba(0,0,0,0.2)');
+      [[6, '#C0503A'], [13, '#E8C07A'], [20, '#8E5BC8'], [26, '#FFFFFF']].forEach(([a, c], i) => { R(g, x + a, y + 8, 2, 20, '#6E5030'); const w = Math.round(Math.sin(t * 3 + i * 1.7) * 2); R(g, x + a + 2, y + 9, 5 + w, 3, c); R(g, x + a + 2, y + 12, 3 + w, 2, c); });
+    },
+    // an overturned sled, half in the snow
+    sled(g, x, y) {
+      R(g, x + 3, y + 26, 26, 3, 'rgba(0,0,0,0.2)'); R(g, x + 4, y + 20, 24, 3, OL); R(g, x + 5, y + 21, 22, 1, '#DCE2EE'); R(g, x + 6, y + 14, 20, 6, OL); R(g, x + 7, y + 15, 18, 4, '#9A6330'); R(g, x + 7, y + 15, 18, 1, '#B8793C');
+      R(g, x + 3, y + 22, 6, 2, OL); R(g, x + 23, y + 22, 6, 2, OL); R(g, x + 2, y + 27, 28, 2, '#F4F6FA');
+    },
+    // a small boat pulled up on the shore
+    skiff(g, x, y) {
+      R(g, x + 1, y + 26, 30, 4, 'rgba(0,0,0,0.2)'); R(g, x + 2, y + 17, 28, 9, OL); R(g, x + 3, y + 18, 26, 6, '#8A5A32'); R(g, x + 3, y + 18, 26, 2, '#B07A46'); R(g, x + 2, y + 17, 3, 3, OL); R(g, x + 27, y + 17, 3, 3, OL);
+      R(g, x + 6, y + 24, 20, 2, 'rgba(120,170,220,0.55)'); R(g, x + 4, y + 27, 24, 2, 'rgba(120,170,220,0.4)');
+    },
+    // a chair set out facing the water, with nobody in it
+    chair(g, x, y) {
+      R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.22)'); R(g, x + 8, y + 6, 3, 22, OL); R(g, x + 9, y + 7, 1, 20, '#A07E54'); R(g, x + 8, y + 6, 15, 3, OL); R(g, x + 9, y + 7, 13, 1, '#A07E54');
+      R(g, x + 8, y + 18, 16, 4, OL); R(g, x + 9, y + 19, 14, 2, '#8A6A44'); R(g, x + 21, y + 18, 3, 10, OL); R(g, x + 22, y + 19, 1, 8, '#6E5030');
+    },
+    // water that is lit from below
+    tidelight(g, x, y, st, t, o) {
+      const f = 0.5 + 0.5 * Math.sin(t * 2 + o.x); R(g, x + 3, y + 14, 26, 14, OL); R(g, x + 4, y + 15, 24, 12, '#2A6FB0');
+      const gl = g.createRadialGradient(x + 16, y + 21, 1, x + 16, y + 21, 22); gl.addColorStop(0, 'rgba(160,240,255,' + (0.55 + 0.2 * f) + ')'); gl.addColorStop(1, 'rgba(160,240,255,0)'); g.fillStyle = gl; g.fillRect(x - 6, y + 4, 44, 34);
+      R(g, x + 8, y + 19, 6, 2, 'rgba(255,255,255,0.7)'); R(g, x + 17, y + 22, 7, 2, 'rgba(255,255,255,0.5)');
+    },
     // a lantern on a leaning post: lit, warm, and nobody near it
     lantern(g, x, y, st, t, o) {
       R(g, x + 8, y + 28, 16, 3, 'rgba(0,0,0,0.22)'); R(g, x + 15, y + 8, 3, 21, '#5A4A38'); R(g, x + 15, y + 8, 1, 21, '#7A664C'); R(g, x + 15, y + 8, 10, 3, '#5A4A38');
