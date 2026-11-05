@@ -993,13 +993,18 @@ const WORLD = (() => {
       for (let i = 0; i < 9; i++) { const px2 = X + 40 + ((i * 17 + Math.floor(tAnim * 6) * 3) % 48), py2 = Y + 34 + ((i * 23 + Math.floor(tAnim * 12 + i * 5)) % 52); ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.9)' : 'rgba(255,216,107,0.9)'; ctx.fillRect(px2 & ~1, py2 & ~1, 2, 2); }
     });
     // a lit beacon: a shaft of light rising from its lantern (objects with `beam`, when their state says lit)
-    (M.objects || []).forEach((o) => { if (!o.beam || !(opts.objState && (opts.objState(o) || {}).lit)) return;
-      const bx2 = snap(o.beam.x * TS - cx), by2 = snap(o.beam.y * TS - cy), k = 0.6 + 0.4 * Math.sin(tAnim * 3);
+    const drawBeam = (bx2, by2, k) => {
       if (bx2 < -60 || bx2 > vw + 60 || by2 < -vh) return;
       const gr = ctx.createLinearGradient(0, by2, 0, 0); gr.addColorStop(0, 'rgba(255,236,160,' + (0.75 * k).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,236,160,0)');
       ctx.fillStyle = gr; ctx.fillRect(bx2 - 14, 0, 28, by2); ctx.fillStyle = 'rgba(255,248,200,' + (0.35 * k).toFixed(2) + ')'; ctx.fillRect(bx2 - 5, 0, 10, by2);
       const gl = ctx.createRadialGradient(bx2, by2, 2, bx2, by2, 56); gl.addColorStop(0, 'rgba(255,236,160,0.8)'); gl.addColorStop(1, 'rgba(255,236,160,0)'); ctx.fillStyle = gl; ctx.fillRect(bx2 - 56, by2 - 56, 112, 112);
-    });
+    };
+    (M.objects || []).forEach((o) => { if (!o.beam || !(opts.objState && (opts.objState(o) || {}).lit)) return; drawBeam(snap(o.beam.x * TS - cx), snap(o.beam.y * TS - cy), 0.6 + 0.4 * Math.sin(tAnim * 3)); });
+    // once the great lamp is lit the land answers: every lighthouse throws a beam inland, day and night
+    if (opts.relit && opts.relit()) (M.props || []).forEach((pr) => { if (pr.id === 'lighthouse') drawBeam(snap((pr.x + pr.w / 2) * TS - cx), snap((pr.y + 0.6) * TS - cy), 0.5 + 0.35 * Math.sin(tAnim * 2.2 + pr.x)); });
+    // home: with three seals the lamp in the window is on, by day as well
+    if (M.id === 'town' && opts.homeLit && opts.homeLit()) { const hp = M.places.find((q) => q.id === 'home'); if (hp) { const roofH = Math.round(hp.h * 32 * 0.5), x = snap(hp.x * TS + 16 - cx), y = snap(hp.y * TS + roofH + 8 - cy), k = 0.85 + 0.15 * Math.sin(tAnim * 1.7);
+      const gr = ctx.createRadialGradient(x + 14, y + 10, 2, x + 14, y + 10, 38); gr.addColorStop(0, 'rgba(255,214,120,' + (0.6 * k).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,214,120,0)'); ctx.fillStyle = gr; ctx.fillRect(x - 28, y - 30, 84, 80); ctx.fillStyle = '#FFD86B'; ctx.fillRect(x, y, 28, 20); } }
     // weather (outdoors only), under the time-of-day tint so night darkens it too
     if (typeof WEATHER !== 'undefined') WEATHER.draw(ctx, { kind: M.interior ? null : (opts.weather ? opts.weather() : null), mapId: M.id, vw: vw, vh: vh, cx: cx, cy: cy, t: tAnim, still: opts.still ? opts.still() : false });
     // time of day: tint the world (tags drawn later stay crisp)

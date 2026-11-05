@@ -389,6 +389,16 @@ const APP = (() => {
     mira: [[2, ['Take what you need.']]],
     mom: [[2, ['You are home. Good.', 'I stopped tidying the desk. You know where things are.']], [3, ['You did not ask what is for dinner.', 'The lamp in the window is on. I did not light it.']], [4, ['You do not have to tell me where you are going.', 'The door stays open. It always did.']]]
   };
+  // the keepers rest once you have carried the light yourself (Meaning: they held it for you until you could). Lines only; [condition, lines].
+  const LETGO = {
+    maren: [() => advOf().flags.lampLit, ['The glass has not been warm in my lifetime.', 'I used to stand here all night. I think I will sit down.']],
+    hale: [() => advOf().flags.forgeLit, ['It is warm in here. I had forgotten.', 'I will not need to watch it.']],
+    keeper: [() => advOf().flags.secret, ['The seat is empty again, and it is not sad.', 'I held it so long. It is lighter than I expected.']],
+    joss: [() => advOf().flags.lampLit, ['I did not light it tonight. It lit.', 'I think I am out of work. I do not mind.']],
+    brandt: [() => advOf().flags.lampLit, ['One cup tonight.']],
+    mom: [() => advOf().flags.lampLit, ['There was a light across the ceiling last night. It went the whole way over the roof.', 'I did not worry. Is that not odd?']]
+  };
+  const letGoLines = (n) => { const r = LETGO[n.id]; return r && r[0]() ? r[1] : null; };
   const scaffoldLines = (n) => { const rows = SCAFFOLD[n.id]; if (!rows) return null; const c = sealCount(); let out = null; rows.forEach((r) => { if (c >= r[0]) out = r[1]; }); return out; };
   function hint(id, text) {
     if (sealCount() >= 1 && id !== 'online') return;   // with a seal in hand the tips go quiet
@@ -747,7 +757,7 @@ const APP = (() => {
   // ---------- adventure: clues, objects, the Sealed Arch (content in adventure.js) ----------
   const advOf = () => { const a = (game && game.state.adv) || {}; return { clues: a.clues || [], open: a.open || {}, flags: a.flags || {} }; };
   function advSave(mut) { const a = advOf(), n = { clues: a.clues.slice(), open: Object.assign({}, a.open), flags: Object.assign({}, a.flags) }; mut(n); game.update({ adv: n }); try { setNear(WORLD.nearest()); } catch (e) {} }   // refresh the action label (e.g. Examine -> Enter)
-  function objState(o) { const a = advOf(); if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? a.clues.length : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  function objState(o) { const a = advOf(); if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -924,7 +934,7 @@ const APP = (() => {
   }
   function talk(n) {
     WORLD.facePlayer(n);
-    const sc = scaffoldLines(n); if (sc) n = Object.assign({}, n, { lines: sc });
+    const sc = letGoLines(n) || scaffoldLines(n); if (sc) n = Object.assign({}, n, { lines: sc, afterLines: letGoLines(n) ? sc : n.afterLines });
     const g = game, done = (g.state.npc && g.state.npc.done) || [];
     const qcity = Object.keys(CITY_QUESTS).find((c) => CITY_QUESTS[c].giver === n.id);
     if (qcity) {
@@ -1265,7 +1275,7 @@ const APP = (() => {
     WORLD.init($('world'), {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
-      objState: objState, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
+      objState: objState, relit: () => !!advOf().flags.lampLit, homeLit: () => sealCount() >= 3, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
       exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       critterLead: () => !!(game && game.state.caught.length && !window.__noFollower),   // you steer the critter; the human walks behind it
