@@ -49,6 +49,7 @@ bash src/run-tests.sh wplay.py   # one test
   python3 -m http.server 8766 --bind 127.0.0.1 -d . &   # from the repo root
   SB_SECRET="$(curl -s 'https://api.supabase.com/v1/projects/xuawpknnmozcfzgnflel/api-keys?reveal=true' | python3 -c "import json,sys; print([k['api_key'] for k in json.load(sys.stdin) if k.get('type')=='secret'][0])")" python3 src/supatest.py
   ```
+- Anything animated is also tested OVER REAL TIME (log the frame or pose number against the clock, as `windrhythmtest.py` does): still screenshots and per-frame checks hide rhythm bugs (speed-ups, jumps, stalls). Say plainly in the report that feel, tempo and video cannot be judged from here.
 - `wplay` uses real randomness, so repeat a flaky result before calling it a regression. Perf numbers vary between machines.
 
 ## Saves on the published site

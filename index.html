@@ -3101,7 +3101,7 @@ const WORLD = (() => {
     if (c.calm < 0.15) return base * (0.75 + 0.25 * n);
     const lo = 0.2 + 0.5 * c.calm; return base * Math.max(0, Math.min(1, (n - lo) / 0.25));
   }
-  let gustUntil = 0, lastWind = null, windClass = 0, lastPic = null, fade = null;
+  let gustUntil = 0, lastWind = null, windClass = 0, lastPic = null, fade = null, lastKf = 0, windPh = 0, windT = 0;
   function windNow() {
     if (M.interior || M.dark || /^dg-/.test(M.id) || (opts.still && opts.still())) return { A: 0, fps: 0, s: 0 };
     const rg = typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(M.id) : null; if (!((WINDS[rg] || { base: 0.5 }).base > 0)) return { A: 0, fps: 0, s: 0 };
@@ -3126,7 +3126,8 @@ const WORLD = (() => {
     ctx.fillStyle = M.theme.bg; ctx.fillRect(0, 0, vw, vh);
     // the picture is one of six baked frames (the still terrain plus the trees, grass, flowers and water in that pose); only the part on screen is copied
     let pic = terrain;
-    if (terrain.anim) { const wd = windNow(), kf = wd.A ? Math.floor(tAnim * wd.fps) % 6 : 0; if (lastWind && lastWind.A !== wd.A && lastPic) fade = { pic: lastPic, t0: performance.now() }; lastWind = wd; pic = terrain.anim.sets[wd.A] && terrain.anim.sets[wd.A][kf]; if (!pic) { const have = PXW.baked(terrain, wd.A); pic = have.length ? have[0] : PXW.bake(terrain, kf, wd.A); } PXW.fill(terrain, wd.A, performance.now()); lastPic = pic; }
+    // the pose is the running SUM of (speed x time), never time x speed: when the wind changes the pose keeps going from where it was instead of jumping
+    if (terrain.anim) { const wd = windNow(); windPh += wd.fps * Math.min(0.1, Math.max(0, tAnim - windT)); windT = tAnim; const kf = wd.A ? Math.floor(windPh) % 6 : 0; lastKf = kf; if (lastWind && lastWind.A !== wd.A && lastPic) fade = { pic: lastPic, t0: performance.now() }; lastWind = wd; pic = terrain.anim.sets[wd.A] && terrain.anim.sets[wd.A][kf]; if (!pic) { const have = PXW.baked(terrain, wd.A); pic = have.length ? have[0] : PXW.bake(terrain, kf, wd.A); } PXW.fill(terrain, wd.A, performance.now()); lastPic = pic; }
     const sx0 = Math.max(0, Math.floor(cx / 2)), sy0 = Math.max(0, Math.floor(cy / 2)), sw = Math.max(1, Math.min(pic.width - sx0, Math.ceil(vw / 2) + 2)), sh = Math.max(1, Math.min(pic.height - sy0, Math.ceil(vh / 2) + 2));
     const fp = fade ? (performance.now() - fade.t0) / 300 : 1;   // a change of wind class fades over 0.3 s instead of jumping
     if (fade && fp < 1 && fade.pic.width === pic.width) { ctx.drawImage(fade.pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2); ctx.globalAlpha = Math.max(0, fp); ctx.drawImage(pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2); ctx.globalAlpha = 1; } else { fade = null; ctx.drawImage(pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2); }
@@ -3277,7 +3278,7 @@ const WORLD = (() => {
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },
     get npcs() { return NPCS[M.id] || []; }, allNpcs: () => NPCS, facePlayer, inSight,
     followerPos: () => (FOL ? { x: FOL.x, y: FOL.y, dir: FOL.dir || null, moving: !!FOL.moving } : null), get lead() { return LEAD; },
-    pos: () => ({ x: P.x, y: P.y }), terrainCanvas: () => terrain, windLevel: (id, t) => windLevel(id, t, typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(id) : null), gust: () => { gustUntil = performance.now() + 3500; }, wind: () => lastWind, debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
+    pos: () => ({ x: P.x, y: P.y }), terrainCanvas: () => terrain, windFrame: () => lastKf, windLevel: (id, t) => windLevel(id, t, typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(id) : null), gust: () => { gustUntil = performance.now() + 3500; }, wind: () => lastWind, debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
   };
 })();
 
