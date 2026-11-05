@@ -1088,7 +1088,7 @@ const WORLD = (() => {
     if (M.id === 'town' && opts.homeLit && opts.homeLit()) { const hp = M.places.find((q) => q.id === 'home'); if (hp) { const roofH = Math.round(hp.h * 32 * 0.5), x = snap(hp.x * TS + 16 - cx), y = snap(hp.y * TS + roofH + 8 - cy), k = 0.85 + 0.15 * Math.sin(tAnim * 1.7);
       const gr = ctx.createRadialGradient(x + 14, y + 10, 2, x + 14, y + 10, 38); gr.addColorStop(0, 'rgba(255,214,120,' + (0.6 * k).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,214,120,0)'); ctx.fillStyle = gr; ctx.fillRect(x - 28, y - 30, 84, 80); ctx.fillStyle = '#FFD86B'; ctx.fillRect(x, y, 28, 20); } }
     // weather (outdoors only), under the time-of-day tint so night darkens it too
-    if (typeof WEATHER !== 'undefined') WEATHER.draw(ctx, { kind: M.interior ? null : (opts.weather ? opts.weather() : null), mapId: M.id, vw: vw, vh: vh, cx: cx, cy: cy, t: tAnim, still: opts.still ? opts.still() : false });
+    if (typeof WEATHER !== 'undefined') WEATHER.draw(ctx, { kind: M.interior ? null : (opts.weather ? opts.weather() : null), mapId: M.id, vw: vw, vh: vh, cx: cx, cy: cy, t: tAnim, wind: lastWind ? lastWind.s : 0, still: opts.still ? opts.still() : false });
     // time of day: tint the world (tags drawn later stay crisp)
     const tod = (M.interior || M.cave) ? 'day' : (opts.tint ? opts.tint() : 'day'); // lamplit rooms and caves: no night tint
     tintNow = tod;
