@@ -1693,7 +1693,8 @@ const PXW = (() => {
   const SIN6 = [0, 0.87, 0.87, 0, -0.87, -0.87];
   const hashT = (x, y) => { let h = Math.imul(x + 374761393, 668265263) ^ Math.imul(y + 1274126177, 2246822519); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
   // the phase is a smooth function of where a thing stands, with no noise: one wave of wind rolls from west to east across the land (a wavelength of about 12 tiles, tilted a little), so each tree is only a small step behind the one to its west. px, py are pixel positions on the 16-px-per-tile picture.
-  const phaseAt = (px, py) => (((Math.round(-(px / 16 * 0.5 + py / 16 * 0.12))) % 6) + 6) % 6;
+  const phaseAt = (px, py, odd) => { let ph = Math.round(-(px / 16 * 0.5 + py / 16 * 0.12)); if (odd) { const h = hashT(px, py); if (h < odd) ph += hashT(py, px) < 0.5 ? -1 : 1; } return ((ph % 6) + 6) % 6; };   // odd: the share of things that break from the wave by one pose, so it is not too perfect
+  const gainAt = (px, py, lo, hi) => lo + (hi - lo) * hashT(px + 91, py + 47);   // each tree its own stiffness
   // a stamp whose rows lean: the top moves most, the foot not at all, and the lean arrives a little later down the stem (so the shape bends instead of sliding)
   function swayStamp(g, x0, y0, rows, colors, k, A, gain) {
     const n = rows.length;
@@ -1707,9 +1708,9 @@ const PXW = (() => {
     const cv = document.createElement('canvas'); cv.width = base.width; cv.height = base.height; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(base, 0, 0); const P = an.P;   // each frame is the whole picture (one blit per frame at draw time, as before), not a transparent overlay (two blits cost 25 ms a frame on a throttled phone)
     an.items.forEach((it) => {
       const kk = A ? (k + it.ph) % 6 : 0;
-      if (it.k === 'tree') swayStamp(g, it.X, it.Y, it.rows, it.colors, kk, A, 1);
-      else if (it.k === 'tuft') swayStamp(g, it.X, it.Y, TUFT, it.cl, kk, A, 0.8);
-      else if (it.k === 'flower') swayStamp(g, it.X, it.Y, FLOWER, it.cl, kk, A, 0.7);
+      if (it.k === 'tree') swayStamp(g, it.X, it.Y, it.rows, it.colors, kk, A, it.gain || 1);
+      else if (it.k === 'tuft') swayStamp(g, it.X, it.Y, TUFT, it.cl, kk, A, 0.8 * (it.gain || 1));
+      else if (it.k === 'flower') swayStamp(g, it.X, it.Y, FLOWER, it.cl, kk, A, 0.7 * (it.gain || 1));
       else if (it.k === 'wave') { const dx = A ? Math.round(SIN6[kk] * A * 1.5) : 0; g.fillStyle = P.wl; g.fillRect(it.X + it.wx + dx, it.Y + it.wy, 4, 1); g.fillRect(it.X + it.wx + 1 + dx, it.Y + it.wy - 1, 2, 1); if (A && kk % 3 === 0) g.fillRect(it.X + ((it.wx + 7 + kk) % 13), it.Y + ((it.wy + 5) % 14) + 1, 1, 1); }
       else if (it.k === 'sparkle') { if (A && kk % 3 === 0) { g.fillStyle = '#FFFFFF'; g.fillRect(it.X + it.dx, it.Y + it.dy, 2, 2); g.fillRect(it.X + it.dx - 1, it.Y + it.dy, 4, 1); } }
     });
@@ -1749,11 +1750,11 @@ const PXW = (() => {
       g.fillStyle = P.g; g.fillRect(X, Y, L, L);
       g.fillStyle = P.gd; for (let yy = 1; yy < L; yy += 4) for (let xx = ((yy >> 2) % 2) * 2 + 1; xx < L; xx += 4) g.fillRect(X + xx, Y + yy, 1, 1);
       if (r() < 0.25) stamp(g, X + 3 + Math.floor(r() * 6), Y + 5 + Math.floor(r() * 6), ['g.g', '.g.'], { g: P.gt });
-      if (t === ',') { const cols = P.fl; for (let i = 0; i < 2; i++) { const fx = X + 2 + i * 7 + Math.floor(r() * 2), fy = Y + 3 + Math.floor(r() * 8); anim.push({ k: 'flower', X: fx, Y: fy, cl: { a: cols[Math.floor(r() * cols.length)], c: '#FFE08A', l: P.gt }, ph: phaseAt(fx, fy) }); } }
+      if (t === ',') { const cols = P.fl; for (let i = 0; i < 2; i++) { const fx = X + 2 + i * 7 + Math.floor(r() * 2), fy = Y + 3 + Math.floor(r() * 8); anim.push({ k: 'flower', X: fx, Y: fy, cl: { a: cols[Math.floor(r() * cols.length)], c: '#FFE08A', l: P.gt }, ph: phaseAt(fx, fy, 0.12), gain: gainAt(fx, fy, 0.85, 1.1) }); } }
       if (t === 'W' || t === 'Z') {
         g.fillStyle = t === 'Z' ? P.th : P.t; g.fillRect(X, Y, L, L);
         const cl = t === 'Z' ? { h: '#FFF7D6', b: P.t, d: P.tb } : { h: P.th, b: P.t, d: P.tb };
-        [[0, 2], [8, 2], [4, 9], [12, 9]].forEach((q, qi) => anim.push({ k: 'tuft', X: X + q[0], Y: Y + q[1], cl: cl, ph: phaseAt(X + q[0], Y + q[1]) }));
+        [[0, 2], [8, 2], [4, 9], [12, 9]].forEach((q, qi) => anim.push({ k: 'tuft', X: X + q[0], Y: Y + q[1], cl: cl, ph: phaseAt(X + q[0], Y + q[1], 0.12), gain: gainAt(X + q[0], Y + q[1], 0.85, 1.1) }));
         if (t === 'Z') anim.push({ k: 'sparkle', X: X, Y: Y, dx: 2 + (hashT(x, y) * 10 | 0), dy: 2 + (hashT(y, x) * 10 | 0), ph: (hashT(x + 7, y + 3) * 6 | 0) });
       }
     }
@@ -1783,7 +1784,7 @@ const PXW = (() => {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const t = grid[y][x], X = x * L, Y = y * L;
       if (t === 'R') { const rc = themeId === 'ember' ? { o: '#1E1414', l: '#7A6464', g: '#4E3E3E', d: '#3A2E2E' } : { o: '#3A4258', l: '#DCE2EE', g: '#A8B2C6', d: '#7E8AA2' }; g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(X + 2, Y + 14, 12, 2); stamp(g, X, Y + 6, ROCK, rc); }
-      if (t === 'T') { const kind = P.tree; const rows = TREE[kind]; g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(X + 3, Y + L - 2, 10, 2); anim.push({ k: 'tree', X: X, Y: Y + L - rows.length, rows: rows, colors: treeColors(kind, P), ph: phaseAt(X, Y) }); }
+      if (t === 'T') { const kind = P.tree; const rows = TREE[kind]; g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(X + 3, Y + L - 2, 10, 2); anim.push({ k: 'tree', X: X, Y: Y + L - rows.length, rows: rows, colors: treeColors(kind, P), ph: phaseAt(X, Y + L - rows.length, 0.25), gain: gainAt(X, Y, 0.7, 1.15) }); }
     }
     c.anim = { items: anim, P: P, sets: {}, last: 0 };   // always: the still image lacks trees, grass, flowers and water highlights until frame 0 is baked
     return c;
@@ -2752,6 +2753,7 @@ const WORLD = (() => {
   function prerender() {
     terrainFor = M.id; terrainScale = 1;
     terrain = PXW.terrain(M, M.id);
+    windClass = 0; lastWind = null; lastPic = null; fade = null;
     if (terrain.anim) PXW.bake(terrain, 0, 0);   // pose 0 with no lean is exactly the old still picture
   }
   function drawTree(g, px, py, kind, r) {
@@ -3072,15 +3074,27 @@ const WORLD = (() => {
       for (let i = 0; i < Math.floor((w - 4) / 6); i++) { const dr = ((i * 7 + p.x) % 3) * 2; ctx.fillStyle = 'rgba(255,255,255,0.96)'; ctx.fillRect(x + 2 + i * 6, y + capH + 4, 4, 2 + dr); }
     });
   }
-  // ---- wind (Meaning per place: wind is change, so it blows where things change; the cold is stillness, so there it never blows, not even in a storm) ----
-  const WIND = { town: 0.45, moss: 0.65, frost: 0, ember: 1, tide: 0.9, peak: 0, 'route-mf': 0.6, 'route-cm': 1, 'route-fc': 0, 'route-cc': 0.9 };
-  let gustUntil = 0, lastWind = null;
+  // ---- wind (Meaning per place: wind is change, so it blows where things change; the cold is stillness, so there it never blows, not even in a storm). Each place has a character: how strong it can get (base) and how much of the time it is calm (calm 0 = it never stops). The strength then changes over time by itself, from three slow waves that never line up, so a sheltered forest breathes now and then and a pass is always moving. ----
+  const WINDS = { town: { base: 0.5, calm: 0.5 }, moss: { base: 0.55, calm: 0.6 }, tide: { base: 0.85, calm: 0.05 }, ember: { base: 1, calm: 0.25 }, 'route-mf': { base: 0.8, calm: 0.1 }, 'route-cm': { base: 1, calm: 0.25 }, 'route-cc': { base: 0.85, calm: 0.05 }, frost: { base: 0 }, peak: { base: 0 }, 'route-fc': { base: 0 } };
+  const hashS = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h ^ (h >>> 15)) >>> 0) / 4294967296; };
+  // the wind strength 0..1 of a map at time t (seconds), before weather, night or a gust (a pure function, so tests can sample it)
+  function windLevel(mapId, t, region) {
+    const c = WINDS[region] || { base: 0.5, calm: 0.4 }; if (!(c.base > 0)) return 0;
+    const sd = hashS(mapId), base = Math.min(1, c.base * (0.85 + 0.3 * hashS(mapId + 'b'))), ph1 = sd * 6.28, ph2 = hashS(mapId + 'c') * 6.28, ph3 = hashS(mapId + 'd') * 6.28;
+    const n = 0.5 + 0.5 * (0.5 * Math.sin(6.283 * t / 23 + ph1) + 0.3 * Math.sin(6.283 * t / 37 + ph2) + 0.2 * Math.sin(6.283 * t / 61 + ph3));
+    if (c.calm < 0.15) return base * (0.75 + 0.25 * n);
+    const lo = 0.2 + 0.5 * c.calm; return base * Math.max(0, Math.min(1, (n - lo) / 0.25));
+  }
+  let gustUntil = 0, lastWind = null, windClass = 0, lastPic = null, fade = null;
   function windNow() {
     if (M.interior || M.dark || /^dg-/.test(M.id) || (opts.still && opts.still())) return { A: 0, fps: 0, s: 0 };
-    const rg = typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(M.id) : null; let s = WIND[rg]; if (s === undefined) s = 0.5; if (s <= 0) return { A: 0, fps: 0, s: 0 };
-    const wk = opts.weather ? opts.weather() : null; if (wk === 'storm') s = Math.min(1, s * 1.5 + 0.2); else if (wk === 'rain') s = Math.min(1, s * 1.2); else if (wk === 'fog') s *= 0.5;
+    const rg = typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(M.id) : null; if (!((WINDS[rg] || { base: 0.5 }).base > 0)) return { A: 0, fps: 0, s: 0 };
+    let s = windLevel(M.id, performance.now() / 1000, rg);
+    const wk = opts.weather ? opts.weather() : null; if (wk === 'storm') s = Math.min(1, s * 1.4 + 0.25); else if (wk === 'rain') s = Math.min(1, s * 1.15); else if (wk === 'fog') s *= 0.5;
+    if ((opts.tint ? opts.tint() : 'day') === 'night') s *= 0.6;   // the night is calmer
     if (performance.now() < gustUntil) s = 1;
-    return { A: s >= 0.8 ? 2 : 1, fps: 2.5 + 2.5 * s, s: s };
+    const prev = windClass, cls = s < (prev === 0 ? 0.14 : 0.1) ? 0 : (s >= (prev === 2 ? 0.66 : 0.74) ? 2 : 1); windClass = cls;   // a little hysteresis, so a strength hovering at a threshold does not flicker
+    return { A: cls, fps: 2.5 + 2.5 * s, s: s };
   }
   function draw() {
     if (!terrain || terrainFor !== M.id) return;
@@ -3096,9 +3110,10 @@ const WORLD = (() => {
     ctx.fillStyle = M.theme.bg; ctx.fillRect(0, 0, vw, vh);
     // the picture is one of six baked frames (the still terrain plus the trees, grass, flowers and water in that pose); only the part on screen is copied
     let pic = terrain;
-    if (terrain.anim) { const wd = windNow(), kf = wd.A ? Math.floor(tAnim * wd.fps) % 6 : 0; lastWind = wd; pic = terrain.anim.sets[wd.A] && terrain.anim.sets[wd.A][kf]; if (!pic) { const have = PXW.baked(terrain, wd.A); pic = have.length ? have[0] : PXW.bake(terrain, kf, wd.A); } PXW.fill(terrain, wd.A, performance.now()); }
+    if (terrain.anim) { const wd = windNow(), kf = wd.A ? Math.floor(tAnim * wd.fps) % 6 : 0; if (lastWind && lastWind.A !== wd.A && lastPic) fade = { pic: lastPic, t0: performance.now() }; lastWind = wd; pic = terrain.anim.sets[wd.A] && terrain.anim.sets[wd.A][kf]; if (!pic) { const have = PXW.baked(terrain, wd.A); pic = have.length ? have[0] : PXW.bake(terrain, kf, wd.A); } PXW.fill(terrain, wd.A, performance.now()); lastPic = pic; }
     const sx0 = Math.max(0, Math.floor(cx / 2)), sy0 = Math.max(0, Math.floor(cy / 2)), sw = Math.max(1, Math.min(pic.width - sx0, Math.ceil(vw / 2) + 2)), sh = Math.max(1, Math.min(pic.height - sy0, Math.ceil(vh / 2) + 2));
-    ctx.drawImage(pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2);
+    const fp = fade ? (performance.now() - fade.t0) / 300 : 1;   // a change of wind class fades over 0.3 s instead of jumping
+    if (fade && fp < 1 && fade.pic.width === pic.width) { ctx.drawImage(fade.pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2); ctx.globalAlpha = Math.max(0, fp); ctx.drawImage(pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2); ctx.globalAlpha = 1; } else { fade = null; ctx.drawImage(pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2); }
     if (typeof VFX !== 'undefined') { const sk = VFX.shakeNow(tAnim); if (sk.x || sk.y) { cx += sk.x; cy += sk.y; } }   // a blow shakes the camera along its direction (off in Reduce motion)
     lastCam = { cx: cx, cy: cy };
     if (M.id === 'town') {
@@ -3246,7 +3261,7 @@ const WORLD = (() => {
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },
     get npcs() { return NPCS[M.id] || []; }, allNpcs: () => NPCS, facePlayer, inSight,
     followerPos: () => (FOL ? { x: FOL.x, y: FOL.y, dir: FOL.dir || null, moving: !!FOL.moving } : null), get lead() { return LEAD; },
-    pos: () => ({ x: P.x, y: P.y }), terrainCanvas: () => terrain, gust: () => { gustUntil = performance.now() + 3500; }, wind: () => lastWind, debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
+    pos: () => ({ x: P.x, y: P.y }), terrainCanvas: () => terrain, windLevel: (id, t) => windLevel(id, t, typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(id) : null), gust: () => { gustUntil = performance.now() + 3500; }, wind: () => lastWind, debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
   };
 })();
 

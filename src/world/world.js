@@ -633,6 +633,7 @@ const WORLD = (() => {
   function prerender() {
     terrainFor = M.id; terrainScale = 1;
     terrain = PXW.terrain(M, M.id);
+    windClass = 0; lastWind = null; lastPic = null; fade = null;
     if (terrain.anim) PXW.bake(terrain, 0, 0);   // pose 0 with no lean is exactly the old still picture
   }
   function drawTree(g, px, py, kind, r) {
@@ -953,15 +954,27 @@ const WORLD = (() => {
       for (let i = 0; i < Math.floor((w - 4) / 6); i++) { const dr = ((i * 7 + p.x) % 3) * 2; ctx.fillStyle = 'rgba(255,255,255,0.96)'; ctx.fillRect(x + 2 + i * 6, y + capH + 4, 4, 2 + dr); }
     });
   }
-  // ---- wind (Meaning per place: wind is change, so it blows where things change; the cold is stillness, so there it never blows, not even in a storm) ----
-  const WIND = { town: 0.45, moss: 0.65, frost: 0, ember: 1, tide: 0.9, peak: 0, 'route-mf': 0.6, 'route-cm': 1, 'route-fc': 0, 'route-cc': 0.9 };
-  let gustUntil = 0, lastWind = null;
+  // ---- wind (Meaning per place: wind is change, so it blows where things change; the cold is stillness, so there it never blows, not even in a storm). Each place has a character: how strong it can get (base) and how much of the time it is calm (calm 0 = it never stops). The strength then changes over time by itself, from three slow waves that never line up, so a sheltered forest breathes now and then and a pass is always moving. ----
+  const WINDS = { town: { base: 0.5, calm: 0.5 }, moss: { base: 0.55, calm: 0.6 }, tide: { base: 0.85, calm: 0.05 }, ember: { base: 1, calm: 0.25 }, 'route-mf': { base: 0.8, calm: 0.1 }, 'route-cm': { base: 1, calm: 0.25 }, 'route-cc': { base: 0.85, calm: 0.05 }, frost: { base: 0 }, peak: { base: 0 }, 'route-fc': { base: 0 } };
+  const hashS = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h ^ (h >>> 15)) >>> 0) / 4294967296; };
+  // the wind strength 0..1 of a map at time t (seconds), before weather, night or a gust (a pure function, so tests can sample it)
+  function windLevel(mapId, t, region) {
+    const c = WINDS[region] || { base: 0.5, calm: 0.4 }; if (!(c.base > 0)) return 0;
+    const sd = hashS(mapId), base = Math.min(1, c.base * (0.85 + 0.3 * hashS(mapId + 'b'))), ph1 = sd * 6.28, ph2 = hashS(mapId + 'c') * 6.28, ph3 = hashS(mapId + 'd') * 6.28;
+    const n = 0.5 + 0.5 * (0.5 * Math.sin(6.283 * t / 23 + ph1) + 0.3 * Math.sin(6.283 * t / 37 + ph2) + 0.2 * Math.sin(6.283 * t / 61 + ph3));
+    if (c.calm < 0.15) return base * (0.75 + 0.25 * n);
+    const lo = 0.2 + 0.5 * c.calm; return base * Math.max(0, Math.min(1, (n - lo) / 0.25));
+  }
+  let gustUntil = 0, lastWind = null, windClass = 0, lastPic = null, fade = null;
   function windNow() {
     if (M.interior || M.dark || /^dg-/.test(M.id) || (opts.still && opts.still())) return { A: 0, fps: 0, s: 0 };
-    const rg = typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(M.id) : null; let s = WIND[rg]; if (s === undefined) s = 0.5; if (s <= 0) return { A: 0, fps: 0, s: 0 };
-    const wk = opts.weather ? opts.weather() : null; if (wk === 'storm') s = Math.min(1, s * 1.5 + 0.2); else if (wk === 'rain') s = Math.min(1, s * 1.2); else if (wk === 'fog') s *= 0.5;
+    const rg = typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(M.id) : null; if (!((WINDS[rg] || { base: 0.5 }).base > 0)) return { A: 0, fps: 0, s: 0 };
+    let s = windLevel(M.id, performance.now() / 1000, rg);
+    const wk = opts.weather ? opts.weather() : null; if (wk === 'storm') s = Math.min(1, s * 1.4 + 0.25); else if (wk === 'rain') s = Math.min(1, s * 1.15); else if (wk === 'fog') s *= 0.5;
+    if ((opts.tint ? opts.tint() : 'day') === 'night') s *= 0.6;   // the night is calmer
     if (performance.now() < gustUntil) s = 1;
-    return { A: s >= 0.8 ? 2 : 1, fps: 2.5 + 2.5 * s, s: s };
+    const prev = windClass, cls = s < (prev === 0 ? 0.14 : 0.1) ? 0 : (s >= (prev === 2 ? 0.66 : 0.74) ? 2 : 1); windClass = cls;   // a little hysteresis, so a strength hovering at a threshold does not flicker
+    return { A: cls, fps: 2.5 + 2.5 * s, s: s };
   }
   function draw() {
     if (!terrain || terrainFor !== M.id) return;
@@ -977,9 +990,10 @@ const WORLD = (() => {
     ctx.fillStyle = M.theme.bg; ctx.fillRect(0, 0, vw, vh);
     // the picture is one of six baked frames (the still terrain plus the trees, grass, flowers and water in that pose); only the part on screen is copied
     let pic = terrain;
-    if (terrain.anim) { const wd = windNow(), kf = wd.A ? Math.floor(tAnim * wd.fps) % 6 : 0; lastWind = wd; pic = terrain.anim.sets[wd.A] && terrain.anim.sets[wd.A][kf]; if (!pic) { const have = PXW.baked(terrain, wd.A); pic = have.length ? have[0] : PXW.bake(terrain, kf, wd.A); } PXW.fill(terrain, wd.A, performance.now()); }
+    if (terrain.anim) { const wd = windNow(), kf = wd.A ? Math.floor(tAnim * wd.fps) % 6 : 0; if (lastWind && lastWind.A !== wd.A && lastPic) fade = { pic: lastPic, t0: performance.now() }; lastWind = wd; pic = terrain.anim.sets[wd.A] && terrain.anim.sets[wd.A][kf]; if (!pic) { const have = PXW.baked(terrain, wd.A); pic = have.length ? have[0] : PXW.bake(terrain, kf, wd.A); } PXW.fill(terrain, wd.A, performance.now()); lastPic = pic; }
     const sx0 = Math.max(0, Math.floor(cx / 2)), sy0 = Math.max(0, Math.floor(cy / 2)), sw = Math.max(1, Math.min(pic.width - sx0, Math.ceil(vw / 2) + 2)), sh = Math.max(1, Math.min(pic.height - sy0, Math.ceil(vh / 2) + 2));
-    ctx.drawImage(pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2);
+    const fp = fade ? (performance.now() - fade.t0) / 300 : 1;   // a change of wind class fades over 0.3 s instead of jumping
+    if (fade && fp < 1 && fade.pic.width === pic.width) { ctx.drawImage(fade.pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2); ctx.globalAlpha = Math.max(0, fp); ctx.drawImage(pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2); ctx.globalAlpha = 1; } else { fade = null; ctx.drawImage(pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2); }
     if (typeof VFX !== 'undefined') { const sk = VFX.shakeNow(tAnim); if (sk.x || sk.y) { cx += sk.x; cy += sk.y; } }   // a blow shakes the camera along its direction (off in Reduce motion)
     lastCam = { cx: cx, cy: cy };
     if (M.id === 'town') {
@@ -1127,6 +1141,6 @@ const WORLD = (() => {
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },
     get npcs() { return NPCS[M.id] || []; }, allNpcs: () => NPCS, facePlayer, inSight,
     followerPos: () => (FOL ? { x: FOL.x, y: FOL.y, dir: FOL.dir || null, moving: !!FOL.moving } : null), get lead() { return LEAD; },
-    pos: () => ({ x: P.x, y: P.y }), terrainCanvas: () => terrain, gust: () => { gustUntil = performance.now() + 3500; }, wind: () => lastWind, debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
+    pos: () => ({ x: P.x, y: P.y }), terrainCanvas: () => terrain, windLevel: (id, t) => windLevel(id, t, typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(id) : null), gust: () => { gustUntil = performance.now() + 3500; }, wind: () => lastWind, debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
   };
 })();
