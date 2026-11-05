@@ -414,6 +414,18 @@ const WORLD = (() => {
     items.forEach((it, i) => { const x = best.x + i * 2, y = best.y; g[y][x] = 'O'; (M.objects = M.objects || []).push({ id: 'shore-' + i, kind: 'returned', v: it[0], gate: 'dawn', x: x, y: y, reach: 1.7, text: it[1] }); });
     g[best.y][best.x + 9] = 'O'; M.objects.push({ id: 'shore-chair', kind: 'chair', x: best.x + 9, y: best.y, reach: 1.7, text: 'An empty chair. It faces the row.' });
   }
+  // one signature thing per zone (Meaning, see the handoff): placed on the nearest clear ground to a hint, beside the water when asked
+  function addSpot(M, o, hx, hy, needWater) {
+    const g = M.grid, W = M.W, H = M.H, clear = (x, y) => ['.', ','].indexOf((g[y] || [])[x]) !== -1;
+    for (let rad = 0; rad < 20; rad++) for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== rad) continue; const x = hx + dx, y = hy + dy; if (x < 4 || y < 4 || x > W - 5 || y > H - 5 || !clear(x, y)) continue;
+      let ok = true, water = false, path = false; for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) { const c = (g[yy] || [])[xx]; if (Math.abs(xx - x) <= 1 && Math.abs(yy - y) <= 1 && !clear(xx, yy) && !(c === '~' && (xx === x || yy === y))) ok = false; if (c === '~' && Math.abs(xx - x) + Math.abs(yy - y) <= 2) water = true; if (c === '=') path = true; }
+      if (needWater) { ok = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([ax, ay]) => clear(x + ax, y + ay)); path = true; }
+      if (!ok || !path || (needWater && !water)) continue;
+      g[y][x] = 'O'; (M.objects = M.objects || []).push(Object.assign({ x: x, y: y, reach: 1.7 }, o)); return true;
+    }
+    return false;
+  }
   function buildNet(net) {
     net.maps.forEach((sp) => { sp.keep = (net.props || []).filter((pr) => pr[0] === sp.id).map((pr) => pr[2]); const Mp = buildWild(sp); MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES[sp.base]; if (PXW.PAL[sp.base]) PXW.PAL[Mp.id] = PXW.PAL[sp.base]; });
     const main = MAPS[net.main]; main.exits = []; main.arriveFrom = {}; main.arrive = {};
@@ -488,6 +500,10 @@ const WORLD = (() => {
     props: [['route-cc-pier', 'cairn', [24, 9], 'Shells in a spiral. Someone counted.'], ['route-cc-shoals', 'cairn', [10, 9], 'The tide line is higher on this side than it should be.'], ['route-cc-steam', 'cairn', [10, 20], 'Warm to the touch, in the middle of a cold hour.'], ['route-cc-drowned', 'cairn', [22, 9], 'Fruit trees, standing in the water. They are in blossom.']],
     posts: [['coralbay', 's', 28, 'South: the Reef Causeway (Tide and Ember critters), the road to Cinderport.'], ['cinderport', 'e', 13, 'East: the Reef Causeway (Tide and Ember critters), the road to Coralbay.']] });
   NETS.forEach(buildNet);
+  addSpot(MAPS.moss, { id: 'z-sprouts', kind: 'sprouts', text: 'Rows of young plants. The soil is turned.' }, 9, 6, false);
+  addSpot(MAPS.frost, { id: 'z-icelamp', kind: 'icelamp', text: 'A flame, held in the ice.' }, 26, 19, false);
+  addSpot(MAPS.ember, { id: 'z-hearth', kind: 'hearth', text: 'Fresh logs.' }, 10, 20, false);
+  addSpot(MAPS.tide, { id: 'z-moored', kind: 'moored', text: 'The knot is a good one.' }, 26, 6, true);
   // ---------- the Cold Ascent: five switchback ledges up the peaks above Frosthold, ending under the beacon tower ----------
   // Ledges are rectangles joined by 4-wide ramps through the cliff rows between them; a packed-snow trail zig-zags up, so trainers beside it
   // see you cross. Wild snow patches (W), a glacier river with a log bridge, a rare patch near the top, and a summit plateau with the beacon.
