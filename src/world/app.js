@@ -387,6 +387,8 @@ const APP = (() => {
   const SCAFFOLD = {
     pip: [[1, ['You know all of this already.', 'I just like standing here.']]],
     mira: [[2, ['Take what you need.']]],
+    fern: [[1, ['You know where to look.']], [3, ['I have been writing about you. Only a little.', 'There is not much left that I can tell you.']]],
+    remy: [[1, ['The terminal is where it always was.']], [3, ['Fern is outside less these days.', 'She says she has run out of things to tell the trainers who come through.']]],
     mom: [[2, ['You are home. Good.', 'I stopped tidying the desk. You know where things are.']], [3, ['You did not ask what is for dinner.', 'The lamp in the window is on. I did not light it.']], [4, ['You do not have to tell me where you are going.', 'The door stays open. It always did.']]]
   };
   // the keepers rest once you have carried the light yourself (Meaning: they held it for you until you could). Lines only; [condition, lines].
@@ -954,7 +956,7 @@ const APP = (() => {
   }
   function talk(n) {
     WORLD.facePlayer(n);
-    const sc = letGoLines(n) || scaffoldLines(n); if (sc) n = Object.assign({}, n, { lines: sc, afterLines: letGoLines(n) ? sc : n.afterLines });
+    const sc = letGoLines(n) || scaffoldLines(n); if (sc) n = Object.assign({}, n, { lines: sc, afterLines: letGoLines(n) ? sc : n.afterLines, after: n.after ? sc : n.after });
     const g = game, done = (g.state.npc && g.state.npc.done) || [];
     const qcity = Object.keys(CITY_QUESTS).find((c) => CITY_QUESTS[c].giver === n.id);
     if (qcity) {

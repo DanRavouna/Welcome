@@ -4,7 +4,7 @@ errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
-  pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,hints:[],npc:{done:[],beaten:{},cleared:[],seals:[]}}); DEV.safe=true; window.__noTransition=true")
+  pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,hints:[],npc:{done:['fern'],beaten:{},cleared:[],seals:[]}}); DEV.safe=true; window.__noTransition=true")
   def lines(who,seals):
     pg.evaluate("(s)=>APP.game.update({npc:Object.assign({},APP.game.state.npc,{seals:s})})",['wren','glacia','blaze','coral'][:seals])
     n=pg.evaluate("(id)=>{const all=WORLD.allNpcs();for(const k in all){const n=all[k].find(x=>x.id===id);if(n)return n}return null}",who)
@@ -15,7 +15,7 @@ with sync_playwright() as p:
       out.append(pg.evaluate("(()=>{const d=document.getElementById('dlg');return d?d.innerText.replace(/\\n+/g,' / '):''})()")[:160]); pg.evaluate("APP.advance()"); pg.wait_for_timeout(60)
     pg.evaluate("while(APP.dialog)APP.advance()")
     return out
-  for who in ['pip','mira','mom']:
+  for who in ['pip','mira','mom','remy','fern']:
     for sc in range(5): print(who,'seals',sc,':',lines(who,sc))
   # tips: with no seal a hint shows, with a seal it does not (and nothing is recorded)
   pg.evaluate("APP.game.update({hints:[],npc:{done:[],beaten:{},cleared:[],seals:[]}})"); pg.evaluate("APP.hint('party','x tip')"); print('no seal: tip recorded:', pg.evaluate("APP.game.state.hints"))
