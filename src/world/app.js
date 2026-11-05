@@ -849,7 +849,7 @@ const APP = (() => {
     if (lit && got) { toast('The great lamp burns steadily. Its light reaches the whole land.'); return; }
     if (lit) { showDialog('The great lamp', ['The glass glows warm under your hand. Something small stirs inside it.', 'A spark slips out of the flame, bright and curious, and lands on your shoulder.'], null, () => grantSecret(SECRET2_SEED)); return; }   // lit before Wickling existed, or by the dev tools
     showDialog('The great lamp', ['You touch the cold glass. A spark answers you.', 'The flame wakes, and a beam of light climbs out of the tower, over the peaks and across the whole land.', 'Far away, in the old arch and the lighthouse, something wakes too.', 'A spark slips out of the flame, bright and curious, and lands on your shoulder.'], null, () => {
-      advSave((x) => { x.flags.lampLit = true; }); game.update({ essence: (game.state.essence || 0) + 30 }); game.sfx('mythic'); game.buzz([30, 40, 30, 40, 30, 40, 160]); toast('The beacon is lit! +30 essence.');
+      advSave((x) => { x.flags.lampLit = true; }); WORLD.gust(); game.update({ essence: (game.state.essence || 0) + 30 }); game.sfx('mythic'); game.buzz([30, 40, 30, 40, 30, 40, 160]); toast('The beacon is lit! +30 essence.');
       setTimeout(() => grantSecret(SECRET2_SEED), 1800);
     });
   }

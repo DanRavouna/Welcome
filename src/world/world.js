@@ -633,6 +633,7 @@ const WORLD = (() => {
   function prerender() {
     terrainFor = M.id; terrainScale = 1;
     terrain = PXW.terrain(M, M.id);
+    if (terrain.anim) PXW.bake(terrain, 0, 0);   // pose 0 with no lean is exactly the old still picture
   }
   function drawTree(g, px, py, kind, r) {
     const sz = 0.9 + r() * 0.35;
@@ -952,6 +953,16 @@ const WORLD = (() => {
       for (let i = 0; i < Math.floor((w - 4) / 6); i++) { const dr = ((i * 7 + p.x) % 3) * 2; ctx.fillStyle = 'rgba(255,255,255,0.96)'; ctx.fillRect(x + 2 + i * 6, y + capH + 4, 4, 2 + dr); }
     });
   }
+  // ---- wind (Meaning per place: wind is change, so it blows where things change; the cold is stillness, so there it never blows, not even in a storm) ----
+  const WIND = { town: 0.45, moss: 0.65, frost: 0, ember: 1, tide: 0.9, peak: 0, 'route-mf': 0.6, 'route-cm': 1, 'route-fc': 0, 'route-cc': 0.9 };
+  let gustUntil = 0, lastWind = null;
+  function windNow() {
+    if (M.interior || M.dark || /^dg-/.test(M.id) || (opts.still && opts.still())) return { A: 0, fps: 0, s: 0 };
+    const rg = typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(M.id) : null; let s = WIND[rg]; if (s === undefined) s = 0.5; if (s <= 0) return { A: 0, fps: 0, s: 0 };
+    const wk = opts.weather ? opts.weather() : null; if (wk === 'storm') s = Math.min(1, s * 1.5 + 0.2); else if (wk === 'rain') s = Math.min(1, s * 1.2); else if (wk === 'fog') s *= 0.5;
+    if (performance.now() < gustUntil) s = 1;
+    return { A: s >= 0.8 ? 2 : 1, fps: 2.5 + 2.5 * s, s: s };
+  }
   function draw() {
     if (!terrain || terrainFor !== M.id) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -964,7 +975,11 @@ const WORLD = (() => {
     cy = snap(mh <= vh ? (mh - vh) / 2 : Math.max(0, Math.min(mh - vh, cy)));
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = M.theme.bg; ctx.fillRect(0, 0, vw, vh);
-    ctx.drawImage(terrain, -cx, -cy, terrain.width * 2, terrain.height * 2);
+    // the picture is one of six baked frames (the still terrain plus the trees, grass, flowers and water in that pose); only the part on screen is copied
+    let pic = terrain;
+    if (terrain.anim) { const wd = windNow(), kf = wd.A ? Math.floor(tAnim * wd.fps) % 6 : 0; lastWind = wd; pic = terrain.anim.sets[wd.A] && terrain.anim.sets[wd.A][kf]; if (!pic) { const have = PXW.baked(terrain, wd.A); pic = have.length ? have[0] : PXW.bake(terrain, kf, wd.A); } PXW.fill(terrain, wd.A, performance.now()); }
+    const sx0 = Math.max(0, Math.floor(cx / 2)), sy0 = Math.max(0, Math.floor(cy / 2)), sw = Math.max(1, Math.min(pic.width - sx0, Math.ceil(vw / 2) + 2)), sh = Math.max(1, Math.min(pic.height - sy0, Math.ceil(vh / 2) + 2));
+    ctx.drawImage(pic, sx0, sy0, sw, sh, sx0 * 2 - cx, sy0 * 2 - cy, sw * 2, sh * 2);
     if (typeof VFX !== 'undefined') { const sk = VFX.shakeNow(tAnim); if (sk.x || sk.y) { cx += sk.x; cy += sk.y; } }   // a blow shakes the camera along its direction (off in Reduce motion)
     lastCam = { cx: cx, cy: cy };
     if (M.id === 'town') {
@@ -1112,6 +1127,6 @@ const WORLD = (() => {
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },
     get npcs() { return NPCS[M.id] || []; }, allNpcs: () => NPCS, facePlayer, inSight,
     followerPos: () => (FOL ? { x: FOL.x, y: FOL.y, dir: FOL.dir || null, moving: !!FOL.moving } : null), get lead() { return LEAD; },
-    pos: () => ({ x: P.x, y: P.y }), debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
+    pos: () => ({ x: P.x, y: P.y }), terrainCanvas: () => terrain, gust: () => { gustUntil = performance.now() + 3500; }, wind: () => lastWind, debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
   };
 })();

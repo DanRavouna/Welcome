@@ -68,12 +68,40 @@ const PXW = (() => {
     }
     return c;
   }
+  // ---- wind: trees, tall grass, flowers and water are NOT painted into the still terrain image; terrain() records them (with the same seeded positions as before) and bake() paints them into transparent overlay frames, six poses of a sway cycle, each tile out of phase with its neighbours ----
+  const SIN6 = [0, 0.87, 0.87, 0, -0.87, -0.87];
+  const hashT = (x, y) => { let h = Math.imul(x + 374761393, 668265263) ^ Math.imul(y + 1274126177, 2246822519); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+  const phaseOf = (tx, ty) => (((Math.floor(tx * 1.0 + ty * 0.35 + hashT(tx, ty) * 2.0)) % 6) + 6) % 6;
+  // a stamp whose rows lean: the top moves most, the foot not at all, and the lean arrives a little later down the stem (so the shape bends instead of sliding)
+  function swayStamp(g, x0, y0, rows, colors, k, A, gain) {
+    const n = rows.length;
+    for (let y = 0; y < n; y++) {
+      const w = n > 1 ? 1 - y / (n - 1) : 1, lag = Math.floor(y * 3 / n), off = A ? Math.round(A * SIN6[(((k - lag) % 6) + 6) % 6] * w * gain) : 0;
+      for (let x = 0; x < rows[y].length; x++) { const col = colors[rows[y][x]]; if (col) { g.fillStyle = col; g.fillRect(x0 + x + off, y0 + y, 1, 1); } }
+    }
+  }
+  function bake(base, k, A) {
+    const an = base.anim; if (!an) return null; const set = an.sets[A] || (an.sets[A] = []); if (set[k]) return set[k];
+    const cv = document.createElement('canvas'); cv.width = base.width; cv.height = base.height; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(base, 0, 0); const P = an.P;   // each frame is the whole picture (one blit per frame at draw time, as before), not a transparent overlay (two blits cost 25 ms a frame on a throttled phone)
+    an.items.forEach((it) => {
+      const kk = A ? (k + it.ph) % 6 : 0;
+      if (it.k === 'tree') swayStamp(g, it.X, it.Y, it.rows, it.colors, kk, A, 1);
+      else if (it.k === 'tuft') swayStamp(g, it.X, it.Y, TUFT, it.cl, kk, A, 0.8);
+      else if (it.k === 'flower') swayStamp(g, it.X, it.Y, FLOWER, it.cl, kk, A, 0.7);
+      else if (it.k === 'wave') { const dx = A ? Math.round(SIN6[kk] * A * 1.5) : 0; g.fillStyle = P.wl; g.fillRect(it.X + it.wx + dx, it.Y + it.wy, 4, 1); g.fillRect(it.X + it.wx + 1 + dx, it.Y + it.wy - 1, 2, 1); if (A && kk % 3 === 0) g.fillRect(it.X + ((it.wx + 7 + kk) % 13), it.Y + ((it.wy + 5) % 14) + 1, 1, 1); }
+      else if (it.k === 'sparkle') { if (A && kk % 3 === 0) { g.fillStyle = '#FFFFFF'; g.fillRect(it.X + it.dx, it.Y + it.dy, 2, 2); g.fillRect(it.X + it.dx - 1, it.Y + it.dy, 4, 1); } }
+    });
+    set[k] = cv; return cv;
+  }
+  const baked = (base, A) => { const set = base.anim && base.anim.sets[A]; return set ? set.filter(Boolean) : []; };
+  // one missing frame at a time, no more often than every 120 ms, so a map loads at once and the other poses arrive as it runs
+  function fill(base, A, now) { const an = base.anim; if (!an || !A || now - (an.last || 0) < 120) return; const set = an.sets[A] || []; for (let k = 0; k < 6; k++) if (!set[k]) { bake(base, k, A); an.last = now; return; } }
   function terrain(M, themeId) {
     if (M.interior) return interior(M);
     const P = PAL[themeId] || PAL.town, W = M.W, H = M.H, grid = M.grid;
     const c = document.createElement('canvas'); c.width = W * L; c.height = H * L;
     const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
-    const r = r2(1234 + W * H);
+    const r = r2(1234 + W * H), anim = [];
     const T = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? 'T' : grid[y][x]);
     const isPath = (t) => t === '=';
     // ground everywhere first (trees/rocks/signs sit on grass)
@@ -91,7 +119,7 @@ const PXW = (() => {
       }
       if (t === '~') {
         g.fillStyle = P.w; g.fillRect(X, Y, L, L);
-        g.fillStyle = P.wl; const wy = Y + 4 + Math.floor(r() * 8), wx = X + Math.floor(r() * 8); g.fillRect(wx, wy, 4, 1); g.fillRect(wx + 1, wy - 1, 2, 1);
+        const wy = 4 + Math.floor(r() * 8), wx = Math.floor(r() * 8); anim.push({ k: 'wave', X: X, Y: Y, wx: wx, wy: wy, ph: phaseOf(x, y) });
         if (T(x, y - 1) !== '~') { g.fillStyle = P.wl; g.fillRect(X, Y, L, 2); }
         if (T(x, y + 1) !== '~') { g.fillStyle = P.we; g.fillRect(X, Y + L - 2, L, 2); }
         continue;
@@ -99,11 +127,12 @@ const PXW = (() => {
       g.fillStyle = P.g; g.fillRect(X, Y, L, L);
       g.fillStyle = P.gd; for (let yy = 1; yy < L; yy += 4) for (let xx = ((yy >> 2) % 2) * 2 + 1; xx < L; xx += 4) g.fillRect(X + xx, Y + yy, 1, 1);
       if (r() < 0.25) stamp(g, X + 3 + Math.floor(r() * 6), Y + 5 + Math.floor(r() * 6), ['g.g', '.g.'], { g: P.gt });
-      if (t === ',') { const cols = P.fl; for (let i = 0; i < 2; i++) stamp(g, X + 2 + i * 7 + Math.floor(r() * 2), Y + 3 + Math.floor(r() * 8), FLOWER, { a: cols[Math.floor(r() * cols.length)], c: '#FFE08A', l: P.gt }); }
+      if (t === ',') { const cols = P.fl; for (let i = 0; i < 2; i++) { const fx = X + 2 + i * 7 + Math.floor(r() * 2), fy = Y + 3 + Math.floor(r() * 8); anim.push({ k: 'flower', X: fx, Y: fy, cl: { a: cols[Math.floor(r() * cols.length)], c: '#FFE08A', l: P.gt }, ph: phaseOf(x, y) }); } }
       if (t === 'W' || t === 'Z') {
         g.fillStyle = t === 'Z' ? P.th : P.t; g.fillRect(X, Y, L, L);
         const cl = t === 'Z' ? { h: '#FFF7D6', b: P.t, d: P.tb } : { h: P.th, b: P.t, d: P.tb };
-        stamp(g, X, Y + 2, TUFT, cl); stamp(g, X + 8, Y + 2, TUFT, cl); stamp(g, X + 4, Y + 9, TUFT, cl); stamp(g, X + 12, Y + 9, TUFT, cl);
+        [[0, 2], [8, 2], [4, 9], [12, 9]].forEach((q, qi) => anim.push({ k: 'tuft', X: X + q[0], Y: Y + q[1], cl: cl, ph: phaseOf(x, y + qi * 0.5) }));
+        if (t === 'Z') anim.push({ k: 'sparkle', X: X, Y: Y, dx: 2 + (hashT(x, y) * 10 | 0), dy: 2 + (hashT(y, x) * 10 | 0), ph: phaseOf(x, y) });
       }
     }
     // cave walls (dungeons): dark rock with a lit front face wherever the floor shows below
@@ -125,14 +154,16 @@ const PXW = (() => {
       g.fillStyle = '#B7C2D6'; g.fillRect(fx + 2, fy + 1, 28, 30); g.fillRect(fx + 1, fy + 2, 30, 28);
       g.fillStyle = '#5AA8F0'; g.fillRect(fx + 5, fy + 5, 22, 22); g.fillStyle = '#A8D8FF'; g.fillRect(fx + 7, fy + 7, 6, 1); g.fillRect(fx + 18, fy + 20, 5, 1);
       g.fillStyle = '#B7C2D6'; g.fillRect(fx + 13, fy + 13, 6, 6); g.fillStyle = '#4A5878'; g.fillRect(fx + 13, fy + 18, 6, 1);
+      anim.push({ k: 'sparkle', X: fx + 6, Y: fy + 6, dx: 0, dy: 0, ph: 0 }, { k: 'sparkle', X: fx + 17, Y: fy + 18, dx: 0, dy: 0, ph: 3 });
     }
     M.signs.forEach((s) => { const X = s.x * L, Y = s.y * L; stamp(g, X + 1, Y + 2, ['oooooooooooooo', 'owwwwwwwwwwwwo', 'owkkkkkkkkkwwo', 'owwwwwwwwwwwwo', 'owkkkkkkwwwwwo', 'owwwwwwwwwwwwo', 'oooooooooooooo', '......ot......', '......ot......', '......ot......', '......ot......', '.....oooo.....'], { o: '#4A2A14', w: '#C8955A', k: '#7A4E2A', t: '#8A5A34' }); });
     // rocks & trees, row by row so lower ones overlap upper ones
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const t = grid[y][x], X = x * L, Y = y * L;
       if (t === 'R') { const rc = themeId === 'ember' ? { o: '#1E1414', l: '#7A6464', g: '#4E3E3E', d: '#3A2E2E' } : { o: '#3A4258', l: '#DCE2EE', g: '#A8B2C6', d: '#7E8AA2' }; g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(X + 2, Y + 14, 12, 2); stamp(g, X, Y + 6, ROCK, rc); }
-      if (t === 'T') { const kind = P.tree; const rows = TREE[kind]; g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(X + 3, Y + L - 2, 10, 2); stamp(g, X, Y + L - rows.length, rows, treeColors(kind, P)); }
+      if (t === 'T') { const kind = P.tree; const rows = TREE[kind]; g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(X + 3, Y + L - 2, 10, 2); anim.push({ k: 'tree', X: X, Y: Y + L - rows.length, rows: rows, colors: treeColors(kind, P), ph: phaseOf(x, y) }); }
     }
+    c.anim = { items: anim, P: P, sets: {}, last: 0 };   // always: the still image lacks trees, grass, flowers and water highlights until frame 0 is baked
     return c;
   }
   function shade(hex, f) { const n = parseInt(hex.slice(1), 16); const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => Math.max(0, Math.min(255, Math.round(f < 0 ? v * (1 + f) : v + (255 - v) * f)))); return '#' + c.map((v) => v.toString(16).padStart(2, '0')).join(''); }
@@ -228,5 +259,5 @@ const PXW = (() => {
     };
     const out = {}; ['down', 'up', 'left', 'right'].forEach((d) => { out[d] = [0, 1, 2].map((f) => make(d, f)); }); return out;
   }
-  return { L, PAL, terrain, frames };
+  return { L, PAL, terrain, frames, bake, fill, baked };
 })();
