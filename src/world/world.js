@@ -334,7 +334,7 @@ const WORLD = (() => {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const e = Math.min(x, y, W - 1 - x, H - 1 - y); if (e < 2 || (e < 3 && r() < 0.55)) set(x, y, 'T'); }
     const hub = spec.hub || [Math.floor(W / 2), Math.floor(H / 2)];
     const brush = (x, y) => { set(x, y, '='); set(x + 1, y, '='); set(x, y + 1, '='); set(x + 1, y + 1, '='); };
-    const path = (x0, y0, x1, y1) => { let x = x0, y = y0; while (x !== x1 || y !== y1) { brush(x, y); if (x !== x1 && (y === y1 || r() < 0.45)) x += x1 > x ? 1 : -1; else if (y !== y1) y += y1 > y ? 1 : -1; } brush(x1, y1); };
+    const path = (x0, y0, x1, y1) => { let x = x0, y = y0, horiz = r() < 0.5; while (x !== x1 || y !== y1) { const run = 3 + Math.floor(r() * 5); for (let k = 0; k < run && (x !== x1 || y !== y1); k++) { brush(x, y); if (horiz && x !== x1) x += x1 > x ? 1 : -1; else if (!horiz && y !== y1) y += y1 > y ? 1 : -1; else horiz = !horiz; } horiz = !horiz; } brush(x1, y1); };   // trails go in straight runs of 3 to 7 tiles with a bend between, not a one-tile staircase
     const way = (x0, y0, x1, y1) => { const wx = Math.max(5, Math.min(W - 7, Math.round((x0 + x1) / 2 + (r() - 0.5) * 12))), wy = Math.max(5, Math.min(H - 7, Math.round((y0 + y1) / 2 + (r() - 0.5) * 12))); path(x0, y0, wx, wy); path(wx, wy, x1, y1); };   // a path bends through a random waypoint
     const nooks = spec.nooks || [];
     nooks.forEach((n) => { for (let y = n.y - n.r; y <= n.y + n.r; y++) for (let x = n.x - n.r; x <= n.x + n.r; x++) if ((x - n.x) ** 2 + (y - n.y) ** 2 <= n.r * n.r + 1) set(x, y, '.'); });
@@ -345,12 +345,25 @@ const WORLD = (() => {
       for (let y = by - rh; y <= by + rh; y++) for (let x = bx - rw; x <= bx + rw; x++) { const dx = (x - bx) / (rw + 0.5), dy = (y - by) / (rh + 0.5); if (dx * dx + dy * dy <= 1 && get(x, y) === '.') set(x, y, 'W'); }
     }
     if (spec.rare != null && nooks[spec.rare]) { const n = nooks[spec.rare]; for (let y = n.y - 3; y <= n.y - 1; y++) for (let x = n.x - 1; x <= n.x + 1; x++) if (get(x, y) !== '=') set(x, y, 'Z'); }
-    const dens = th.dense ? 0.16 : 0.08;
+    // what the land does: trees stand in stands and groves with meadow between them, each kind of route has its own feature (ridge, boulders, inlet, pools), and the ground near any path, clearing, object or the hub stays open so a walker always finds the way
+    const prot = []; for (let y = 0; y < H; y++) prot.push(new Array(W).fill(false));
+    const guard = (cx, cy, rad) => { for (let y = cy - rad; y <= cy + rad; y++) for (let x = cx - rad; x <= cx + rad; x++) if (x >= 0 && y >= 0 && x < W && y < H) prot[y][x] = true; };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (m[y][x] === '=' || m[y][x] === 'Z') guard(x, y, 2);
+    nooks.forEach((n) => guard(n.x, n.y, n.r + 2)); (spec.objects || []).forEach((o) => guard(o.x, o.y, 2)); (spec.signs || []).forEach((sg) => guard(sg.x, sg.y, 2)); guard(hub[0], hub[1], 3);
+    (spec.keep || []).forEach((k) => guard(k[0], k[1], 3));
+    const nearPath = (x, y, d) => { for (let yy = y - d; yy <= y + d; yy++) for (let xx = x - d; xx <= x + d; xx++) if (get(xx, yy) === '=') return true; return false; };
+    const free = (x, y) => x >= 3 && y >= 3 && x < W - 3 && y < H - 3 && !prot[y][x] && get(x, y) === '.';
+    const blob = (cx, cy, rx, ry, ch, edge) => { for (let y = cy - ry; y <= cy + ry; y++) for (let x = cx - rx; x <= cx + rx; x++) { const dx = (x - cx) / (rx + 0.4), dy = (y - cy) / (ry + 0.4); if (dx * dx + dy * dy <= 1 && free(x, y) && r() > edge) set(x, y, ch); } };
+    const feature = spec.feature || { 'route-mf': 'ridge', 'route-cm': 'boulders', 'route-fc': 'inlet', 'route-cc': 'pools' }[spec.base];
+    if (feature === 'ridge') for (let i = 0, got = 0; i < 40 && got < 2; i++) { const horiz = r() < 0.5, len = 8 + Math.floor(r() * 7), sx = 5 + Math.floor(r() * (W - 10 - (horiz ? len : 0))), sy = 5 + Math.floor(r() * (H - 10 - (horiz ? 0 : len))); let n = 0; for (let k = 0; k < len; k++) if (free(sx + (horiz ? k : 0), sy + (horiz ? 0 : k))) n++; if (n < len - 3) continue; got++; for (let k = 0; k < len; k++) { const x = sx + (horiz ? k : 0), y = sy + (horiz ? 0 : k); if (free(x, y)) set(x, y, 'R'); if (free(x + (horiz ? 0 : 1), y + (horiz ? 1 : 0)) && r() < 0.7) set(x + (horiz ? 0 : 1), y + (horiz ? 1 : 0), 'R'); } }   // a rock ridge with gaps where a trail already crosses it
+    if (feature === 'boulders') for (let i = 0, got = 0; i < 40 && got < 5; i++) { const cx = 5 + Math.floor(r() * (W - 10)), cy = 5 + Math.floor(r() * (H - 10)); if (!free(cx, cy)) continue; got++; blob(cx, cy, 1 + Math.floor(r() * 2), 1 + Math.floor(r() * 2), 'R', 0.3); }
+    if (feature === 'inlet' || feature === 'pools') for (let i = 0, got = 0, want = feature === 'inlet' ? 1 : 2; i < 200 && got < want; i++) { const sm = i > 100 ? 1 : 0, rx = (feature === 'inlet' ? 4 : 2 + Math.floor(r() * 2)) - sm, ry = (feature === 'inlet' ? 3 : 2) - (sm && feature === 'inlet' ? 1 : 0), cx = 6 + rx + Math.floor(r() * (W - 12 - 2 * rx)), cy = 6 + ry + Math.floor(r() * (H - 12 - 2 * ry)); let ok = true; for (let y = cy - ry - 1; y <= cy + ry + 1; y++) for (let x = cx - rx - 1; x <= cx + rx + 1; x++) if (get(x, y) !== "." || nearPath(x, y, 1) || nooks.some((n) => (x - n.x) ** 2 + (y - n.y) ** 2 <= (n.r + 2) ** 2) || (spec.objects || []).some((o) => Math.abs(o.x - x) < 3 && Math.abs(o.y - y) < 3)) ok = false; if (!ok) continue; got++; for (let y = cy - ry - 1; y <= cy + ry + 1; y++) for (let x = cx - rx - 1; x <= cx + rx + 1; x++) { const dx = (x - cx) / (rx + 0.4), dy = (y - cy) / (ry + 0.4), d2 = dx * dx + dy * dy; if (d2 <= 1) set(x, y, '~'); else if (d2 <= 1.6 && r() > 0.4 && get(x, y) === '.') set(x, y, 'R'); } }
+    for (let i = 0, n = Math.round(W * H / (th.dense ? 60 : 85)); i < n; i++) blob(4 + Math.floor(r() * (W - 8)), 4 + Math.floor(r() * (H - 8)), 1 + Math.floor(r() * 3), 1 + Math.floor(r() * 3), 'T', 0.18);
+    const dens = th.dense ? 0.05 : 0.025;
     for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) {
-      if (get(x, y) !== '.') continue;
-      let near = false; for (let yy = y - 1; yy <= y + 1; yy++) for (let xx = x - 1; xx <= x + 1; xx++) if (['=', 'Z'].indexOf(get(xx, yy)) !== -1) near = true;
-      const inNook = nooks.some((n) => (x - n.x) ** 2 + (y - n.y) ** 2 <= (n.r + 1) ** 2), v = r();
-      if (!near && !inNook && v < dens) set(x, y, 'T'); else if (!near && !inNook && v < dens + 0.03) set(x, y, 'R'); else if (v < dens + 0.13) set(x, y, ',');
+      if (get(x, y) !== '.' || prot[y][x]) { if (get(x, y) === '.' && r() < 0.14) set(x, y, ','); continue; }
+      const v = r();
+      if (v < dens) set(x, y, 'T'); else if (v < dens + 0.02) set(x, y, 'R'); else if (v < dens + 0.16) set(x, y, ',');
     }
     const objects = (spec.objects || []).map((o) => { set(o.x, o.y, 'O'); return Object.assign({ reach: 1.7 }, o); });
     const signs = (spec.signs || []).map((sg) => { set(sg.x, sg.y, 'G'); return sg; });
@@ -373,7 +386,7 @@ const WORLD = (() => {
   const NETS = [];
   const NET_META = [];
   function buildNet(net) {
-    net.maps.forEach((sp) => { const Mp = buildWild(sp); MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES[sp.base]; if (PXW.PAL[sp.base]) PXW.PAL[Mp.id] = PXW.PAL[sp.base]; });
+    net.maps.forEach((sp) => { sp.keep = (net.props || []).filter((pr) => pr[0] === sp.id).map((pr) => pr[2]); const Mp = buildWild(sp); MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES[sp.base]; if (PXW.PAL[sp.base]) PXW.PAL[Mp.id] = PXW.PAL[sp.base]; });
     const main = MAPS[net.main]; main.exits = []; main.arriveFrom = {}; main.arrive = {};
     net.links.forEach((l) => connect(MAPS[l[0]], l[1], l[2], MAPS[l[3]], l[4], l[5], l[6] || null, l[7] || null));
     main.spawn = main.arriveFrom[net.spawnFrom];
@@ -947,7 +960,8 @@ const WORLD = (() => {
     list.forEach((it) => {
       if (it.fn) { it.fn(ctx); return; }
       if (it.p) { if (LEAD) drawCritterAt(fol, P.x + (P.ox || 0), P.y + (P.oy || 0), P.moving, cx, cy, snap, true); else drawPlayer(pxs - cx, pys - cy); return; }
-      if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy); if (ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50) return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (art) art(ctx, ox, oy, st, tAnim, o); return; }
+      if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy); if (ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50) return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (art) { ctx.save(); ctx.translate(ox, oy); art(ctx, 0, 0, st, tAnim, o); ctx.restore(); } return; }   // drawn from its own origin: the art snaps to a 2 px grid, which must be relative to the object, not the screen, or it jitters against the ground while the camera moves
+
       if (it.f && LEAD) { drawPlayer(snap(FOL.x - cx), snap(FOL.y - cy), { x: FOL.x, y: FOL.y, dir: FOL.dir || P.dir, moving: FOL.moving, step: FOL.step || 0 }); return; }
       if (it.f) {
         const x = snap(FOL.x + (FOL.ox || 0) - cx), y = snap(FOL.y + (FOL.oy || 0) - cy), hop = FOL.moving ? Math.abs(Math.sin(tAnim * 12)) * 3 : Math.abs(Math.sin(tAnim * 2)) * 1;

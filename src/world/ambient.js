@@ -86,7 +86,7 @@ const AMBIENT = (() => {
       if (a.vis > 0.01 || should) d.step(a, env.dt, env);
       if (a.respawn) { a.respawn = false; a.fly = 0; a.vis = 0; a.x = (a.home[0] + 0.5) * env.TS; a.y = (a.home[1] + 0.7) * env.TS; a.lift = 0; }
       const sx = a.x - env.cx, sy = a.y - env.cy; if (a.vis < 0.02 || sx < -30 || sx > env.vw + 30 || sy < -30 || sy > env.vh + 30) return;
-      g.save(); g.globalAlpha = Math.min(1, a.vis) * (a.fly > 0 && a.fly < 0.5 ? a.fly / 0.5 : 1); d.draw(g, a, Math.round(sx), Math.round(sy), env.t); g.restore();
+      g.save(); g.globalAlpha = Math.min(1, a.vis) * (a.fly > 0 && a.fly < 0.5 ? a.fly / 0.5 : 1); g.translate(Math.round(sx), Math.round(sy)); d.draw(g, a, 0, 0, env.t); g.restore();   // local origin: the 2 px grid is relative to the critter, so it does not jitter against the ground as the camera moves
     });
   }
   return { defs, draw, listFor, BY_REGION, MAP_LIST, _list: () => list };
