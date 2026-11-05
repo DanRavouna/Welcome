@@ -17,6 +17,7 @@ const WORLD = (() => {
   THEMES.coralbay = { ground: '#F2DFA8', blade: 'rgba(150,120,60,0.3)', path: '#C9A070', water: '#2F8FD8', tall: '#B9C46A', tallBlade: '#7E8A32', tree: 'palm', bg: '#1F6FB0', flowers: ['#FFFFFF', '#F59ACB'] };
   THEMES['dg-arch'] = { ground: '#262B40', blade: 'rgba(10,12,24,0.35)', path: '#515A7C', water: '#1E3A5F', tall: '#2E4A4A', tallBlade: '#1E3434', tree: 'dead', bg: '#0A0C18', flowers: ['#7AA0FF'], cave: true };
   THEMES.ascent = { ground: '#E8F0F8', blade: 'rgba(120,150,190,0.35)', path: '#A8B8D0', water: '#7FB8E0', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#9FB4D0', flowers: ['#FFFFFF', '#BBD5FF'], ice: true };
+  THEMES['gym-wren'] = { ground: '#6E9A4A', blade: 'rgba(20,70,20,0.3)', path: '#B99B6A', water: '#3F8FC8', tall: '#2E7D33', tallBlade: '#1D5A24', tree: 'round', bg: '#2A1E12', flowers: ['#F5A3D0', '#FFFFFF'], cave: true };
   THEMES['dg-lamp'] = { ground: '#C9BFA8', blade: 'rgba(120,100,70,0.25)', path: '#E4DAC2', water: '#7FB8E0', tall: '#9CB89A', tallBlade: '#6A8A68', tree: 'pine', bg: '#8E8470', flowers: ['#FFFFFF'], cave: true };
   THEMES.descent = { ground: '#8A6A58', blade: 'rgba(60,30,20,0.35)', path: '#B08A70', water: '#FF6A2B', tall: '#C7A23A', tallBlade: '#8E6B1E', tree: 'dead', bg: '#3A1E14', flowers: ['#FFD86B', '#FF8A3D'], lava: true };
   THEMES['dg-forge'] = { ground: '#4A3A38', blade: 'rgba(20,10,10,0.35)', path: '#8A6A5A', water: '#FF6A2B', tall: '#6A4A38', tallBlade: '#3A2A20', tree: 'dead', bg: '#1A0E0A', flowers: ['#FF8A3D'], cave: true, lava: true };
@@ -559,12 +560,14 @@ const WORLD = (() => {
     const d = ADV.DUNGEONS[id](), grid = d.rows.map((r) => r.split(''));
     const objects = d.objects.map((o) => { grid[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });
     const arrive = d.spawn;
-    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
+    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, hall: id.indexOf('gym-') === 0, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
       exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: d.exit.to || 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive, gates: d.gates || {}, rules: d.rules || {}, pickups: d.pickups || {} };
   }
   MAPS['dg-arch'] = buildDungeon('dg-arch');
   MAPS['dg-lamp'] = buildDungeon('dg-lamp');
   MAPS['dg-forge'] = buildDungeon('dg-forge');
+  MAPS['gym-wren'] = buildDungeon('gym-wren');   // the trial hall behind Wren's Gym door
+  (() => { const Mc = MAPS.mossbrook, gp = Mc.places.find((q) => q.id === 'gym-wren'); gp.enter = 'gym-wren'; Mc.arriveFrom = Object.assign({}, Mc.arriveFrom, { 'gym-wren': [gp.door[0] + 0.9, gp.door[1] + 1.5] }); })();
   // the Cold Ascent hangs off Frosthold's north palisade (a gate cut at columns 31-32), with signposts and landmarks placed with the reusable props
   (() => {   // Cinderport's southern gate (the gap in its tree line, columns 19-20) onto the Cinder Descent
     const C = MAPS.cinderport, D = MAPS.descent;
@@ -967,7 +970,7 @@ const WORLD = (() => {
   }
   let gustUntil = 0, lastWind = null, windClass = 0, lastPic = null, fade = null, lastKf = 0, windPh = 0, windT = 0;
   function windNow() {
-    if (M.interior || M.dark || /^dg-/.test(M.id) || (opts.still && opts.still())) return { A: 0, fps: 0, s: 0 };
+    if (M.interior || M.dark || M.cave || /^dg-/.test(M.id) || (opts.still && opts.still())) return { A: 0, fps: 0, s: 0 };
     const rg = typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(M.id) : null; if (!((WINDS[rg] || { base: 0.5 }).base > 0)) return { A: 0, fps: 0, s: 0 };
     let s = windLevel(M.id, performance.now() / 1000, rg);
     const wk = opts.weather ? opts.weather() : null; if (wk === 'storm') s = Math.min(1, s * 1.4 + 0.25); else if (wk === 'rain') s = Math.min(1, s * 1.15); else if (wk === 'fog') s *= 0.5;

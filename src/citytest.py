@@ -30,12 +30,13 @@ with sync_playwright() as p:
   pg.evaluate("WORLD.enter('town'); WORLD.setPos(21.9*WORLD.TS, 23.6*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(200)
   # gym door -> Wren dialog; house -> toast; herb hut -> shop
   pg.evaluate("WORLD.enter('mossbrook'); WORLD.setPos(17.9*WORLD.TS, 8.3*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(80)
-  print('near gym/wren label:', pg.inner_text('#act-label')); pg.click('#act'); pg.wait_for_timeout(100); print('dialog:', pg.evaluate("APP.dialog && APP.dialog.name"), '|', pg.evaluate("APP.dialog && APP.dialog.lines[0]"))
+  print('near gym label:', pg.inner_text('#act-label')); pg.click('#act'); pg.wait_for_timeout(300); print('the gym door leads inside:', pg.evaluate("WORLD.map.id")); pg.evaluate("APP.talk(WORLD.npcs.find(n=>n.id==='wren'))"); pg.wait_for_timeout(100); print('dialog:', pg.evaluate("APP.dialog && APP.dialog.name"), '|', pg.evaluate("APP.dialog && APP.dialog.lines[0]"))
   for _ in range(10):
     if pg.evaluate("!document.getElementById('dlg-choices').hidden || !APP.dialog"): break
     pg.evaluate("APP.advance()")
   print('wren choices:', pg.evaluate("[...document.querySelectorAll('#dlg-choices button')].map(b=>b.textContent)"))
   pg.click("#dlg-choices button:has-text('Not now')"); pg.wait_for_timeout(150)
+  pg.evaluate("WORLD.enter('mossbrook')"); pg.wait_for_timeout(100)
   pg.evaluate("WORLD.setPos(28.9*WORLD.TS, 9.3*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(60); print('house label:', pg.inner_text('#act-label'))
   pg.click('#act'); pg.wait_for_timeout(60); print('house toast:', pg.inner_text('#toast')[:60])
   pg.evaluate("WORLD.setPos(6.9*WORLD.TS, 10.3*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(60); print('herb hut label:', pg.inner_text('#act-label'))

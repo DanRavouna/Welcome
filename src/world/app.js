@@ -201,7 +201,7 @@ const APP = (() => {
   // which maps count as visited: the ones recorded, plus what the save implies for older saves (Sproutvale, and a zone whose trainer or leader you have beaten)
   function knownMaps() {
     const st = game.state, set = new Set(st.visited || []), npc = st.npc || {}, cleared = npc.cleared || [], seals = npc.seals || [];
-    set.add('town'); if (WORLD.map && !WORLD.map.interior) set.add(WORLD.map.id);
+    set.add('town'); if (WORLD.map && !WORLD.map.interior && !WORLD.map.hall) set.add(WORLD.map.id);
     [['moss', 'ivy', 'wren'], ['frost', 'bram', 'glacia'], ['ember', 'kiki', 'blaze'], ['tide', 'marlo', 'coral']].forEach((z) => { if (cleared.indexOf(z[1]) !== -1 || seals.indexOf(z[2]) !== -1) set.add(z[0]); });
     return set;
   }
@@ -588,8 +588,9 @@ const APP = (() => {
     // Mossbrook (city): Elder Wren moves into her gym; Moss Forest keeps Ivy and Old Oak
     const wren = out.moss.find((n) => n.id === 'wren');
     out.moss = out.moss.filter((n) => n.id !== 'wren');
-    Object.assign(wren, { x: 19, y: 8, dir: 'down', city: 'mossbrook', intro: ['Welcome to Mossbrook, young trainer. I am Elder Wren, leader of this gym.', 'Show me that you and your critters grow together.'] });
-    out.mossbrook = [wren,
+    Object.assign(wren, { x: 10, y: 3, dir: 'down', city: 'mossbrook', intro: ['Welcome to Mossbrook, young trainer. I am Elder Wren, leader of this gym.', 'Show me that you and your critters grow together.'] });
+    out['gym-wren'] = [wren];   // the leader waits inside the gym, behind the vines
+    out.mossbrook = [
       { id: 'juniper', name: 'Herbalist Juniper', x: 8, y: 10, kind: 'shop', pal: { h: '#6B3FA0', y: '#8E5BC8', Y: '#6B3FA0' },
         lines: ['Welcome to the Herb Hut! Same remedies as Mira in Sproutvale, brewed with Mossbrook leaves.'] },
       { lv: 3, id: 'sorrel', name: 'Forager Sorrel', x: 11, y: 11, dir: 'down', kind: 'trainer', trainer: true, pal: { cap: true, c: '#6B8E23', y: '#C9A26A', Y: '#8A6A44' }, types: ['Bloom', 'Volt'], size: 3, stage: 2, pick: 0.5,
@@ -779,7 +780,7 @@ const APP = (() => {
     }
     const k = lampK[o.id] === undefined ? want : lampK[o.id]; lampK[o.id] = k + Math.sign(want - k) * Math.min(Math.abs(want - k), dt * 1.6); return { k: lampK[o.id] };
   }
-  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') { const t = advOf().flags.wg | 0; return { tended: !!advOf().flags['gym:wren'] || o.size <= t }; } if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -837,6 +838,20 @@ const APP = (() => {
   }
   // ---- the Lamp Tower: levers flip gates (open = an odd number of its levers are ON), the beacon door leads in, the great lamp ends the climb ----
   function applyLamp() { const m = WORLD.MAPS['dg-lamp']; if (!m || !m.gates) return; const f = advOf().flags; Object.keys(m.gates).forEach((gid) => WORLD.setGate('dg-lamp', gid, m.gates[gid].filter((l) => f['lv:' + l]).length % 2 === 1)); }
+  // ---- Wren's Gym: the trial of being tended (Meaning: you are tended smallest first, because that is how you were tended). Tend the beds from the smallest up; one out of order and they droop and start again (nothing lost); the vines draw back when all four are tended. Players who already beat Wren or hold her seal find the way open. ----
+  function gymWrenOpen() { const f = advOf().flags, npc = game.state.npc || {}; return !!f['gym:wren'] || (npc.cleared || []).indexOf('wren') !== -1 || (npc.seals || []).indexOf('wren') !== -1; }
+  function applyGym() { if (WORLD.MAPS['gym-wren']) WORLD.setGate('gym-wren', 'wren', gymWrenOpen()); }
+  function gbedUse(o) {
+    if (gymWrenOpen()) { toast('The beds are in bloom.'); return; }
+    const t = advOf().flags.wg | 0;
+    if (o.size <= t) { toast('It is already green.'); return; }
+    if (o.size === t + 1) {
+      advSave((a) => { a.flags.wg = t + 1; if (t + 1 >= 4) a.flags['gym:wren'] = true; }); game.sfx('tap');
+      if (t + 1 >= 4) { applyGym(); game.sfx('claim'); toast('The vines draw back.'); setTimeout(() => toast('The vines draw back.'), 900); } else toast('The sprouts straighten.');   // (twice: a tip can land on top of the first)
+      return;
+    }
+    advSave((a) => { a.flags.wg = 0; }); game.sfx('tap'); toast('The leaves droop.');
+  }
   function leverUse(o) { const key = 'lv:' + o.id, on = !advOf().flags[key]; advSave((a) => { a.flags[key] = on; }); applyLamp(); game.sfx('tap'); toast('You pull the lever. Somewhere, a gate grinds.'); }
   function beaconDoorUse() {
     if (advOf().open.lamp) { game.sfx('tap'); WORLD.go('dg-lamp'); return; }
@@ -887,6 +902,7 @@ const APP = (() => {
     if (o.kind === 'furnace') { furnaceUse(); return; }
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
     if (o.kind === 'lever') { leverUse(o); return; }
+    if (o.kind === 'gbed') { gbedUse(o); return; }
     if (o.kind === 'greatlamp') { greatLampUse(); return; }
     if (o.kind === 'chest') { chestUse(o); return; }
     if (o.order !== undefined) { riteUse(o); return; }
@@ -1157,7 +1173,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend the bed', gsign: 'Read the board', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -1312,7 +1328,7 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { trailDir = {}; plank(m.name); setNear(null); applyDungeon(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
+      onMap: (m) => { trailDir = {}; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map
     });

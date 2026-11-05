@@ -8,7 +8,7 @@ with sync_playwright() as p:
   for _ in range(30):
     if pg.evaluate("!!APP.dialog"): pg.evaluate("APP.advance()"); pg.wait_for_timeout(40)
   # coverage and spacing
-  cov=pg.evaluate("""()=>{const missing=Object.keys(WORLD.MAPS).filter(k=>!WORLD.MAPS[k].interior&&!MAP_LAYOUT[k]);const extra=Object.keys(MAP_LAYOUT).filter(k=>!WORLD.MAPS[k]);
+  cov=pg.evaluate("""()=>{const missing=Object.keys(WORLD.MAPS).filter(k=>!WORLD.MAPS[k].interior&&!WORLD.MAPS[k].hall&&!MAP_LAYOUT[k]);const extra=Object.keys(MAP_LAYOUT).filter(k=>!WORLD.MAPS[k]);
     const ids=Object.keys(MAP_LAYOUT),overlap=[];for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){const a=MAP_LAYOUT[ids[i]],b=MAP_LAYOUT[ids[j]];if(Math.abs(a[0]-b[0])<(a[2]+b[2])/2+0.05&&Math.abs(a[1]-b[1])<(a[2]+b[2])/2+0.05)overlap.push(ids[i]+'~'+ids[j])}
     const outside=ids.filter(k=>{const a=MAP_LAYOUT[k];return a[0]-a[2]/2<0||a[1]-a[2]/2<0||a[0]+a[2]/2>12||a[1]+a[2]/2>13});return {missing,extra,overlap,outside,n:ids.length}}""")
   print('every outdoor map has a place on the overview:', not cov['missing'], cov['missing'] or '', '| unknown ids:', cov['extra'] or 'none', '| nodes overlapping:', cov['overlap'] or 'none', '| outside the canvas:', cov['outside'] or 'none', '| nodes:', cov['n'])

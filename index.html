@@ -1309,6 +1309,25 @@ const ADV = (() => {
     return { name: 'The Sealed Arch', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [12.9, H - 1.4], exit: { edge: 's', a: 12, b: 13 }, dark: { r: 3.4 }, types: ['Dusk', 'Stone'], rate: 0.12,
       spots: { guard1: [13, 25], guard2: [13, 12], keeper: [13, 4] }, rubble: [[12, 41], [13, 41]] };
   }
+  // ---- Wren's Gym (Mossbrook): the trial of being tended. Four beds of young plants at different heights; the way north is hung with vines. Tend the smallest first (the tall ones were small once, and nothing grows unless the smallest are looked after); tend one out of order and the leaves droop and the beds start again, nothing lost. ----
+  function wrenHall() {
+    const W = 22, H = 19, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
+    const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    rect(6, 2, 15, 5, '=');                  // the leader's chamber
+    rect(2, 7, 19, 17, '=');                 // the hall
+    rect(3, 8, 18, 13, '.');                 // the garden
+    rect(10, 16, 11, 18, '=');               // the way in
+    rect(9, 6, 12, 6, '=');                  // the way north (hung with vines)
+    [[5, 3], [8, 1], [13, 4], [16, 2]].forEach(([x, y]) => set(x, y, ','));
+    [[5, 10, 3], [8, 10, 1], [13, 10, 4], [16, 10, 2]].forEach(([x, y, size]) => objects.push({ id: 'bed' + size, kind: 'gbed', size: size, x: x, y: y, text: 'A bed of young plants.' }));
+    [9, 10, 11, 12].forEach((x) => objects.push({ id: 'vines' + x, kind: 'vines', gate: 'wren', x: x, y: 6, text: 'Vines hang across the way.' }));
+    objects.push({ id: 'gsign', kind: 'gsign', x: 8, y: 15, text: 'Every tall thing here was small once.' });
+    [[3, 16], [18, 16], [7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'gbr' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. The coals are warm.' }));
+    objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
+    return { name: 'Wren\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'mossbrook' }, types: [], rate: 0, spots: { wren: [10, 3] } };
+  }
   // ---- the Lamp Tower: a bright climb through four chambers. Levers flip gates (a gate is open when an odd number of its levers are ON), so going forward closes
   // the way behind you, and flipping a lever back always undoes it (you can never be locked in). Guards in chambers 2 and 3, the Warden and the great lamp at the top. ----
   function lampTower() {
@@ -1356,7 +1375,7 @@ const ADV = (() => {
     return { name: 'The Forge Below', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [14.9, H - 1.4], exit: { edge: 's', a: 14, b: 15, to: 'descent' }, dark: { r: 5.2 },
       rules: { gb: ['sock:A', 'sock:B'] }, pickups: { coreA: 'core:A', coreB: 'core:B' }, spots: { guard1: [5, 25], guard2: [24, 25], hale: [14, 6] } };
   }
-  const DUNGEONS = { 'dg-arch': sealedArch, 'dg-lamp': lampTower, 'dg-forge': forgeBelow };
+  const DUNGEONS = { 'dg-arch': sealedArch, 'dg-lamp': lampTower, 'dg-forge': forgeBelow, 'gym-wren': wrenHall };
   // ---- pixel art (screen pixels, 32 px per tile, drawn on 2 px steps); x, y = the tile's top-left; st = object state from the app ----
   const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, w, h); };
   const OL = '#14101E';
@@ -1481,6 +1500,25 @@ const ADV = (() => {
       R(g, x + 9, y + 28, 14, 3, 'rgba(0,0,0,0.22)'); R(g, x + 14, y + 6, 4, 22, '#4A5878'); R(g, x + 11, y + 4, 10, 3, '#4A5878'); R(g, x + 11, y + 6, 10, 10, OL);
       if (st.lit) { const gl = g.createRadialGradient(x + 16, y + 11, 1, x + 16, y + 11, 26); gl.addColorStop(0, 'rgba(255,214,120,0.6)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 12, y - 14, 56, 52); }
       R(g, x + 12, y + 7, 8, 8, st.lit ? '#FFD27A' : '#3A3340');
+    },
+    // a planter bed: the plants stand taller the larger o.size is (1 to 4, about 10 to 28 px); st.tended = it has been looked after (bright green with blossoms), otherwise pale and a little limp
+    gbed(g, x, y, st, t, o) {
+      const sz = o.size | 0, tend = !!st.tended, h = 4 + sz * 6, leaf = tend ? '#4FC25A' : '#C8C66A', lite = tend ? '#8FE08A' : '#E0DE90', stem = tend ? '#1F7A32' : '#8A8A44';
+      R(g, x + 1, y + 27, 30, 3, 'rgba(0,0,0,0.25)'); R(g, x + 2, y + 18, 28, 10, OL); R(g, x + 3, y + 19, 26, 8, '#8A5A32'); R(g, x + 3, y + 19, 26, 2, '#B07A46'); R(g, x + 5, y + 22, 22, 4, '#5A3A22');
+      [7, 14, 21].forEach((px, i) => { const hh = h + (i === 1 ? 4 : 0), top = y + 19 - hh; R(g, px - 1, top, 6, hh, OL); R(g, px, top, 4, hh, stem);
+        R(g, px - 4, top + 2, 12, 6, OL); R(g, px - 3, top + 3, 10, 4, leaf); R(g, px - 3, top + 3, 10, 1, lite);
+        if (sz > 1) { R(g, px - 6, top + 10, 16, 6, OL); R(g, px - 5, top + 11, 14, 4, leaf); }
+        if (tend) { R(g, px + 1, top - 3, 2, 3, '#F59ACB'); R(g, px, top - 4, 4, 2, '#FFE0F0'); } });
+    },
+    // vines hung across a way: braided and heavy, with pale flowers, darker than tall grass
+    vines(g, x, y, st, t, o) {
+      const sw = Math.round(Math.sin(t * 1.4 + o.x) * 1);
+      R(g, x, y, 32, 6, OL); R(g, x + 1, y + 1, 30, 4, '#1B4E26');
+      [3, 9, 15, 21, 27].forEach((vx, i) => { const L = 28 - (i % 2) * 6; R(g, vx + x - 1 + sw, y + 4, 5, L, OL); R(g, vx + x + sw, y + 4, 3, L - 1, i % 2 ? '#2A7A38' : '#1F6A2E'); R(g, vx + x - 3 + sw, y + 9 + (i % 3) * 5, 4, 3, '#4FC25A'); R(g, vx + x + 3 + sw, y + 16 + (i % 2) * 4, 4, 3, '#4FC25A'); if (i % 2 === 0) R(g, vx + x + sw, y + 21, 3, 3, '#F4E8A0'); });
+    },
+    // a small wooden board on a post
+    gsign(g, x, y) {
+      R(g, x + 8, y + 27, 16, 3, 'rgba(0,0,0,0.22)'); R(g, x + 14, y + 14, 4, 14, '#5A4A38'); R(g, x + 5, y + 5, 22, 12, OL); R(g, x + 6, y + 6, 20, 10, '#B8935F'); R(g, x + 8, y + 9, 16, 2, '#6E5030'); R(g, x + 8, y + 12, 11, 2, '#6E5030');
     },
     // two cups on a flat stone; one still has steam
     cups(g, x, y, st, t, o) {
@@ -1634,6 +1672,7 @@ const PXW = (() => {
     mossbrook: { g: '#5FA34A', gd: '#74B85C', gt: '#44803A', p: '#C9A878', ps: '#B39064', pe: '#8A6A44', w: '#4F9AD0', wl: '#9CD0F2', we: '#2F70A0', t: '#3E8A3A', tb: '#2A6A2C', th: '#74B85C', tree: 'round', ol: '#1E3A1E', fl: ['#F5A3D0', '#FFFFFF', '#FFD86B', '#C9A8FF'] },
     tide: { g: '#F2DFA8', gd: '#FAECC4', gt: '#D9C38A', p: '#E2C98E', ps: '#CDB27A', pe: '#B09060', w: '#3C95DC', wl: '#A8D8FF', we: '#2A6FB0', t: '#B9C46A', tb: '#7E8A32', th: '#D8E08A', tree: 'palm', ol: '#5A4A20', fl: ['#FFFFFF', '#F5A3D0'] }
   };
+  PAL['gym-wren'] = { g: '#6E9A4A', gd: '#82B05C', gt: '#4E7E3A', p: '#C9AE7E', ps: '#B39464', pe: '#8A6A44', w: '#3F8FC8', wl: '#8CC8F0', we: '#2A6A9A', t: '#2E7D33', tb: '#1D5A24', th: '#4FA040', tree: 'round', ol: '#163A1A', fl: ['#F5A3D0', '#FFFFFF'], cw: '#5A3E26', cwl: '#7A5A38', cwd: '#3E2A18' };
   PAL['dg-arch'] = { g: '#262B40', gd: '#2F3550', gt: '#1C2033', p: '#515A7C', ps: '#626C90', pe: '#383E5A', w: '#1E3A5F', wl: '#3A6A9A', we: '#122A48', t: '#2E4A4A', tb: '#1E3434', th: '#3E6A5A', tree: 'dead', ol: '#0A0C18', fl: ['#7AA0FF'], cw: '#171A2A', cwl: '#3A4160', cwd: '#0C0E1A' };
   PAL.ascent = { g: '#E8F0F8', gd: '#FFFFFF', gt: '#B9CCE0', p: '#A8B8D0', ps: '#98A8C2', pe: '#7888A4', w: '#7FB8E0', wl: '#D8EEFF', we: '#4A88B8', t: '#9CC9D9', tb: '#5E97AE', th: '#C8E8F2', tree: 'pine', ol: '#2E3A4A', fl: ['#FFFFFF', '#BBD5FF'], cw: '#6E7A96', cwl: '#C4D0E6', cwd: '#3E4864' };
   PAL['dg-lamp'] = { g: '#C9BFA8', gd: '#D8CFB8', gt: '#B5AA92', p: '#E4DAC2', ps: '#D2C8AE', pe: '#A89E86', w: '#7FB8E0', wl: '#D8EEFF', we: '#4A88B8', t: '#9CB89A', tb: '#6A8A68', th: '#C8E0C4', tree: 'pine', ol: '#2E2A3A', fl: ['#FFFFFF'], cw: '#7C7488', cwl: '#B8B0C8', cwd: '#4C4660' };
@@ -2153,6 +2192,7 @@ const WORLD = (() => {
   THEMES.coralbay = { ground: '#F2DFA8', blade: 'rgba(150,120,60,0.3)', path: '#C9A070', water: '#2F8FD8', tall: '#B9C46A', tallBlade: '#7E8A32', tree: 'palm', bg: '#1F6FB0', flowers: ['#FFFFFF', '#F59ACB'] };
   THEMES['dg-arch'] = { ground: '#262B40', blade: 'rgba(10,12,24,0.35)', path: '#515A7C', water: '#1E3A5F', tall: '#2E4A4A', tallBlade: '#1E3434', tree: 'dead', bg: '#0A0C18', flowers: ['#7AA0FF'], cave: true };
   THEMES.ascent = { ground: '#E8F0F8', blade: 'rgba(120,150,190,0.35)', path: '#A8B8D0', water: '#7FB8E0', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#9FB4D0', flowers: ['#FFFFFF', '#BBD5FF'], ice: true };
+  THEMES['gym-wren'] = { ground: '#6E9A4A', blade: 'rgba(20,70,20,0.3)', path: '#B99B6A', water: '#3F8FC8', tall: '#2E7D33', tallBlade: '#1D5A24', tree: 'round', bg: '#2A1E12', flowers: ['#F5A3D0', '#FFFFFF'], cave: true };
   THEMES['dg-lamp'] = { ground: '#C9BFA8', blade: 'rgba(120,100,70,0.25)', path: '#E4DAC2', water: '#7FB8E0', tall: '#9CB89A', tallBlade: '#6A8A68', tree: 'pine', bg: '#8E8470', flowers: ['#FFFFFF'], cave: true };
   THEMES.descent = { ground: '#8A6A58', blade: 'rgba(60,30,20,0.35)', path: '#B08A70', water: '#FF6A2B', tall: '#C7A23A', tallBlade: '#8E6B1E', tree: 'dead', bg: '#3A1E14', flowers: ['#FFD86B', '#FF8A3D'], lava: true };
   THEMES['dg-forge'] = { ground: '#4A3A38', blade: 'rgba(20,10,10,0.35)', path: '#8A6A5A', water: '#FF6A2B', tall: '#6A4A38', tallBlade: '#3A2A20', tree: 'dead', bg: '#1A0E0A', flowers: ['#FF8A3D'], cave: true, lava: true };
@@ -2695,12 +2735,14 @@ const WORLD = (() => {
     const d = ADV.DUNGEONS[id](), grid = d.rows.map((r) => r.split(''));
     const objects = d.objects.map((o) => { grid[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });
     const arrive = d.spawn;
-    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
+    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, hall: id.indexOf('gym-') === 0, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
       exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: d.exit.to || 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive, gates: d.gates || {}, rules: d.rules || {}, pickups: d.pickups || {} };
   }
   MAPS['dg-arch'] = buildDungeon('dg-arch');
   MAPS['dg-lamp'] = buildDungeon('dg-lamp');
   MAPS['dg-forge'] = buildDungeon('dg-forge');
+  MAPS['gym-wren'] = buildDungeon('gym-wren');   // the trial hall behind Wren's Gym door
+  (() => { const Mc = MAPS.mossbrook, gp = Mc.places.find((q) => q.id === 'gym-wren'); gp.enter = 'gym-wren'; Mc.arriveFrom = Object.assign({}, Mc.arriveFrom, { 'gym-wren': [gp.door[0] + 0.9, gp.door[1] + 1.5] }); })();
   // the Cold Ascent hangs off Frosthold's north palisade (a gate cut at columns 31-32), with signposts and landmarks placed with the reusable props
   (() => {   // Cinderport's southern gate (the gap in its tree line, columns 19-20) onto the Cinder Descent
     const C = MAPS.cinderport, D = MAPS.descent;
@@ -3103,7 +3145,7 @@ const WORLD = (() => {
   }
   let gustUntil = 0, lastWind = null, windClass = 0, lastPic = null, fade = null, lastKf = 0, windPh = 0, windT = 0;
   function windNow() {
-    if (M.interior || M.dark || /^dg-/.test(M.id) || (opts.still && opts.still())) return { A: 0, fps: 0, s: 0 };
+    if (M.interior || M.dark || M.cave || /^dg-/.test(M.id) || (opts.still && opts.still())) return { A: 0, fps: 0, s: 0 };
     const rg = typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(M.id) : null; if (!((WINDS[rg] || { base: 0.5 }).base > 0)) return { A: 0, fps: 0, s: 0 };
     let s = windLevel(M.id, performance.now() / 1000, rg);
     const wk = opts.weather ? opts.weather() : null; if (wk === 'storm') s = Math.min(1, s * 1.4 + 0.25); else if (wk === 'rain') s = Math.min(1, s * 1.15); else if (wk === 'fog') s *= 0.5;
@@ -6298,7 +6340,7 @@ const APP = (() => {
   // which maps count as visited: the ones recorded, plus what the save implies for older saves (Sproutvale, and a zone whose trainer or leader you have beaten)
   function knownMaps() {
     const st = game.state, set = new Set(st.visited || []), npc = st.npc || {}, cleared = npc.cleared || [], seals = npc.seals || [];
-    set.add('town'); if (WORLD.map && !WORLD.map.interior) set.add(WORLD.map.id);
+    set.add('town'); if (WORLD.map && !WORLD.map.interior && !WORLD.map.hall) set.add(WORLD.map.id);
     [['moss', 'ivy', 'wren'], ['frost', 'bram', 'glacia'], ['ember', 'kiki', 'blaze'], ['tide', 'marlo', 'coral']].forEach((z) => { if (cleared.indexOf(z[1]) !== -1 || seals.indexOf(z[2]) !== -1) set.add(z[0]); });
     return set;
   }
@@ -6685,8 +6727,9 @@ const APP = (() => {
     // Mossbrook (city): Elder Wren moves into her gym; Moss Forest keeps Ivy and Old Oak
     const wren = out.moss.find((n) => n.id === 'wren');
     out.moss = out.moss.filter((n) => n.id !== 'wren');
-    Object.assign(wren, { x: 19, y: 8, dir: 'down', city: 'mossbrook', intro: ['Welcome to Mossbrook, young trainer. I am Elder Wren, leader of this gym.', 'Show me that you and your critters grow together.'] });
-    out.mossbrook = [wren,
+    Object.assign(wren, { x: 10, y: 3, dir: 'down', city: 'mossbrook', intro: ['Welcome to Mossbrook, young trainer. I am Elder Wren, leader of this gym.', 'Show me that you and your critters grow together.'] });
+    out['gym-wren'] = [wren];   // the leader waits inside the gym, behind the vines
+    out.mossbrook = [
       { id: 'juniper', name: 'Herbalist Juniper', x: 8, y: 10, kind: 'shop', pal: { h: '#6B3FA0', y: '#8E5BC8', Y: '#6B3FA0' },
         lines: ['Welcome to the Herb Hut! Same remedies as Mira in Sproutvale, brewed with Mossbrook leaves.'] },
       { lv: 3, id: 'sorrel', name: 'Forager Sorrel', x: 11, y: 11, dir: 'down', kind: 'trainer', trainer: true, pal: { cap: true, c: '#6B8E23', y: '#C9A26A', Y: '#8A6A44' }, types: ['Bloom', 'Volt'], size: 3, stage: 2, pick: 0.5,
@@ -6876,7 +6919,7 @@ const APP = (() => {
     }
     const k = lampK[o.id] === undefined ? want : lampK[o.id]; lampK[o.id] = k + Math.sign(want - k) * Math.min(Math.abs(want - k), dt * 1.6); return { k: lampK[o.id] };
   }
-  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') { const t = advOf().flags.wg | 0; return { tended: !!advOf().flags['gym:wren'] || o.size <= t }; } if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -6934,6 +6977,20 @@ const APP = (() => {
   }
   // ---- the Lamp Tower: levers flip gates (open = an odd number of its levers are ON), the beacon door leads in, the great lamp ends the climb ----
   function applyLamp() { const m = WORLD.MAPS['dg-lamp']; if (!m || !m.gates) return; const f = advOf().flags; Object.keys(m.gates).forEach((gid) => WORLD.setGate('dg-lamp', gid, m.gates[gid].filter((l) => f['lv:' + l]).length % 2 === 1)); }
+  // ---- Wren's Gym: the trial of being tended (Meaning: you are tended smallest first, because that is how you were tended). Tend the beds from the smallest up; one out of order and they droop and start again (nothing lost); the vines draw back when all four are tended. Players who already beat Wren or hold her seal find the way open. ----
+  function gymWrenOpen() { const f = advOf().flags, npc = game.state.npc || {}; return !!f['gym:wren'] || (npc.cleared || []).indexOf('wren') !== -1 || (npc.seals || []).indexOf('wren') !== -1; }
+  function applyGym() { if (WORLD.MAPS['gym-wren']) WORLD.setGate('gym-wren', 'wren', gymWrenOpen()); }
+  function gbedUse(o) {
+    if (gymWrenOpen()) { toast('The beds are in bloom.'); return; }
+    const t = advOf().flags.wg | 0;
+    if (o.size <= t) { toast('It is already green.'); return; }
+    if (o.size === t + 1) {
+      advSave((a) => { a.flags.wg = t + 1; if (t + 1 >= 4) a.flags['gym:wren'] = true; }); game.sfx('tap');
+      if (t + 1 >= 4) { applyGym(); game.sfx('claim'); toast('The vines draw back.'); setTimeout(() => toast('The vines draw back.'), 900); } else toast('The sprouts straighten.');   // (twice: a tip can land on top of the first)
+      return;
+    }
+    advSave((a) => { a.flags.wg = 0; }); game.sfx('tap'); toast('The leaves droop.');
+  }
   function leverUse(o) { const key = 'lv:' + o.id, on = !advOf().flags[key]; advSave((a) => { a.flags[key] = on; }); applyLamp(); game.sfx('tap'); toast('You pull the lever. Somewhere, a gate grinds.'); }
   function beaconDoorUse() {
     if (advOf().open.lamp) { game.sfx('tap'); WORLD.go('dg-lamp'); return; }
@@ -6984,6 +7041,7 @@ const APP = (() => {
     if (o.kind === 'furnace') { furnaceUse(); return; }
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
     if (o.kind === 'lever') { leverUse(o); return; }
+    if (o.kind === 'gbed') { gbedUse(o); return; }
     if (o.kind === 'greatlamp') { greatLampUse(); return; }
     if (o.kind === 'chest') { chestUse(o); return; }
     if (o.order !== undefined) { riteUse(o); return; }
@@ -7254,7 +7312,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend the bed', gsign: 'Read the board', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -7409,7 +7467,7 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { trailDir = {}; plank(m.name); setNear(null); applyDungeon(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
+      onMap: (m) => { trailDir = {}; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map
     });

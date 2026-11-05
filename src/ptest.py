@@ -26,7 +26,7 @@ with sync_playwright() as p:
     pg.click('#act'); print('tide sign:', sign, '|', pg.inner_text('#toast'))
     # leader requires zone trainer
     pg.evaluate("APP.game.update({settings:Object.assign({},APP.game.state.settings,{test:true})})")
-    pg.evaluate("WORLD.enter('mossbrook')")
+    pg.evaluate("WORLD.enter('gym-wren')")   # Wren waits inside her gym hall now
     pg.evaluate("""() => { const g=APP.game; let s=1; for(;;s++){ const k=g.make(s,3); if(k.stats.reduce((a,q)=>a+q.value,0)>470) break; } const strong=[]; for(let t=1; strong.length<3; t++){ const k=g.make(t,3); if(k.stats.reduce((a,q)=>a+q.value,0)>450) strong.push(t); } g.update({caught:strong.map(x=>({seed:x,stage:3})), party:strong, fighter:strong[0], essence:0}); }""")
     pg.evaluate("APP.talk(WORLD.npcs.find(n=>n.id==='wren'))"); print('wren before Ivy:', pg.evaluate("APP.dialog.lines.join(' / ')"))
     for _ in range(4): pg.evaluate("APP.advance()")
