@@ -27,7 +27,7 @@ The game has a greater meaning, the quest sits inside it, and every place sits i
 - `src/world/` holds the source pieces (`shell.html`, `screen.html`, `runtime.js`, `pixel.js`, `pxworld.js`, `landmarks.js` (reusable props), `adventure.js` (clues, dungeon layouts, object art), `world.js`, `weather.js`, `ambient.js` (scenery critters), `vfx.js` (attack visual effects), `action.js` (action mode), `cloud.js`, `music.js`, `flavor.js` (townsfolk remarks), then `base.js` (Base + Component), `data.js` (constants), `game.js` (Game class) and `app.js` (APP: HUD, menus, screens)). `logic.js`, `critter.html`, `helmet.html`, `build.py` and `reassemble.py` are older leftovers that the current build does not use.
 - `src/*.py` and `src/*.js` are the tests and balance sims from the handoff.
 - Developer tools: tap the ID in the menu 5 times, then Menu > Game > Dev tools (teleport, ignore level requirements, adventure shortcuts). See the handoff.
-- Run tests by group: `bash src/run-tests.sh @world` (also `@battle`, `@saves`, `@ui`); no argument runs everything.
+- Run tests by group: `bash src/run-tests.sh @world` (also `@battle`, `@saves`, `@ui`); no argument runs EVERYTHING ONCE (about 71 tests, about 7.5 minutes on 4 cores: a few run side by side, `JOBS=n` changes how many, and the real-time ones run alone first). Do NOT also run the groups afterwards: they are already included (that mistake made a full run take 23 minutes).
 
 ## Build
 ```bash

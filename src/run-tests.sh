@@ -12,13 +12,22 @@ GROUP_battle="abilitytest ntest ptest aggrotest fxtest towertest twisttest itemt
 GROUP_saves="compattest menutest dextest p14 p15 p18r ctest statstest titletest questtest p17"
 GROUP_ui="evotest a11ytest hudcheck musictest vfxtest"
 expand() { for a in "$@"; do case "$a" in @*) v="GROUP_${a#@}"; for t in ${!v}; do echo $t.py; done;; *) echo "$a";; esac; done; }
-if [ $# -gt 0 ]; then TESTS="$(expand "$@")"; else TESTS="$(for t in $HOOKED weathertest p17; do echo $t.py; done)"; fi
+# No argument = every test once (the default list plus all groups, duplicates removed; before, the default list and the groups overlapped and half of a "full run" was repeats). Several tests run side by side (JOBS, default 3 of the 4 cores); tests that measure real time or speed run alone first, so load does not skew them.
+SERIAL=" perf.py windrhythmtest.py winddrifttest.py jitter.py "
+dedupe() { awk '!seen[$0]++'; }
+if [ $# -gt 0 ]; then TESTS="$(expand "$@" | dedupe)"; else TESTS="$( (for t in $HOOKED weathertest p17; do echo $t.py; done; expand @world @battle @saves @ui) | dedupe)"; fi
 cd /tmp
-for t in $TESTS; do
-  n="${t%.py}"
-  if [ "$n" = p17 ] || [ "$n" = menutest ] || [ "$n" = transitiontest ] || [ "$n" = devtest ] || [ "$n" = compattest ]; then PP=""; else PP="$SRC/pwhook"; fi  # these two run WITHOUT the seed hook (real defaults)
+run_one() {
+  t="$1"; n="${t%.py}"
+  if [ "$n" = p17 ] || [ "$n" = menutest ] || [ "$n" = transitiontest ] || [ "$n" = devtest ] || [ "$n" = compattest ]; then PP=""; else PP="$SRC/pwhook"; fi  # these run WITHOUT the seed hook (real defaults)
   start=$(date +%s)
   PYTHONPATH="$PP" timeout 600 python3 "$SRC/$n.py" > "$LOG/$n.log" 2>&1; rc=$?
   bad=$(grep -ciE "traceback|pageerror|uncaught|errors: \[['\"]" "$LOG/$n.log")
   echo "$n rc=$rc flagged_lines=$bad time=$(( $(date +%s)-start ))s"
-done
+}
+export -f run_one; export SRC LOG
+SER=""; PAR=""
+for t in $TESTS; do case "$SERIAL" in *" $t "*) SER="$SER $t";; *) PAR="$PAR $t";; esac; done
+for t in $SER; do run_one "$t"; done
+[ -n "$PAR" ] && echo $PAR | tr ' ' '\n' | xargs -P "${JOBS:-3}" -I{} bash -c 'run_one {}'
+true
