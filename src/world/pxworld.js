@@ -71,7 +71,8 @@ const PXW = (() => {
   // ---- wind: trees, tall grass, flowers and water are NOT painted into the still terrain image; terrain() records them (with the same seeded positions as before) and bake() paints them into transparent overlay frames, six poses of a sway cycle, each tile out of phase with its neighbours ----
   const SIN6 = [0, 0.87, 0.87, 0, -0.87, -0.87];
   const hashT = (x, y) => { let h = Math.imul(x + 374761393, 668265263) ^ Math.imul(y + 1274126177, 2246822519); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
-  const phaseOf = (tx, ty) => (((Math.floor(tx * 1.0 + ty * 0.35 + hashT(tx, ty) * 2.0)) % 6) + 6) % 6;
+  // the phase is a smooth function of where a thing stands, with no noise: one wave of wind rolls from west to east across the land (a wavelength of about 12 tiles, tilted a little), so each tree is only a small step behind the one to its west. px, py are pixel positions on the 16-px-per-tile picture.
+  const phaseAt = (px, py) => (((Math.round(-(px / 16 * 0.5 + py / 16 * 0.12))) % 6) + 6) % 6;
   // a stamp whose rows lean: the top moves most, the foot not at all, and the lean arrives a little later down the stem (so the shape bends instead of sliding)
   function swayStamp(g, x0, y0, rows, colors, k, A, gain) {
     const n = rows.length;
@@ -119,7 +120,7 @@ const PXW = (() => {
       }
       if (t === '~') {
         g.fillStyle = P.w; g.fillRect(X, Y, L, L);
-        const wy = 4 + Math.floor(r() * 8), wx = Math.floor(r() * 8); anim.push({ k: 'wave', X: X, Y: Y, wx: wx, wy: wy, ph: phaseOf(x, y) });
+        const wy = 4 + Math.floor(r() * 8), wx = Math.floor(r() * 8); anim.push({ k: 'wave', X: X, Y: Y, wx: wx, wy: wy, ph: phaseAt(X, Y) });
         if (T(x, y - 1) !== '~') { g.fillStyle = P.wl; g.fillRect(X, Y, L, 2); }
         if (T(x, y + 1) !== '~') { g.fillStyle = P.we; g.fillRect(X, Y + L - 2, L, 2); }
         continue;
@@ -127,12 +128,12 @@ const PXW = (() => {
       g.fillStyle = P.g; g.fillRect(X, Y, L, L);
       g.fillStyle = P.gd; for (let yy = 1; yy < L; yy += 4) for (let xx = ((yy >> 2) % 2) * 2 + 1; xx < L; xx += 4) g.fillRect(X + xx, Y + yy, 1, 1);
       if (r() < 0.25) stamp(g, X + 3 + Math.floor(r() * 6), Y + 5 + Math.floor(r() * 6), ['g.g', '.g.'], { g: P.gt });
-      if (t === ',') { const cols = P.fl; for (let i = 0; i < 2; i++) { const fx = X + 2 + i * 7 + Math.floor(r() * 2), fy = Y + 3 + Math.floor(r() * 8); anim.push({ k: 'flower', X: fx, Y: fy, cl: { a: cols[Math.floor(r() * cols.length)], c: '#FFE08A', l: P.gt }, ph: phaseOf(x, y) }); } }
+      if (t === ',') { const cols = P.fl; for (let i = 0; i < 2; i++) { const fx = X + 2 + i * 7 + Math.floor(r() * 2), fy = Y + 3 + Math.floor(r() * 8); anim.push({ k: 'flower', X: fx, Y: fy, cl: { a: cols[Math.floor(r() * cols.length)], c: '#FFE08A', l: P.gt }, ph: phaseAt(fx, fy) }); } }
       if (t === 'W' || t === 'Z') {
         g.fillStyle = t === 'Z' ? P.th : P.t; g.fillRect(X, Y, L, L);
         const cl = t === 'Z' ? { h: '#FFF7D6', b: P.t, d: P.tb } : { h: P.th, b: P.t, d: P.tb };
-        [[0, 2], [8, 2], [4, 9], [12, 9]].forEach((q, qi) => anim.push({ k: 'tuft', X: X + q[0], Y: Y + q[1], cl: cl, ph: phaseOf(x, y + qi * 0.5) }));
-        if (t === 'Z') anim.push({ k: 'sparkle', X: X, Y: Y, dx: 2 + (hashT(x, y) * 10 | 0), dy: 2 + (hashT(y, x) * 10 | 0), ph: phaseOf(x, y) });
+        [[0, 2], [8, 2], [4, 9], [12, 9]].forEach((q, qi) => anim.push({ k: 'tuft', X: X + q[0], Y: Y + q[1], cl: cl, ph: phaseAt(X + q[0], Y + q[1]) }));
+        if (t === 'Z') anim.push({ k: 'sparkle', X: X, Y: Y, dx: 2 + (hashT(x, y) * 10 | 0), dy: 2 + (hashT(y, x) * 10 | 0), ph: (hashT(x + 7, y + 3) * 6 | 0) });
       }
     }
     // cave walls (dungeons): dark rock with a lit front face wherever the floor shows below
@@ -161,7 +162,7 @@ const PXW = (() => {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const t = grid[y][x], X = x * L, Y = y * L;
       if (t === 'R') { const rc = themeId === 'ember' ? { o: '#1E1414', l: '#7A6464', g: '#4E3E3E', d: '#3A2E2E' } : { o: '#3A4258', l: '#DCE2EE', g: '#A8B2C6', d: '#7E8AA2' }; g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(X + 2, Y + 14, 12, 2); stamp(g, X, Y + 6, ROCK, rc); }
-      if (t === 'T') { const kind = P.tree; const rows = TREE[kind]; g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(X + 3, Y + L - 2, 10, 2); anim.push({ k: 'tree', X: X, Y: Y + L - rows.length, rows: rows, colors: treeColors(kind, P), ph: phaseOf(x, y) }); }
+      if (t === 'T') { const kind = P.tree; const rows = TREE[kind]; g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(X + 3, Y + L - 2, 10, 2); anim.push({ k: 'tree', X: X, Y: Y + L - rows.length, rows: rows, colors: treeColors(kind, P), ph: phaseAt(X, Y) }); }
     }
     c.anim = { items: anim, P: P, sets: {}, last: 0 };   // always: the still image lacks trees, grass, flowers and water highlights until frame 0 is baked
     return c;
