@@ -34,7 +34,8 @@ with sync_playwright() as p:
       const g=APP.game, seen=[]; const orig=g.encounter.bind(g); g.encounter=(info)=>{ seen.push(info.types.join('+')); return false; };
       const r0=Math.random; let lowCalls=0; Math.random=()=>0.1; APP.encounter({types:['Frost','Stone'], rare:false, zone:'Frost Peaks'}); await new Promise(r=>setTimeout(r,350));
       Math.random=()=>0.9; APP.encounter({types:['Frost','Stone'], rare:false, zone:'Frost Peaks'}); await new Promise(r=>setTimeout(r,350));
-      window.Date=RD; Math.random=()=>0.1; APP.encounter({types:['Frost','Stone'], rare:false, zone:'Frost Peaks'}); await new Promise(r=>setTimeout(r,350));
+      window.Date=class extends RD { constructor(...a){ if(a.length) super(...a); else { super(); this.setHours(12); } } }; Math.random=()=>0.1; APP.encounter({types:['Frost','Stone'], rare:false, zone:'Frost Peaks'}); await new Promise(r=>setTimeout(r,350));   // noon pinned too: the real clock made this case Dusk at night
+      window.Date=RD;
       Math.random=r0; g.encounter=orig; WORLD.setPaused(false); return seen; }""")
     print('encounter types [night+low roll, night+high roll, daytime]:', dusk)
     # backup round trip

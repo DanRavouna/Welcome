@@ -4,7 +4,7 @@ errors=[]
 with sync_playwright() as p:
     b=p.chromium.launch(); pg=b.new_context(viewport={'width':390,'height':844}, has_touch=True).new_page()
     pg.on('pageerror', lambda e: errors.append(str(e)))
-    pg.add_init_script("if(!sessionStorage.getItem('s')){sessionStorage.setItem('s','1'); localStorage.setItem('critter-roll:v2', JSON.stringify({caught:[{seed:12,stage:1}],party:[12],intro:true,hints:['grass','zone','battle','party','shop','evolve'],settings:{test:false}}));}")
+    pg.add_init_script("window.__weather='clear'; if(!sessionStorage.getItem('s')){sessionStorage.setItem('s','1'); localStorage.setItem('critter-roll:v2', JSON.stringify({caught:[{seed:12,stage:1}],party:[12],intro:true,hints:['grass','zone','battle','party','shop','evolve'],settings:{test:false}}));}")
     pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1300)
     seeds=pg.evaluate("""(()=>{ const g=APP.game, out={}; for(let s=1; Object.keys(out).length<4; s++){ if (s === 12) continue; const r=g.make(s,1).rarity; if(!out[r]) out[r]=s; } return out; })()""")
     st=lambda: pg.evaluate("({used:APP.game.state.used, left:APP.game.energy().left, sightings:APP.game.sightingsLeft(), kept:APP.game.state.caught.length})")
