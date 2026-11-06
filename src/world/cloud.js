@@ -229,5 +229,6 @@ const CLOUD = (() => {
   }
   return { ready, init, changed, flush, resolve, reconcile, text, signIn, signUp, signOut, resetPassword, setPassword,
     get status() { return status; }, get conflict() { return conflictData; }, get connected() { return !!ref; },
+    get status() { return status; },
     get account() { return { mode: mode, available: !!sb, email: account ? account.email : null, recovering: recovering }; } };
 })();

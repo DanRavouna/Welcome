@@ -168,6 +168,7 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .acct-link{display:block;margin:8px auto 0;min-height:44px;padding:0 12px;border:0;background:none;color:#2B5BB8;font:inherit;font-size:14px;font-weight:800;text-decoration:underline;cursor:pointer}
 .acct-small{font-size:12px;color:#5A6888}
 .bk-btn:disabled{opacity:.55;cursor:default}
+.bk-btn.danger{background:#B8312F;border:2px solid #7A1F1D}.bk-btn.danger.armed{background:#7A1F1D}
 .bk-btn.gold{background:linear-gradient(180deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,0) 60%),#FFC94D;color:#2A1B00}
 .plist{display:flex;flex-direction:column;gap:6px;margin-top:6px}
 .prow{display:flex;align-items:center;gap:10px;padding:8px;border-radius:14px;background:#fff;border:1.5px solid #D5DEEE}
@@ -328,6 +329,8 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
       <p class="bk-p">Play stats: a small daily log (time played, essence, battles, Tower) kept only in your save. Send it to Claude to tune the balance from real play.</p>
       <button id="bk-stats-copy" class="bk-btn">Copy play stats</button>
       <button id="bk-stats-dl" class="bk-btn" hidden>Download play stats</button>
+      <p class="bk-p">Start over: erases the save on this device and begins a new game. If you are signed in, sign out first; the account keeps the old save.</p>
+      <button id="bk-reset" class="bk-btn danger">Start over</button>
       <p id="bk-msg" class="bk-p" role="status" aria-live="polite"></p>
     </div>
   </div>

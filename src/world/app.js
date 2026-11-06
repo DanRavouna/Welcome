@@ -1458,6 +1458,17 @@ const APP = (() => {
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(out.value).then(done, () => { document.execCommand('copy'); done(); });
       else { document.execCommand('copy'); done(); }
     });
+    // Start over: two taps within 15 s; refused while signed in (the account copy would come straight back, or worse, an empty save would go up), so sign out first
+    let resetArmed = 0;
+    $('bk-reset').addEventListener('click', () => {
+      const ac = CLOUD.account, signedIn = !!ac.email || (ac.mode === 'claude' && ['local', 'signedout', 'signin'].indexOf(CLOUD.status) === -1);
+      if (signedIn) { $('bk-msg').textContent = 'You are signed in, so this save lives in your account. Sign out first (above), then start over. The account keeps this save.'; return; }
+      if (Date.now() - resetArmed > 15000) { resetArmed = Date.now(); $('bk-reset').textContent = 'Erase and start over'; $('bk-reset').classList.add('armed'); $('bk-msg').textContent = 'This erases every critter, seal and step on this device. Tap again to start over.'; return; }
+      window.__saveFrozen = true;
+      try { const gone = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf('critter-roll:') === 0 && k !== 'critter-roll:device') gone.push(k); } gone.forEach((k) => localStorage.removeItem(k)); } catch (e) {}
+      try { sessionStorage.removeItem('seeded'); } catch (e) {}
+      $('bk-msg').textContent = 'Starting over...'; setTimeout(() => location.reload(), 200);
+    });
     $('bk-in').addEventListener('input', () => { pendingImport = null; $('bk-restore').textContent = 'Check code'; $('bk-msg').textContent = ''; });
     $('bk-restore').addEventListener('click', () => {
       if (pendingImport) {

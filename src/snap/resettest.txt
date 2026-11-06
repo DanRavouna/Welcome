@@ -1,0 +1,7 @@
+ok a save exists on the device | ['critter-roll:dev', 'critter-roll:device', 'critter-roll:id', 'critter-roll:meta', 'critter-roll:world', 'critter-roll:cleanup#', 'critter-roll:v#']
+ok the Save panel has a Start over button
+ok one tap only arms it (nothing erased) | This erases every critter, seal and step on this device. Tap again to start over.
+ok after the second tap the page reloaded as a new game (no critters, intro not done) | [#, False]
+ok the old save keys are gone (the device id may stay) | ['critter-roll:dev', 'critter-roll:device', 'critter-roll:id', 'critter-roll:cleanup#', 'critter-roll:v#', 'critter-roll:meta', 'critter-roll:world']
+ok the new game shows the starter choice or the intro
+ok no page errors | []

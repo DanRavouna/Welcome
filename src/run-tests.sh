@@ -9,9 +9,9 @@ HOOKED="hudcheck wplay p14 p15 p18r ctest ntest ptest ztest jitter perf peaktest
 # Groups: bash src/run-tests.sh @world  (or @battle @saves @ui, several allowed; no argument = everything)
 GROUP_world="forgetest slagtest wildtest maptest jittertest scaffoldtest letgotest lanternroadtest signaturetest zonespottest citiesclimbtest windtest gymtest gymtest2 balancetest winddrifttest windrhythmtest acttest acttest2 acttest3 acttest4 acttest5 leadtest duelflowtest descenttest walktest wicktest devtest lamptest ascenttest secrettest adventuretest transitiontest flavortest ambienttest landmarkstest wplay ztest jitter perf peaktest citytest cities interiors hometest guidetest fishtest weathertest"
 GROUP_battle="abilitytest ntest ptest aggrotest fxtest towertest twisttest itemtest shinytest"
-GROUP_saves="compattest menutest dextest p14 p15 p18r ctest statstest titletest questtest p17"
+GROUP_saves="resettest compattest menutest dextest p14 p15 p18r ctest statstest titletest questtest p17"
 # @smoke: the quick broad set (about 30 s side by side) to run after EVERY change; the whole suite (no argument) once before pushing a batch
-GROUP_smoke="balancetest compattest jittertest maptest guidetest citytest hometest fxtest windtest gymtest zonespottest statstest flavortest landmarkstest evotest"
+GROUP_smoke="balancetest resettest compattest jittertest maptest guidetest citytest hometest fxtest windtest gymtest zonespottest statstest flavortest landmarkstest evotest"
 GROUP_ui="evotest a11ytest hudcheck musictest vfxtest"
 expand() { for a in "$@"; do case "$a" in @*) v="GROUP_${a#@}"; for t in ${!v}; do echo $t.py; done;; *) echo "$a";; esac; done; }
 # No argument = every test once (the default list plus all groups, duplicates removed; before, the default list and the groups overlapped and half of a "full run" was repeats). Six tests run side by side by default (JOBS): the suite is mostly sleeping (about 480 s of fixed waits in 1100 s of test time), so 6 jobs on 4 cores still leave the CPU half idle.
@@ -21,7 +21,7 @@ if [ $# -gt 0 ]; then TESTS="$(expand "$@" | dedupe)"; else TESTS="$( (for t in 
 cd /tmp
 run_one() {
   t="$1"; n="${t%.py}"
-  if [ "$n" = p17 ] || [ "$n" = menutest ] || [ "$n" = transitiontest ] || [ "$n" = devtest ] || [ "$n" = compattest ]; then PP=""; else PP="$SRC/pwhook"; fi  # these run WITHOUT the seed hook (real defaults)
+  if [ "$n" = p17 ] || [ "$n" = resettest ] || [ "$n" = menutest ] || [ "$n" = transitiontest ] || [ "$n" = devtest ] || [ "$n" = compattest ]; then PP=""; else PP="$SRC/pwhook"; fi  # these run WITHOUT the seed hook (real defaults)
   start=$(date +%s); flaky=""
   for attempt in 1 2; do
     PYTHONPATH="$PP" timeout 600 python3 "$SRC/$n.py" > "$LOG/$n.log" 2>&1; rc=$?
