@@ -1,4 +1,4 @@
-map town {'grass': '51/51', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map town {'grass': '57/57', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map peak {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map ascent {'grass': '58/58', 'rare': '9/9', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map descent {'grass': '58/58', 'rare': '9/9', 'exitsOk': True, 'signsOk': True, 'placesOk': True}

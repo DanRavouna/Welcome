@@ -1,4 +1,4 @@
-map town {'grass': '51/51', 'exitsOk': True, 'placesOk': True, 'npcs': ['fern:true', 'pip:true', 'mira:true', 'rowan:true', 'mae:true']}
+map town {'grass': '57/57', 'exitsOk': True, 'placesOk': True, 'npcs': ['fern:true', 'pip:true', 'mira:true', 'rowan:true', 'mae:true']}
 map peak {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': []}
 map ascent {'grass': '67/67', 'exitsOk': True, 'placesOk': True, 'npcs': ['reka:true', 'joran:true', 'dag:true', 'ansel:true', 'marta:true']}
 map descent {'grass': '67/67', 'exitsOk': True, 'placesOk': True, 'npcs': ['kolb:true', 'yara:true', 'brec:true', 'mirel:true', 'brand:true']}

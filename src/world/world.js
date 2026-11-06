@@ -76,19 +76,22 @@ const WORLD = (() => {
       { x: 41, y: 19, to: 'tide', text: 'East: Tide Shore (Tide and Dusk critters). Follow the boardwalk past the shore to reach Admiral Coral in Coralbay.' }
     ];
     signs.forEach((s) => set(s.x, s.y, 'G'));
-    // trail north to Vigil Peak: stamped after the decor pass so the seeded scatter (and every other tile) is unchanged
+    // the opening (Meaning: being kept is the first thing played): a patch of tall grass beside Home's path, and a lamp lit by day on the one open gate
+  [[5, 9], [6, 9], [5, 10], [6, 10], [5, 11], [6, 11]].forEach(([x, y]) => { if (['.', ','].indexOf(m[y][x]) !== -1) m[y][x] = 'W'; });
+  m[15][3] = 'O'; const openingObjects = [{ id: 'gate-lamp', kind: 'postlamp', day: true, x: 3, y: 15, reach: 1.7, text: 'A lamp on a post by the gate. Lit, in daylight. Someone keeps it that way.' }];
+  // trail north to Vigil Peak: stamped after the decor pass so the seeded scatter (and every other tile) is unchanged
     for (let y = 0; y <= 11; y++) { set(26, y, '='); set(27, y, '='); }
     set(28, 10, 'G'); signs.push({ x: 28, y: 10, to: 'peak', text: "North: Vigil Peak. The trail opens to trainers holding all 4 Leader Seals." });
     places.forEach((p) => { const [dx, dy] = p.door; [[dx, dy + 1], [dx + 1, dy + 1]].forEach(([x, y]) => set(x, y, '=')); });
     return {
-      id: 'town', name: 'Sproutvale', theme: THEMES.town, grid: m, W, H, places, signs, types: ALL_TYPES, rate: 0.08,
+      id: 'town', name: 'Sproutvale', theme: THEMES.town, grid: m, W, H, places, signs, objects: openingObjects, types: ALL_TYPES, rate: 0.08,
       exits: [
         { edge: 'n', a: 21, b: 22, to: 'frost' }, { edge: 's', a: 21, b: 22, to: 'ember' },
         { edge: 'w', a: 16, b: 17, to: 'moss' }, { edge: 'e', a: 16, b: 17, to: 'tide' }, { edge: 'n', a: 26, b: 27, to: 'peak' }
       ],
       arriveFrom: { peak: [26.9, 1.2] },
       arrive: { n: [21.9, 1.2], s: [21.9, 32.6], w: [1.2, 17.2], e: [42.8, 17.2] },
-      spawn: [21.9, 23.6]
+      spawn: [8.9, 9.4]   // the opening: at the door of Home, the window above you, the road ahead
     };
   }
 
@@ -755,7 +758,7 @@ const WORLD = (() => {
   }
 
   // ---------- state ----------
-  const P = { x: 21.9 * TS, y: 23.6 * TS, dir: 'down', moving: false, step: 0 };
+  const P = { x: 8.9 * TS, y: 9.4 * TS, dir: 'down', moving: false, step: 0 };
   const input = { jx: 0, jy: 0, keys: {} };
   let canvas, ctx, vw = 0, vh = 0, dpr = 1, paused = false, tAnim = 0, opts = {};
   let lastTile = '', stepsSince = 0, rustle = 0, flash = 0;

@@ -4,7 +4,7 @@ errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
-  pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,npc:{done:[],beaten:{},cleared:['maren','hale','keeper'],seals:[]}}); DEV.safe=true; window.__noTransition=true; window.__tod='day'; window.__weather='clear'")   # the beam pixel sample sat under real-clock weather (snow flecks), which made it flaky
+  pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15},{seed:9,stage:1}],party:[2],fighter:2,intro:true,xp:99999,npc:{done:[],beaten:{},cleared:['maren','hale','keeper'],seals:[]}}); DEV.safe=true; window.__noTransition=true; window.__tod='day'; window.__weather='clear'")   # the beam pixel sample sat under real-clock weather (snow flecks), which made it flaky
   def say(who):
     pg.evaluate("(id)=>{const all=WORLD.allNpcs();let n;for(const k in all){n=all[k].find(x=>x.id===id)||n}APP.talk(n)}",who); pg.wait_for_timeout(120)
     out=[]
@@ -29,5 +29,7 @@ with sync_playwright() as p:
       else{const l=M.props.find(q=>q.id==='lighthouse');WORLD.setPos((l.x+1)*32,(l.y+l.h+3)*32);WORLD.drawNow();const c=WORLD.debug().cam;x=(l.x+l.w/2)*32-c.cx;y=(l.y+0.6)*32-c.cy-60}
       WORLD.drawNow();const d=g.getImageData(Math.round(x*devicePixelRatio),Math.round(y*devicePixelRatio),1,1).data;return [d[0],d[1],d[2]]}""",[pt])
   h0=px('town',0,False,'home'); h3=px('town',3,False,'home'); print('home window by day, 0 seals vs 3 seals:',h0,h3,'| lit only with 3 seals:',h3[2]<h0[2]-60)
+  pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15}],party:[2]})"); h1=px('town',0,False,'home'); pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15},{seed:9,stage:1}]})")
+  print('with a single critter (the opening) the window is kept lit for you by day:', h1[2]<h0[2]-60)
   l0=px('route-fc',0,False,'light'); l1=px('route-fc',4,True,'light'); print('lighthouse beam above the lamp, lamp dark vs lit:',l0,l1,'| beam only when lit:',l1[2]<l0[2]-15)
   print('errors:', errs or 'none'); b.close()

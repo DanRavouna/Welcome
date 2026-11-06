@@ -5,5 +5,6 @@ joss before: ['oot of the tower. Older than the lamp. / There is a brass plate a
 brandt before: [' is not for you, but it will not mind. / Sit if you like. The second cup is not for you, but it will not mind.'] | after lampLit: ['Hermit Brandt / One cup tonight. / One cup tonight.']
 mom before: ['s are on the desk. I keep them tidy for you. / Your trainer records are on the desk. I keep them tidy for you.'] | after lampLit: ['Mom / The window was dark when I came down. I left it. / The window was dark when I came down. I left it.']
 home window by day, # seals vs # seals: [#...] [#...] | lit only with # seals: True
+with a single critter (the opening) the window is kept lit for you by day: True
 lighthouse beam above the lamp, lamp dark vs lit: [#...] [#...] | beam only when lit: True
 errors: none

@@ -451,7 +451,7 @@ const APP = (() => {
     game.update({ caught: [{ seed: s, stage: 1 }], party: [s], fighter: s, intro: true, seen: [k.speciesNo] }, [{ t: 'keep' }, { t: 'species' }]);
     game.sfx('claim');
     $('starter').hidden = true;
-    showDialog('Professor Fern', ['A good choice. ' + k.name + ' will walk with you.', 'The tall grass past the gate is where most people start. Talk to people on the way; they know more than the signs do.'], null);
+    showDialog('Professor Fern', ['A good choice. ' + k.name + ' will walk with you.', 'The gate with the lamp on it. Most people start in the tall grass past it, and there is some by your door. Talk to people on the way; they know more than the signs do.'], null);
   }
   // ---------- party, bag, shop ----------
   const ITEMS = {
@@ -776,7 +776,8 @@ const APP = (() => {
     const M = WORLD.map, tr = M && M.trail, now = performance.now(); if (now - lampStamp > 5) { lampDt = Math.min(0.1, (now - lampStamp) / 1000); lampStamp = now; } const dt = lampDt; let want = 0;
     const tod = timeOfDay(), dark = tod === 'night' || tod === 'dusk';
     const mine = o.own || (!o.wave && !o.always && !!advOf().flags.lampLit);   // after the beacon no lamp lights itself ahead of you: a post lights when you pass it and stays lit (the roads are kept by you now)
-    if (o.always) want = dark ? 1 : 0;
+    if (o.day) want = 1;   // lit by day as well: the road someone keeps for you
+    else if (o.always) want = dark ? 1 : 0;
     else if (mine) {
       const f = advOf().flags, key = 'own:' + o.id;
       if (!f[key] && tr) { const P = WORLD.pos(), px = P.x / 32, py = P.y / 32; let pi = 0, bd = 1e9; tr.cells.forEach((c, i) => { const d = (c[0] - px) * (c[0] - px) + (c[1] - py) * (c[1] - py); if (d < bd) { bd = d; pi = i; } }); if (bd < 36 && pi >= o.trail) advSave((a) => { a.flags[key] = true; }); }
@@ -798,6 +799,8 @@ const APP = (() => {
       if (!folCache || folCache.key !== key) { const k = game.make(sd, e ? e.stage : 1), img = new Image(); img.src = PIX.sprite(k, 'icon'); folCache = { key: key, img: img, shiny: !!k.shiny }; }
       return folCache;
   }
+  // the window at Home: kept lit for you at the very start and once you tend three fires; after the beacon, lit only by you, each day
+  function homeLitNow() { const f = advOf().flags; return f.lampLit ? f.homeLit === new Date().toDateString() : (sealCount() >= 3 || game.state.caught.length <= 1); }
   function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'chamberlamp') return chamberlampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'windowlamp') { const t = timeOfDay(); return { lit: a.flags.lampLit ? a.flags.homeLit === new Date().toDateString() : (sealCount() >= 3 || t === 'night' || t === 'dusk') }; } /* after the beacon the window is lit only by you, each day */ if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'critterbasket') { const fl = APP_FOLLOWER(); return { img: fl ? fl.img : null }; } if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
@@ -1423,7 +1426,7 @@ const APP = (() => {
     WORLD.init($('world'), {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
-      objState: objState, carry: () => carry, relit: () => !!advOf().flags.lampLit, homeLit: () => (advOf().flags.lampLit ? advOf().flags.homeLit === new Date().toDateString() : sealCount() >= 3), weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
+      objState: objState, carry: () => carry, relit: () => !!advOf().flags.lampLit, homeLit: homeLitNow, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
       exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       critterLead: () => !!(game && game.state.caught.length && !window.__noFollower),   // you steer the critter; the human walks behind it
@@ -1538,6 +1541,6 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { tending: () => tending, carry: () => carry, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { homeLitNow: homeLitNow, tending: () => tending, carry: () => carry, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
