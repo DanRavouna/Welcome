@@ -1330,6 +1330,61 @@ const ADV = (() => {
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
     return { name: 'Wren\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'mossbrook' }, types: [], rate: 0, spots: { wren: [10, 3] } };
   }
+  // ---- Glacia's Gym (Frosthold): the trial of stillness. Black water lies between the door and Glacia. Ice forms on the water around you only while you STAND STILL (about 0.8 s),
+  // and the ice you leave behind melts the moment you move on; the plate under your feet never melts. You cross by stopping, waiting, stepping, stopping. Reach the far shore and the whole pool
+  // freezes for good (Meaning: what is kept by being kept cold; the cold keeps what it is given). No sign: the first still moment at the water's edge teaches it. ----
+  function glaciaHall() {
+    const W = 22, H = 21, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
+    const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    rect(6, 2, 15, 5, '=');                  // the leader's chamber
+    rect(2, 7, 19, 19, '.');                 // the hall (ice floor)
+    rect(3, 9, 18, 14, '~');                 // the black water
+    rect(10, 18, 11, 20, '=');               // the way in
+    rect(9, 6, 12, 6, '=');                  // the way north (icicles hang across it)
+    [9, 10, 11, 12].forEach((x) => objects.push({ id: 'ice' + x, kind: 'icicles', gate: 'glacia', x: x, y: 6, text: 'Icicles, thick as arms.' }));
+    [[3, 17], [18, 17], [7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'glb' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. The flame is thin and straight.' }));
+    objects.push({ id: 'gstone', kind: 'ringstones', x: 17, y: 8, text: 'Stones on the far shore. Someone sat here a long time.' });
+    objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
+    return { name: 'Glacia\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'frosthold' }, types: [], rate: 0, spots: { glacia: [10, 3] }, pool: [3, 9, 18, 14] };
+  }
+  // ---- Blaze's Gym (Cinderport): the trial of the fire that has to be fed. Three braziers between the door and Blaze, a woodpile by the door. A brazier burns down in about 14 s and goes dark.
+  // You carry one log at a time: take one, feed a fire, go back. The way opens the moment all three burn at once (Meaning: this one wants feeding every day; the fire is kept by someone who keeps coming back). ----
+  function blazeHall() {
+    const W = 22, H = 19, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
+    const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    rect(6, 2, 15, 5, '=');                  // the leader's chamber
+    rect(2, 7, 19, 17, '.');                 // the hall
+    rect(10, 16, 11, 18, '=');               // the way in
+    rect(9, 6, 12, 6, '=');                  // the way north (a slab of cold slag)
+    [[4, 10], [11, 8], [17, 10]].forEach(([x, y], i) => objects.push({ id: 'fire' + (i + 1), kind: 'gbrazier', x: x, y: y, text: 'A great brazier. The iron is warm.' }));
+    objects.push({ id: 'wood', kind: 'woodpile', x: 10, y: 15, text: 'Split logs, stacked by someone who stacks logs every day.' });
+    [9, 10, 11, 12].forEach((x) => objects.push({ id: 'slag' + x, kind: 'slagwall', gate: 'blaze', x: x, y: 6, text: 'Cold slag, poured across the way.' }));
+    [[7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'blb' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. Somebody keeps it lit.' }));
+    objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
+    return { name: 'Blaze\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'cinderport' }, types: [], rate: 0, spots: { blaze: [10, 3] } };
+  }
+  // ---- Coral's Gym (Coralbay): the trial of answering across the dark. The hall is dark; five lamps stand in it. They light one after another (the call), then go out; you touch them in the same
+  // order (the answer). Three rounds, each one lamp longer. A wrong touch makes them all blink and the call comes again; nothing is lost. When the third answer is right the lamps stay lit and the
+  // chain across the way falls (Meaning: the road home lit across the dark; someone left a light on for you, and you answer it). ----
+  function coralHall() {
+    const W = 22, H = 19, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
+    const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    rect(6, 2, 15, 5, '=');                  // the leader's chamber
+    rect(2, 7, 19, 17, '.');                 // the hall
+    rect(10, 16, 11, 18, '=');               // the way in
+    rect(9, 6, 12, 6, '=');                  // the way north (a chain across it)
+    [[4, 9], [8, 12], [11, 8], [14, 12], [18, 9]].forEach(([x, y], i) => objects.push({ id: 'lamp' + i, kind: 'callamp', n: i, x: x, y: y, text: 'A lamp on a post. The glass is warm.' }));
+    [9, 10, 11, 12].forEach((x) => objects.push({ id: 'chain' + x, kind: 'chain', gate: 'coral', x: x, y: 6, text: 'A chain across the way, wet from the sea.' }));
+    [[7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'clb' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. Somebody keeps it lit.' }));
+    objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
+    return { name: 'Coral\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'coralbay' }, types: [], rate: 0, spots: { coral: [10, 3] }, dark: { r: 3.2 } };
+  }
   // ---- the Lamp Tower: a bright climb through four chambers. Levers flip gates (a gate is open when an odd number of its levers are ON), so going forward closes
   // the way behind you, and flipping a lever back always undoes it (you can never be locked in). Guards in chambers 2 and 3, the Warden and the great lamp at the top. ----
   function lampTower() {
@@ -1377,7 +1432,7 @@ const ADV = (() => {
     return { name: 'The Forge Below', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [14.9, H - 1.4], exit: { edge: 's', a: 14, b: 15, to: 'descent' }, dark: { r: 5.2 },
       rules: { gb: ['sock:A', 'sock:B'] }, pickups: { coreA: 'core:A', coreB: 'core:B' }, spots: { guard1: [5, 25], guard2: [24, 25], hale: [14, 6] } };
   }
-  const DUNGEONS = { 'dg-arch': sealedArch, 'dg-lamp': lampTower, 'dg-forge': forgeBelow, 'gym-wren': wrenHall };
+  const DUNGEONS = { 'dg-arch': sealedArch, 'dg-lamp': lampTower, 'dg-forge': forgeBelow, 'gym-wren': wrenHall, 'gym-glacia': glaciaHall, 'gym-blaze': blazeHall, 'gym-coral': coralHall };
   // ---- pixel art (screen pixels, 32 px per tile, drawn on 2 px steps); x, y = the tile's top-left; st = object state from the app ----
   const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, w, h); };
   const OL = '#14101E';
@@ -1523,6 +1578,38 @@ const ADV = (() => {
       R(g, x + 1, y + 28, 30, 3, 'rgba(0,0,0,0.25)'); R(g, x + 1, y + 10, 30, 19, OL); R(g, x + 2, y + 11, 28, 17, '#8E98AD'); R(g, x + 2, y + 11, 28, 3, '#C9D0DC'); R(g, x + 2, y + 26, 28, 2, '#5E6678');
       R(g, x + 5, y + 14, 22, 11, OL); R(g, x + 6, y + 15, 20, 9, '#3F8FC8'); R(g, x + 6, y + 15, 20, 2, '#5AA8F0'); const w = Math.round(Math.sin(t * 1.3 + o.x) * 2); R(g, x + 9 + w, y + 18, 7, 1, '#A8D8FF'); R(g, x + 16 - w, y + 21, 6, 1, '#A8D8FF');
     },
+    // icicles hanging across a way (Glacia's gate)
+    icicles(g, x, y, st, t, o) {
+      R(g, x, y, 32, 5, OL); R(g, x + 1, y + 1, 30, 3, '#5E97AE');
+      [2, 8, 13, 19, 25].forEach((vx, i) => { const L = 24 - (i % 2) * 8 - (i === 2 ? 4 : 0); R(g, x + vx - 1, y + 4, 6, L, OL); R(g, x + vx, y + 4, 4, L - 1, '#BFE4F4'); R(g, x + vx, y + 4, 1, L - 1, '#FFFFFF'); R(g, x + vx + 1, y + 3 + L, 2, 2, OL); });
+    },
+    // a great brazier whose fire is a burn level (st.burn 0..1): tall and bright when fed, embers when low, cold iron at 0
+    gbrazier(g, x, y, st, t, o) {
+      const b = Math.max(0, Math.min(1, st.burn || 0)), f = Math.round(Math.sin(t * 9 + o.x) * 2) * 2;
+      R(g, x + 3, y + 28, 26, 3, 'rgba(0,0,0,0.25)'); R(g, x + 12, y + 22, 8, 6, OL); R(g, x + 13, y + 23, 6, 4, '#3A3330'); R(g, x + 4, y + 14, 24, 9, OL); R(g, x + 5, y + 15, 22, 7, '#4A4440'); R(g, x + 5, y + 15, 22, 2, '#6A6460');
+      if (b > 0) { const h = Math.round(6 + b * 16), gl = g.createRadialGradient(x + 16, y + 14, 1, x + 16, y + 14, 18 + b * 22); gl.addColorStop(0, 'rgba(255,150,60,' + (0.25 + 0.4 * b).toFixed(2) + ')'); gl.addColorStop(1, 'rgba(255,150,60,0)'); g.fillStyle = gl; g.fillRect(x - 24, y - 30, 80, 70);
+        R(g, x + 11, y + 15 - h + f / 2, 10, h - f / 2, '#E8552A'); R(g, x + 13, y + 17 - Math.round(h * 0.7), 6, Math.round(h * 0.7), '#FFB03A'); if (b > 0.35) R(g, x + 15, y + 16 - Math.round(h * 0.4), 2, Math.round(h * 0.4), '#FFE08A'); }
+      else { R(g, x + 9, y + 12, 14, 3, '#2A2420'); R(g, x + 12, y + 11, 3, 2, '#3A3330'); }
+    },
+    // split logs, stacked
+    woodpile(g, x, y) {
+      R(g, x + 2, y + 27, 28, 3, 'rgba(0,0,0,0.22)'); [[3, 20], [11, 20], [19, 20], [7, 14], [15, 14], [11, 8]].forEach(([lx, ly]) => { R(g, x + lx, y + ly, 10, 7, OL); R(g, x + lx + 1, y + ly + 1, 8, 5, '#A87A48'); R(g, x + lx + 1, y + ly + 1, 8, 1, '#C9986A'); R(g, x + lx + 3, y + ly + 3, 2, 2, '#7A5230'); });
+    },
+    // a wall of cold slag across a way (Blaze's gate)
+    slagwall(g, x, y, st, t, o) {
+      R(g, x, y + 2, 32, 26, OL); R(g, x + 1, y + 3, 30, 24, '#3A2A24'); R(g, x + 1, y + 3, 30, 3, '#5A4A40'); [[4, 9], [14, 14], [22, 8], [9, 20], [24, 20]].forEach(([px, py]) => { R(g, x + px, y + py, 5, 3, '#2A1C18'); R(g, x + px + 1, y + py + 1, 2, 1, '#5E3A2A'); });
+    },
+    // a lamp on a post in the dark hall (Coral); st.lit 0..1
+    callamp(g, x, y, st, t, o) {
+      const k = Math.max(0, Math.min(1, st.lit || 0));
+      R(g, x + 10, y + 28, 12, 3, 'rgba(0,0,0,0.3)'); R(g, x + 14, y + 10, 4, 18, OL); R(g, x + 15, y + 10, 2, 18, '#4A5878'); R(g, x + 9, y + 2, 14, 3, OL); R(g, x + 10, y + 3, 12, 1, '#6A7A98');
+      if (k > 0.02) { const gl = g.createRadialGradient(x + 16, y + 9, 1, x + 16, y + 9, 14 + k * 30); gl.addColorStop(0, 'rgba(255,220,130,' + (0.7 * k).toFixed(2) + ')'); gl.addColorStop(1, 'rgba(255,220,130,0)'); g.fillStyle = gl; g.fillRect(x - 30, y - 36, 92, 90); }
+      R(g, x + 10, y + 4, 12, 11, OL); R(g, x + 11, y + 5, 10, 9, k > 0.5 ? '#FFD27A' : k > 0.02 ? '#B08A40' : '#3A3340'); if (k > 0.5) R(g, x + 14, y + 7, 4, 5, '#FFF6D0');
+    },
+    // a chain across a way (Coral's gate)
+    chain(g, x, y, st, t, o) {
+      R(g, x, y + 12, 32, 6, OL); for (let i = 0; i < 4; i++) { R(g, x + i * 8 + 1, y + 13, 6, 4, i % 2 ? '#8E98AD' : '#6A7488'); R(g, x + i * 8 + 3, y + 14, 2, 2, OL); } R(g, x + 6, y + 18, 3, 3, 'rgba(120,170,220,0.5)');
+    },
     // vines hung across a way: braided and heavy, with pale flowers, darker than tall grass
     vines(g, x, y, st, t, o) {
       const sw = Math.round(Math.sin(t * 1.4 + o.x) * 1);
@@ -1662,7 +1749,7 @@ const ADV = (() => {
       for (let i = 0; i < 4; i++) { const on = i < n; g.save(); g.globalAlpha = on ? (st.open ? 1 : 0.6 + 0.4 * k) : 1; R(g, x + 12, y + 11 + i * 4, 8, 2, on ? '#FFD86B' : '#4A4860'); g.restore(); }
     }
   };
-  const LIGHT = { furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
+  const LIGHT = { gbrazier: (o, st) => (st && st.burn > 0 ? 1.6 + 2.4 * st.burn : 0.6), callamp: (o, st) => (st && st.lit > 0.02 ? 1.2 + 2.6 * st.lit : 0.5), furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
   return { CLUES, DUNGEONS, ART, LIGHT, TCOL, TYPES };
 })();
 
@@ -1686,6 +1773,9 @@ const PXW = (() => {
   PAL.ascent = { g: '#E8F0F8', gd: '#FFFFFF', gt: '#B9CCE0', p: '#A8B8D0', ps: '#98A8C2', pe: '#7888A4', w: '#7FB8E0', wl: '#D8EEFF', we: '#4A88B8', t: '#9CC9D9', tb: '#5E97AE', th: '#C8E8F2', tree: 'pine', ol: '#2E3A4A', fl: ['#FFFFFF', '#BBD5FF'], cw: '#6E7A96', cwl: '#C4D0E6', cwd: '#3E4864' };
   PAL['dg-lamp'] = { g: '#C9BFA8', gd: '#D8CFB8', gt: '#B5AA92', p: '#E4DAC2', ps: '#D2C8AE', pe: '#A89E86', w: '#7FB8E0', wl: '#D8EEFF', we: '#4A88B8', t: '#9CB89A', tb: '#6A8A68', th: '#C8E0C4', tree: 'pine', ol: '#2E2A3A', fl: ['#FFFFFF'], cw: '#7C7488', cwl: '#B8B0C8', cwd: '#4C4660' };
   PAL.descent = { g: '#8A6A58', gd: '#A08068', gt: '#6A4A38', p: '#B08A70', ps: '#9A7860', pe: '#6A4A38', w: '#FF6A2B', wl: '#FFC24D', we: '#B83A10', t: '#C7A23A', tb: '#8E6B1E', th: '#E8C860', tree: 'dead', ol: '#2A1810', fl: ['#FFD86B', '#FF8A3D'], cw: '#3A2A2A', cwl: '#7A5A4A', cwd: '#1A1010' };
+  PAL['gym-glacia'] = Object.assign({}, PAL.frost, { g: '#DCEFF8', gd: '#EEF7FC', gt: '#B9CCE0', w: '#1E3A5F', wl: '#3A6A9A', we: '#122A48', cw: '#3A4A66', cwl: '#5E7898', cwd: '#20283A' });
+  PAL['gym-blaze'] = Object.assign({}, PAL.descent, { g: '#6A4A3A', gd: '#7A5A48', gt: '#4A3028', cw: '#3A2218', cwl: '#5A3A2A', cwd: '#1A0E0A' });
+  PAL['gym-coral'] = Object.assign({}, PAL['dg-arch'], { g: '#2A3A4A', gd: '#34465A', gt: '#1E2C3A', cw: '#1A2432', cwl: '#34485E', cwd: '#0C121A' });
   PAL['dg-forge'] = { g: '#4A3A38', gd: '#5A4A46', gt: '#3A2A28', p: '#8A6A5A', ps: '#7A5A4A', pe: '#5A3A2A', w: '#FF6A2B', wl: '#FFC24D', we: '#B83A10', t: '#6A4A38', tb: '#3A2A20', th: '#8A6A50', tree: 'dead', ol: '#1A0E0A', fl: ['#FF8A3D'], cw: '#2A1A1A', cwl: '#6A4A3A', cwd: '#120808' };
   PAL['route-mf'] = Object.assign({}, PAL.peak, { g: '#97B07E', gd: '#ABC492' }); PAL['route-fc'] = Object.assign({}, PAL.frost, { w: '#3C95DC', wl: '#A8D8FF', we: '#2A6FB0' }); PAL['route-cc'] = Object.assign({}, PAL.tide, { p: '#B08858', ps: '#9A7448', tree: 'palm' });
   PAL['route-cm'] = { g: '#8C9A5E', gd: '#A0AE70', gt: '#6E7A44', p: '#A08A6A', ps: '#8E7858', pe: '#6A5A40', w: '#4F9AD0', wl: '#9CD0F2', we: '#2F70A0', t: '#7E8A3A', tb: '#5E6A22', th: '#A0AE70', tree: 'dead', ol: '#2E2A1A', fl: ['#FF8A3D', '#FFD86B'] };
@@ -2201,6 +2291,9 @@ const WORLD = (() => {
   THEMES.coralbay = { ground: '#F2DFA8', blade: 'rgba(150,120,60,0.3)', path: '#C9A070', water: '#2F8FD8', tall: '#B9C46A', tallBlade: '#7E8A32', tree: 'palm', bg: '#1F6FB0', flowers: ['#FFFFFF', '#F59ACB'] };
   THEMES['dg-arch'] = { ground: '#262B40', blade: 'rgba(10,12,24,0.35)', path: '#515A7C', water: '#1E3A5F', tall: '#2E4A4A', tallBlade: '#1E3434', tree: 'dead', bg: '#0A0C18', flowers: ['#7AA0FF'], cave: true };
   THEMES.ascent = { ground: '#E8F0F8', blade: 'rgba(120,150,190,0.35)', path: '#A8B8D0', water: '#7FB8E0', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#9FB4D0', flowers: ['#FFFFFF', '#BBD5FF'], ice: true };
+  THEMES['gym-glacia'] = { ground: '#DCEFF8', blade: 'rgba(120,150,190,0.3)', path: '#B4C9E0', water: '#1E3A5F', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#101A2A', flowers: ['#FFFFFF'], cave: true };
+  THEMES['gym-blaze'] = { ground: '#6A4A3A', blade: 'rgba(20,10,10,0.3)', path: '#8A6A5A', water: '#FF6A2B', tall: '#6A4A38', tallBlade: '#3A2A20', tree: 'dead', bg: '#1A0E0A', flowers: ['#FF8A3D'], cave: true };
+  THEMES['gym-coral'] = { ground: '#2A3A4A', blade: 'rgba(10,20,40,0.3)', path: '#3E5068', water: '#1E3A5F', tall: '#2E4A4A', tallBlade: '#1E3434', tree: 'palm', bg: '#08101C', flowers: ['#7AA0FF'], cave: true };
   THEMES['gym-wren'] = { ground: '#6E9A4A', blade: 'rgba(20,70,20,0.3)', path: '#B99B6A', water: '#3F8FC8', tall: '#2E7D33', tallBlade: '#1D5A24', tree: 'round', bg: '#2A1E12', flowers: ['#F5A3D0', '#FFFFFF'], cave: true };
   THEMES['dg-lamp'] = { ground: '#C9BFA8', blade: 'rgba(120,100,70,0.25)', path: '#E4DAC2', water: '#7FB8E0', tall: '#9CB89A', tallBlade: '#6A8A68', tree: 'pine', bg: '#8E8470', flowers: ['#FFFFFF'], cave: true };
   THEMES.descent = { ground: '#8A6A58', blade: 'rgba(60,30,20,0.35)', path: '#B08A70', water: '#FF6A2B', tall: '#C7A23A', tallBlade: '#8E6B1E', tree: 'dead', bg: '#3A1E14', flowers: ['#FFD86B', '#FF8A3D'], lava: true };
@@ -2745,14 +2838,16 @@ const WORLD = (() => {
     const d = ADV.DUNGEONS[id](), grid = d.rows.map((r) => r.split(''));
     const objects = d.objects.map((o) => { grid[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });
     const arrive = d.spawn;
-    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, hall: id.indexOf('gym-') === 0, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
+    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, hall: id.indexOf('gym-') === 0, pool: d.pool || null, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
       exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: d.exit.to || 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive, gates: d.gates || {}, rules: d.rules || {}, pickups: d.pickups || {} };
   }
   MAPS['dg-arch'] = buildDungeon('dg-arch');
   MAPS['dg-lamp'] = buildDungeon('dg-lamp');
   MAPS['dg-forge'] = buildDungeon('dg-forge');
-  MAPS['gym-wren'] = buildDungeon('gym-wren');   // the trial hall behind Wren's Gym door
-  (() => { const Mc = MAPS.mossbrook, gp = Mc.places.find((q) => q.id === 'gym-wren'); gp.enter = 'gym-wren'; Mc.arriveFrom = Object.assign({}, Mc.arriveFrom, { 'gym-wren': [gp.door[0] + 0.9, gp.door[1] + 1.5] }); })();
+  // the trial halls behind the four gym doors
+  [['gym-wren', 'mossbrook'], ['gym-glacia', 'frosthold'], ['gym-blaze', 'cinderport'], ['gym-coral', 'coralbay']].forEach(([gid, cid]) => {
+    MAPS[gid] = buildDungeon(gid); const Mc = MAPS[cid], gp = Mc.places.find((q) => q.id === gid); gp.enter = gid; Mc.arriveFrom = Object.assign({}, Mc.arriveFrom, { [gid]: [gp.door[0] + 0.9, gp.door[1] + 1.5] });
+  });
   // the Cold Ascent hangs off Frosthold's north palisade (a gate cut at columns 31-32), with signposts and landmarks placed with the reusable props
   (() => {   // Cinderport's southern gate (the gap in its tree line, columns 19-20) onto the Cinder Descent
     const C = MAPS.cinderport, D = MAPS.descent;
@@ -3059,6 +3154,7 @@ const WORLD = (() => {
   }
   let FR = null, lastPlayerScreen = null, lastCam = null, tintNow = 'day';
   function drawPlayer(sx, sy, body) {
+    if (!body && opts.carry && opts.carry()) { ctx.fillStyle = '#14101E'; ctx.fillRect(sx - 7, sy - 46, 14, 6); ctx.fillStyle = '#A87A48'; ctx.fillRect(sx - 6, sy - 45, 12, 4); ctx.fillStyle = '#C9986A'; ctx.fillRect(sx - 6, sy - 45, 12, 1); }   // a log carried on the shoulders (Blaze's trial)
     if (!FR) FR = PXW.frames();
     const B = body || P, x = Math.round(sx * dpr) / dpr, y = Math.round(sy * dpr) / dpr;
     if (!body) lastPlayerScreen = { x: x, y: y };
@@ -3324,6 +3420,7 @@ const WORLD = (() => {
     // clear tiles (and the objects standing on them) of a map, e.g. rubble after the rite; redraws the ground if it is the current map
     // open or close a gate (all objects with `gate: id`): hidden + walkable when open, solid when closed
     setGate: (mapId, gateId, open) => { const m = MAPS[mapId]; if (!m) return; (m.objects || []).forEach((o) => { if (o.gate !== gateId) return; o.hidden = !!open; m.grid[o.y][o.x] = open ? '.' : 'O'; }); },
+    setTiles: (mapId, cells, ch) => { const m = MAPS[mapId]; if (!m) return; cells.forEach(([x, y]) => { if (m.grid[y] && x >= 0 && x < m.W) m.grid[y][x] = ch; }); if (M === m && canvas) prerender(); }, moving: () => !!P.moving,
     openTiles: (mapId, cells, objIds) => { const m = MAPS[mapId]; if (!m) return; cells.forEach(([x, y]) => { if (m.grid[y]) m.grid[y][x] = '.'; }); m.objects = (m.objects || []).filter((o) => objIds.indexOf(o.id) === -1); if (M === m && canvas) prerender(); }, setFish: (f) => { fishAt = f; }, follower: () => FOL,
     addProp, PROPS, get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
     solidAt: (x, y) => solidAt(x, y),
@@ -6777,6 +6874,8 @@ const APP = (() => {
       { id: 'finn', name: 'Finn', x: 24, y: 15, kind: 'talk', pal: { h: '#8A5A34', y: '#4A9A8A', Y: '#2A6A6A' }, lines: ['Coral was the youngest admiral the harbor ever had. Her critters never lose their footing.', 'Count the waves on the causeway at night. Everyone gets a different number.', 'After her seal, climb the Tower. It is up the trail north of Sproutvale.'] },
       { id: 'pearl', name: 'Pearl', x: 16, y: 16, kind: 'talk', pal: { h: '#F4EAD6', y: '#E0A0B8', Y: '#C07898' }, lines: ['I collect shells. My brother collects critter species. He has all 48!', 'Well, he says he does.'] }
     ]);
+    // the three other leaders wait inside their trial halls, like Wren
+    [['glacia', 'frosthold'], ['blaze', 'cinderport'], ['coral', 'coralbay']].forEach(([id, cid]) => { const L = out[cid].find((n) => n.id === id); out[cid] = out[cid].filter((n) => n.id !== id); Object.assign(L, { x: 10, y: 3, dir: 'down' }); out['gym-' + id] = [L]; });
     // route trainers (one per route; tuned with lbal5.py against the gate's party model)
     const rt = (id, name, x, y, dir, types, size, stage, lv, pick, intro, winLine, pal) => ({ id, name, x, y, dir, kind: 'trainer', trainer: true, types, size, stage, lv, pick, pal, intro, winLine, beatenLines: ['That was a good battle. Come back tomorrow for another.'] });
     out['route-mf'] = [rt('kai', 'Mountaineer Kai', 16, 7, 'up', ['Moss', 'Frost'], 4, 2, 11, 0.55, ['The pass is steep, and so is my challenge!', 'Highland critters are tough. Prove yours are tougher.'], 'You climbed right over me. Here is your reward.', { cap: true, c: '#4E8A3A', y: '#E8E8F0', Y: '#A8B2C8' })];
@@ -6929,7 +7028,7 @@ const APP = (() => {
     }
     const k = lampK[o.id] === undefined ? want : lampK[o.id]; lampK[o.id] = k + Math.sign(want - k) * Math.min(Math.abs(want - k), dt * 1.6); return { k: lampK[o.id] };
   }
-  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -6990,8 +7089,65 @@ const APP = (() => {
   // ---- Wren's Gym: the trial of being tended (Meaning: you grew because someone stayed with you). Press Tend by a seedling, then STAY: it grows about one stage per 2.5 s, two stages to bloom.
   // Step away and it stops, keeping what it grew (a stage is saved the moment it is reached, nothing is ever lost). All four in bloom and the vines draw back. Old saves (Wren beaten, or her seal) find the way open. ----
   const BED_STAGE_S = 2.5, BED_REACH = 1.9; let tending = null, tendP = 0, tendStamp = 0;
-  function gymWrenOpen() { const f = advOf().flags, npc = game.state.npc || {}; return !!f['gym:wren'] || (npc.cleared || []).indexOf('wren') !== -1 || (npc.seals || []).indexOf('wren') !== -1; }
-  function applyGym() { tending = null; if (WORLD.MAPS['gym-wren']) WORLD.setGate('gym-wren', 'wren', gymWrenOpen()); }
+  function gymOpen(id) { const f = advOf().flags, npc = game.state.npc || {}; return !!f['gym:' + id] || (npc.cleared || []).indexOf(id) !== -1 || (npc.seals || []).indexOf(id) !== -1; }
+  function gymWrenOpen() { return gymOpen('wren'); }
+  function applyGym() {
+    tending = null; carry = false; coralReset();
+    ['wren', 'glacia', 'blaze', 'coral'].forEach((id) => { if (WORLD.MAPS['gym-' + id]) WORLD.setGate('gym-' + id, id, gymOpen(id)); });
+    const G = WORLD.MAPS['gym-glacia']; if (G && G.pool) { const cells = []; for (let y = G.pool[1]; y <= G.pool[3]; y++) for (let x = G.pool[0]; x <= G.pool[2]; x++) cells.push([x, y]); if (gymOpen('glacia')) WORLD.setTiles('gym-glacia', cells, '.'); else { WORLD.setTiles('gym-glacia', cells, '~'); iceCells = []; stillT = 0; } }   // the whole pool is frozen for good once the trial is done
+  }
+  function gymDone(id, line) { advSave((x) => { x.flags['gym:' + id] = true; }); applyGym(); game.sfx('claim'); toast(line); setTimeout(() => toast(line), 900); }
+  // ---- Glacia's Gym: the trial of stillness. Ice forms on the water around you only while you stand still; what you leave behind melts when you move on; the plate under you never melts. ----
+  const STILL_S = 0.8; let iceCells = [], stillT = 0, stillStamp = 0;
+  setInterval(() => {
+    const M = WORLD.map; if (!M || M.id !== 'gym-glacia' || gymOpen('glacia')) return;
+    const now = performance.now(), dt = Math.min(0.3, (now - stillStamp) / 1000); stillStamp = now;
+    const P = WORLD.pos(), tx = Math.floor(P.x / 32), ty = Math.floor(P.y / 32), near = (c) => Math.max(Math.abs(c[0] - tx), Math.abs(c[1] - ty)) <= 1;
+    if (WORLD.moving()) {
+      stillT = 0; const melt = iceCells.filter((c) => !near(c)); if (melt.length) { WORLD.setTiles('gym-glacia', melt, '~'); iceCells = iceCells.filter(near); }
+    } else {
+      stillT += dt;
+      if (stillT >= STILL_S) { const grow = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = tx + dx, y = ty + dy; if (M.grid[y] && M.grid[y][x] === '~') grow.push([x, y]); } if (grow.length) { WORLD.setTiles('gym-glacia', grow, '.'); iceCells = iceCells.concat(grow); game.sfx('tap'); } }
+    }
+    if (ty <= 8 && M.pool && ty < M.pool[1]) gymDone('glacia', 'The pool goes still, and stays.');   // the far shore
+  }, 100);
+  // ---- Blaze's Gym: the fire that has to be fed. Carry one log at a time from the woodpile; a brazier burns down in BURN_S seconds; all three alight at once opens the way. ----
+  const BURN_S = 14; let carry = false, burn = {}, burnStamp = 0;
+  function brazierState(o) {
+    const now = performance.now(), dt = Math.min(0.2, Math.max(0, (now - burnStamp) / 1000)); burnStamp = now;
+    if (gymOpen('blaze')) return { burn: 1 };
+    Object.keys(burn).forEach((k) => { burn[k] = Math.max(0, burn[k] - dt / BURN_S); });
+    return { burn: burn[o.id] || 0 };
+  }
+  function woodUse() { if (carry) { toast('You already carry one.'); return; } carry = true; game.sfx('tap'); toast('You take a log.'); }
+  function brazierUse(o) {
+    if (gymOpen('blaze')) { toast('It burns steadily.'); return; }
+    if (!carry) { toast((burn[o.id] || 0) > 0 ? 'It is burning down.' : 'It is cold.'); return; }
+    carry = false; burn[o.id] = 1; game.sfx('tap'); toast('The fire takes it.');
+    const M = WORLD.MAPS['gym-blaze']; if ((M.objects || []).filter((q) => q.kind === 'gbrazier').every((q) => (burn[q.id] || 0) > 0)) gymDone('blaze', 'Three fires. The slag cracks.');
+  }
+  // ---- Coral's Gym: answering across the dark. The lamps light in an order (the call), go out, and you touch them in that order (the answer); three rounds, one lamp longer each time. ----
+  const CORAL_SEQ = [[2, 0, 4], [1, 3, 0, 2], [4, 1, 3, 0, 2]], CALL_STEP = 0.7;
+  let coral = { round: 0, phase: 'idle', i: 0, t: 0, lit: {}, answered: [] }, coralStamp = 0;
+  function coralReset() { coral = { round: 0, phase: 'idle', i: 0, t: 0, lit: {}, answered: [] }; }
+  function coralCall() { coral.phase = 'call'; coral.i = 0; coral.t = 0; coral.answered = []; coral.lit = {}; }
+  setInterval(() => {
+    const M = WORLD.map; if (!M || M.id !== 'gym-coral' || gymOpen('coral')) return;
+    const now = performance.now(), dt = Math.min(0.2, (now - coralStamp) / 1000); coralStamp = now; coral.t += dt; const seq = CORAL_SEQ[coral.round];
+    if (coral.phase === 'idle' && coral.t > 1.2) coralCall();
+    else if (coral.phase === 'call') { const k = Math.floor(coral.t / CALL_STEP); coral.lit = {}; if (k < seq.length) coral.lit[seq[k]] = (coral.t % CALL_STEP) < CALL_STEP * 0.8 ? 1 : 0; else if (coral.t > seq.length * CALL_STEP + 0.6) { coral.phase = 'listen'; coral.t = 0; coral.lit = {}; } }
+    else if (coral.phase === 'listen') { Object.keys(coral.lit).forEach((k) => { coral.lit[k] = Math.max(0, coral.lit[k] - dt * 2.5); }); if (coral.t > 9 && !coral.answered.length) { coral.phase = 'idle'; coral.t = 0; } }
+    else if (coral.phase === 'wrong') { const on = Math.floor(coral.t / 0.3) % 2 === 0 && coral.t < 1.2; coral.lit = { 0: on ? 1 : 0, 1: on ? 1 : 0, 2: on ? 1 : 0, 3: on ? 1 : 0, 4: on ? 1 : 0 }; if (coral.t > 1.8) coralCall(); }
+    else if (coral.phase === 'right') { coral.lit = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1 }; if (coral.t > 1.4) { coral.round += 1; if (coral.round >= CORAL_SEQ.length) { gymDone('coral', 'The lamps stay lit. The chain falls.'); } else coralCall(); } }
+  }, 50);
+  function lampUse(o) {
+    if (gymOpen('coral')) { toast('It stays lit.'); return; }
+    if (coral.phase !== 'listen') { if (coral.phase === 'call') toast('It is still speaking.'); return; }
+    const seq = CORAL_SEQ[coral.round]; coral.lit[o.n] = 1; game.sfx('tap');
+    if (seq[coral.answered.length] === o.n) { coral.answered.push(o.n); coral.t = 0; if (coral.answered.length === seq.length) { coral.phase = 'right'; coral.t = 0; } }
+    else { coral.phase = 'wrong'; coral.t = 0; }
+  }
+  function callampState(o2) { return { lit: gymOpen('coral') ? 1 : (coral.lit[o2.n] || 0) }; }
   const bedStage = (o) => (gymWrenOpen() ? 2 : (advOf().flags['wb:' + o.id] | 0));
   function bedState(o) {   // called every frame the bed is drawn: this is where growth happens
     const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - tendStamp) / 1000)); if (tending === o.id) tendStamp = now;
@@ -7067,6 +7223,9 @@ const APP = (() => {
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
     if (o.kind === 'lever') { leverUse(o); return; }
     if (o.kind === 'gbed') { gbedUse(o); return; }
+    if (o.kind === 'woodpile') { woodUse(); return; }
+    if (o.kind === 'gbrazier') { brazierUse(o); return; }
+    if (o.kind === 'callamp') { lampUse(o); return; }
     if (o.kind === 'greatlamp') { greatLampUse(); return; }
     if (o.kind === 'chest') { chestUse(o); return; }
     if (o.order !== undefined) { riteUse(o); return; }
@@ -7337,7 +7496,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -7477,7 +7636,7 @@ const APP = (() => {
     WORLD.init($('world'), {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
-      objState: objState, relit: () => !!advOf().flags.lampLit, homeLit: () => sealCount() >= 3, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
+      objState: objState, carry: () => carry, relit: () => !!advOf().flags.lampLit, homeLit: () => sealCount() >= 3, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
       exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       critterLead: () => !!(game && game.state.caught.length && !window.__noFollower),   // you steer the critter; the human walks behind it
@@ -7492,7 +7651,7 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { trailDir = {}; tending = null; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
+      onMap: (m) => { trailDir = {}; tending = null; carry = false; burn = {}; coralReset(); iceCells = []; stillT = 0; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map
     });
@@ -7587,7 +7746,7 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { tending: () => tending, lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { tending: () => tending, carry: () => carry, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
 

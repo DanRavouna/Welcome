@@ -1,10 +1,10 @@
 mossbrook  doors True | npc reachable True | on solid [] | zone link True | leader home gym-wren | town hop moss | trainer sight [('sorrel', [',', '=', '=', '='])]
 walk -> mossbrook
-frosthold  doors True | npc reachable True | on solid [] | zone link True | leader home frosthold | town hop frost | trainer sight [('pike', ['=', '=', '=', '='])]
+frosthold  doors True | npc reachable True | on solid [] | zone link True | leader home gym-glacia | town hop frost | trainer sight [('pike', ['=', '=', '=', '='])]
 walk -> frosthold
-cinderport doors True | npc reachable True | on solid [] | zone link True | leader home cinderport | town hop ember | trainer sight [('tamsin', [',', '=', '=', 'T'])]
+cinderport doors True | npc reachable True | on solid [] | zone link True | leader home gym-blaze | town hop ember | trainer sight [('tamsin', [',', '=', '=', 'T'])]
 walk -> cinderport
-coralbay   doors True | npc reachable True | on solid [] | zone link True | leader home coralbay | town hop tide | trainer sight [('rafe', ['=', '=', '=', '='])]
+coralbay   doors True | npc reachable True | on solid [] | zone link True | leader home gym-coral | town hop tide | trainer sight [('rafe', ['=', '=', '=', '='])]
 walk -> coralbay
 music in coralbay -> coralbay
 errors: none

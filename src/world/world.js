@@ -17,6 +17,9 @@ const WORLD = (() => {
   THEMES.coralbay = { ground: '#F2DFA8', blade: 'rgba(150,120,60,0.3)', path: '#C9A070', water: '#2F8FD8', tall: '#B9C46A', tallBlade: '#7E8A32', tree: 'palm', bg: '#1F6FB0', flowers: ['#FFFFFF', '#F59ACB'] };
   THEMES['dg-arch'] = { ground: '#262B40', blade: 'rgba(10,12,24,0.35)', path: '#515A7C', water: '#1E3A5F', tall: '#2E4A4A', tallBlade: '#1E3434', tree: 'dead', bg: '#0A0C18', flowers: ['#7AA0FF'], cave: true };
   THEMES.ascent = { ground: '#E8F0F8', blade: 'rgba(120,150,190,0.35)', path: '#A8B8D0', water: '#7FB8E0', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#9FB4D0', flowers: ['#FFFFFF', '#BBD5FF'], ice: true };
+  THEMES['gym-glacia'] = { ground: '#DCEFF8', blade: 'rgba(120,150,190,0.3)', path: '#B4C9E0', water: '#1E3A5F', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#101A2A', flowers: ['#FFFFFF'], cave: true };
+  THEMES['gym-blaze'] = { ground: '#6A4A3A', blade: 'rgba(20,10,10,0.3)', path: '#8A6A5A', water: '#FF6A2B', tall: '#6A4A38', tallBlade: '#3A2A20', tree: 'dead', bg: '#1A0E0A', flowers: ['#FF8A3D'], cave: true };
+  THEMES['gym-coral'] = { ground: '#2A3A4A', blade: 'rgba(10,20,40,0.3)', path: '#3E5068', water: '#1E3A5F', tall: '#2E4A4A', tallBlade: '#1E3434', tree: 'palm', bg: '#08101C', flowers: ['#7AA0FF'], cave: true };
   THEMES['gym-wren'] = { ground: '#6E9A4A', blade: 'rgba(20,70,20,0.3)', path: '#B99B6A', water: '#3F8FC8', tall: '#2E7D33', tallBlade: '#1D5A24', tree: 'round', bg: '#2A1E12', flowers: ['#F5A3D0', '#FFFFFF'], cave: true };
   THEMES['dg-lamp'] = { ground: '#C9BFA8', blade: 'rgba(120,100,70,0.25)', path: '#E4DAC2', water: '#7FB8E0', tall: '#9CB89A', tallBlade: '#6A8A68', tree: 'pine', bg: '#8E8470', flowers: ['#FFFFFF'], cave: true };
   THEMES.descent = { ground: '#8A6A58', blade: 'rgba(60,30,20,0.35)', path: '#B08A70', water: '#FF6A2B', tall: '#C7A23A', tallBlade: '#8E6B1E', tree: 'dead', bg: '#3A1E14', flowers: ['#FFD86B', '#FF8A3D'], lava: true };
@@ -561,14 +564,16 @@ const WORLD = (() => {
     const d = ADV.DUNGEONS[id](), grid = d.rows.map((r) => r.split(''));
     const objects = d.objects.map((o) => { grid[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });
     const arrive = d.spawn;
-    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, hall: id.indexOf('gym-') === 0, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
+    return { id: id, name: d.name, theme: THEMES[id], grid: grid, W: d.W, H: d.H, places: [], signs: [], types: d.types || [], rate: d.rate || 0, cave: true, hall: id.indexOf('gym-') === 0, pool: d.pool || null, dark: d.dark || null, objects: objects, spots: d.spots || {}, rubble: d.rubble || [],
       exits: [{ edge: d.exit.edge, a: d.exit.a, b: d.exit.b, to: d.exit.to || 'route-mf' }], arrive: { [d.exit.edge]: arrive }, spawn: arrive, gates: d.gates || {}, rules: d.rules || {}, pickups: d.pickups || {} };
   }
   MAPS['dg-arch'] = buildDungeon('dg-arch');
   MAPS['dg-lamp'] = buildDungeon('dg-lamp');
   MAPS['dg-forge'] = buildDungeon('dg-forge');
-  MAPS['gym-wren'] = buildDungeon('gym-wren');   // the trial hall behind Wren's Gym door
-  (() => { const Mc = MAPS.mossbrook, gp = Mc.places.find((q) => q.id === 'gym-wren'); gp.enter = 'gym-wren'; Mc.arriveFrom = Object.assign({}, Mc.arriveFrom, { 'gym-wren': [gp.door[0] + 0.9, gp.door[1] + 1.5] }); })();
+  // the trial halls behind the four gym doors
+  [['gym-wren', 'mossbrook'], ['gym-glacia', 'frosthold'], ['gym-blaze', 'cinderport'], ['gym-coral', 'coralbay']].forEach(([gid, cid]) => {
+    MAPS[gid] = buildDungeon(gid); const Mc = MAPS[cid], gp = Mc.places.find((q) => q.id === gid); gp.enter = gid; Mc.arriveFrom = Object.assign({}, Mc.arriveFrom, { [gid]: [gp.door[0] + 0.9, gp.door[1] + 1.5] });
+  });
   // the Cold Ascent hangs off Frosthold's north palisade (a gate cut at columns 31-32), with signposts and landmarks placed with the reusable props
   (() => {   // Cinderport's southern gate (the gap in its tree line, columns 19-20) onto the Cinder Descent
     const C = MAPS.cinderport, D = MAPS.descent;
@@ -875,6 +880,7 @@ const WORLD = (() => {
   }
   let FR = null, lastPlayerScreen = null, lastCam = null, tintNow = 'day';
   function drawPlayer(sx, sy, body) {
+    if (!body && opts.carry && opts.carry()) { ctx.fillStyle = '#14101E'; ctx.fillRect(sx - 7, sy - 46, 14, 6); ctx.fillStyle = '#A87A48'; ctx.fillRect(sx - 6, sy - 45, 12, 4); ctx.fillStyle = '#C9986A'; ctx.fillRect(sx - 6, sy - 45, 12, 1); }   // a log carried on the shoulders (Blaze's trial)
     if (!FR) FR = PXW.frames();
     const B = body || P, x = Math.round(sx * dpr) / dpr, y = Math.round(sy * dpr) / dpr;
     if (!body) lastPlayerScreen = { x: x, y: y };
@@ -1140,6 +1146,7 @@ const WORLD = (() => {
     // clear tiles (and the objects standing on them) of a map, e.g. rubble after the rite; redraws the ground if it is the current map
     // open or close a gate (all objects with `gate: id`): hidden + walkable when open, solid when closed
     setGate: (mapId, gateId, open) => { const m = MAPS[mapId]; if (!m) return; (m.objects || []).forEach((o) => { if (o.gate !== gateId) return; o.hidden = !!open; m.grid[o.y][o.x] = open ? '.' : 'O'; }); },
+    setTiles: (mapId, cells, ch) => { const m = MAPS[mapId]; if (!m) return; cells.forEach(([x, y]) => { if (m.grid[y] && x >= 0 && x < m.W) m.grid[y][x] = ch; }); if (M === m && canvas) prerender(); }, moving: () => !!P.moving,
     openTiles: (mapId, cells, objIds) => { const m = MAPS[mapId]; if (!m) return; cells.forEach(([x, y]) => { if (m.grid[y]) m.grid[y][x] = '.'; }); m.objects = (m.objects || []).filter((o) => objIds.indexOf(o.id) === -1); if (M === m && canvas) prerender(); }, setFish: (f) => { fishAt = f; }, follower: () => FOL,
     addProp, PROPS, get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
     solidAt: (x, y) => solidAt(x, y),

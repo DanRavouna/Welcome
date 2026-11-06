@@ -3,9 +3,9 @@ map peak {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': []}
 map ascent {'grass': '67/67', 'exitsOk': True, 'placesOk': True, 'npcs': ['reka:true', 'joran:true', 'dag:true', 'ansel:true', 'marta:true']}
 map descent {'grass': '67/67', 'exitsOk': True, 'placesOk': True, 'npcs': ['kolb:true', 'yara:true', 'brec:true', 'mirel:true', 'brand:true']}
 map mossbrook {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['juniper:true', 'sorrel:true', 'fennel:true', 'bryn:true']}
-map frosthold {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['glacia:true', 'tove:true', 'pike:true', 'hilde:true', 'olaf:true']}
-map cinderport {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['blaze:true', 'bea:true', 'tamsin:true', 'cole:true', 'ruby:true']}
-map coralbay {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['coral:true', 'marina:true', 'rafe:true', 'finn:true', 'pearl:true']}
+map frosthold {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['tove:true', 'pike:true', 'hilde:true', 'olaf:true']}
+map cinderport {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['bea:true', 'tamsin:true', 'cole:true', 'ruby:true']}
+map coralbay {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['marina:true', 'rafe:true', 'finn:true', 'pearl:true']}
 map frost {'grass': '136/136', 'exitsOk': True, 'placesOk': True, 'npcs': ['bram:true', 'sola:true']}
 map ember {'grass': '144/144', 'exitsOk': True, 'placesOk': True, 'npcs': ['kiki:true', 'dax:true']}
 map moss {'grass': '129/129', 'exitsOk': True, 'placesOk': True, 'npcs': ['ivy:true', 'oak:true']}
@@ -35,6 +35,9 @@ map dg-arch {'grass': '40/40', 'exitsOk': True, 'placesOk': True, 'npcs': ['pell
 map dg-lamp {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['bex:true', 'odo:true', 'maren:true']}
 map dg-forge {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['dross:true', 'ingot:true', 'hale:true']}
 map gym-wren {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['wren:true']}
+map gym-glacia {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['glacia:true']}
+map gym-blaze {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['blaze:true']}
+map gym-coral {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['coral:true']}
 map in-house-fennel {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-house-fennel:true']}
 map in-house-moss {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-house-moss:true']}
 map in-house-bryn {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-house-bryn:true']}

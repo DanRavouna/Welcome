@@ -8,7 +8,7 @@ same gate with the override -> ascent
 override is browser-only (not in the save): True | stored: {"levels":true,"safe":false}
 trainer sees you, challenges ON: True
 trainer sees you, "No trainer challenges" ON: False
-teleport buttons: 37 maps | failed: none
+teleport buttons: 40 maps | failed: none
 Level 20 -> 20
 Level 5 afterwards keeps it (never lowers): 20
 after every shortcut: {'clues': 4, 'arch': True, 'rubble': True, 'lampdoor': True, 'lit': True, 'keeper': True, 'maren': True, 'veil': True, 'wick': True, 'forge': True, 'cores': True, 'hale': True, 'forgeLit': True, 'slag': True}

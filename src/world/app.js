@@ -628,6 +628,8 @@ const APP = (() => {
       { id: 'finn', name: 'Finn', x: 24, y: 15, kind: 'talk', pal: { h: '#8A5A34', y: '#4A9A8A', Y: '#2A6A6A' }, lines: ['Coral was the youngest admiral the harbor ever had. Her critters never lose their footing.', 'Count the waves on the causeway at night. Everyone gets a different number.', 'After her seal, climb the Tower. It is up the trail north of Sproutvale.'] },
       { id: 'pearl', name: 'Pearl', x: 16, y: 16, kind: 'talk', pal: { h: '#F4EAD6', y: '#E0A0B8', Y: '#C07898' }, lines: ['I collect shells. My brother collects critter species. He has all 48!', 'Well, he says he does.'] }
     ]);
+    // the three other leaders wait inside their trial halls, like Wren
+    [['glacia', 'frosthold'], ['blaze', 'cinderport'], ['coral', 'coralbay']].forEach(([id, cid]) => { const L = out[cid].find((n) => n.id === id); out[cid] = out[cid].filter((n) => n.id !== id); Object.assign(L, { x: 10, y: 3, dir: 'down' }); out['gym-' + id] = [L]; });
     // route trainers (one per route; tuned with lbal5.py against the gate's party model)
     const rt = (id, name, x, y, dir, types, size, stage, lv, pick, intro, winLine, pal) => ({ id, name, x, y, dir, kind: 'trainer', trainer: true, types, size, stage, lv, pick, pal, intro, winLine, beatenLines: ['That was a good battle. Come back tomorrow for another.'] });
     out['route-mf'] = [rt('kai', 'Mountaineer Kai', 16, 7, 'up', ['Moss', 'Frost'], 4, 2, 11, 0.55, ['The pass is steep, and so is my challenge!', 'Highland critters are tough. Prove yours are tougher.'], 'You climbed right over me. Here is your reward.', { cap: true, c: '#4E8A3A', y: '#E8E8F0', Y: '#A8B2C8' })];
@@ -780,7 +782,7 @@ const APP = (() => {
     }
     const k = lampK[o.id] === undefined ? want : lampK[o.id]; lampK[o.id] = k + Math.sign(want - k) * Math.min(Math.abs(want - k), dt * 1.6); return { k: lampK[o.id] };
   }
-  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -841,8 +843,65 @@ const APP = (() => {
   // ---- Wren's Gym: the trial of being tended (Meaning: you grew because someone stayed with you). Press Tend by a seedling, then STAY: it grows about one stage per 2.5 s, two stages to bloom.
   // Step away and it stops, keeping what it grew (a stage is saved the moment it is reached, nothing is ever lost). All four in bloom and the vines draw back. Old saves (Wren beaten, or her seal) find the way open. ----
   const BED_STAGE_S = 2.5, BED_REACH = 1.9; let tending = null, tendP = 0, tendStamp = 0;
-  function gymWrenOpen() { const f = advOf().flags, npc = game.state.npc || {}; return !!f['gym:wren'] || (npc.cleared || []).indexOf('wren') !== -1 || (npc.seals || []).indexOf('wren') !== -1; }
-  function applyGym() { tending = null; if (WORLD.MAPS['gym-wren']) WORLD.setGate('gym-wren', 'wren', gymWrenOpen()); }
+  function gymOpen(id) { const f = advOf().flags, npc = game.state.npc || {}; return !!f['gym:' + id] || (npc.cleared || []).indexOf(id) !== -1 || (npc.seals || []).indexOf(id) !== -1; }
+  function gymWrenOpen() { return gymOpen('wren'); }
+  function applyGym() {
+    tending = null; carry = false; coralReset();
+    ['wren', 'glacia', 'blaze', 'coral'].forEach((id) => { if (WORLD.MAPS['gym-' + id]) WORLD.setGate('gym-' + id, id, gymOpen(id)); });
+    const G = WORLD.MAPS['gym-glacia']; if (G && G.pool) { const cells = []; for (let y = G.pool[1]; y <= G.pool[3]; y++) for (let x = G.pool[0]; x <= G.pool[2]; x++) cells.push([x, y]); if (gymOpen('glacia')) WORLD.setTiles('gym-glacia', cells, '.'); else { WORLD.setTiles('gym-glacia', cells, '~'); iceCells = []; stillT = 0; } }   // the whole pool is frozen for good once the trial is done
+  }
+  function gymDone(id, line) { advSave((x) => { x.flags['gym:' + id] = true; }); applyGym(); game.sfx('claim'); toast(line); setTimeout(() => toast(line), 900); }
+  // ---- Glacia's Gym: the trial of stillness. Ice forms on the water around you only while you stand still; what you leave behind melts when you move on; the plate under you never melts. ----
+  const STILL_S = 0.8; let iceCells = [], stillT = 0, stillStamp = 0;
+  setInterval(() => {
+    const M = WORLD.map; if (!M || M.id !== 'gym-glacia' || gymOpen('glacia')) return;
+    const now = performance.now(), dt = Math.min(0.3, (now - stillStamp) / 1000); stillStamp = now;
+    const P = WORLD.pos(), tx = Math.floor(P.x / 32), ty = Math.floor(P.y / 32), near = (c) => Math.max(Math.abs(c[0] - tx), Math.abs(c[1] - ty)) <= 1;
+    if (WORLD.moving()) {
+      stillT = 0; const melt = iceCells.filter((c) => !near(c)); if (melt.length) { WORLD.setTiles('gym-glacia', melt, '~'); iceCells = iceCells.filter(near); }
+    } else {
+      stillT += dt;
+      if (stillT >= STILL_S) { const grow = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = tx + dx, y = ty + dy; if (M.grid[y] && M.grid[y][x] === '~') grow.push([x, y]); } if (grow.length) { WORLD.setTiles('gym-glacia', grow, '.'); iceCells = iceCells.concat(grow); game.sfx('tap'); } }
+    }
+    if (ty <= 8 && M.pool && ty < M.pool[1]) gymDone('glacia', 'The pool goes still, and stays.');   // the far shore
+  }, 100);
+  // ---- Blaze's Gym: the fire that has to be fed. Carry one log at a time from the woodpile; a brazier burns down in BURN_S seconds; all three alight at once opens the way. ----
+  const BURN_S = 14; let carry = false, burn = {}, burnStamp = 0;
+  function brazierState(o) {
+    const now = performance.now(), dt = Math.min(0.2, Math.max(0, (now - burnStamp) / 1000)); burnStamp = now;
+    if (gymOpen('blaze')) return { burn: 1 };
+    Object.keys(burn).forEach((k) => { burn[k] = Math.max(0, burn[k] - dt / BURN_S); });
+    return { burn: burn[o.id] || 0 };
+  }
+  function woodUse() { if (carry) { toast('You already carry one.'); return; } carry = true; game.sfx('tap'); toast('You take a log.'); }
+  function brazierUse(o) {
+    if (gymOpen('blaze')) { toast('It burns steadily.'); return; }
+    if (!carry) { toast((burn[o.id] || 0) > 0 ? 'It is burning down.' : 'It is cold.'); return; }
+    carry = false; burn[o.id] = 1; game.sfx('tap'); toast('The fire takes it.');
+    const M = WORLD.MAPS['gym-blaze']; if ((M.objects || []).filter((q) => q.kind === 'gbrazier').every((q) => (burn[q.id] || 0) > 0)) gymDone('blaze', 'Three fires. The slag cracks.');
+  }
+  // ---- Coral's Gym: answering across the dark. The lamps light in an order (the call), go out, and you touch them in that order (the answer); three rounds, one lamp longer each time. ----
+  const CORAL_SEQ = [[2, 0, 4], [1, 3, 0, 2], [4, 1, 3, 0, 2]], CALL_STEP = 0.7;
+  let coral = { round: 0, phase: 'idle', i: 0, t: 0, lit: {}, answered: [] }, coralStamp = 0;
+  function coralReset() { coral = { round: 0, phase: 'idle', i: 0, t: 0, lit: {}, answered: [] }; }
+  function coralCall() { coral.phase = 'call'; coral.i = 0; coral.t = 0; coral.answered = []; coral.lit = {}; }
+  setInterval(() => {
+    const M = WORLD.map; if (!M || M.id !== 'gym-coral' || gymOpen('coral')) return;
+    const now = performance.now(), dt = Math.min(0.2, (now - coralStamp) / 1000); coralStamp = now; coral.t += dt; const seq = CORAL_SEQ[coral.round];
+    if (coral.phase === 'idle' && coral.t > 1.2) coralCall();
+    else if (coral.phase === 'call') { const k = Math.floor(coral.t / CALL_STEP); coral.lit = {}; if (k < seq.length) coral.lit[seq[k]] = (coral.t % CALL_STEP) < CALL_STEP * 0.8 ? 1 : 0; else if (coral.t > seq.length * CALL_STEP + 0.6) { coral.phase = 'listen'; coral.t = 0; coral.lit = {}; } }
+    else if (coral.phase === 'listen') { Object.keys(coral.lit).forEach((k) => { coral.lit[k] = Math.max(0, coral.lit[k] - dt * 2.5); }); if (coral.t > 9 && !coral.answered.length) { coral.phase = 'idle'; coral.t = 0; } }
+    else if (coral.phase === 'wrong') { const on = Math.floor(coral.t / 0.3) % 2 === 0 && coral.t < 1.2; coral.lit = { 0: on ? 1 : 0, 1: on ? 1 : 0, 2: on ? 1 : 0, 3: on ? 1 : 0, 4: on ? 1 : 0 }; if (coral.t > 1.8) coralCall(); }
+    else if (coral.phase === 'right') { coral.lit = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1 }; if (coral.t > 1.4) { coral.round += 1; if (coral.round >= CORAL_SEQ.length) { gymDone('coral', 'The lamps stay lit. The chain falls.'); } else coralCall(); } }
+  }, 50);
+  function lampUse(o) {
+    if (gymOpen('coral')) { toast('It stays lit.'); return; }
+    if (coral.phase !== 'listen') { if (coral.phase === 'call') toast('It is still speaking.'); return; }
+    const seq = CORAL_SEQ[coral.round]; coral.lit[o.n] = 1; game.sfx('tap');
+    if (seq[coral.answered.length] === o.n) { coral.answered.push(o.n); coral.t = 0; if (coral.answered.length === seq.length) { coral.phase = 'right'; coral.t = 0; } }
+    else { coral.phase = 'wrong'; coral.t = 0; }
+  }
+  function callampState(o2) { return { lit: gymOpen('coral') ? 1 : (coral.lit[o2.n] || 0) }; }
   const bedStage = (o) => (gymWrenOpen() ? 2 : (advOf().flags['wb:' + o.id] | 0));
   function bedState(o) {   // called every frame the bed is drawn: this is where growth happens
     const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - tendStamp) / 1000)); if (tending === o.id) tendStamp = now;
@@ -918,6 +977,9 @@ const APP = (() => {
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
     if (o.kind === 'lever') { leverUse(o); return; }
     if (o.kind === 'gbed') { gbedUse(o); return; }
+    if (o.kind === 'woodpile') { woodUse(); return; }
+    if (o.kind === 'gbrazier') { brazierUse(o); return; }
+    if (o.kind === 'callamp') { lampUse(o); return; }
     if (o.kind === 'greatlamp') { greatLampUse(); return; }
     if (o.kind === 'chest') { chestUse(o); return; }
     if (o.order !== undefined) { riteUse(o); return; }
@@ -1188,7 +1250,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -1328,7 +1390,7 @@ const APP = (() => {
     WORLD.init($('world'), {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
-      objState: objState, relit: () => !!advOf().flags.lampLit, homeLit: () => sealCount() >= 3, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
+      objState: objState, carry: () => carry, relit: () => !!advOf().flags.lampLit, homeLit: () => sealCount() >= 3, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
       exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       critterLead: () => !!(game && game.state.caught.length && !window.__noFollower),   // you steer the critter; the human walks behind it
@@ -1343,7 +1405,7 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { trailDir = {}; tending = null; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
+      onMap: (m) => { trailDir = {}; tending = null; carry = false; burn = {}; coralReset(); iceCells = []; stillT = 0; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map
     });
@@ -1438,6 +1500,6 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { tending: () => tending, lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { tending: () => tending, carry: () => carry, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);

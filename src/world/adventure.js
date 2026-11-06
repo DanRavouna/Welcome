@@ -71,6 +71,61 @@ const ADV = (() => {
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
     return { name: 'Wren\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'mossbrook' }, types: [], rate: 0, spots: { wren: [10, 3] } };
   }
+  // ---- Glacia's Gym (Frosthold): the trial of stillness. Black water lies between the door and Glacia. Ice forms on the water around you only while you STAND STILL (about 0.8 s),
+  // and the ice you leave behind melts the moment you move on; the plate under your feet never melts. You cross by stopping, waiting, stepping, stopping. Reach the far shore and the whole pool
+  // freezes for good (Meaning: what is kept by being kept cold; the cold keeps what it is given). No sign: the first still moment at the water's edge teaches it. ----
+  function glaciaHall() {
+    const W = 22, H = 21, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
+    const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    rect(6, 2, 15, 5, '=');                  // the leader's chamber
+    rect(2, 7, 19, 19, '.');                 // the hall (ice floor)
+    rect(3, 9, 18, 14, '~');                 // the black water
+    rect(10, 18, 11, 20, '=');               // the way in
+    rect(9, 6, 12, 6, '=');                  // the way north (icicles hang across it)
+    [9, 10, 11, 12].forEach((x) => objects.push({ id: 'ice' + x, kind: 'icicles', gate: 'glacia', x: x, y: 6, text: 'Icicles, thick as arms.' }));
+    [[3, 17], [18, 17], [7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'glb' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. The flame is thin and straight.' }));
+    objects.push({ id: 'gstone', kind: 'ringstones', x: 17, y: 8, text: 'Stones on the far shore. Someone sat here a long time.' });
+    objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
+    return { name: 'Glacia\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'frosthold' }, types: [], rate: 0, spots: { glacia: [10, 3] }, pool: [3, 9, 18, 14] };
+  }
+  // ---- Blaze's Gym (Cinderport): the trial of the fire that has to be fed. Three braziers between the door and Blaze, a woodpile by the door. A brazier burns down in about 14 s and goes dark.
+  // You carry one log at a time: take one, feed a fire, go back. The way opens the moment all three burn at once (Meaning: this one wants feeding every day; the fire is kept by someone who keeps coming back). ----
+  function blazeHall() {
+    const W = 22, H = 19, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
+    const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    rect(6, 2, 15, 5, '=');                  // the leader's chamber
+    rect(2, 7, 19, 17, '.');                 // the hall
+    rect(10, 16, 11, 18, '=');               // the way in
+    rect(9, 6, 12, 6, '=');                  // the way north (a slab of cold slag)
+    [[4, 10], [11, 8], [17, 10]].forEach(([x, y], i) => objects.push({ id: 'fire' + (i + 1), kind: 'gbrazier', x: x, y: y, text: 'A great brazier. The iron is warm.' }));
+    objects.push({ id: 'wood', kind: 'woodpile', x: 10, y: 15, text: 'Split logs, stacked by someone who stacks logs every day.' });
+    [9, 10, 11, 12].forEach((x) => objects.push({ id: 'slag' + x, kind: 'slagwall', gate: 'blaze', x: x, y: 6, text: 'Cold slag, poured across the way.' }));
+    [[7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'blb' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. Somebody keeps it lit.' }));
+    objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
+    return { name: 'Blaze\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'cinderport' }, types: [], rate: 0, spots: { blaze: [10, 3] } };
+  }
+  // ---- Coral's Gym (Coralbay): the trial of answering across the dark. The hall is dark; five lamps stand in it. They light one after another (the call), then go out; you touch them in the same
+  // order (the answer). Three rounds, each one lamp longer. A wrong touch makes them all blink and the call comes again; nothing is lost. When the third answer is right the lamps stay lit and the
+  // chain across the way falls (Meaning: the road home lit across the dark; someone left a light on for you, and you answer it). ----
+  function coralHall() {
+    const W = 22, H = 19, rows = [], objects = [];
+    for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
+    const set = (x, y, c) => { if (y >= 0 && y < H && x >= 0 && x < W) rows[y][x] = c; };
+    const rect = (x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c || '.'); };
+    rect(6, 2, 15, 5, '=');                  // the leader's chamber
+    rect(2, 7, 19, 17, '.');                 // the hall
+    rect(10, 16, 11, 18, '=');               // the way in
+    rect(9, 6, 12, 6, '=');                  // the way north (a chain across it)
+    [[4, 9], [8, 12], [11, 8], [14, 12], [18, 9]].forEach(([x, y], i) => objects.push({ id: 'lamp' + i, kind: 'callamp', n: i, x: x, y: y, text: 'A lamp on a post. The glass is warm.' }));
+    [9, 10, 11, 12].forEach((x) => objects.push({ id: 'chain' + x, kind: 'chain', gate: 'coral', x: x, y: 6, text: 'A chain across the way, wet from the sea.' }));
+    [[7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'clb' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. Somebody keeps it lit.' }));
+    objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
+    return { name: 'Coral\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'coralbay' }, types: [], rate: 0, spots: { coral: [10, 3] }, dark: { r: 3.2 } };
+  }
   // ---- the Lamp Tower: a bright climb through four chambers. Levers flip gates (a gate is open when an odd number of its levers are ON), so going forward closes
   // the way behind you, and flipping a lever back always undoes it (you can never be locked in). Guards in chambers 2 and 3, the Warden and the great lamp at the top. ----
   function lampTower() {
@@ -118,7 +173,7 @@ const ADV = (() => {
     return { name: 'The Forge Below', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [14.9, H - 1.4], exit: { edge: 's', a: 14, b: 15, to: 'descent' }, dark: { r: 5.2 },
       rules: { gb: ['sock:A', 'sock:B'] }, pickups: { coreA: 'core:A', coreB: 'core:B' }, spots: { guard1: [5, 25], guard2: [24, 25], hale: [14, 6] } };
   }
-  const DUNGEONS = { 'dg-arch': sealedArch, 'dg-lamp': lampTower, 'dg-forge': forgeBelow, 'gym-wren': wrenHall };
+  const DUNGEONS = { 'dg-arch': sealedArch, 'dg-lamp': lampTower, 'dg-forge': forgeBelow, 'gym-wren': wrenHall, 'gym-glacia': glaciaHall, 'gym-blaze': blazeHall, 'gym-coral': coralHall };
   // ---- pixel art (screen pixels, 32 px per tile, drawn on 2 px steps); x, y = the tile's top-left; st = object state from the app ----
   const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, w, h); };
   const OL = '#14101E';
@@ -264,6 +319,38 @@ const ADV = (() => {
       R(g, x + 1, y + 28, 30, 3, 'rgba(0,0,0,0.25)'); R(g, x + 1, y + 10, 30, 19, OL); R(g, x + 2, y + 11, 28, 17, '#8E98AD'); R(g, x + 2, y + 11, 28, 3, '#C9D0DC'); R(g, x + 2, y + 26, 28, 2, '#5E6678');
       R(g, x + 5, y + 14, 22, 11, OL); R(g, x + 6, y + 15, 20, 9, '#3F8FC8'); R(g, x + 6, y + 15, 20, 2, '#5AA8F0'); const w = Math.round(Math.sin(t * 1.3 + o.x) * 2); R(g, x + 9 + w, y + 18, 7, 1, '#A8D8FF'); R(g, x + 16 - w, y + 21, 6, 1, '#A8D8FF');
     },
+    // icicles hanging across a way (Glacia's gate)
+    icicles(g, x, y, st, t, o) {
+      R(g, x, y, 32, 5, OL); R(g, x + 1, y + 1, 30, 3, '#5E97AE');
+      [2, 8, 13, 19, 25].forEach((vx, i) => { const L = 24 - (i % 2) * 8 - (i === 2 ? 4 : 0); R(g, x + vx - 1, y + 4, 6, L, OL); R(g, x + vx, y + 4, 4, L - 1, '#BFE4F4'); R(g, x + vx, y + 4, 1, L - 1, '#FFFFFF'); R(g, x + vx + 1, y + 3 + L, 2, 2, OL); });
+    },
+    // a great brazier whose fire is a burn level (st.burn 0..1): tall and bright when fed, embers when low, cold iron at 0
+    gbrazier(g, x, y, st, t, o) {
+      const b = Math.max(0, Math.min(1, st.burn || 0)), f = Math.round(Math.sin(t * 9 + o.x) * 2) * 2;
+      R(g, x + 3, y + 28, 26, 3, 'rgba(0,0,0,0.25)'); R(g, x + 12, y + 22, 8, 6, OL); R(g, x + 13, y + 23, 6, 4, '#3A3330'); R(g, x + 4, y + 14, 24, 9, OL); R(g, x + 5, y + 15, 22, 7, '#4A4440'); R(g, x + 5, y + 15, 22, 2, '#6A6460');
+      if (b > 0) { const h = Math.round(6 + b * 16), gl = g.createRadialGradient(x + 16, y + 14, 1, x + 16, y + 14, 18 + b * 22); gl.addColorStop(0, 'rgba(255,150,60,' + (0.25 + 0.4 * b).toFixed(2) + ')'); gl.addColorStop(1, 'rgba(255,150,60,0)'); g.fillStyle = gl; g.fillRect(x - 24, y - 30, 80, 70);
+        R(g, x + 11, y + 15 - h + f / 2, 10, h - f / 2, '#E8552A'); R(g, x + 13, y + 17 - Math.round(h * 0.7), 6, Math.round(h * 0.7), '#FFB03A'); if (b > 0.35) R(g, x + 15, y + 16 - Math.round(h * 0.4), 2, Math.round(h * 0.4), '#FFE08A'); }
+      else { R(g, x + 9, y + 12, 14, 3, '#2A2420'); R(g, x + 12, y + 11, 3, 2, '#3A3330'); }
+    },
+    // split logs, stacked
+    woodpile(g, x, y) {
+      R(g, x + 2, y + 27, 28, 3, 'rgba(0,0,0,0.22)'); [[3, 20], [11, 20], [19, 20], [7, 14], [15, 14], [11, 8]].forEach(([lx, ly]) => { R(g, x + lx, y + ly, 10, 7, OL); R(g, x + lx + 1, y + ly + 1, 8, 5, '#A87A48'); R(g, x + lx + 1, y + ly + 1, 8, 1, '#C9986A'); R(g, x + lx + 3, y + ly + 3, 2, 2, '#7A5230'); });
+    },
+    // a wall of cold slag across a way (Blaze's gate)
+    slagwall(g, x, y, st, t, o) {
+      R(g, x, y + 2, 32, 26, OL); R(g, x + 1, y + 3, 30, 24, '#3A2A24'); R(g, x + 1, y + 3, 30, 3, '#5A4A40'); [[4, 9], [14, 14], [22, 8], [9, 20], [24, 20]].forEach(([px, py]) => { R(g, x + px, y + py, 5, 3, '#2A1C18'); R(g, x + px + 1, y + py + 1, 2, 1, '#5E3A2A'); });
+    },
+    // a lamp on a post in the dark hall (Coral); st.lit 0..1
+    callamp(g, x, y, st, t, o) {
+      const k = Math.max(0, Math.min(1, st.lit || 0));
+      R(g, x + 10, y + 28, 12, 3, 'rgba(0,0,0,0.3)'); R(g, x + 14, y + 10, 4, 18, OL); R(g, x + 15, y + 10, 2, 18, '#4A5878'); R(g, x + 9, y + 2, 14, 3, OL); R(g, x + 10, y + 3, 12, 1, '#6A7A98');
+      if (k > 0.02) { const gl = g.createRadialGradient(x + 16, y + 9, 1, x + 16, y + 9, 14 + k * 30); gl.addColorStop(0, 'rgba(255,220,130,' + (0.7 * k).toFixed(2) + ')'); gl.addColorStop(1, 'rgba(255,220,130,0)'); g.fillStyle = gl; g.fillRect(x - 30, y - 36, 92, 90); }
+      R(g, x + 10, y + 4, 12, 11, OL); R(g, x + 11, y + 5, 10, 9, k > 0.5 ? '#FFD27A' : k > 0.02 ? '#B08A40' : '#3A3340'); if (k > 0.5) R(g, x + 14, y + 7, 4, 5, '#FFF6D0');
+    },
+    // a chain across a way (Coral's gate)
+    chain(g, x, y, st, t, o) {
+      R(g, x, y + 12, 32, 6, OL); for (let i = 0; i < 4; i++) { R(g, x + i * 8 + 1, y + 13, 6, 4, i % 2 ? '#8E98AD' : '#6A7488'); R(g, x + i * 8 + 3, y + 14, 2, 2, OL); } R(g, x + 6, y + 18, 3, 3, 'rgba(120,170,220,0.5)');
+    },
     // vines hung across a way: braided and heavy, with pale flowers, darker than tall grass
     vines(g, x, y, st, t, o) {
       const sw = Math.round(Math.sin(t * 1.4 + o.x) * 1);
@@ -403,6 +490,6 @@ const ADV = (() => {
       for (let i = 0; i < 4; i++) { const on = i < n; g.save(); g.globalAlpha = on ? (st.open ? 1 : 0.6 + 0.4 * k) : 1; R(g, x + 12, y + 11 + i * 4, 8, 2, on ? '#FFD86B' : '#4A4860'); g.restore(); }
     }
   };
-  const LIGHT = { furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
+  const LIGHT = { gbrazier: (o, st) => (st && st.burn > 0 ? 1.6 + 2.4 * st.burn : 0.6), callamp: (o, st) => (st && st.lit > 0.02 ? 1.2 + 2.6 * st.lit : 0.5), furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
   return { CLUES, DUNGEONS, ART, LIGHT, TCOL, TYPES };
 })();
