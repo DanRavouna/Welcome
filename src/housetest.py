@@ -1,4 +1,4 @@
-# Mossbrook's three houses (Meaning: being tended while you grow): each room is a statement made of things to look at; door texts agree with the inside; nothing is a tip; Wil is away by day and home from dusk as the note says (away = not drawn, not solid, not talkable); residents and every object reachable.
+# All twelve city houses: each room is a statement inside its city's meaning, made of things to look at; door texts agree with the inside; nothing is a tip; every thing and every resident reachable; Wil (Mosscap Cottage) is away by day and home from dusk as the note says (away = not drawn, not solid, not talkable).
 from playwright.sync_api import sync_playwright
 from chk import check, done
 errs=[]
@@ -6,13 +6,13 @@ with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_function("typeof APP!=='undefined' && APP.game")
   pg.evaluate("APP.game.update({hints:['party','shop','evolve','weather','zone','grass','keep','battle','online'],caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999}); DEV.safe=true; window.__noTransition=true; window.__noFollower=true; window.__tod='day'; window.__weather='clear'; document.getElementById('starter').hidden=true")
-  want={'in-house-fennel':['kettle','armchair','jars'],'in-house-moss':['baskets','herbs','wallmap'],'in-house-bryn':['drawings','shinyjar','smallbed']}
+  want={'in-house-fennel':['kettle','armchair','jars'],'in-house-moss':['baskets','herbs','wallmap'],'in-house-bryn':['drawings','shinyjar','smallbed'],'in-fh-a':['stool','tally','lantern','cloakpeg'],'in-fh-b':['furs','furs','ledger','kettle'],'in-fh-c':['souppot','bowls','armchair'],'in-cp-a':['anvil','toolwall','coals'],'in-cp-b':['broom','ashjar','sprouts'],'in-cp-c':['bunks','helmets','glowrock'],'in-cb-a':['logbook','oilcans','shiplist'],'in-cb-b':['nets','network','stool'],'in-cb-c':['shellrows','smallbed','bucket']}
   reach=lambda: pg.evaluate("""()=>{const M=WORLD.map,S=new Set(['w','b','s','t','p','k','h','m','O']),walk=(x,y)=>x>=0&&y>=0&&x<M.W&&y<M.H&&!S.has(M.grid[y][x]);const seen=new Set(),q=[[Math.floor(M.spawn[0]),Math.floor(M.spawn[1])]];seen.add(q[0].join());while(q.length){const [x,y]=q.shift();[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{const k=(x+dx)+','+(y+dy);if(!seen.has(k)&&walk(x+dx,y+dy)){seen.add(k);q.push([x+dx,y+dy])}})}return [...seen]}""")
-  tipwords=['tip','odds','one in two hundred','sparkling grass','rare ones','they say','you should','try ']
+  tipwords=['tip','odds','one in two hundred','sparkling grass','rare ones','they say','you should','try ','whetstone','lure from the market','starts at the north end','links us to','full of ember','love the cold','all 48']
   for mid,kinds in want.items():
     pg.evaluate("(m)=>{WORLD.enter(m);WORLD.setPaused(false)}",mid); pg.wait_for_timeout(300)
     objs=pg.evaluate("WORLD.map.objects.map(o=>o.kind)")
-    check(mid+': the room holds its three things', sorted(objs)==sorted(kinds), objs)
+    check(mid+': the room holds its things', sorted(objs)==sorted(kinds), objs)
     R=set(tuple(int(v) for v in c.split(',')) for c in reach()); pos=pg.evaluate("WORLD.map.objects.map(o=>[o.x,o.y]).concat((WORLD.allNpcs()[WORLD.map.id]||[]).map(n=>[n.x,n.y]))")
     check(mid+': every thing and the resident can be stood next to', all(any((x+dx,y+dy) in R for dx,dy in ((1,0),(-1,0),(0,1),(0,-1))) for x,y in pos), pos)
     texts=pg.evaluate("WORLD.map.objects.map(o=>o.text).concat((WORLD.allNpcs()[WORLD.map.id]||[]).flatMap(n=>n.lines)).join(' | ')")

@@ -698,15 +698,15 @@ const APP = (() => {
       'house-fennel': ['Grandma Clover', ['You are not Fennel. Sit anyway. The kettle does not mind who.', 'She said she would be back by supper. She says it every day, and every day I pour two cups.']],
       'house-moss': ['Forager Wil', ['Back before dark, like the note says.', 'Same path every day. A different basket every day.']],
       'house-bryn': ["Bryn's Dad", ['Those on the wall are all Bryn\u2019s. Every one of them is a shiny one.', 'The jar is for when. Not if.']],
-      'fh-a': ['Guard Brann', ['Hm? I was not sleeping. I was resting my eyes.', 'The palisade has held for a hundred winters. It will hold one more.']],
-      'fh-b': ['Trader Ylva', ['Closed for the blizzard season, but you can warm up by the fire.', 'Highland Pass to the west links us to Mossbrook. Glacier Coast to the east goes to Coralbay.']],
-      'fh-c': ['Old Ingrid', ['Soup? There is always soup.', 'My grandson climbed the Tower once. Floor six! He still talks about it.']],
-      'cp-a': ['Smith Hal', ['Clang! Oh, hello. Mind the anvil.', 'A Whetstone from the market makes a critter hit much harder. Use it early in a long battle.']],
-      'cp-b': ['Cinda', ['The walls stay warm all night. No blankets needed in Cinderport!', 'Ashwood Trail, west of town, is full of Ember and Moss critters.']],
-      'cp-c': ['Miner Petra', ['Back from the mines. We found more glowing rocks today.', 'Stone critters love the cold. You will find them in Frost Peaks.']],
-      'cb-a': ['Keeper Morgan', ['From the top of the lighthouse I can see two roads.', 'Glacier Coast starts at the north end of the boardwalk, Reef Causeway at the south end.']],
-      'cb-b': ['Old Tam', ['Nets need mending, critters need training. Same patience.', 'A Tide Lure from the market draws out species you have never kept.']],
-      'cb-c': ["Pearl's Mum", ['Pearl is out collecting shells again.', 'She says her brother has all 48 species. I am not so sure.']]
+      'fh-a': ['Guard Brann', ['Hm? Resting my eyes. The window does the watching.', 'A hundred winters. The marks are on the wall, if you want to count them.']],
+      'fh-b': ['Trader Ylva', ['Closed for the season. Everything is folded and counted.', 'Nothing sells in a blizzard. Everything keeps.']],
+      'fh-c': ['Old Ingrid', ['Soup? There is always soup.', 'I make it for twelve. There are two of us. It keeps.']],
+      'cp-a': ['Smith Hal', ['Mind the anvil.', 'Banked for the night. In the morning it only needs breath.']],
+      'cp-b': ['Cinda', ['The walls stay warm all night. The whole town leans on the forge.', 'I sweep every morning. The jar is this week.']],
+      'cp-c': ['Miner Petra', ['Back from below. Three lamps on the hooks, four of us.', 'He will be up by supper. His lamp is still lit, down there.']],
+      'cb-a': ['Keeper Morgan', ['Two roads from the top, and the sea is the third.', 'The list on the wall. One is not crossed off. The lamp stays on for that one.']],
+      'cb-b': ['Old Tam', ['Nets tear. I mend them. They tear again.', 'Same knot ten thousand times. The sea has never once noticed.']],
+      'cb-c': ['Pearl\u2019s Mum', ['Pearl is out on the shore again.', 'Every shell on that shelf came back from somewhere. The gap is for the next one.']]
     };
     out['in-home'] = [{ id: 'mom', name: 'Mom', x: 6, y: 4, dir: 'down', kind: 'talk', pal: { h: '#8A5A34', y: '#D8574A', Y: '#A8382E' }, lines: ['Welcome home, sweetie! Did you eat?', 'Your trainer records are on the desk. I keep them tidy for you.'] }];
     out['in-lab'] = [{ id: 'remy', name: 'Lab Aide Remy', x: 3, y: 5, dir: 'down', kind: 'talk', pal: { h: '#3A2A1A', y: '#E8EEF8', Y: '#9AA3B5' }, lines: ['Professor Fern is usually just outside, greeting new trainers.', 'The Dex terminal records every species you keep. Use it any time.'] }];

@@ -42,6 +42,7 @@ with sync_playwright() as p:
   check('crossing by stopping and stepping reaches the far shore and the pool freezes for good', pg.evaluate("!!APP.game.state.adv.flags['gym:glacia']") and pg.evaluate("(()=>{const M=WORLD.map;for(let y=M.pool[1];y<=M.pool[3];y++)for(let x=M.pool[0];x<=M.pool[2];x++)if(M.grid[y][x]!=='.')return false;return true})()"), y)
   check('Glacia can be reached now', reach())
   # ================= Blaze: the fire that has to be fed =================
+  pg.wait_for_timeout(1300)   # Glacia's completion toast repeats after 0.9 s; let it pass before reading Blaze's toasts
   pg.evaluate("WORLD.enter('gym-blaze');WORLD.setPaused(false)"); pg.wait_for_timeout(400)
   check('Blaze: no object text tells the rule', not any(w in texts() for w in ['feed','carry','three','at once','must','keep it']), texts())
   check('Blaze unreachable: cold slag across the way', not reach())
