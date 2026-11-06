@@ -3878,9 +3878,9 @@ const ACT = (() => {
   }
   function dummy() { return { k: hero.k, hp: 9999, max: 9999, burn: 0, weak: 0, daze: 0, sap: 0, fort: 0, guard: false, uses: 9, abUsed: false }; }
   function tileFree(e, x, y) { return !e.solidAt(Math.floor((x - 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor((x + 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor(x / e.TS), Math.floor((y - 5) / e.TS)); }
-  function spawnOne(e, far, elem, rare) {
+  function spawnOne(e, far, elem, rare, at) {
     const cells = [], M = e.M, px = e.P.x / e.TS, py = e.P.y / e.TS;
-    for (let y = 0; y < M.H; y++) for (let x = 0; x < M.W; x++) { const t = M.grid[y][x]; if ((t === 'W' || t === 'Z') && Math.hypot(x - px, y - py) >= far) cells.push([x, y]); }
+    if (at) cells.push(at); else for (let y = 0; y < M.H; y++) for (let x = 0; x < M.W; x++) { const t = M.grid[y][x]; if ((t === 'W' || t === 'Z') && Math.hypot(x - px, y - py) >= far) cells.push([x, y]); }
     if (!cells.length) return false;
     const c = cells[Math.floor(rand() * cells.length)], isRare = rare !== undefined ? rare : M.grid[c[1]][c[0]] === 'Z', k = H.foe(elem ? [elem] : (M.types || []), lead(), isRare);
     if (!k) return false;
@@ -3889,7 +3889,8 @@ const ACT = (() => {
     return true;
   }
   let stir = 0, stirSpent = false;   // rare grass: stand in a sparkling patch and something stirs; it comes out once per visit
-  function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; stir = 0; stirSpent = false; st.atk = null; st.cd = 0; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7); }
+  function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; stir = 0; stirSpent = false; st.atk = null; st.cd = 0; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7);
+    if (wildOk(e) && e.M.id === 'town' && H.game().state.caught.length <= 1) spawnOne(e, 0, null, false, [6, 10]); }   // a new game: one wild critter waits in the grass by your door (Meaning: the first thing kept is at home)
   const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }

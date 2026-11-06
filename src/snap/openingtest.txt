@@ -10,4 +10,9 @@ ok the gate lamp burns in daylight (its level is #) | {'gate-lamp': #}
 ok the window above the door is kept lit for you at the start (by day) | None
 seconds to a wild critter within # tiles: # | to its orb in the pouch: # | to the first keep: #
 ok a real first keep happens within # s of the opening (bot, real attack, no cheats) | [#...]
+ok the bot walks from the keep to the west gate and into Moss Forest | {'Moss Forest': #}
+ok standing in the sparkling patch, something comes out of it | {'Moss Forest': #, 'the sparkling patch stirs and the rare one wakes': #}
+ok on to Mossbrook | {'Moss Forest': #, 'the sparkling patch stirs and the rare one wakes': #, 'Mossbrook': #}
+ok to Wren's door, with the action button offering the gym | [{'Moss Forest': #, 'the sparkling patch stirs and the rare one wakes': #, 'Mossbrook': #, "Wren's door": #}, 'Enter the gym']
+the second minute, seconds after the first keep: {'Moss Forest': #, 'the sparkling patch stirs and the rare one wakes': #, 'Mossbrook': #, "Wren's door": #} | party HP at the end: [#...]
 ok no page errors | []

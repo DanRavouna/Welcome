@@ -61,7 +61,7 @@ with sync_playwright() as p:
       if tOrb is None: tOrb=time.time()-t0
       pg.evaluate("WORLD.input.jx=0;WORLD.input.jy=0; document.getElementById('pouch').click()"); pg.wait_for_timeout(500)
       pg.evaluate("APP.game.renderVals().keep && APP.game.renderVals().keep()"); pg.wait_for_timeout(400)
-      if pg.evaluate("APP.game.state.caught.length")>=2: tKeep=time.time()-t0
+      if pg.evaluate("APP.game.state.caught.length")>=2: tKeep=time.time()-t0; pg.evaluate("APP.close && APP.close()"); pg.wait_for_timeout(300); pg.evaluate("WORLD.setPaused(false)")   # the card closes, the road is open again
       continue
     orb=pg.evaluate("(()=>{const o=ACT.orbs();return o.length?[o[0].x,o[0].y]:null})()")
     f=foe()
@@ -80,5 +80,49 @@ with sync_playwright() as p:
   pg.evaluate("WORLD.input.jx=0;WORLD.input.jy=0")
   print('seconds to a wild critter within 6 tiles:', None if tNear is None else round(tNear,1), '| to its orb in the pouch:', None if tOrb is None else round(tOrb,1), '| to the first keep:', None if tKeep is None else round(tKeep,1))
   check('a real first keep happens within 60 s of the opening (bot, real attack, no cheats)', tKeep is not None and tKeep<=60, [tNear, tOrb, tKeep])
+  # the second minute: from the keep to the gate, into Moss Forest, to the sparkling patch until it stirs, on to Mossbrook and Wren's door (real walking, real time)
+  def grid(): return pg.evaluate("({id:WORLD.map.id,W:WORLD.map.W,H:WORLD.map.H,g:WORLD.map.grid.map(r=>r.join(''))})")
+  def goto(tile, limit=90):
+    t=time.time(); G=grid(); last=None; still=0
+    while time.time()-t<limit:
+      st_=pg.evaluate("({p:WORLD.pos(),paused:WORLD.paused,scr:!document.getElementById('screen').hidden,dlg:!!APP.dialog,tr:WORLD.transitioning})")
+      if last and abs(st_['p']['x']-last['x'])<1 and abs(st_['p']['y']-last['y'])<1: still+=1
+      else: still=0
+      last=st_['p']
+      if still==30: print('  stuck at', [round(last['x']/32,1), round(last['y']/32,1)], 'on', G['id'], st_); 
+      if st_['dlg']: pg.evaluate("APP.advance()")
+      pos=pg.evaluate("WORLD.pos()"); a=(int(pos['x']//32),int(pos['y']//32))
+      if Math_hyp(pos,tile)<0.7: pg.evaluate("WORLD.input.jx=0;WORLD.input.jy=0"); return True
+      prev={a:None}; q=deque([a]); found=False
+      while q and not found:
+        x,y=q.popleft()
+        for dx,dy in ((1,0),(-1,0),(0,1),(0,-1)):
+          nx,ny=x+dx,y+dy
+          if 0<=nx<G['W'] and 0<=ny<G['H'] and (nx,ny) not in prev and G['g'][ny][nx] in WALK: prev[(nx,ny)]=(x,y); q.append((nx,ny))
+          if (nx,ny)==tile: found=True; break
+      if not found: print('  no path from', a, 'to', tile, 'on', G['id']); return False
+      pth=[]; c=tile
+      while c: pth.append(c); c=prev[c]
+      pth=pth[::-1]; nxt=pth[1] if len(pth)>1 else pth[0]
+      pg.evaluate("([wx,wy])=>{const p=WORLD.pos();const dx=wx-p.x,dy=wy-p.y,d=Math.hypot(dx,dy)||1;WORLD.input.jx=dx/d;WORLD.input.jy=dy/d}", [(nxt[0]+0.5)*32,(nxt[1]+0.6)*32]); pg.wait_for_timeout(90)
+    return False
+  def Math_hyp(pos,tile): return ((pos['x']/32-(tile[0]+0.5))**2+(pos['y']/32-(tile[1]+0.6))**2)**0.5
+  def cross(jx, jy, to, limit=8):
+    t=time.time(); pg.evaluate("([x,y])=>{WORLD.input.jx=x;WORLD.input.jy=y}", [jx,jy])
+    while time.time()-t<limit and pg.evaluate("WORLD.map.id")!=to: pg.wait_for_timeout(100)
+    pg.evaluate("WORLD.input.jx=0;WORLD.input.jy=0"); pg.wait_for_timeout(900); return pg.evaluate("WORLD.map.id")==to
+  T=time.time(); lap={}
+  ok=goto((1,16)) and cross(-1,0,'moss'); lap['Moss Forest']=round(time.time()-T,1)
+  check('the bot walks from the keep to the west gate and into Moss Forest', ok, lap)
+  z=pg.evaluate("WORLD.map.rare"); ok2=ok and goto((z['x']+1,z['y']+1))
+  t=time.time()
+  while ok2 and time.time()-t<20 and not pg.evaluate("ACT.stirSpent()"): pg.wait_for_timeout(200)
+  lap['the sparkling patch stirs and the rare one wakes']=round(time.time()-T,1)
+  check('standing in the sparkling patch, something comes out of it', ok2 and pg.evaluate("ACT.stirSpent()"), lap)
+  ok3=goto((1,14)) and cross(-1,0,'mossbrook'); lap['Mossbrook']=round(time.time()-T,1)
+  check('on to Mossbrook', ok3, lap)
+  d=pg.evaluate("WORLD.map.places.find(p=>p.id==='gym-wren').door"); ok4=ok3 and goto((d[0],d[1]+1)); lap["Wren's door"]=round(time.time()-T,1)
+  check("to Wren's door, with the action button offering the gym", ok4 and 'gym' in pg.inner_text('#act-label').lower(), [lap, pg.inner_text('#act-label')])
+  print('the second minute, seconds after the first keep:', lap, '| party HP at the end:', pg.evaluate("ACT.hero?[ACT.hero.hp,ACT.hero.max]:null"))
   check('no page errors', not errs, errs); b.close()
 done()
