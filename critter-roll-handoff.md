@@ -134,7 +134,7 @@ Needs Dan (cannot be done from here):
 - Which meaning the Reduce-motion player should keep (wind and smoke are off for them; the lamps and the window still show).
 
 Polish, in order of what a player would notice:
-- The small one-tile room objects may be hard to read on a phone.
+- (Looked at five rooms at phone scale, Nov 2026: the one-tile objects read at about the player's size; only the drying nets were faint and are darker now. A real phone may still say otherwise.)
 
 Process debt:
 - A mutation pass on cloud sync (`cloud.js`) has not been done; it needs the live project (`supatest.py`).
