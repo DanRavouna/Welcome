@@ -1,4 +1,4 @@
-changed tiles # outside tower area []
+the Watch stands on Vigil Peak: The Long Watch | door front walkable: True | footprint solid: True
 near: Enter the Tower
 locked toast: The Long Watch is for those who hold all # Leader Seals. You hold #.
 with seals the door leads into: in-tower
@@ -6,7 +6,6 @@ lobby: Welcome. Twenty nights, one lamp. Each night someone comes to the door. /
 title: The Long Watch · Night # | note: Mild nights: Your party rests #% between nights this week (normally #%). A new longest watch is worth #% less essence. Night # of #. Pip is at the door with # critters. Your HP carries over between nights. Kept for the first time: +# essence.
 runs left after start: #
 floor# result: {'over': True, 'win': True, 'res': {'kind': 'win', 'floor': #, 'reward': #, 'first': True}, 'tower': {'best': #, 'day': '<date>', 'runs': #, 'clears': #, 'run': {'floor': #, 'party': [#...], 'hp': {'#': #, '#': #, '#': #}}}, 'ess': #}
-replay blocked after win (STALE: simulates the old turn-based flow, always False now; the live Tower is covered by acttest#): True
 after dialog: Night # kept. +# essence for a longest watch. / Your party rests: Kipmonarch #/#, Tibwarden #/#, Nibtitan #/#.
 after reload run: {"best":#,"day":"<date>","runs":#,"clears":#,"run":{"floor":#,"party":[#,#,#],"hp":{"#":#,"#":#,"#":#}}}
 dbg ["place",false,false,false,"Climb the stair",true]

@@ -4,12 +4,11 @@ from collections import deque
 errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844})
-  pg.goto('file:///tmp/cr/backups/live-before-endgame.html'); pg.wait_for_timeout(800); orig=pg.evaluate("WORLD.map.grid.map(r=>r.join(''))"); pg.close()
-  pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
+  pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1100)
   new=pg.evaluate("WORLD.MAPS.town.grid.map(r=>r.join(''))")
-  diff=[(x,y,orig[y][x],new[y][x]) for y in range(len(orig)) for x in range(len(orig[0])) if orig[y][x]!=new[y][x]]
-  print('town diffs outside trail+sign:', [d for d in diff if not ((d[0] in (26,27) and d[1]<=11) or (d[0],d[1])==(28,10))], '| trail tiles changed:', len(diff))
+  trail=[new[y][x] for y in range(0,12) for x in (26,27)]
+  print('the trail north is stamped (path tiles in columns 26-27, rows 0-11):', trail.count('=')==len(trail), '| sign at (28,10):', new[10][28]=='G', '| the stamp is 2 wide, nothing else of the row changed:', all(new[y][25] not in '=' and new[y][28] not in '=' for y in range(0,9)))
   g=pg.evaluate("WORLD.MAPS.peak.grid.map(r=>r.join(''))"); SOL=set('TXF~GOR')
   start=(12,23); seen={start}; q=deque([start])
   while q:

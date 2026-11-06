@@ -52,6 +52,11 @@ const AMBIENT = (() => {
       make: (r) => ({ ph: r() * 9, col: ['#C9A24A', '#D9842A', '#8FBF5A', '#B04A2A'][Math.floor(r() * 4)], spin: 0.6 + r() * 0.8 }),
       step(a, dt, env) { const w = env.wind || 0; a.x += (30 + 70 * w) * dt; a.y += Math.sin(env.t * (1.2 + a.spin) + a.ph) * 14 * dt + 6 * dt; if (a.x > env.M.W * env.TS + 20) { a.x = -20; a.y = (a.home[1] + 0.5) * env.TS + (Math.random() - 0.5) * 160; } },
       draw(g, a, x, y, t) { const f = Math.floor(t * 6 + a.ph) % 4, w = f === 1 || f === 3 ? 2 : 4; R(g, x - w / 2, y - 1, w, 2, a.col); if (f === 0) R(g, x - 1, y - 2, 2, 1, a.col); } },
+    // spray off the water when it blows (Meaning, Tide Shore: what the sea gives back; the wind takes a little of it inland). Only on water, only while the map's wind is up.
+    spray: { layer: 'air', tile: (c) => c === '~', when: (tod, w, env) => (env ? env.wind : 0) > 0.3,
+      make: (r) => ({ ph: r() * 9, life: 0, rise: 10 + r() * 10 }),
+      step(a, dt, env) { const w = env.wind || 0; a.life += dt; if (a.life > 0.9) { a.life = 0; a.x = (a.home[0] + 0.5) * env.TS + (Math.random() - 0.5) * 20; a.y = (a.home[1] + 0.6) * env.TS; } a.x += (20 + 60 * w) * dt; a.y -= a.rise * dt * (1 - a.life); },
+      draw(g, a, x, y, t) { const k = 1 - a.life / 0.9; R(g, x - 1, y - 1, 2, 2, 'rgba(255,255,255,' + (0.85 * k).toFixed(2) + ')'); if (k > 0.6) R(g, x + 2, y - 3, 1, 1, 'rgba(255,255,255,' + (0.6 * k).toFixed(2) + ')'); } },
     ember: { layer: 'glow', tile: (c) => c !== '~', when: (tod, w, env) => (env ? env.wind : 0) > 0.2 || tod === 'night',
       make: (r) => ({ ph: r() * 9, life: 2 + r() * 3 }),
       step(a, dt, env) { const w = env.wind || 0; a.x += (10 + 50 * w) * dt + Math.sin(env.t * 2 + a.ph) * 8 * dt; a.y -= (16 + 10 * w) * dt; if (a.y < (a.home[1] + 0.5) * env.TS - 160 || a.x > env.M.W * env.TS + 20) { a.x = (a.home[0] + 0.5) * env.TS; a.y = (a.home[1] + 0.7) * env.TS; } },
@@ -65,11 +70,11 @@ const AMBIENT = (() => {
   // [def, count] per climate (WEATHER.region) and per-map overrides
   const BY_REGION = {
     town: [['butterfly', 8], ['bird', 4], ['firefly', 12], ['leaf', 6]], moss: [['butterfly', 10], ['bird', 4], ['firefly', 20], ['leaf', 14]],
-    frost: [['glint', 12]], peak: [['glint', 8], ['bird', 2]], ember: [['bird', 2], ['ember', 14]], tide: [['crab', 5], ['bird', 4], ['leaf', 4]]
+    frost: [['glint', 12]], peak: [['glint', 8], ['bird', 2]], ember: [['bird', 2], ['ember', 14]], tide: [['crab', 5], ['bird', 4], ['leaf', 4], ['spray', 10]]
   };
   const MAP_LIST = {
     'route-mf': [['butterfly', 6], ['bird', 3], ['firefly', 12], ['glint', 6], ['leaf', 8]], 'route-cm': [['butterfly', 7], ['bird', 2], ['firefly', 12], ['leaf', 8], ['ember', 6]],
-    'route-fc': [['glint', 8], ['crab', 3], ['bird', 2]], 'route-cc': [['crab', 5], ['bird', 3]]
+    'route-fc': [['glint', 8], ['crab', 3], ['bird', 2]], 'route-cc': [['crab', 5], ['bird', 3], ['spray', 6]]
   };
   const SPAWN = {}; let spawnFor = null, list = [];
   const rng = (s) => () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };

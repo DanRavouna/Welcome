@@ -284,7 +284,9 @@ const PXW = (() => {
       dome(R, X, Y, Wd, roofH, ['#4E8A3A', '#3E7A2E', '#5A9A44'], ol, '#7CC25C');
       for (let i = 0; i < 9; i++) { const tx = X + 6 + Math.floor(hsh(p.x + i, p.y) * (Wd - 12)), ty = Y + 6 + Math.floor(hsh(p.y + i, p.x) * (roofH - 9)); R(tx, ty - 3, 1, 3, '#7CC25C'); R(tx + 2, ty - 2, 1, 2, '#7CC25C'); if (i % 3 === 0) R(tx + 1, ty - 4, 2, 2, [roof, '#F5A3D0', '#FFFFFF'][i % 3 === 0 ? (i / 3) % 3 : 0]); }
       const tx0 = sd < 0.5 ? X - 6 : X + Wd - 4; R(tx0 - 1, Y + roofH - 8, 12, Hd - roofH + 9, ol); R(tx0, Y + roofH - 7, 10, Hd - roofH + 7, '#6E4A2E'); R(tx0 + 2, Y + roofH - 7, 2, Hd - roofH + 7, '#8A5A34');
-      [[tx0 - 10, Y + roofH - 26, 30, 22], [tx0 - 4, Y + roofH - 32, 18, 12]].forEach(([cx, cy, cw, ch]) => { R(cx - 1, cy - 1, cw + 2, ch + 2, ol); R(cx, cy, cw, ch, '#3E8A3E'); R(cx + 2, cy + 2, cw - 4, 3, '#5FBF58'); R(cx, cy, 2, 2, P.g); R(cx + cw - 2, cy, 2, 2, P.g); R(cx, cy + ch - 2, 2, 2, P.g); R(cx + cw - 2, cy + ch - 2, 2, 2, P.g); });
+      const crown = (ccx, ccy, rx, ry, dark, light) => { for (let i = -ry; i <= ry; i++) { const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (i * i) / (ry * ry)))); if (w < 1) continue; R(ccx - w - 1, ccy + i, 2 * w + 2, 1, ol); } for (let i = -ry + 1; i <= ry - 1; i++) { const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (i * i) / (ry * ry)))) - 1; if (w < 1) continue; R(ccx - w, ccy + i, 2 * w, 1, i < -ry * 0.3 ? light : dark); } };   // a round crown, row by row
+      crown(tx0 + 5, Y + roofH - 16, 17, 11, '#3E8A3E', '#5FBF58'); crown(tx0 + 9, Y + roofH - 25, 11, 7, '#3E8A3E', '#5FBF58');
+      [[tx0 - 6, Y + roofH - 12], [tx0 + 12, Y + roofH - 9], [tx0 + 3, Y + roofH - 20]].forEach(([lx, ly]) => { R(lx, ly, 3, 2, '#2E7D33'); R(lx + 1, ly - 1, 1, 1, '#2E7D33'); });   // a few darker leaf clumps
       door(12, 14, '#6B4626', true); win(X + 8, Y + roofH + 4, 12, 9, '#9CD3F5', true); win(X + Wd - 20, Y + roofH + 4, 12, 9, '#9CD3F5', true);
       R(X + Wd - 8, Y + roofH, 2, Hd - roofH - 2, '#2E7D33'); R(X + Wd - 10, Y + roofH + 6, 3, 2, '#5FBF58'); R(X + Wd - 7, Y + roofH + 14, 3, 2, '#5FBF58');   // a vine down the wall
       return;

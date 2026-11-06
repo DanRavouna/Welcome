@@ -98,6 +98,12 @@ Humans read in metaphor. The game is the greater meaning; the quest is inside it
 ## The Long Watch speaks of nights (Nov 2026)
 - Floors are nights, runs are watches, a loss is the lamp going out, the best is the longest watch, the top is morning. Visitors have plain names (`TOWER_NAMES`: Pip on night 1, Sable / Onyx / Aurora on the long nights 5, 10, 15, Vale on night 20; the `warden` flag and the floor curve are unchanged). The weekly twists are weathers of the nights: Storm nights (surge), Cold nights (iron), Mild nights (wind), Nights of one kind (mono); ids, multipliers and heal values unchanged, the rule text still states the numbers. Keeper is 'Keeper of the Watch'. Text lives in `data.js` (TWISTS, TOWER_NAMES, the Watchkeeper title), `game.js` (`towerFloor` winLines, the battle screen title, note and button), `app.js` (lobby, after-floor and pause lines), `action.js` (give-up toast), `world.js` (the Vigil Peak sign). Tests: `towertest`, `twisttest`, `acttest5` snapshots.
 
+## Wind polish (Nov 2026): flags, spray, the lamps ahead, the grove crown
+- Flags (`world.js`, after the smoke pass): one pennant on every gym hall, on the Long Watch and on the harbour lamp post in Coralbay. The tail ripples with the trees' six poses (`lastKf`, `SIN6F`), 1 px per column; with wind under 0.12 it hangs. Drawn per frame, not baked. Meaning: wind is change; the banner shows it where a fire is kept, and in the cold it hangs still.
+- Spray (`ambient.js` `spray`): white flecks off the water on Tide Shore, Coralbay and the Reef Causeway while the map's wind is over 0.3; they rise, drift east and fall back. `ambienttest` lists it.
+- Post lamps on the climbs now ease on and off even while off screen (`world.js` object loop steps every `postlamp` state before culling), so the lamps ahead are already lit when they come into view.
+- The grove houses' canopy is a round crown drawn row by row (`pxworld.js` `crown`), with a lighter top and three darker leaf clumps.
+
 ## Watch items
 - Old cached copies of the page on another device would drop the `tower` save key (and any newer field) if THEY write; this build no longer does that to others (see Save compatibility).
 - Not yet verified on a real phone: touch feel, sound, vibration, Pixelify Sans font, real cloud sync.
@@ -117,15 +123,12 @@ Needs Dan (cannot be done from here):
 - Which meaning the Reduce-motion player should keep (wind and smoke are off for them; the lamps and the window still show).
 
 Polish, in order of what a player would notice:
-- The grove houses' tree canopy is a boxy blob; the small one-tile room objects may be hard to read on a phone; the Coral lamps stand beside the road rather than across water (the causeway maps have almost no water).
-- Flags and banners that move with the wind (gyms, the Tower, the harbour); spray on the Tide Shore when it blows.
-- The climbs' lit posts only fade up while on screen.
+- The small one-tile room objects may be hard to read on a phone; the Coral lamps stand beside the road rather than across water (the causeway maps have almost no water).
 
 Process debt:
+- `peaktest` and `towertest` no longer compare against an old build (none exists); they check the trail stamp and the tower footprint directly, and `test-setup.sh` no longer fakes the old build. The two STALE checks (shinytest sprite comparison, towertest replay) are gone.
 - `guidetest`'s gold-arrow pixel check masks the player's own sprite (the cap is the same gold, `#FFD86B`); before the mask the check read 128 on every build, so its earlier 0 was not evidence. It still proves little: a redesigned arrow in another colour would pass.
-- Two stale checks print a constant False and are labelled STALE (`shinytest` sprite comparison, `towertest` "replay blocked"); rewrite or drop them.
 - A mutation pass on the older systems (saves, cloud sync, Dex, battles) to learn what the suite misses there; the only one done so far was on the revamp's new systems (5 bugs injected, 3 caught, 2 closed with `balancetest`).
 - The route-trainer balance sims (`lbal*`) were deleted; restore from git history before re-tuning route trainers.
-- `peaktest` / `towertest` "tiles changed" lines compare against the current build and prove nothing.
 
-Done this session (for orientation; details in the sections above and in the archive): the Long Watch speaks of nights; flavor lines as observations; the Sealed Arch clues as things you look at; rare grass reworked for action mode (it stirs while you stay); meaning first; help that leaves; seals and Tower reworded; signature places on every route, zone, city and climb; the deep layer on the main path; the painted world map with fast travel; wind in three passes (edge flutter, per-map wind, weather follows it, drift and smoke); four gym trials; Start over; every city house, Home, the Lab, the Shrine, the Arena and the Watch as rooms; architecture per region; the test process (snapshots, retry, `@smoke`, mutation check, handoff split).
+Done this session (for orientation; details in the sections above and in the archive): wind polish (flags, spray, lamps ahead, grove crown); the old-build comparisons and STALE checks removed; the Long Watch speaks of nights; flavor lines as observations; the Sealed Arch clues as things you look at; rare grass reworked for action mode (it stirs while you stay); meaning first; help that leaves; seals and Tower reworded; signature places on every route, zone, city and climb; the deep layer on the main path; the painted world map with fast travel; wind in three passes (edge flutter, per-map wind, weather follows it, drift and smoke); four gym trials; Start over; every city house, Home, the Lab, the Shrine, the Arena and the Watch as rooms; architecture per region; the test process (snapshots, retry, `@smoke`, mutation check, handoff split).

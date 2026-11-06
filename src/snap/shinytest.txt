@@ -1,13 +1,13 @@
-rate_first200k : 0.503%
-firstShiny : 2
+rate_first#k : #%
+pickSeedRareGrass : #%
+firstShiny : #
 name : Velwing ★
 idempotent : True
-body : ['#A1FA5C', '#A1FA5C']
-spriteDiffers_STALE_always_false : False
+body : ['#A#FA#C', '#A#FA#C']
 starters : [False, False, False]
-foeShinies : 2 of 211
-encounter seed shiny: True | sfx: [None, 'tap', 'roll', 'mythic'] | ribbon: 1 | class: burst
-0 rolls shiny keep: {'label': 'Keep (free, shiny!)', 'dis': False, 'rolls': 0}
-kept free: True | used still 20
+foeShinies : # of #
+encounter seed shiny: True | sfx: [None, 'tap', 'roll', 'mythic'] | ribbon: # | class: burst
+# rolls shiny keep: {'label': 'Keep (free, shiny!)', 'dis': False, 'rolls': #}
+kept free: True | used still #
 after reload still shiny in dex name: Velling ★
 errors: none

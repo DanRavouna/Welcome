@@ -1027,6 +1027,7 @@ const WORLD = (() => {
     const lo = 0.2 + 0.5 * c.calm; return base * Math.max(0, Math.min(1, (n - lo) / 0.25));
   }
   let gustUntil = 0, lastWind = null, windClass = 0, lastPic = null, fade = null, lastKf = 0, windPh = 0, windT = 0;
+  const SIN6F = [0, 0.87, 0.87, 0, -0.87, -0.87];   // the same six poses the trees use
   function windNow() {
     if (M.interior || M.dark || M.cave || /^dg-/.test(M.id) || (opts.still && opts.still())) return { A: 0, fps: 0, s: 0 };
     const rg = typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(M.id) : null; if (!((WINDS[rg] || { base: 0.5 }).base > 0)) return { A: 0, fps: 0, s: 0 };
@@ -1105,7 +1106,7 @@ const WORLD = (() => {
     list.forEach((it) => {
       if (it.fn) { it.fn(ctx); return; }
       if (it.p) { if (LEAD) drawCritterAt(fol, P.x + (P.ox || 0), P.y + (P.oy || 0), P.moving, cx, cy, snap, true); else drawPlayer(pxs - cx, pys - cy); return; }
-      if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy); if (ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50) return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (art) { ctx.save(); ctx.translate(ox, oy); art(ctx, 0, 0, st, tAnim, o); ctx.restore(); } return; }   // drawn from its own origin: the art snaps to a 2 px grid, which must be relative to the object, not the screen, or it jitters against the ground while the camera moves
+      if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy), far = ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50; if (far && o.kind !== 'postlamp') return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (far) return; /* a post lamp's state eases over time, so it is stepped even off screen (otherwise the lamps ahead light only once they are in view) */ if (art) { ctx.save(); ctx.translate(ox, oy); art(ctx, 0, 0, st, tAnim, o); ctx.restore(); } return; }   // drawn from its own origin: the art snaps to a 2 px grid, which must be relative to the object, not the screen, or it jitters against the ground while the camera moves
 
       if (it.f && LEAD) { drawPlayer(snap(FOL.x - cx), snap(FOL.y - cy), { x: FOL.x, y: FOL.y, dir: FOL.dir || P.dir, moving: FOL.moving, step: FOL.step || 0 }); return; }
       if (it.f) {
@@ -1155,6 +1156,14 @@ const WORLD = (() => {
       M.places.forEach((p) => { if (p.kind && p.kind !== 'house' && p.kind !== 'gym') return; const chx = (p.x + p.w) * TS - (arch === 'forge' ? (p.kind === 'gym' ? 24 : 20) : 26), chy = p.y * TS - (arch === 'forge' ? 26 : 4);
         for (let i = 0; i < 3; i++) { const ph = (tAnim * 0.35 + i / 3 + (p.x * 0.37)) % 1, sx = snap(chx - cx + Math.round((ph * 10 * (0.3 + ws) + Math.sin(tAnim * 1.5 + i) * 2) / 2) * 2), sy = snap(chy - cy - Math.round(ph * 22 / 2) * 2), sz = 4 + Math.round(ph * 3) * 2;
           if (sx < -20 || sx > vw + 20 || sy < -20 || sy > vh + 20) continue; ctx.fillStyle = arch === 'forge' ? 'rgba(90,80,80,' + (0.45 * (1 - ph)).toFixed(2) + ')' : 'rgba(240,240,248,' + (0.55 * (1 - ph)).toFixed(2) + ')'; ctx.fillRect(sx - sz / 2, sy - sz / 2, sz, sz); } }); } }
+    // flags (Meaning: wind is change; a banner shows it where a fire is kept): one pennant on every gym hall, on the Long Watch and on the harbour mast. Its tail ripples pose by pose with the trees' six-step cycle, 1 px at a time; with no wind (the cold) it hangs still.
+    if (!M.interior) { const kf = lastKf, ws = lastWind ? lastWind.s : 0, A = ws > 0.12 && !(opts.still && opts.still());
+      const flag = (fx, fy, col) => { const x = snap(fx - cx), y = snap(fy - cy); if (x < -30 || x > vw + 30 || y < -30 || y > vh + 30) return;
+        ctx.fillStyle = '#2B2235'; ctx.fillRect(x, y, 2, 16); ctx.fillStyle = '#E8D8B0'; ctx.fillRect(x, y - 2, 2, 2);
+        if (!A) { ctx.fillStyle = col; ctx.fillRect(x + 2, y, 3, 8); ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x + 4, y, 1, 8); return; }   // hanging
+        for (let j = 0; j < 8; j++) { const dy = j < 3 ? 0 : Math.round(SIN6F[(kf + j) % 6]), h = 5 - (j >> 2); ctx.fillStyle = col; ctx.fillRect(x + 2 + j, y + dy, 1, h); if (j % 3 === 2) { ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(x + 2 + j, y + dy, 1, h); } } };
+      M.places.forEach((p) => { if (p.kind === 'gym') flag((p.x + p.w) * TS - 22, p.y * TS + 2, p.color || '#F5C542'); else if (p.kind === 'tower') flag((p.x + p.w) * TS - 14, p.y * TS - 12, '#FFD86B'); });
+      (M.objects || []).forEach((o) => { if (o.kind === 'harborlamp') flag(o.x * TS + 26, o.y * TS - 10, '#D8574A'); }); }
     // weather (outdoors only), under the time-of-day tint so night darkens it too
     if (typeof WEATHER !== 'undefined') WEATHER.draw(ctx, { kind: M.interior ? null : (opts.weather ? opts.weather() : null), mapId: M.id, vw: vw, vh: vh, cx: cx, cy: cy, t: tAnim, wind: lastWind ? lastWind.s : 0, still: opts.still ? opts.still() : false });
     // time of day: tint the world (tags drawn later stay crisp)

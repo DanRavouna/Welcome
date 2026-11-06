@@ -6,15 +6,15 @@ descent # -> # bird,ember
 mossbrook # -> # butterfly,bird,firefly,leaf
 frosthold # -> # glint
 cinderport # -> # bird,ember
-coralbay # -> # crab,bird,leaf
+coralbay # -> # crab,bird,leaf,spray
 frost # -> # glint
 ember # -> # bird,ember
 moss # -> # butterfly,bird,firefly,leaf
-tide # -> # crab,bird,leaf
+tide # -> # crab,bird,leaf,spray
 route-mf # -> # butterfly,bird,firefly,glint,leaf
 route-cm # -> # butterfly,bird,firefly,leaf,ember
 route-fc # -> # glint,crab,bird
-route-cc # -> # crab,bird
+route-cc # -> # crab,bird,spray
 route-mf-gate # -> #
 route-mf-hollow # -> #
 route-mf-lookout # -> #
