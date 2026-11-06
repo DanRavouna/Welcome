@@ -6,6 +6,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(viewport={'width':390,'height':844}, device_scale_factor=2, has_touch=True)
     pg=ctx.new_page(); pg.on('pageerror', lambda e: errors.append(str(e))); pg.on('console', lambda m: errors.append(m.text) if m.type=='error' and 'ERR_NAME' not in m.text else None)
     pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
+    pg.evaluate("APP.game.update({hints:['party','shop','evolve','weather','zone','grass','keep','battle','online']})")   # no one-time tip may queue onto a toast this test reads
     # 1. reachability on every map
     r=pg.evaluate("""() => { const out={}; for (const id of Object.keys(WORLD.MAPS)) { const M=WORLD.MAPS[id]; const S=new Set(['T','X','~','F','G','O','R']);
       const solid=(x,y)=>x<0||y<0||x>=M.W||y>=M.H||S.has(M.grid[y][x]);

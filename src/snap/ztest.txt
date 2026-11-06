@@ -55,7 +55,7 @@ encounter buttons: ['Frost Peaks', 'Let it go', 'Keep (1 roll)']
 no roll button in encounter: True | seed tool hidden: True
 after keep: ['Back to exploring', 'Kept'] kept= 1
 closed: True encounter cleared: None
-out of rolls: {'screenOpen': True, 'toast': 'Tall grass hides wild critters. Keep walking through it to find one.'}
+out of rolls: {'screenOpen': True, 'toast': ''}
 species hint: Frost type · Blob body · lives in Frost Peaks
 after reload map: tide | label: Tide Shore
 errors: none
