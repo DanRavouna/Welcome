@@ -6,7 +6,7 @@ Read this first. It is deliberately short. The full per-phase history (every sys
 Humans read in metaphor. The game is the greater meaning; the quest is inside it; each level is inside the quest. Dan confirmed this reading of the existing text (he did not write the theme himself, so refine it with him rather than treat it as fixed).
 - **The game (theme): home is something someone keeps lit for you, and the journey ends when you become the one who keeps it. Dan's refinement: becoming the keeper means you no longer need someone to keep it for you.** The ending is independence, not inheritance: lighting the lamp is the moment you realise you can carry your own light. The keepers (Maren, Hale, Orlen, the hermit) held it for you until you could, so their "prove you can carry it" is letting go, not gatekeeping. The early scaffolding (Mom, the Lab, the gifted partner, Pip's tips, Mira's potions) is the being-looked-after that the game should gradually and visibly withdraw. Guard rails: being looked after is good, not weakness; carrying your own light is not being alone (home and its people stay intact at the end); withdrawn support must be felt, not look like a bug. The ninth seat (the one left out) now supports this and no longer carries it. You start looked after (Mom, the Lab, a gifted partner), cross a land full of keepers who tend dormant things for a successor, and end by lighting the lamp and taking the ninth seat, which is the one the world left out. Evidence already in the text: eight statues and an empty ninth seat with an unclaimed crown; Keeper Orlen "Eight were enough for the world, they said. The ninth was kept here, asleep"; Veilcrown (Dusk, Last Light) and Wickling (Guiding Light); Warden Maren, Forgemaster Hale and Keeper Orlen each keep something dark or cold until someone proves they can carry it; Old Marta "Four fires and one lamp, and the whole country knew where home was"; Joss: the lighthouse lamp points inland at the arch, "whoever built it wanted the door found"; and the unexplained route props (new rope, second cup, warm lantern, new stone, new ribbon, polished runners, wet skiff, empty chair) all say someone tends this for someone not yet arrived.
 - **The quest:** the four seals are four fires you are trusted to tend (not trophies); the three side places are the three things that must be kept (the seat: who is counted; the light: the way home; the fire: the work); the Peak is the long watch. Lighting the lamp is the answer to the question the game asks from the first minute.
-- **Known contradictions to resolve in the revamp:** the spine is written as conquest ("Champion", "beat me and you hold every seal"); the Tower is a floor counter with no meaning; weather lines are type trivia; the four cities and zones mean only their element; the four clue-givers are plot devices; the deep layer (keepers, ninth seat) is reachable only through side content, and Dan's first three days (about 2.5 h, level 6, two seals, no Tower, no secrets) were all on the conquest spine.
+- **The contradictions found in the first reading, and where they stand (Nov 2026):** the spine was written as conquest -> DONE (seals handed over as fires, Vigil Peak / The Long Watch / Fire-keeper / Watchkeeper); the Tower was a floor counter -> DONE as the long watch (lobby room, keeper lines; floors and rewards unchanged); the deep layer reachable only through side content -> DONE (keepers rest, lighthouse beams, Home's window, the arch glows); cities and zones meant only their element -> DONE (one signature place each, four gym trials, every house a statement, architecture per region); weather lines are type trivia -> OPEN (`flavor.js` still says "Volt critters love this weather"); the four clue-givers are plot devices -> OPEN (Edda, Dell, Joss, Neri still deliver clues as exposition; Joss and Brandt got one letting-go line each). Dan's first three days (2.5 h, level 6, two seals) were all on the conquest spine; he has not yet reported a play-through of the revamp.
 - **DRAFT meaning of each place (refine with Dan):**
   - Sproutvale: where you are kept. The lit window; the Shrine is the first thing that gives without being asked.
   - Moss Forest / Mossbrook: being tended while you grow (Elder Wren: "grow together"); first seal = first fire.
@@ -15,9 +15,9 @@ Humans read in metaphor. The game is the greater meaning; the quest is inside it
   - Tide Shore / Coralbay: what the sea gives back; return; the last fire, where the road home begins.
   - The routes: the roads between the fires, kept walkable by people you mostly never meet; every route holds one sign of someone tending.
   - The Sealed Arch / Lamp Tower / Forge Below: the seat, the light, the fire.
-  - Champion's Peak and the Tower: unresolved (a conquest ladder today). Candidate: the long watch, where the floors are nights kept, not rivals beaten.
+  - Vigil Peak and the Long Watch: the long watch, where the floors are nights kept, not rivals beaten (built: names, keeper lines, a lobby room; the floor-by-floor fight text still calls them trainers and wardens).
   - Emphasis question settled by Dan (see theme): independence, you no longer need it kept for you.
-- Revamp order proposed: (1) this section and the CLAUDE.md rule (done); (2) re-word the spine and the seals from conquest to tending without changing mechanics; (3) give every route, zone and city one meaning-bearing hand-built place instead of terrain noise; (4) decide the Tower; (5) put the deep layer on the main path in a way you can feel without being told.
+- Revamp order, all five steps done (Nov 2026): the rule and this section; the spine and seals reworded; a meaning-bearing place per route, zone and city (then the gyms as trials, then every house); the Tower decided; the deep layer on the main path. What remains is listed under "To do" at the end.
 
 ## Project
 - Original creature-collector web game, built and played entirely from Dan's phone. Critters are original (no Pokémon assets); style inspired by GBA-era pixel art + glassy modern menus.
@@ -92,7 +92,7 @@ Humans read in metaphor. The game is the greater meaning; the quest is inside it
 - `#bk-reset` in the Save panel: the first tap arms it (button reads "Erase and start over", 15 s), the second erases every `critter-roll:*` key except the device id, freezes saving (`window.__saveFrozen`) and reloads into a new game. Refused while signed in (Supabase `CLOUD.account.email`, or claude.ai mode with a connected account): the message says to sign out first, because the account copy would come straight back on reload (or an empty save could go up). Signing out already pushes progress and keeps the account's save. `CLOUD.status` getter added. Test: `resettest.py` (runs without the seed hook, in `@smoke` and `@saves`). Not verified: the signed-in refusal against a real account (`supatest` does not cover it).
 
 ## Watch items
-- Tower titles (floors 10/20) not yet shown anywhere; do it with the titles step. Old cached copies of the page on another device would drop the `tower` save key (and any newer field) if THEY write; this build no longer does that to others (see Save compatibility).
+- Old cached copies of the page on another device would drop the `tower` save key (and any newer field) if THEY write; this build no longer does that to others (see Save compatibility).
 - Not yet verified on a real phone: touch feel, sound, vibration, Pixelify Sans font, real cloud sync.
 - Early essence may feel slow after the roll rework. Leveling pace assumptions (≈Lv5 at Wren, ≈Lv13 at Coral) are estimates.
 
@@ -103,5 +103,26 @@ Humans read in metaphor. The game is the greater meaning; the quest is inside it
 - One-time hint `online` for signed-out players with 3+ critters.
 - Test: `supatest.py` (real project; see `CLAUDE.md`). Note: its seed uses a localStorage marker; a sessionStorage-based seed re-seeded mid-test under file:// and looked like data loss.
 
-## Open ideas
-Real-phone playtest. The other three gym trials, the Arena / Shrine / Long Watch interiors, the Mossbrook house interiors, ambient drift particles (leaves, snow, embers, spray, chimney smoke), flags, a GitHub Action that builds `index.html` instead of committing it (needs Pages set to "GitHub Actions" by Dan).
+## To do (kept current; Nov 2026, after the night's batch)
+Needs Dan (cannot be done from here):
+- A real-phone play-through of the revamp: Wren's trial cold (did "stay beside it" come across?), the other three gyms, the lantern road at night, Moss Forest breathing then Frost Peaks still, the new architecture in motion, smoke and leaves. Every tempo is one constant (`BED_STAGE_S` 2.5, `STILL_S` 0.8, `BURN_S` 14, `CALL_STEP` 0.7, wind `fps`), waiting on his feel.
+- GitHub Pages set to "GitHub Actions" so `index.html` can be built there instead of committed (the repo grows ~0.7 MB per push).
+- Which meaning the Reduce-motion player should keep (wind and smoke are off for them; the lamps and the window still show).
+
+Open on the meaning (the two contradictions still standing):
+- `flavor.js` weather and time remarks are type trivia ("Volt critters love this weather"); rewrite them as observations in each region's voice.
+- The four clue-givers (Edda, Dell, Joss, Neri) deliver the Sealed Arch clues as exposition; make the clues things you see at their landmarks, with the people only pointing at what is in front of them.
+- The Long Watch's floor-by-floor text ("trainers", "wardens") and the weekly twist names still speak the old language.
+
+Polish, in order of what a player would notice:
+- The grove houses' tree canopy is a boxy blob; the small one-tile room objects may be hard to read on a phone; the Coral lamps stand beside the road rather than across water (the causeway maps have almost no water).
+- Flags and banners that move with the wind (gyms, the Tower, the harbour); spray on the Tide Shore when it blows.
+- The climbs' lit posts only fade up while on screen.
+
+Process debt:
+- Two stale checks print a constant False and are labelled STALE (`shinytest` sprite comparison, `towertest` "replay blocked"); rewrite or drop them.
+- A mutation pass on the older systems (saves, cloud sync, Dex, battles) to learn what the suite misses there; the only one done so far was on the revamp's new systems (5 bugs injected, 3 caught, 2 closed with `balancetest`).
+- The route-trainer balance sims (`lbal*`) were deleted; restore from git history before re-tuning route trainers.
+- `peaktest` / `towertest` "tiles changed" lines compare against the current build and prove nothing.
+
+Done this session (for orientation; details in the sections above and in the archive): meaning first; help that leaves; seals and Tower reworded; signature places on every route, zone, city and climb; the deep layer on the main path; the painted world map with fast travel; wind in three passes (edge flutter, per-map wind, weather follows it, drift and smoke); four gym trials; Start over; every city house, Home, the Lab, the Shrine, the Arena and the Watch as rooms; architecture per region; the test process (snapshots, retry, `@smoke`, mutation check, handoff split).
