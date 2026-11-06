@@ -1,14 +1,23 @@
-Wren no longer stands in the plaza: True | she waits in the gym hall: ['wren@#,#']
-gym door leads to: ['gym-wren', [#...]]
-in the hall: tended / solved / vines gone: [#, False, False] | beds left to right (size): [#...]
-Wren reachable before the trial: False
-tend size # first (wrong): [#, False, False] | toast: The leaves droop.
-tend size #: [#, False, False]
-tend size # again (no harm): [#, False, False] | toast: It is already green.
-tend size # before # (wrong): [#, False, False] | toast: The leaves droop.
-then #, #, #, # in order: [#, True, True] | toast: The vines draw back.
-Wren reachable after the trial: True
-Wren speaks: Elder Wren / Welcome to Mos / Welcome to Mossbrook, young trainer. I am Elder Wren, leader
-after a reload (solved, vines gone): [#, True, True] | reachable: True
-old save with the Moss Seal: vines gone on entering: True | reachable: True
-errors: none
+ok Wren no longer stands in the plaza
+ok she waits in the gym hall
+ok the gym door leads inside
+ok four seedlings, a trough, vines, and no sign that explains anything | ['gbed', 'gbed', 'gbed', 'gbed', 'trough', 'vines', 'vines', 'vines', 'vines', 'brazier', 'brazier', 'brazier', 'brazier']
+ok no object text tells the rule | A seedling in turned soil. | A seedling in turned soil. | A seedling in turned soil. | A seedling in turned soil. | A stone trough. The water is clear, and it was filled today. | Vines hang across the way. | Vines hang across the way. | Vines hang across the way. | Vines hang across the way. | A brazier. The coals are warm. | A brazier. The coals are warm. | A brazier. The coals are warm. | A brazier. The coals are warm.
+ok Wren cannot be reached before the trial
+ok the action by a seedling is Tend | Tend
+ok pressing Tend kneels you by the bed | You kneel by the bed.
+ok it grows a stage after about # s of staying (not before # s, not after # s) | [#...]
+ok and blooms after about # s | [#...]
+ok in bloom it is no longer being tended
+ok bed# grew one stage while you stayed # s | #
+ok walking away ends the tending
+ok nothing grows while you are away, and nothing is lost | #
+ok coming back and tending again continues from where it was
+ok Wren is still out of reach with two beds done
+ok all four in bloom | [#...]
+ok the vines drew back and the flag is saved
+ok Wren can be reached now
+ok Wren speaks
+ok after a reload: stages kept, vines gone, Wren reachable
+ok an old save with the Moss Seal: beds in bloom, way open
+ok no page errors | []

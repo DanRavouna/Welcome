@@ -50,7 +50,9 @@ const ADV = (() => {
     return { name: 'The Sealed Arch', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [12.9, H - 1.4], exit: { edge: 's', a: 12, b: 13 }, dark: { r: 3.4 }, types: ['Dusk', 'Stone'], rate: 0.12,
       spots: { guard1: [13, 25], guard2: [13, 12], keeper: [13, 4] }, rubble: [[12, 41], [13, 41]] };
   }
-  // ---- Wren's Gym (Mossbrook): the trial of being tended. Four beds of young plants at different heights; the way north is hung with vines. Tend the smallest first (the tall ones were small once, and nothing grows unless the smallest are looked after); tend one out of order and the leaves droop and the beds start again, nothing lost. ----
+  // ---- Wren's Gym (Mossbrook): the trial of being tended. Four seedlings in a garden, a stone trough of water in the middle, the way north hung with vines, Wren beyond them.
+  // A seedling grows only while you STAY beside it (press Tend, then stand): about 2.5 s a stage, two stages to bloom. Walk away and it simply stops, keeping what it grew; nothing is ever lost.
+  // When all four bloom the vines draw back. No sign explains it: the first bed is right beside the way in, and the first try teaches it (Meaning: you grew because someone stayed with you). ----
   function wrenHall() {
     const W = 22, H = 19, rows = [], objects = [];
     for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
@@ -61,10 +63,10 @@ const ADV = (() => {
     rect(3, 8, 18, 13, '.');                 // the garden
     rect(10, 16, 11, 18, '=');               // the way in
     rect(9, 6, 12, 6, '=');                  // the way north (hung with vines)
-    [[5, 3], [8, 1], [13, 4], [16, 2]].forEach(([x, y]) => set(x, y, ','));
-    [[5, 10, 3], [8, 10, 1], [13, 10, 4], [16, 10, 2]].forEach(([x, y, size]) => objects.push({ id: 'bed' + size, kind: 'gbed', size: size, x: x, y: y, text: 'A bed of young plants.' }));
+    [[5, 3], [8, 1], [13, 4], [16, 2], [3, 13], [18, 8]].forEach(([x, y]) => set(x, y, ','));
+    [[11, 13], [4, 9], [16, 9], [8, 11]].forEach(([x, y], i) => objects.push({ id: 'bed' + (i + 1), kind: 'gbed', x: x, y: y, text: 'A seedling in turned soil.' }));   // bed1 is the one you pass on the way in
+    objects.push({ id: 'trough', kind: 'trough', x: 12, y: 10, text: 'A stone trough. The water is clear, and it was filled today.' });
     [9, 10, 11, 12].forEach((x) => objects.push({ id: 'vines' + x, kind: 'vines', gate: 'wren', x: x, y: 6, text: 'Vines hang across the way.' }));
-    objects.push({ id: 'gsign', kind: 'gsign', x: 8, y: 15, text: 'Every tall thing here was small once.' });
     [[3, 16], [18, 16], [7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'gbr' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. The coals are warm.' }));
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
     return { name: 'Wren\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'mossbrook' }, types: [], rate: 0, spots: { wren: [10, 3] } };
@@ -242,24 +244,31 @@ const ADV = (() => {
       if (st.lit) { const gl = g.createRadialGradient(x + 16, y + 11, 1, x + 16, y + 11, 26); gl.addColorStop(0, 'rgba(255,214,120,0.6)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 12, y - 14, 56, 52); }
       R(g, x + 12, y + 7, 8, 8, st.lit ? '#FFD27A' : '#3A3340');
     },
-    // a planter bed: the plants stand taller the larger o.size is (1 to 4, about 10 to 28 px); st.tended = it has been looked after (bright green with blossoms), otherwise pale and a little limp
+    // a seedling in a raised planter box: st.stage 0 (a two-leaf seedling), 1 (leafy), 2 (in bloom); st.p is the growth under way (0..1) so you SEE it rise while you stay; st.tending draws the care (green motes rising)
     gbed(g, x, y, st, t, o) {
-      const sz = o.size | 0, tend = !!st.tended, h = 4 + sz * 6, leaf = tend ? '#4FC25A' : '#C8C66A', lite = tend ? '#8FE08A' : '#E0DE90', stem = tend ? '#1F7A32' : '#8A8A44';
-      R(g, x + 1, y + 27, 30, 3, 'rgba(0,0,0,0.25)'); R(g, x + 2, y + 18, 28, 10, OL); R(g, x + 3, y + 19, 26, 8, '#8A5A32'); R(g, x + 3, y + 19, 26, 2, '#B07A46'); R(g, x + 5, y + 22, 22, 4, '#5A3A22');
-      [7, 14, 21].forEach((px, i) => { const hh = h + (i === 1 ? 4 : 0), top = y + 19 - hh; R(g, px - 1, top, 6, hh, OL); R(g, px, top, 4, hh, stem);
-        R(g, px - 4, top + 2, 12, 6, OL); R(g, px - 3, top + 3, 10, 4, leaf); R(g, px - 3, top + 3, 10, 1, lite);
-        if (sz > 1) { R(g, px - 6, top + 10, 16, 6, OL); R(g, px - 5, top + 11, 14, 4, leaf); }
-        if (tend) { R(g, px + 1, top - 3, 2, 3, '#F59ACB'); R(g, px, top - 4, 4, 2, '#FFE0F0'); } });
+      const stage = st.stage | 0, p = Math.max(0, Math.min(1, st.p || 0)), k = stage + p, tend = !!st.tending;
+      R(g, x + 1, y + 28, 30, 3, 'rgba(0,0,0,0.28)');
+      R(g, x + 1, y + 16, 30, 13, OL); R(g, x + 2, y + 17, 28, 11, '#8A5A32'); R(g, x + 2, y + 17, 28, 3, '#B07A46'); R(g, x + 2, y + 26, 28, 2, '#5E3C22');   // the box
+      R(g, x + 4, y + 20, 24, 6, OL); R(g, x + 5, y + 21, 22, 4, '#4A2E1A'); R(g, x + 6, y + 21, 20, 1, '#6E4A2E');                                             // turned soil
+      const leaf = k >= 2 ? '#4FC25A' : k >= 1 ? '#6FC865' : '#8ED878', lite = '#B8F0A0', stem = k >= 1 ? '#1F7A32' : '#3E9A3E';
+      const h = Math.round(6 + k * 7), top = y + 21 - h;                        // 6 px seedling to 20 px plant
+      R(g, x + 14, top, 4, h, OL); R(g, x + 15, top, 2, h, stem);
+      const w0 = Math.round(4 + Math.min(k, 1) * 3);                            // the first pair of leaves is there from the start
+      R(g, x + 15 - w0, top + 1, w0 + 1, 4, OL); R(g, x + 16, top + 1, w0 + 1, 4, OL); R(g, x + 15 - w0 + 1, top + 2, w0 - 1, 2, leaf); R(g, x + 17, top + 2, w0 - 1, 2, leaf); R(g, x + 15 - w0 + 1, top + 2, 2, 1, lite);
+      if (k >= 1) { const w = Math.round(4 + (Math.min(k, 2) - 1) * 4); R(g, x + 15 - w, top + 8, w + 1, 4, OL); R(g, x + 16, top + 9, w + 1, 4, OL); R(g, x + 16 - w, top + 9, w - 1, 2, leaf); R(g, x + 17, top + 10, w - 1, 2, leaf); }
+      if (stage >= 2) { [[16, top - 5], [9, top + 3], [23, top + 6]].forEach(([fx, fy]) => { R(g, x + fx - 3, fy - 1, 6, 6, OL); R(g, x + fx - 2, fy, 4, 4, '#F59ACB'); R(g, x + fx - 1, fy + 1, 2, 2, '#FFE0F0'); }); }
+      if (tend) { for (let i = 0; i < 4; i++) { const ph = (t * 0.8 + i * 0.29) % 1; R(g, x + 7 + i * 6 + Math.round(Math.sin(t * 3 + i) * 1) * 2, y + 18 - Math.round(ph * 14) * 2, 2, 2, 'rgba(170,240,150,' + (0.9 - ph * 0.8).toFixed(2) + ')'); } }
+    },
+    // a stone trough of clear water, filled today
+    trough(g, x, y, st, t, o) {
+      R(g, x + 1, y + 28, 30, 3, 'rgba(0,0,0,0.25)'); R(g, x + 1, y + 10, 30, 19, OL); R(g, x + 2, y + 11, 28, 17, '#8E98AD'); R(g, x + 2, y + 11, 28, 3, '#C9D0DC'); R(g, x + 2, y + 26, 28, 2, '#5E6678');
+      R(g, x + 5, y + 14, 22, 11, OL); R(g, x + 6, y + 15, 20, 9, '#3F8FC8'); R(g, x + 6, y + 15, 20, 2, '#5AA8F0'); const w = Math.round(Math.sin(t * 1.3 + o.x) * 2); R(g, x + 9 + w, y + 18, 7, 1, '#A8D8FF'); R(g, x + 16 - w, y + 21, 6, 1, '#A8D8FF');
     },
     // vines hung across a way: braided and heavy, with pale flowers, darker than tall grass
     vines(g, x, y, st, t, o) {
       const sw = Math.round(Math.sin(t * 1.4 + o.x) * 1);
       R(g, x, y, 32, 6, OL); R(g, x + 1, y + 1, 30, 4, '#1B4E26');
       [3, 9, 15, 21, 27].forEach((vx, i) => { const L = 28 - (i % 2) * 6; R(g, vx + x - 1 + sw, y + 4, 5, L, OL); R(g, vx + x + sw, y + 4, 3, L - 1, i % 2 ? '#2A7A38' : '#1F6A2E'); R(g, vx + x - 3 + sw, y + 9 + (i % 3) * 5, 4, 3, '#4FC25A'); R(g, vx + x + 3 + sw, y + 16 + (i % 2) * 4, 4, 3, '#4FC25A'); if (i % 2 === 0) R(g, vx + x + sw, y + 21, 3, 3, '#F4E8A0'); });
-    },
-    // a small wooden board on a post
-    gsign(g, x, y) {
-      R(g, x + 8, y + 27, 16, 3, 'rgba(0,0,0,0.22)'); R(g, x + 14, y + 14, 4, 14, '#5A4A38'); R(g, x + 5, y + 5, 22, 12, OL); R(g, x + 6, y + 6, 20, 10, '#B8935F'); R(g, x + 8, y + 9, 16, 2, '#6E5030'); R(g, x + 8, y + 12, 11, 2, '#6E5030');
     },
     // two cups on a flat stone; one still has steam
     cups(g, x, y, st, t, o) {

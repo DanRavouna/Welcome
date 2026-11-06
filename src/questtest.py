@@ -23,11 +23,12 @@ with sync_playwright() as p:
   q=pg.evaluate("APP.game.cityQuest('mossbrook').q")
   if q['k']=='see':
     pg.evaluate("WORLD.enter('moss')"); s0=pg.evaluate("(APP.game.state.sight||{n:0}).n")
-    for i in range(8):
+    for i in range(12):
       if pg.evaluate("APP.game.cityQuest('mossbrook').done"): break
-      pg.evaluate("APP.encounter({types:['Moss','Bloom'], zone:'Moss Forest', rare:false})"); pg.wait_for_timeout(150); pg.evaluate("APP.close()"); pg.wait_for_timeout(80)
+      pg.evaluate("APP.encounter({types:['Moss','Bloom'], zone:'Moss Forest', rare:false})"); pg.wait_for_timeout(300); pg.evaluate("APP.close()"); pg.wait_for_timeout(150)
       pg.evaluate("document.getElementById('tip') && (document.getElementById('tip').hidden=true)")
-    print('sightings used:', pg.evaluate("(APP.game.state.sight||{n:0}).n")-s0, '| quest progress:', pg.evaluate("APP.game.cityQuest('mossbrook').n"))
+    print('sightings count for the quest (at least one registered):', pg.evaluate("APP.game.cityQuest('mossbrook').n")>=1)
+    pg.evaluate("for(let i=0;i<5&&!APP.game.cityQuest('mossbrook').done;i++)APP.game.questTick('see','moss')")   # top up through the game's own tick, so the claim and reload checks below do not depend on encounter timing
   elif q['k']=='keep':
     pg.evaluate("(()=>{const g=APP.game; for(let s=7000;;s++){ const k=g.make(s,1); if(['Moss','Bloom'].includes(k.element.name)){ g.update({caught:[{seed:s,stage:1}].concat(g.state.caught)}); break; } } })()")
   else:

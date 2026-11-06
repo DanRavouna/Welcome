@@ -780,7 +780,7 @@ const APP = (() => {
     }
     const k = lampK[o.id] === undefined ? want : lampK[o.id]; lampK[o.id] = k + Math.sign(want - k) * Math.min(Math.abs(want - k), dt * 1.6); return { k: lampK[o.id] };
   }
-  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') { const t = advOf().flags.wg | 0; return { tended: !!advOf().flags['gym:wren'] || o.size <= t }; } if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -838,19 +838,34 @@ const APP = (() => {
   }
   // ---- the Lamp Tower: levers flip gates (open = an odd number of its levers are ON), the beacon door leads in, the great lamp ends the climb ----
   function applyLamp() { const m = WORLD.MAPS['dg-lamp']; if (!m || !m.gates) return; const f = advOf().flags; Object.keys(m.gates).forEach((gid) => WORLD.setGate('dg-lamp', gid, m.gates[gid].filter((l) => f['lv:' + l]).length % 2 === 1)); }
-  // ---- Wren's Gym: the trial of being tended (Meaning: you are tended smallest first, because that is how you were tended). Tend the beds from the smallest up; one out of order and they droop and start again (nothing lost); the vines draw back when all four are tended. Players who already beat Wren or hold her seal find the way open. ----
+  // ---- Wren's Gym: the trial of being tended (Meaning: you grew because someone stayed with you). Press Tend by a seedling, then STAY: it grows about one stage per 2.5 s, two stages to bloom.
+  // Step away and it stops, keeping what it grew (a stage is saved the moment it is reached, nothing is ever lost). All four in bloom and the vines draw back. Old saves (Wren beaten, or her seal) find the way open. ----
+  const BED_STAGE_S = 2.5, BED_REACH = 1.9; let tending = null, tendP = 0, tendStamp = 0;
   function gymWrenOpen() { const f = advOf().flags, npc = game.state.npc || {}; return !!f['gym:wren'] || (npc.cleared || []).indexOf('wren') !== -1 || (npc.seals || []).indexOf('wren') !== -1; }
-  function applyGym() { if (WORLD.MAPS['gym-wren']) WORLD.setGate('gym-wren', 'wren', gymWrenOpen()); }
-  function gbedUse(o) {
-    if (gymWrenOpen()) { toast('The beds are in bloom.'); return; }
-    const t = advOf().flags.wg | 0;
-    if (o.size <= t) { toast('It is already green.'); return; }
-    if (o.size === t + 1) {
-      advSave((a) => { a.flags.wg = t + 1; if (t + 1 >= 4) a.flags['gym:wren'] = true; }); game.sfx('tap');
-      if (t + 1 >= 4) { applyGym(); game.sfx('claim'); toast('The vines draw back.'); setTimeout(() => toast('The vines draw back.'), 900); } else toast('The sprouts straighten.');   // (twice: a tip can land on top of the first)
-      return;
+  function applyGym() { tending = null; if (WORLD.MAPS['gym-wren']) WORLD.setGate('gym-wren', 'wren', gymWrenOpen()); }
+  const bedStage = (o) => (gymWrenOpen() ? 2 : (advOf().flags['wb:' + o.id] | 0));
+  function bedState(o) {   // called every frame the bed is drawn: this is where growth happens
+    const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - tendStamp) / 1000)); if (tending === o.id) tendStamp = now;
+    let stage = bedStage(o), p = 0;
+    if (tending === o.id && stage < 2) {
+      const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5));
+      if (d > BED_REACH) { tending = null; tendP = 0; }   // you walked away: it stops, quietly
+      else {
+        tendP += dt / BED_STAGE_S;
+        if (tendP >= 1) { tendP = 0; stage += 1; const key = 'wb:' + o.id; advSave((x) => { x.flags[key] = stage; }); game.sfx('tap');
+          if (stage >= 2) { tending = null; const M = WORLD.MAPS['gym-wren'], all = (M.objects || []).filter((q) => q.kind === 'gbed').every((q) => (advOf().flags['wb:' + q.id] | 0) >= 2);
+            if (all) { advSave((x) => { x.flags['gym:wren'] = true; }); applyGym(); game.sfx('claim'); toast('The vines draw back.'); setTimeout(() => toast('The vines draw back.'), 900); } else toast('It is in bloom.'); } }
+        p = tendP;
+      }
     }
-    advSave((a) => { a.flags.wg = 0; }); game.sfx('tap'); toast('The leaves droop.');
+    return { stage: stage, p: p, tending: tending === o.id };
+  }
+  // growth happens in bedState (every frame the bed is drawn); walking so far that the bed leaves the screen must end the tending too, so a timer checks the distance as well
+  setInterval(() => { if (!tending || !WORLD.map || WORLD.map.id !== 'gym-wren') { tending = null; return; } const o = (WORLD.map.objects || []).find((q) => q.id === tending); if (!o) { tending = null; return; } const P = WORLD.pos(); if (Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)) > BED_REACH) { tending = null; tendP = 0; } }, 250);
+  function gbedUse(o) {
+    if (bedStage(o) >= 2) { toast('It is in bloom.'); return; }
+    if (tending === o.id) { toast('You are already here.'); return; }
+    tending = o.id; tendP = 0; tendStamp = performance.now(); game.sfx('tap'); toast('You kneel by the bed.');
   }
   function leverUse(o) { const key = 'lv:' + o.id, on = !advOf().flags[key]; advSave((a) => { a.flags[key] = on; }); applyLamp(); game.sfx('tap'); toast('You pull the lever. Somewhere, a gate grinds.'); }
   function beaconDoorUse() {
@@ -1173,7 +1188,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend the bed', gsign: 'Read the board', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -1328,7 +1343,7 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { trailDir = {}; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
+      onMap: (m) => { trailDir = {}; tending = null; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map
     });
@@ -1423,6 +1438,6 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { tending: () => tending, lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
