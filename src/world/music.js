@@ -26,6 +26,8 @@ const MUSIC = (() => {
       lead: 'D5 - - - F5 - A5 - | D5 - - - F5 - - . | Bb4 - - - D5 - F5 - | E5 - - - C#5 - - . | A5 - - - F5 - D5 - | G5 - - - Bb5 - D6 - | F5 - - - D5 - Bb4 - | E5 - C#5 - A4 - - .' },
     'dg-lamp': { bpm: 88, wave: 'triangle', chords: 'G Em C D G Em C D', bass: 'R . 5 . R . 5 .', drums: 'k . h . s . h .',
       lead: 'G5 - B5 - D6 - B5 - | E5 - G5 - B5 - - . | C5 - E5 - G5 - E5 - | D5 - F#5 - A5 - - . | G5 - B5 - D6 - G6 - | E6 - D6 - B5 - G5 - | C6 - B5 - A5 - G5 - | F#5 - A5 - D6 - - .' },
+    watch: { bpm: 72, wave: 'triangle', vol: 0.72, chords: 'Em C G D Em C Am B', bass: 'R - - - - - - -', drums: '. . . . . . . h',
+      lead: 'E5 - - - B5 - - - | G5 - - - - - - . | C6 - - - B5 - - - | D6 - - - - - - . | E5 - - - B5 - - - | G5 - - - E6 - - - | A5 - - - C6 - - - | B5 - - - - - - .' },   // the Watch's lobby: a lamp that does not go out, waiting
     'dg-forge': { bpm: 78, wave: 'square', duty: 0.25, chords: 'Em Em C C Am Am B B', bass: 'R . R . 5 . R .', drums: 'k . . h k . s h',
       lead: 'E5 - - - G5 - B5 - | E5 - - - D5 - - . | C5 - E5 - G5 - E5 - | D5 - C5 - B4 - - . | A4 - C5 - E5 - A5 - | G5 - E5 - C5 - - . | B4 - D#5 - F#5 - B5 - | A5 - F#5 - D#5 - - .' },
     spotted: { bpm: 160, wave: 'square', duty: 0.125, chords: 'Em Em C D Em Em C B', bass: 'R R R R R R R R', drums: 'k h k h s h k s',
@@ -51,6 +53,8 @@ const MUSIC = (() => {
     }
     return steps;
   }
+  // night versions of the place themes (Meaning: the world is quieter at night, the quiet before someone comes to a door): the same tune, slower, on a triangle wave, no drums, one bass note a bar
+  ['town', 'moss', 'frost', 'ember', 'tide', 'peak', 'mossbrook', 'frosthold', 'cinderport', 'coralbay'].forEach((id) => { const t = T[id]; T[id + '@night'] = { bpm: Math.round(t.bpm * 0.78), wave: 'triangle', chords: t.chords, bass: 'R - - - - - - -', drums: '. . . . . . . .', lead: t.lead, vol: 0.62 }; });
   Object.keys(T).forEach((k) => { T[k].steps = compile(T[k]); });
 
   let ac = null, master = null, bus = null, noise = null, cur = null, want = null, step = 0, nextT = 0, timer = null, enabled = true, hidden = false, unlocked = false;
@@ -90,8 +94,8 @@ const MUSIC = (() => {
     const t = T[cur], dt = 60 / t.bpm / 2;
     while (nextT < ac.currentTime + 0.15) {
       const e = t.steps[step % 64];
-      if (e.L) tone(t.wave, t.duty, hz(e.L[0]), nextT, e.L[1] * dt * 0.95, 0.32);
-      if (e.B !== null && e.B >= 0) { let len = 1; while (t.steps[(step + len) % 64].B === -1 && len < 8) len++; tone('triangle', 0, hz(e.B), nextT, len * dt * 0.9, 0.55); }
+      if (e.L) tone(t.wave, t.duty, hz(e.L[0]), nextT, e.L[1] * dt * 0.95, 0.32 * (t.vol || 1));
+      if (e.B !== null && e.B >= 0) { let len = 1; while (t.steps[(step + len) % 64].B === -1 && len < 8) len++; tone('triangle', 0, hz(e.B), nextT, len * dt * 0.9, 0.55 * (t.vol || 1)); }
       if (e.D !== '.') drum(e.D, nextT);
       nextT += dt; step++;
     }
@@ -135,7 +139,7 @@ const MUSIC = (() => {
       const len = sr * 0.3; noise = off.createBuffer(1, len, sr); const d = noise.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       const m = off.createGain(); m.gain.value = VOL; m.connect(off.destination); bus = off.createGain(); bus.connect(m);
       cur = id; step = 0; nextT = 0.05; const end = 64 * dt * (loops || 1);
-      while (nextT < end) { const e = t.steps[step % 64]; if (e.L) tone(t.wave, t.duty, hz(e.L[0]), nextT, e.L[1] * dt * 0.95, 0.32); if (e.B !== null && e.B >= 0) { let l = 1; while (t.steps[(step + l) % 64].B === -1 && l < 8) l++; tone('triangle', 0, hz(e.B), nextT, l * dt * 0.9, 0.55); } if (e.D !== '.') drum(e.D, nextT); nextT += dt; step++; }
+      while (nextT < end) { const e = t.steps[step % 64]; if (e.L) tone(t.wave, t.duty, hz(e.L[0]), nextT, e.L[1] * dt * 0.95, 0.32 * (t.vol || 1)); if (e.B !== null && e.B >= 0) { let l = 1; while (t.steps[(step + l) % 64].B === -1 && l < 8) l++; tone('triangle', 0, hz(e.B), nextT, l * dt * 0.9, 0.55 * (t.vol || 1)); } if (e.D !== '.') drum(e.D, nextT); nextT += dt; step++; }
       const buf = await off.startRendering();
       [ac, bus, cur, step, nextT, noise] = save; Object.keys(waves).forEach((k) => delete waves[k]);
       return buf.getChannelData(0);

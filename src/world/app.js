@@ -1317,13 +1317,16 @@ const APP = (() => {
     }, wait);
   }
   const ROUTE = { wren: ['Elder Wren', 'Mossbrook', 'west', 'Moss Forest'], glacia: ['Glacia', 'Frosthold', 'north', 'Frost Peaks'], blaze: ['Blaze', 'Cinderport', 'south', 'Ember Fields'], coral: ['Admiral Coral', 'Coralbay', 'east', 'Tide Shore'] };
+  const T_HAS = (id) => typeof MUSIC !== 'undefined' && MUSIC.tracks.indexOf(id) !== -1;
   function musicTrack() {
     const st = game.state;
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
     { const di = ACT.duelInfo(); if (di && !open) return di.boss ? 'boss' : 'battle'; }   // the Watch: only the long nights (5, 10, 15, 20) carry the heavy track; the others are nights, not bosses
     if (open && st.tab === 'battle') return st.trainer && (st.trainer.warden || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
-    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : (WORLD.map.base || WORLD.map.id)), alias = { descent: 'ember', ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
+    if (WORLD.map && WORLD.map.id === 'in-tower') return 'watch';   // the lobby: a lamp that does not go out
+    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : (WORLD.map.base || WORLD.map.id)), alias = { descent: 'ember', ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; const base = alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
+    return !WORLD.map.interior && !WORLD.map.cave && timeOfDay() === 'night' && T_HAS(base + '@night') ? base + '@night' : base;   // at night the same tune, quieter
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
