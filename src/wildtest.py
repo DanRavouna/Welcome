@@ -56,7 +56,12 @@ with sync_playwright() as p:
   for mid,oid in chests:
     pg.evaluate("(m)=>{WORLD.enter(m);WORLD.setPaused(false)}", mid); pg.wait_for_timeout(150)
     pg.evaluate("(o)=>{const ob=WORLD.objects.find(x=>x.id===o);WORLD.setPos((ob.x+0.5)*WORLD.TS,(ob.y+1.4)*WORLD.TS);WORLD.step(1/30)}", oid); pg.wait_for_timeout(200)
-    pg.click('#act'); pg.wait_for_timeout(200); t1=pg.inner_text('#toast'); pg.wait_for_timeout(300); pg.click('#act'); pg.wait_for_timeout(200); t2=pg.inner_text('#toast')
+    def act_toast(word):   # wait for the toast this press produces (a fixed 200 ms read the previous map's toast now and then)
+      pg.click('#act')
+      try: pg.wait_for_function("(w)=>document.getElementById('toast').textContent.indexOf(w)!==-1", arg=word, timeout=1500)
+      except Exception: pass
+      return pg.inner_text('#toast')
+    t1=act_toast('chest'); pg.wait_for_timeout(300); t2=act_toast('empty')
     results.append((mid+'/'+oid,'You open the chest' in t1, 'empty' in t2))
   print(f'{len(chests)} chests: each opens once and is empty after:', all(a and c for _,a,c in results), '| failed:', [r for r in results if not (r[1] and r[2])])
   # people and unexplained things

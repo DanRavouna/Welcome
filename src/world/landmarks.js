@@ -46,7 +46,7 @@ const LAND = (() => {
         R(g, X + 13, Y + 34, 6, 8, OL); R(g, X + 14, Y + 35, 4, 6, '#1E2A4A');
       } },
     // a wrecked boat on the sand
-    wreck: { w: 4, h: 2, text: 'A boat that never reached the forge town. Tide critters nest in the hull now.',
+    wreck: { w: 4, h: 2, text: 'A boat that never reached the forge town. Something lives in the hull now.',
       draw(g, X, Y, P) {
         shadow(g, X, Y, 64, 32);
         const hull = ['..........ooooooooooo.....', '.....oooooobbbbbbbbbbbo...', '..oooobbbbbbbbbbbbbbbbbbo.', '.obbbbbbbbbbbbbbddbbbbbbbo', 'obbbbbbbbbbbddbbbbbbbbbbo.', '.oobbbbbbbbbbbbbbbbbbboo..', '...ooooooooooooooooooo...'], col = { o: OL, b: '#8A5A32', d: '#5E3C22' };

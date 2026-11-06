@@ -1,0 +1,4 @@
+lines read: #
+ok nobody recites a sign (types that live here, what links what, where the gym is) | []
+ok nobody hands out tips | []
+ok no page errors | []
