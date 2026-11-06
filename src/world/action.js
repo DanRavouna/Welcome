@@ -4,6 +4,7 @@
 // Enemies are visible wild critters on maps with tall grass; they replace the random grass encounters while the mode is on.
 // world.js calls: ACT.step(env) every frame, ACT.items(env) (y-sorted drawables), ACT.drawFx(env) (slashes, numbers, bars) and ACT.active() (grass encounters off).
 const ACT = (() => {
+  const dir8 = (vx, vy) => ['right', 'downright', 'down', 'downleft', 'left', 'upleft', 'up', 'upright'][((Math.round(Math.atan2(vy, vx) / (Math.PI / 4)) % 8) + 8) % 8];
   const D7 = Math.SQRT1_2, DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0], upright: [D7, -D7], upleft: [-D7, -D7], downright: [D7, D7], downleft: [-D7, D7] };
   const CD = [0.45, 1.1, 1.4, 3.0];            // seconds: quick slash, heavy slash, guard, special
   let GH = [], H = null, hero = null, team = {}, OFF = [], orbId = 1, duel = null, armed = false, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
@@ -264,7 +265,8 @@ const ACT = (() => {
       const x = e.snap(m.x - e.cx), y = e.snap(m.y - e.cy); if (x < -40 || x > e.vw + 40 || y < -40 || y > e.vh + 60) return;
       c.fillStyle = 'rgba(10,30,10,0.28)'; c.fillRect(x - 8, y - 2, 16, 3); c.fillRect(x - 6, y - 3, 12, 5);
       const sh = m.tele > 0 ? Math.round(Math.sin(e.t * 60) * 1.5) : 0;
-      if (!(m.flash > 0 && Math.floor(m.flash * 40) % 2) && m.img && m.img.complete) { const w = 30, h = Math.round(30 * m.img.height / Math.max(1, m.img.width)); c.imageSmoothingEnabled = false; c.drawImage(m.img, Math.round(x - w / 2 + sh), Math.round(y - h), w, h); }
+      if (Math.hypot(m.dx || 0, m.dy || 0) > 0.05) m.fdir = dir8(m.dx, m.dy); const fim = H.img(m.k, m.fdir || 'down'), mim = fim && fim.complete && fim.naturalWidth ? fim : m.img;   // it faces where it moves
+      if (!(m.flash > 0 && Math.floor(m.flash * 40) % 2) && mim && mim.complete) { const w = 30, h = Math.round(30 * mim.height / Math.max(1, mim.width)); c.imageSmoothingEnabled = false; c.drawImage(mim, Math.round(x - w / 2 + sh), Math.round(y - h), w, h); }
       c.fillStyle = m.k.element.color; c.fillRect(x - 13, y - 44, 5, 5);
       if (m.s.hp < m.s.max) { c.fillStyle = '#1E2A4A'; c.fillRect(x - 13, y - 38, 26, 5); c.fillStyle = '#FF6B6B'; c.fillRect(x - 12, y - 37, Math.max(0, Math.round(24 * m.s.hp / m.s.max)), 3); }
       if (m.tele > 0) { c.fillStyle = '#D8574A'; c.fillRect(x - 2, y - 52, 4, 9); c.fillRect(x - 2, y - 41, 4, 3); }

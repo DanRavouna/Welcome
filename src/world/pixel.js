@@ -30,18 +30,34 @@ const PIX = (() => {
     g.restore();
   }
   const mix = (a, b, t) => [Math.round(a[0] + (b[0] - a[0]) * t), Math.round(a[1] + (b[1] - a[1]) * t), Math.round(a[2] + (b[2] - a[2]) * t), 1];
-  function draw(k, S, mode) {
-    const Wd = Math.round(240 * S), Ht = Math.round(210 * S);
+  // ---- facings (Dan, Nov 2026: eight directions, a real second drawing from the same parts, not a flip of the front) ----
+  // Every facing is the critter's own geometry re-arranged: the back shows the parts mirrored with no face and the tail in front of the body; the profile is the body narrowed to 0.8 with one eye and the mouth at the far edge and the tail behind; the quarter views sit between (0.92 wide, the face shifted toward the facing). Left facings mirror the right ones.
+  const FACE = { down: { c: 1, mirror: false, face: 'front' }, up: { c: 1, mirror: true, face: 'none', tailFront: true }, right: { c: 0.8, mirror: false, face: 'side', tailBack: true }, left: { c: 0.8, mirror: true, face: 'side', tailBack: true },
+    downright: { c: 0.92, mirror: false, face: 'quarter' }, downleft: { c: 0.92, mirror: true, face: 'quarter' }, upright: { c: 0.92, mirror: true, face: 'none', tailFront: true }, upleft: { c: 0.92, mirror: false, face: 'none', tailFront: true } };
+  const mirrorR = (r) => String(r).split(' / ').map((s) => { const t = s.trim().split(/\s+/); if (t.length === 1) return t[0]; if (t.length === 2) return t[1] + ' ' + t[0]; if (t.length === 3) return t[1] + ' ' + t[0] + ' ' + t[1]; return t[1] + ' ' + t[0] + ' ' + t[3] + ' ' + t[2]; }).join(' / ');
+  function geometry(k, facing) {
+    const F = FACE[facing] || FACE.down, c = F.c, body = k.body, isTail = (p) => p.x + p.w / 2 > body.x + body.w * 0.72 && p.y + p.h / 2 > body.y + body.h * 0.35;
+    const tx = (p, flip) => { let x = 120 + (p.x + p.w / 2 - 120) * c - p.w * c / 2, w = p.w * c, r = p.r, rot = p.rot || 0; if (flip) { x = 240 - x - w; r = mirrorR(r); rot = -rot; } return Object.assign({}, p, { x: x, w: w, r: r, rot: rot }); };
+    const parts = (k.parts || []).map((p) => tx(p, F.mirror !== !!(F.tailBack && isTail(p)))), over = (k.over || []).map((p) => tx(p, F.mirror)), bodyT = tx(body, F.mirror), belly = tx(k.belly, F.mirror), mouth = tx(k.mouth, F.mirror), eyeRow = tx(k.eyeRow, F.mirror);
+    const back = parts.filter((p, i) => !(F.tailFront && isTail((k.parts || [])[i]))), front = parts.filter((p, i) => F.tailFront && isTail((k.parts || [])[i]));
+    return { F: F, back: back, front: front, over: over, body: bodyT, belly: belly, mouth: mouth, eyeRow: eyeRow, shift: (F.face === 'quarter' ? 0.1 : (F.face === 'side' ? 0.28 : 0)) * bodyT.w * (F.mirror ? -1 : 1) };
+  }
+  function draw(k, S, mode, facing) {
+    const Wd = Math.round(240 * S), Ht = Math.round(210 * S), G = geometry(k, facing || 'down'), F = G.F;
     const c = document.createElement('canvas'); c.width = Wd; c.height = Ht;
     const g = c.getContext('2d'); g.scale(S, S);
     const body = parseColor(k.bodyColor), ink = parseColor('#1E2340');
     const fillOf = (bg) => (typeof bg === 'string' && bg.indexOf('gradient') !== -1) ? body : parseColor(bg);
-    (k.parts || []).forEach((p) => { if (p.bw === 0 && /rgba\(255,216,77/.test(p.bg)) return; const col = fillOf(p.bg); g.fillStyle = css(col); shape(g, p.x, p.y, p.w, p.h, p.r, p.rot); g.fill(); });
-    g.fillStyle = css(body); shape(g, k.body.x, k.body.y, k.body.w, k.body.h, k.body.r, 0); g.fill();
-    g.fillStyle = k.bellyBg; g.beginPath(); g.ellipse(k.belly.x + k.belly.w / 2, k.belly.y + k.belly.h / 2, k.belly.w / 2, k.belly.h / 2, 0, 0, 6.3); g.fill();
-    (k.over || []).forEach((o) => { g.fillStyle = o.bg; shape(g, o.x, o.y, o.w, o.h, o.r, o.rot); g.fill(); });
-    const n = k.eyes.length, s = k.eyes[0].s, total = n * s + (n - 1) * 8, sx = k.eyeRow.x + (k.eyeRow.w - total) / 2;
-    k.eyes.forEach((e, i) => {
+    const partFill = (p) => { if (p.bw === 0 && /rgba\(255,216,77/.test(p.bg)) return; const col = fillOf(p.bg); g.fillStyle = css(col); shape(g, p.x, p.y, p.w, p.h, p.r, p.rot); g.fill(); };
+    G.back.forEach(partFill);
+    g.fillStyle = css(body); shape(g, G.body.x, G.body.y, G.body.w, G.body.h, G.body.r, 0); g.fill();
+    if (F.face !== 'none') { g.fillStyle = k.bellyBg; g.beginPath(); g.ellipse(G.belly.x + G.belly.w / 2 + G.shift * 0.6, G.belly.y + G.belly.h / 2, G.belly.w / 2 * (F.face === 'side' ? 0.7 : 1), G.belly.h / 2, 0, 0, 6.3); g.fill(); }
+    else { const lo2 = mix(body, [0, 0, 0], 0.18); g.fillStyle = css(lo2); g.beginPath(); g.ellipse(G.body.x + G.body.w / 2, G.body.y + G.body.h * 0.42, G.body.w * 0.1, G.body.h * 0.3, 0, 0, 6.3); g.fill(); }   // from behind: no face, a darker line down the back
+    G.front.forEach(partFill);
+    if (F.face !== 'none') G.over.forEach((o) => { g.fillStyle = o.bg; shape(g, o.x, o.y, o.w, o.h, o.r, o.rot); g.fill(); });
+    const eyesDrawn = F.face === 'none' ? [] : (F.face === 'side' ? [k.eyes[k.eyes.length - 1]] : k.eyes);
+    const n = eyesDrawn.length, s = n ? k.eyes[0].s : 0, total = n * s + (n - 1) * 8, sx = (F.face === 'side' ? G.body.x + G.body.w * (F.mirror ? 0.2 : 0.8) - s / 2 : G.eyeRow.x + (G.eyeRow.w - total) / 2 + G.shift);
+    eyesDrawn.forEach((e, i) => {
       const ex = sx + i * (s + 8), ey = k.eyeRow.y, cxE = ex + s / 2, cyE = ey + s / 2;
       g.fillStyle = css(ink); g.beginPath(); g.arc(cxE, cyE, s / 2, 0, 6.3); g.fill();
       if (mode === 'icon') return;
@@ -50,9 +66,10 @@ const PIX = (() => {
       g.fillStyle = css(ink); g.beginPath(); g.arc(px, cyE, ps / 2 + (mode === 'icon' ? 1.5 : 0.5), 0, 6.3); g.fill();
       if (mode === 'big') { g.fillStyle = '#FFFFFF'; g.fillRect(px - ps / 2 + 0.5, cyE - ps / 2 + 0.5, Math.max(4, ps * 0.4), Math.max(4, ps * 0.4)); }
     });
-    const m = k.mouth;
+    const m = Object.assign({}, G.mouth, { x: G.mouth.x + G.shift * (F.face === 'side' ? 0.9 : 0.8), w: G.mouth.w * (F.face === 'side' ? 0.6 : 1) });
     g.fillStyle = css(ink);
-    if (m.bg === 'transparent') { g.lineWidth = 4; g.strokeStyle = css(ink); g.beginPath(); g.ellipse(m.x + m.w / 2, m.y, m.w / 2, m.h, 0, 0.15, Math.PI - 0.15); g.stroke(); }
+    if (F.face === 'none') {}
+    else if (m.bg === 'transparent') { g.lineWidth = 4; g.strokeStyle = css(ink); g.beginPath(); g.ellipse(m.x + m.w / 2, m.y, m.w / 2, m.h, 0, 0.15, Math.PI - 0.15); g.stroke(); }
     else if (m.bg === '#FFFFFF') { g.fillRect(m.x, m.y, m.w, m.h); g.fillStyle = '#FFFFFF'; g.fillRect(m.x + 3, m.y + 2, m.w - 6, m.h - 5); }
     else { g.beginPath(); g.ellipse(m.x + m.w / 2, m.y + m.h / 2, m.w / 2 + 1, Math.max(2.5, m.h / 2 + 1), 0, 0, 6.3); g.fill(); }
     // ---- pixel pass ----
@@ -88,17 +105,19 @@ const PIX = (() => {
     mark.forEach((i) => { d[i] = ol[0]; d[i + 1] = ol[1]; d[i + 2] = ol[2]; d[i + 3] = 255; });
     // mythic sparkles as crisp pixels
     if (mode === 'big' && k.fx) k.fx.forEach((f) => {
-      const x0 = Math.round((f.x + f.s / 2) * S), y0 = Math.round((f.y + f.s / 2) * S);
+      const fx0 = F.mirror ? 240 - f.x - f.s : f.x, x0 = Math.round((fx0 + f.s / 2) * S), y0 = Math.round((f.y + f.s / 2) * S);   // the sparkles turn with the facing
       [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([a, b]) => { const x = x0 + a, y = y0 + b; if (x >= 0 && y >= 0 && x < Wd && y < Ht) { const i = (y * Wd + x) * 4; const isC = a === 0 && b === 0; d[i] = 255; d[i + 1] = isC ? 255 : 216; d[i + 2] = isC ? 255 : 107; d[i + 3] = 255; } });
     });
     g.setTransform(1, 0, 0, 1, 0, 0); g.putImageData(img, 0, 0);
     return c.toDataURL();
   }
-  function sprite(k, mode) {
-    mode = mode || 'big';
-    const key = k.seed + ':' + k.stage + ':' + mode;
-    if (!cache.has(key)) cache.set(key, draw(k, mode === 'big' ? 0.25 : 0.075, mode));
+  function sprite(k, mode, facing) {
+    mode = mode || 'big'; facing = facing || 'down';
+    const key = k.seed + ':' + k.stage + ':' + mode + ':' + facing;
+    if (!cache.has(key)) cache.set(key, draw(k, mode === 'big' ? 0.25 : 0.075, mode, facing));
     return cache.get(key);
   }
-  return { sprite, radii, parseColor };
+  // what a facing does to a critter, for tests: how many eyes it draws, whether it is mirrored, how wide the body is, how many parts sit in front of the body
+  const plan = (k, facing) => { const G = geometry(k, facing || 'down'); return { face: G.F.face, eyes: G.F.face === 'none' ? 0 : (G.F.face === 'side' ? 1 : k.eyes.length), mirror: !!G.F.mirror, bodyW: Math.round(G.body.w), front: G.front.length, back: G.back.length }; };
+  return { sprite, radii, parseColor, plan, FACINGS: Object.keys(FACE) };
 })();

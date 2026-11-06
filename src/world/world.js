@@ -953,12 +953,12 @@ const WORLD = (() => {
       for (let i = -3; i <= 3; i++) { const bx = x + i * 5 + sway; ctx.fillStyle = pal.tb; ctx.fillRect(bx - 2, y - 8, 4, 10); ctx.fillStyle = t === 'Z' ? '#FFF7D6' : pal.th; ctx.fillRect(bx - 2, y - 10, 2, 4); }
     }
   }
-  function drawCritterAt(fol, wx, wy, moving, cx, cy, snap, isBody) {
+  function drawCritterAt(fol, wx, wy, moving, cx, cy, snap, isBody, dir) {
     const x = snap(wx - cx), y = snap(wy - cy), hop = moving ? Math.abs(Math.sin(tAnim * 12)) * 3 : Math.abs(Math.sin(tAnim * 2)) * 1;
-    const w = 30, h = Math.round(30 * fol.img.height / Math.max(1, fol.img.width));
+    const im = fol.imgFor ? fol.imgFor(dir || 'down') : fol.img, w = 30, h = Math.round(30 * im.height / Math.max(1, im.width));
     if (isBody) lastPlayerScreen = { x: x, y: y };
     ctx.fillStyle = 'rgba(10,30,10,0.28)'; ctx.fillRect(x - 8, y - 2, 16, 3); ctx.fillRect(x - 6, y - 3, 12, 5);
-    ctx.imageSmoothingEnabled = false; ctx.drawImage(fol.img, Math.round(x - w / 2), Math.round(y - h - hop), w, h);
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(im, Math.round(x - w / 2), Math.round(y - h - hop), w, h);
     if (fol.shiny && Math.floor(tAnim * 1.5) % 3 === 0) { const sx = x + 10 - (Math.floor(tAnim * 6) % 3) * 6, sy = y - h - 2 - hop; ctx.fillStyle = '#FFF3B0'; ctx.fillRect(sx - 1, sy - 4, 2, 8); ctx.fillRect(sx - 4, sy - 1, 8, 2); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(sx - 1, sy - 1, 2, 2); }
     if (isBody) { const t = M.grid[Math.floor(wy / TS)] && M.grid[Math.floor(wy / TS)][Math.floor(wx / TS)]; if (t === 'W' || t === 'Z') { const pal = PXW.PAL[M.id] || PXW.PAL.town, sway = rustle > 0 ? (Math.floor(tAnim * 20) % 2) * 2 : 0; for (let i = -3; i <= 3; i++) { const bx = x + i * 5 + sway; ctx.fillStyle = pal.tb; ctx.fillRect(bx - 2, y - 8, 4, 10); ctx.fillStyle = t === 'Z' ? '#FFF7D6' : pal.th; ctx.fillRect(bx - 2, y - 10, 2, 4); } } }
   }
@@ -1114,15 +1114,15 @@ const WORLD = (() => {
     list.sort((a, b) => a.y - b.y);
     list.forEach((it) => {
       if (it.fn) { it.fn(ctx); return; }
-      if (it.p) { if (LEAD) drawCritterAt(fol, P.x + (P.ox || 0), P.y + (P.oy || 0), P.moving, cx, cy, snap, true); else drawPlayer(pxs - cx, pys - cy); return; }
+      if (it.p) { if (LEAD) drawCritterAt(fol, P.x + (P.ox || 0), P.y + (P.oy || 0), P.moving, cx, cy, snap, true, P.dir); else drawPlayer(pxs - cx, pys - cy); return; }
       if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy), far = ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50; if (far && o.kind !== 'postlamp') return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (far) return; /* a post lamp's state eases over time, so it is stepped even off screen (otherwise the lamps ahead light only once they are in view) */ if (art) { ctx.save(); ctx.translate(ox, oy); art(ctx, 0, 0, st, tAnim, o); ctx.restore(); } return; }   // drawn from its own origin: the art snaps to a 2 px grid, which must be relative to the object, not the screen, or it jitters against the ground while the camera moves
 
       if (it.f && LEAD) { drawPlayer(snap(FOL.x - cx), snap(FOL.y - cy), { x: FOL.x, y: FOL.y, dir: FOL.dir || P.dir, moving: FOL.moving, step: FOL.step || 0 }); return; }
       if (it.f) {
         const x = snap(FOL.x + (FOL.ox || 0) - cx), y = snap(FOL.y + (FOL.oy || 0) - cy), hop = FOL.moving ? Math.abs(Math.sin(tAnim * 12)) * 3 : Math.abs(Math.sin(tAnim * 2)) * 1;
-        const w = 30, h = Math.round(30 * fol.img.height / Math.max(1, fol.img.width));
+        const fim = fol.imgFor ? fol.imgFor(FOL.dir || 'down') : fol.img, w = 30, h = Math.round(30 * fim.height / Math.max(1, fim.width));
         ctx.fillStyle = 'rgba(10,30,10,0.28)'; ctx.fillRect(x - 8, y - 2, 16, 3); ctx.fillRect(x - 6, y - 3, 12, 5);
-        ctx.imageSmoothingEnabled = false; ctx.drawImage(fol.img, Math.round(x - w / 2), Math.round(y - h - hop), w, h);
+        ctx.imageSmoothingEnabled = false; ctx.drawImage(fim, Math.round(x - w / 2), Math.round(y - h - hop), w, h);
         if (fol.shiny && Math.floor(tAnim * 1.5) % 3 === 0) { const sx = x + 10 - (Math.floor(tAnim * 6) % 3) * 6, sy = y - h - 2 - hop; ctx.fillStyle = '#FFF3B0'; ctx.fillRect(sx - 1, sy - 4, 2, 8); ctx.fillRect(sx - 4, sy - 1, 8, 2); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(sx - 1, sy - 1, 2, 2); }
         return;
       }

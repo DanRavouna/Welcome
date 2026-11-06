@@ -797,7 +797,7 @@ const APP = (() => {
     const st = game.state; if (!st.caught.length || window.__noFollower) return null;   // window.__noFollower is a test hook (the older turn-based suites)
       const seeds = game.partySeeds(), sd = st.caught.some((e) => e.seed === st.fighter) ? st.fighter : (seeds[0] || st.caught[0].seed), e = st.caught.find((c) => c.seed === sd);
       const key = sd + ':' + (e ? e.stage : 1);
-      if (!folCache || folCache.key !== key) { const k = game.make(sd, e ? e.stage : 1), img = new Image(); img.src = PIX.sprite(k, 'icon'); folCache = { key: key, img: img, shiny: !!k.shiny }; }
+      if (!folCache || folCache.key !== key) { const k = game.make(sd, e ? e.stage : 1), img = new Image(); img.src = PIX.sprite(k, 'icon'); const per = { down: img }; folCache = { key: key, img: img, shiny: !!k.shiny, imgFor: (d) => { if (!per[d]) { const im = new Image(); im.src = PIX.sprite(k, 'icon', d); per[d] = im; } return per[d].complete && per[d].naturalWidth ? per[d] : img; } }; }   // one image per facing, made the first time that facing is needed
       return folCache;
   }
   // the window at Home: kept lit for you at the very start and once you tend three fires; after the beacon, lit only by you, each day
@@ -1362,7 +1362,7 @@ const APP = (() => {
           const own = new Set(game.state.caught.map((c) => c.seed)); let sd = pool[Math.floor(Math.random() * pool.length)]; for (let i = 0; i < 8 && own.has(sd); i++) sd = pool[Math.floor(Math.random() * pool.length)];   // skip critters you already keep when there is a choice
           return game.make(sd, lead.stage || 1, lv);
         },
-        img: (k) => { const key = k.seed + ':' + k.stage; if (!imgs[key]) { const im = new Image(); im.src = PIX.sprite(k, 'icon'); imgs[key] = im; } return imgs[key]; },
+        img: (k, facing) => { const key = k.seed + ':' + k.stage + ':' + (facing || 'down'); if (!imgs[key]) { const im = new Image(); im.src = PIX.sprite(k, 'icon', facing || 'down'); imgs[key] = im; } return imgs[key]; },
         bench: () => {
           const st = game.state, lead = leadCache.k ? leadCache.k.seed : null;
           return (ACT.duelParty() || game.partySeeds()).filter((sd) => sd !== lead).slice(0, 2).map((sd) => { const e = st.caught.find((c) => c.seed === sd), key = sd + ':' + e.stage + ':' + (e.lv || 1); if (!benchCache[key]) benchCache[key] = game.make(sd, e.stage, e.lv || 1); return benchCache[key]; });
