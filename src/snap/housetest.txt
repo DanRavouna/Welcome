@@ -46,6 +46,14 @@ ok in-cb-c: the room holds its things | ['shellrows', 'smallbed', 'bucket']
 ok in-cb-c: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
 ok in-cb-c: nothing is a tip, everything is something to look at | Shells on a shelf in rows, each on its own square of cloth. One square is empty. | A small bed. Sand in the blanket. | A bucket by the door, still wet. | Pearl
 ok in-cb-c: every thing has a line
+ok in-home: the room holds its things | ['windowlamp', 'photo', 'cloakpeg']
+ok in-home: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-home: nothing is a tip, everything is something to look at | A lamp on the windowsill, facing the road. | A picture on the wall: two people, one much smaller, in front of this house. | Your coat on its peg. It still fits.
+ok in-home: every thing has a line
+ok in-lab: the room holds its things | ['notes', 'critterbasket']
+ok in-lab: every thing and the resident can be stood next to | [[#...], [#...], [#...]]
+ok in-lab: nothing is a tip, everything is something to look at | Pages in Fern’s hand, pinned in order. The newest ones are about a trainer with your name. | A basket with a folded blanket. Something small slept here, and wil
+ok in-lab: every thing has a line
 ok Clover's door: a kettle whistles, and nobody is said to be absent | [['house-fennel', 'A kettle whistles inside.'], ['house-moss', 'A note on the door: "Out foraging. Back by dusk."'], ['house-bryn', 'Crayon drawings of critters cover the window. Every one has stars around it.']]
 ok Bryn's door: the drawings have stars, like the ones inside
 ok by day Wil is away (hidden) | {'hidden': True, 'x': #, 'y': #}

@@ -266,7 +266,7 @@ const PXW = (() => {
     if (arch === 'forge') { R(X - 3, Y + 4, Wd + 6, roofH - 2, ol); R(X - 2, Y + 5, Wd + 4, roofH - 4, roof); R(X - 2, Y + 5, Wd + 4, 2, shade(roof, 0.3)); for (let x = X + 2; x < X + Wd - 2; x += 10) { R(x, Y + 5, 1, roofH - 4, shade(roof, -0.3)); for (let yy = Y + 8; yy < Y + roofH; yy += 6) R(x + 4, yy, 2, 2, shade(roof, 0.4)); } const cxm = X + Wd - 16; R(cxm - 1, Y - 12, 10, 18, ol); R(cxm, Y - 11, 8, 16, '#6E3424'); [[cxm + 2, Y - 17], [cxm + 5, Y - 20]].forEach(([ex, ey], i) => R(ex, ey, 2, 2, i ? '#FFD86B' : '#FF9A3A')); return; }
     dome(R, X, Y, Wd, roofH, [roof, shade(roof, -0.25)], ol, shade(roof, 0.3));
     if (arch === 'grove') for (let i = 0; i < 10; i++) { const tx = X + 8 + Math.floor(hsh(p.x + i, p.y + 3) * (Wd - 16)), ty = Y + 8 + Math.floor(hsh(p.y + i, p.x + 5) * (roofH - 12)); R(tx, ty - 3, 1, 3, '#7CC25C'); if (i % 3 === 0) R(tx + 1, ty - 4, 2, 2, '#F5A3D0'); }
-    if (arch === 'shell') for (let i = 3; i < roofH; i += 3) for (let x = X + 4 + ((i / 3) % 2) * 4; x < X + Wd - 4; x += 8) R(x, Y + i, 1, 1, '#A8D8FF');
+    if (arch === 'shell') for (let i = 3; i < roofH; i += 3) { const k = (roofH - i) / roofH, w = Math.round((Wd + 4) * Math.sqrt(Math.max(0, 1 - k * k)) / 2) * 2 - 6; for (let x = X + Wd / 2 - w / 2 + ((i / 3) % 2) * 4; x < X + Wd / 2 + w / 2; x += 8) R(x, Y + i, 1, 1, '#A8D8FF'); }
   }
   const hsh = (a, b) => ((Math.imul(a + 7, 2654435761) ^ Math.imul(b + 13, 1597334677)) >>> 0) / 4294967296;
   // dome roof rows: width follows a half ellipse, so the roof is round like a cap
@@ -312,7 +312,7 @@ const PXW = (() => {
     if (arch === 'shell') {   // Coralbay: what the sea gives back, and the road home. Whitewashed round walls, a blue tiled dome, a porthole, a shell over the door, a lamp left on beside it.
       R(X + 2, Y + roofH - 3, Wd - 4, Hd - roofH + 3, ol); R(X + 3, Y + roofH - 2, Wd - 6, Hd - roofH + 1, '#F4F0E6'); R(X + 3, Y + roofH - 2, 1, 1, ol); R(X + Wd - 4, Y + roofH - 2, 1, 1, ol); R(X + 3, Y + Hd - 2, 1, 1, ol); R(X + Wd - 4, Y + Hd - 2, 1, 1, ol);
       R(X + 3, Y + Hd - 5, Wd - 6, 1, '#B8A888'); for (let x = X + 6; x < X + Wd - 6; x += 6) R(x, Y + Hd - 5, 2, 1, '#8A7A5A');   // a rope along the base
-      dome(R, X, Y, Wd, roofH, ['#3C7FC8', '#2F6FB0', '#4A8ED8'], ol, '#9CD3F5'); for (let i = 3; i < roofH; i += 3) for (let x = X + 4 + ((i / 3) % 2) * 4; x < X + Wd - 4; x += 8) R(x, Y + i, 1, 1, '#A8D8FF');
+      dome(R, X, Y, Wd, roofH, ['#3C7FC8', '#2F6FB0', '#4A8ED8'], ol, '#9CD3F5'); for (let i = 3; i < roofH; i += 3) { const k = (roofH - i) / roofH, w = Math.round((Wd + 4) * Math.sqrt(Math.max(0, 1 - k * k)) / 2) * 2 - 6; for (let x = X + Wd / 2 - w / 2 + ((i / 3) % 2) * 4; x < X + Wd / 2 + w / 2; x += 8) R(x, Y + i, 1, 1, '#A8D8FF'); }
       const px0 = X + Wd / 2 - 5, py0 = Y + roofH + 4; R(px0 - 1, py0 - 1, 12, 12, ol); R(px0, py0, 10, 10, '#3C95DC'); [[px0 - 1, py0 - 1], [px0 + 10, py0 - 1], [px0 - 1, py0 + 10], [px0 + 10, py0 + 10]].forEach(([cx2, cy2]) => R(cx2, cy2, 1, 1, '#F4F0E6')); R(px0, py0, 10, 1, '#FFFFFF'); R(px0, py0, 1, 10, '#FFFFFF'); R(px0 + 2, py0 + 2, 2, 2, '#FFFFFF');   // the porthole
       door(12, 14, '#4A8ED8', true); R(doorX + 2, Y + Hd - 20, 8, 5, '#F5A3D0'); R(doorX + 4, Y + Hd - 21, 4, 1, '#F5A3D0'); R(doorX + 5, Y + Hd - 18, 1, 3, '#E07AB0'); R(doorX + 7, Y + Hd - 18, 1, 3, '#E07AB0');   // a shell over the door
       const lx = doorX + 18; R(lx - 2, Y + Hd - 21, 5, 6, ol); R(lx - 1, Y + Hd - 20, 3, 4, '#FFD27A'); R(lx + 3, Y + Hd - 22, 1, 7, '#4A5878'); R(lx - 4, Y + Hd - 23, 9, 1, 'rgba(255,210,120,0.45)'); R(lx - 4, Y + Hd - 14, 9, 1, 'rgba(255,210,120,0.45)');   // the lamp left on
@@ -323,7 +323,7 @@ const PXW = (() => {
     R(X + 2, Y + roofH - 3, Wd - 4, Hd - roofH + 3, ol); R(X + 3, Y + roofH - 2, Wd - 6, Hd - roofH + 1, p.wall || '#F4EAD6');
     R(X + 3, Y + roofH - 2, Wd - 6, 2, '#8A5A34'); R(X + 3, Y + roofH - 2, 2, Hd - roofH + 1, '#8A5A34'); R(X + Wd - 5, Y + roofH - 2, 2, Hd - roofH + 1, '#8A5A34'); R(X + Wd / 2 - 1, Y + roofH, 2, Hd - roofH - 1, '#A87A48');   // timber frame
     const roofD = shade(roof, -0.25), roofL = shade(roof, 0.3);
-    dome(R, X, Y, Wd, roofH, [roof, roofD], ol, roofL); for (let i = 3; i < roofH; i += 3) for (let x = X + 3 + ((i / 3) % 2) * 3; x < X + Wd - 3; x += 6) R(x, Y + i + 2, 1, 1, roofD);
+    dome(R, X, Y, Wd, roofH, [roof, roofD], ol, roofL); for (let i = 3; i < roofH; i += 3) { const k = (roofH - i - 2) / roofH, w = Math.round((Wd + 4) * Math.sqrt(Math.max(0, 1 - k * k)) / 2) * 2 - 6; for (let x = X + Wd / 2 - w / 2 + ((i / 3) % 2) * 3; x < X + Wd / 2 + w / 2; x += 6) R(x, Y + i + 2, 1, 1, roofD); }
     const cxm = X + Wd - 16; R(cxm - 1, Y - 2, 8, 12, ol); R(cxm, Y - 1, 6, 10, '#8E98AD'); R(cxm, Y - 1, 6, 2, '#B7BFCF'); R(cxm + 1, Y - 6, 2, 2, 'rgba(255,255,255,0.55)'); R(cxm + 4, Y - 9, 2, 2, 'rgba(255,255,255,0.4)');
     door(12, 14, '#8A5A34', true);
     [[X + 8, Y + roofH + 4], [X + Wd - 22, Y + roofH + 4]].forEach(([wx, wy]) => { win(wx, wy, 14, 10, '#9CD3F5', true); R(wx - 1, wy + 11, 16, 4, ol); R(wx, wy + 12, 14, 2, '#8A5A34'); [0, 4, 8, 12].forEach((fx, i) => R(wx + fx + 1, wy + 10, 2, 2, ['#F06A6A', '#FFD86B', '#F5A3D0', '#FFFFFF'][i])); });

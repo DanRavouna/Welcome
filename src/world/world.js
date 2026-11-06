@@ -652,10 +652,13 @@ const WORLD = (() => {
     MAPS[cid].arriveFrom = Object.assign({}, MAPS[cid].arriveFrom, { [id]: [p.door[0] + 0.9, p.door[1] + 1.5] });
   }));
   // Sproutvale: your home (trainer records desk) and the Lab (Dex terminal); Fern stays outside for the intro
+  // Home (Meaning: where you are kept): the lamp in the window that Mom did not light, a picture of two people one much smaller, your coat on its peg, still fitting. The Lab (being studied, and believed in): Fern's pages about a trainer with your name, a basket where small things slept and will again.
   [['home', { W: 12, H: 9, style: 'town', layout: { b: [[1, 2], [2, 2]], m: [[8, 2]], s: [[9, 2], [10, 2]], t: [[4, 5], [5, 5]], p: [[1, 7], [10, 7]], r: [3, 4, 7, 6] },
-      places: [{ id: 'desk', name: 'Trainer records', x: 8, y: 2, w: 1, h: 1, kind: 'device', door: [8, 2], open: 'badges' }] }],
+      places: [{ id: 'desk', name: 'Trainer records', x: 8, y: 2, w: 1, h: 1, kind: 'device', door: [8, 2], open: 'badges' }],
+      objects: [{ id: 'wlamp', kind: 'windowlamp', x: 5, y: 2, text: 'A lamp on the windowsill, facing the road.' }, { id: 'photo', kind: 'photo', x: 6, y: 2, text: 'A picture on the wall: two people, one much smaller, in front of this house.' }, { id: 'coat', kind: 'cloakpeg', x: 10, y: 6, text: 'Your coat on its peg. It still fits. Just.' }] }],
    ['lab', { W: 14, H: 10, style: 'lab', layout: { s: [[1, 2], [2, 2], [3, 2], [4, 2]], m: [[8, 2], [9, 2], [10, 2], [11, 2]], t: [[5, 6], [6, 6], [7, 6]], p: [[1, 8], [12, 8]], h: [[12, 5]], r: [4, 4, 9, 7] },
-      places: [{ id: 'dexpc', name: 'Dex terminal', x: 9, y: 2, w: 1, h: 1, kind: 'device', door: [9, 2], open: 'dex' }] }]].forEach(([pid, opt], i) => {
+      places: [{ id: 'dexpc', name: 'Dex terminal', x: 9, y: 2, w: 1, h: 1, kind: 'device', door: [9, 2], open: 'dex' }],
+      objects: [{ id: 'notes', kind: 'notes', x: 6, y: 2, text: 'Pages in Fern\u2019s hand, pinned in order. The newest ones are about a trainer with your name.' }, { id: 'basket', kind: 'critterbasket', x: 10, y: 8, text: 'A basket with a folded blanket. Something small slept here, and will again.' }] }]].forEach(([pid, opt], i) => {
     const P0 = MAPS.town.places.find((p) => p.id === pid), id = 'in-' + pid;
     MAPS[id] = buildInterior(id, P0, 'town', i, opt); P0.enter = id;
     MAPS.town.arriveFrom = Object.assign({}, MAPS.town.arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + 1.5] });
@@ -1022,6 +1025,7 @@ const WORLD = (() => {
     const wk = opts.weather ? opts.weather() : null; if (wk === 'storm') s = Math.min(1, s * 1.4 + 0.25); else if (wk === 'rain') s = Math.min(1, s * 1.15); else if (wk === 'fog') s *= 0.5;
     if ((opts.tint ? opts.tint() : 'day') === 'night') s *= 0.6;   // the night is calmer
     if (performance.now() < gustUntil) s = 1;
+    if (typeof window.__wind === 'number') s = window.__wind;   // test hook
     const prev = windClass, cls = s < (prev === 0 ? 0.14 : 0.1) ? 0 : (s >= (prev === 2 ? 0.66 : 0.74) ? 2 : 1); windClass = cls;   // a little hysteresis, so a strength hovering at a threshold does not flicker
     return { A: cls, fps: 1.5 + 1.5 * s, s: s };
   }
@@ -1078,7 +1082,7 @@ const WORLD = (() => {
       } });
     // ambient scenery critters + weather on the ground (ripples, whitecaps, snow caps), under the entities
     const wk = M.interior ? null : (opts.weather ? opts.weather() : null), todNow = M.interior ? 'day' : (opts.tint ? opts.tint() : 'day');
-    const ambEnv = { M: M, TS: TS, solidAt: (x, y) => solidAt(x, y), tileAt: (x, y) => (M.grid[y] ? M.grid[y][x] : 'T'), player: { x: P.x, y: P.y }, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, dt: frameDt, tod: todNow, weather: wk, still: opts.still ? opts.still() : false, on: opts.ambient ? opts.ambient() : true };
+    const ambEnv = { M: M, TS: TS, wind: lastWind ? lastWind.s : 0, solidAt: (x, y) => solidAt(x, y), tileAt: (x, y) => (M.grid[y] ? M.grid[y][x] : 'T'), player: { x: P.x, y: P.y }, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, dt: frameDt, tod: todNow, weather: wk, still: opts.still ? opts.still() : false, on: opts.ambient ? opts.ambient() : true };
     if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'ground', ambEnv);
     if (!ambEnv.still && (wk === 'rain' || wk === 'storm')) waterFx(wk, cx, cy);
     if (wk === 'snow') snowCaps(cx, cy);
@@ -1137,6 +1141,11 @@ const WORLD = (() => {
     // home: with three seals the lamp in the window is on, by day as well
     if (M.id === 'town' && opts.homeLit && opts.homeLit()) { const hp = M.places.find((q) => q.id === 'home'); if (hp) { const roofH = Math.round(hp.h * 32 * 0.5), x = snap(hp.x * TS + 16 - cx), y = snap(hp.y * TS + roofH + 8 - cy), k = 0.85 + 0.15 * Math.sin(tAnim * 1.7);
       const gr = ctx.createRadialGradient(x + 14, y + 10, 2, x + 14, y + 10, 38); gr.addColorStop(0, 'rgba(255,214,120,' + (0.6 * k).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,214,120,0)'); ctx.fillStyle = gr; ctx.fillRect(x - 28, y - 30, 84, 80); ctx.fillStyle = '#FFD86B'; ctx.fillRect(x, y, 28, 20); } }
+    // chimney smoke from the houses that keep a fire (Meaning: a lit home; the puffs lean with the wind): Sproutvale cottages, Cinderport's forge houses and the gym halls' chimneys
+    if (!M.interior && !(opts.still && opts.still())) { const arch = (PXW.PAL[M.id] || {}).arch; if (arch === 'cottage' || arch === 'forge') { const ws = lastWind ? lastWind.s : 0;
+      M.places.forEach((p) => { if (p.kind && p.kind !== 'house' && p.kind !== 'gym') return; const chx = (p.x + p.w) * TS - (arch === 'forge' ? (p.kind === 'gym' ? 24 : 20) : 26), chy = p.y * TS - (arch === 'forge' ? 26 : 4);
+        for (let i = 0; i < 3; i++) { const ph = (tAnim * 0.35 + i / 3 + (p.x * 0.37)) % 1, sx = snap(chx - cx + Math.round((ph * 10 * (0.3 + ws) + Math.sin(tAnim * 1.5 + i) * 2) / 2) * 2), sy = snap(chy - cy - Math.round(ph * 22 / 2) * 2), sz = 4 + Math.round(ph * 3) * 2;
+          if (sx < -20 || sx > vw + 20 || sy < -20 || sy > vh + 20) continue; ctx.fillStyle = arch === 'forge' ? 'rgba(90,80,80,' + (0.45 * (1 - ph)).toFixed(2) + ')' : 'rgba(240,240,248,' + (0.55 * (1 - ph)).toFixed(2) + ')'; ctx.fillRect(sx - sz / 2, sy - sz / 2, sz, sz); } }); } }
     // weather (outdoors only), under the time-of-day tint so night darkens it too
     if (typeof WEATHER !== 'undefined') WEATHER.draw(ctx, { kind: M.interior ? null : (opts.weather ? opts.weather() : null), mapId: M.id, vw: vw, vh: vh, cx: cx, cy: cy, t: tAnim, wind: lastWind ? lastWind.s : 0, still: opts.still ? opts.still() : false });
     // time of day: tint the world (tags drawn later stay crisp)

@@ -1679,6 +1679,11 @@ const ADV = (() => {
     namewall(g, x, y) { R(g, x + 2, y + 2, 28, 24, '#B8955A'); for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++) { const nx = x + 4 + c * 9, ny = y + 4 + r * 4; R(g, nx, ny, 5 + ((r + c) % 3), 1, '#5E3C22'); R(g, nx, ny + 1, 2, 1, '#5E3C22'); } },
     blanketbench(g, x, y) { R(g, x + 3, y + 27, 26, 3, 'rgba(0,0,0,0.22)'); R(g, x + 4, y + 16, 24, 5, OL); R(g, x + 5, y + 17, 22, 3, '#8F8BB4'); R(g, x + 6, y + 21, 3, 6, OL); R(g, x + 23, y + 21, 3, 6, OL); R(g, x + 8, y + 9, 14, 8, OL); R(g, x + 9, y + 10, 12, 6, '#C0503A'); R(g, x + 9, y + 12, 12, 1, '#F08070'); R(g, x + 9, y + 14, 12, 1, '#F08070'); },
     walllamp(g, x, y, st, t, o) { const k = 0.85 + 0.15 * Math.sin(t * 2 + o.x), gl = g.createRadialGradient(x + 16, y + 10, 1, x + 16, y + 10, 26); gl.addColorStop(0, 'rgba(255,220,130,' + (0.5 * k).toFixed(2) + ')'); gl.addColorStop(1, 'rgba(255,220,130,0)'); g.fillStyle = gl; g.fillRect(x - 12, y - 18, 56, 56); R(g, x + 10, y + 4, 12, 13, OL); R(g, x + 11, y + 5, 10, 11, '#FFD27A'); R(g, x + 14, y + 8, 4, 5, '#FFF6D0'); R(g, x + 13, y + 17, 6, 3, '#4A5878'); },
+    // --- home and the Lab ---
+    windowlamp(g, x, y, st, t, o) { const lit = !!st.lit; R(g, x + 4, y + 18, 24, 4, OL); R(g, x + 5, y + 19, 22, 2, '#B07A46'); R(g, x + 12, y + 8, 8, 10, OL); R(g, x + 13, y + 9, 6, 8, lit ? '#FFD27A' : '#5A5468'); R(g, x + 10, y + 5, 12, 4, OL); R(g, x + 11, y + 6, 10, 2, '#C0503A'); if (lit) { const gl = g.createRadialGradient(x + 16, y + 12, 1, x + 16, y + 12, 24); gl.addColorStop(0, 'rgba(255,214,120,0.55)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 10, y - 14, 52, 52); R(g, x + 15, y + 11, 2, 3, '#FFF6D0'); } },
+    photo(g, x, y) { R(g, x + 6, y + 4, 20, 18, OL); R(g, x + 7, y + 5, 18, 16, '#F4EAD6'); R(g, x + 8, y + 6, 16, 14, '#9CD3F5'); R(g, x + 8, y + 14, 16, 6, '#74C25C'); R(g, x + 12, y + 8, 8, 6, '#D8574A'); R(g, x + 11, y + 11, 3, 6, '#2B2F45'); R(g, x + 11, y + 9, 3, 2, '#F2C9A0'); R(g, x + 17, y + 14, 2, 4, '#2B2F45'); R(g, x + 17, y + 13, 2, 1, '#F2C9A0'); },
+    notes(g, x, y) { R(g, x + 2, y + 2, 28, 24, '#5E3C22'); [[4, 4], [13, 4], [22, 4], [6, 14], [16, 14]].forEach(([nx, ny], i) => { R(g, x + nx, y + ny, 7, 9, '#F4EAD6'); R(g, x + nx + 1, y + ny + 2, 5, 1, '#5A4A38'); R(g, x + nx + 1, y + ny + 4, 4, 1, '#5A4A38'); R(g, x + nx + 1, y + ny + 6, 5, 1, i > 2 ? '#C0503A' : '#5A4A38'); R(g, x + nx + 3, y + ny - 1, 1, 1, '#C0503A'); }); },
+    critterbasket(g, x, y) { R(g, x + 4, y + 27, 24, 3, 'rgba(0,0,0,0.22)'); R(g, x + 5, y + 14, 22, 13, OL); R(g, x + 6, y + 15, 20, 11, '#B07A46'); R(g, x + 6, y + 19, 20, 1, '#8A5A34'); R(g, x + 6, y + 23, 20, 1, '#8A5A34'); R(g, x + 8, y + 12, 16, 6, '#3C6FE0'); R(g, x + 8, y + 14, 16, 1, '#6A96F0'); R(g, x + 12, y + 10, 8, 3, '#F4EAD6'); },
     // vines hung across a way: braided and heavy, with pale flowers, darker than tall grass
     vines(g, x, y, st, t, o) {
       const sw = Math.round(Math.sin(t * 1.4 + o.x) * 1);
@@ -2090,7 +2095,7 @@ const PXW = (() => {
     if (arch === 'forge') { R(X - 3, Y + 4, Wd + 6, roofH - 2, ol); R(X - 2, Y + 5, Wd + 4, roofH - 4, roof); R(X - 2, Y + 5, Wd + 4, 2, shade(roof, 0.3)); for (let x = X + 2; x < X + Wd - 2; x += 10) { R(x, Y + 5, 1, roofH - 4, shade(roof, -0.3)); for (let yy = Y + 8; yy < Y + roofH; yy += 6) R(x + 4, yy, 2, 2, shade(roof, 0.4)); } const cxm = X + Wd - 16; R(cxm - 1, Y - 12, 10, 18, ol); R(cxm, Y - 11, 8, 16, '#6E3424'); [[cxm + 2, Y - 17], [cxm + 5, Y - 20]].forEach(([ex, ey], i) => R(ex, ey, 2, 2, i ? '#FFD86B' : '#FF9A3A')); return; }
     dome(R, X, Y, Wd, roofH, [roof, shade(roof, -0.25)], ol, shade(roof, 0.3));
     if (arch === 'grove') for (let i = 0; i < 10; i++) { const tx = X + 8 + Math.floor(hsh(p.x + i, p.y + 3) * (Wd - 16)), ty = Y + 8 + Math.floor(hsh(p.y + i, p.x + 5) * (roofH - 12)); R(tx, ty - 3, 1, 3, '#7CC25C'); if (i % 3 === 0) R(tx + 1, ty - 4, 2, 2, '#F5A3D0'); }
-    if (arch === 'shell') for (let i = 3; i < roofH; i += 3) for (let x = X + 4 + ((i / 3) % 2) * 4; x < X + Wd - 4; x += 8) R(x, Y + i, 1, 1, '#A8D8FF');
+    if (arch === 'shell') for (let i = 3; i < roofH; i += 3) { const k = (roofH - i) / roofH, w = Math.round((Wd + 4) * Math.sqrt(Math.max(0, 1 - k * k)) / 2) * 2 - 6; for (let x = X + Wd / 2 - w / 2 + ((i / 3) % 2) * 4; x < X + Wd / 2 + w / 2; x += 8) R(x, Y + i, 1, 1, '#A8D8FF'); }
   }
   const hsh = (a, b) => ((Math.imul(a + 7, 2654435761) ^ Math.imul(b + 13, 1597334677)) >>> 0) / 4294967296;
   // dome roof rows: width follows a half ellipse, so the roof is round like a cap
@@ -2136,7 +2141,7 @@ const PXW = (() => {
     if (arch === 'shell') {   // Coralbay: what the sea gives back, and the road home. Whitewashed round walls, a blue tiled dome, a porthole, a shell over the door, a lamp left on beside it.
       R(X + 2, Y + roofH - 3, Wd - 4, Hd - roofH + 3, ol); R(X + 3, Y + roofH - 2, Wd - 6, Hd - roofH + 1, '#F4F0E6'); R(X + 3, Y + roofH - 2, 1, 1, ol); R(X + Wd - 4, Y + roofH - 2, 1, 1, ol); R(X + 3, Y + Hd - 2, 1, 1, ol); R(X + Wd - 4, Y + Hd - 2, 1, 1, ol);
       R(X + 3, Y + Hd - 5, Wd - 6, 1, '#B8A888'); for (let x = X + 6; x < X + Wd - 6; x += 6) R(x, Y + Hd - 5, 2, 1, '#8A7A5A');   // a rope along the base
-      dome(R, X, Y, Wd, roofH, ['#3C7FC8', '#2F6FB0', '#4A8ED8'], ol, '#9CD3F5'); for (let i = 3; i < roofH; i += 3) for (let x = X + 4 + ((i / 3) % 2) * 4; x < X + Wd - 4; x += 8) R(x, Y + i, 1, 1, '#A8D8FF');
+      dome(R, X, Y, Wd, roofH, ['#3C7FC8', '#2F6FB0', '#4A8ED8'], ol, '#9CD3F5'); for (let i = 3; i < roofH; i += 3) { const k = (roofH - i) / roofH, w = Math.round((Wd + 4) * Math.sqrt(Math.max(0, 1 - k * k)) / 2) * 2 - 6; for (let x = X + Wd / 2 - w / 2 + ((i / 3) % 2) * 4; x < X + Wd / 2 + w / 2; x += 8) R(x, Y + i, 1, 1, '#A8D8FF'); }
       const px0 = X + Wd / 2 - 5, py0 = Y + roofH + 4; R(px0 - 1, py0 - 1, 12, 12, ol); R(px0, py0, 10, 10, '#3C95DC'); [[px0 - 1, py0 - 1], [px0 + 10, py0 - 1], [px0 - 1, py0 + 10], [px0 + 10, py0 + 10]].forEach(([cx2, cy2]) => R(cx2, cy2, 1, 1, '#F4F0E6')); R(px0, py0, 10, 1, '#FFFFFF'); R(px0, py0, 1, 10, '#FFFFFF'); R(px0 + 2, py0 + 2, 2, 2, '#FFFFFF');   // the porthole
       door(12, 14, '#4A8ED8', true); R(doorX + 2, Y + Hd - 20, 8, 5, '#F5A3D0'); R(doorX + 4, Y + Hd - 21, 4, 1, '#F5A3D0'); R(doorX + 5, Y + Hd - 18, 1, 3, '#E07AB0'); R(doorX + 7, Y + Hd - 18, 1, 3, '#E07AB0');   // a shell over the door
       const lx = doorX + 18; R(lx - 2, Y + Hd - 21, 5, 6, ol); R(lx - 1, Y + Hd - 20, 3, 4, '#FFD27A'); R(lx + 3, Y + Hd - 22, 1, 7, '#4A5878'); R(lx - 4, Y + Hd - 23, 9, 1, 'rgba(255,210,120,0.45)'); R(lx - 4, Y + Hd - 14, 9, 1, 'rgba(255,210,120,0.45)');   // the lamp left on
@@ -2147,7 +2152,7 @@ const PXW = (() => {
     R(X + 2, Y + roofH - 3, Wd - 4, Hd - roofH + 3, ol); R(X + 3, Y + roofH - 2, Wd - 6, Hd - roofH + 1, p.wall || '#F4EAD6');
     R(X + 3, Y + roofH - 2, Wd - 6, 2, '#8A5A34'); R(X + 3, Y + roofH - 2, 2, Hd - roofH + 1, '#8A5A34'); R(X + Wd - 5, Y + roofH - 2, 2, Hd - roofH + 1, '#8A5A34'); R(X + Wd / 2 - 1, Y + roofH, 2, Hd - roofH - 1, '#A87A48');   // timber frame
     const roofD = shade(roof, -0.25), roofL = shade(roof, 0.3);
-    dome(R, X, Y, Wd, roofH, [roof, roofD], ol, roofL); for (let i = 3; i < roofH; i += 3) for (let x = X + 3 + ((i / 3) % 2) * 3; x < X + Wd - 3; x += 6) R(x, Y + i + 2, 1, 1, roofD);
+    dome(R, X, Y, Wd, roofH, [roof, roofD], ol, roofL); for (let i = 3; i < roofH; i += 3) { const k = (roofH - i - 2) / roofH, w = Math.round((Wd + 4) * Math.sqrt(Math.max(0, 1 - k * k)) / 2) * 2 - 6; for (let x = X + Wd / 2 - w / 2 + ((i / 3) % 2) * 3; x < X + Wd / 2 + w / 2; x += 6) R(x, Y + i + 2, 1, 1, roofD); }
     const cxm = X + Wd - 16; R(cxm - 1, Y - 2, 8, 12, ol); R(cxm, Y - 1, 6, 10, '#8E98AD'); R(cxm, Y - 1, 6, 2, '#B7BFCF'); R(cxm + 1, Y - 6, 2, 2, 'rgba(255,255,255,0.55)'); R(cxm + 4, Y - 9, 2, 2, 'rgba(255,255,255,0.4)');
     door(12, 14, '#8A5A34', true);
     [[X + 8, Y + roofH + 4], [X + Wd - 22, Y + roofH + 4]].forEach(([wx, wy]) => { win(wx, wy, 14, 10, '#9CD3F5', true); R(wx - 1, wy + 11, 16, 4, ol); R(wx, wy + 12, 14, 2, '#8A5A34'); [0, 4, 8, 12].forEach((fx, i) => R(wx + fx + 1, wy + 10, 2, 2, ['#F06A6A', '#FFD86B', '#F5A3D0', '#FFFFFF'][i])); });
@@ -2365,6 +2370,15 @@ const AMBIENT = (() => {
         R(g, x - 7, y - 2, 14, 2, 'rgba(0,0,0,0.18)'); R(g, x - 5, y - 7, 10, 5, '#D8574A'); R(g, x - 3, y - 8, 6, 2, '#E8806A');
         R(g, x - 8, y - 9 - (a.scared ? 2 : 0), 4, 4, '#D8574A'); R(g, x + 4, y - 9 - (a.scared ? 2 : 0), 4, 4, '#D8574A'); R(g, x - 3, y - 10, 2, 2, '#1E1A24'); R(g, x + 1, y - 10, 2, 2, '#1E1A24');
         R(g, x - 7, y - 3 + w, 2, 2, '#B03A30'); R(g, x + 5, y - 3 + (1 - w), 2, 2, '#B03A30'); } },
+    // things the wind carries (Meaning: wind is change; where the air moves, something passes through). They show only while the map's wind blows (env.wind), drift east with it and come round again. The cold has none.
+    leaf: { layer: 'air', tile: (c) => c === '.' || c === ',' || c === 'T', when: (tod, w, env) => (env ? env.wind : 0) > 0.25 && w !== 'storm' && w !== 'rain',
+      make: (r) => ({ ph: r() * 9, col: ['#C9A24A', '#D9842A', '#8FBF5A', '#B04A2A'][Math.floor(r() * 4)], spin: 0.6 + r() * 0.8 }),
+      step(a, dt, env) { const w = env.wind || 0; a.x += (30 + 70 * w) * dt; a.y += Math.sin(env.t * (1.2 + a.spin) + a.ph) * 14 * dt + 6 * dt; if (a.x > env.M.W * env.TS + 20) { a.x = -20; a.y = (a.home[1] + 0.5) * env.TS + (Math.random() - 0.5) * 160; } },
+      draw(g, a, x, y, t) { const f = Math.floor(t * 6 + a.ph) % 4, w = f === 1 || f === 3 ? 2 : 4; R(g, x - w / 2, y - 1, w, 2, a.col); if (f === 0) R(g, x - 1, y - 2, 2, 1, a.col); } },
+    ember: { layer: 'glow', tile: (c) => c !== '~', when: (tod, w, env) => (env ? env.wind : 0) > 0.2 || tod === 'night',
+      make: (r) => ({ ph: r() * 9, life: 2 + r() * 3 }),
+      step(a, dt, env) { const w = env.wind || 0; a.x += (10 + 50 * w) * dt + Math.sin(env.t * 2 + a.ph) * 8 * dt; a.y -= (16 + 10 * w) * dt; if (a.y < (a.home[1] + 0.5) * env.TS - 160 || a.x > env.M.W * env.TS + 20) { a.x = (a.home[0] + 0.5) * env.TS; a.y = (a.home[1] + 0.7) * env.TS; } },
+      draw(g, a, x, y, t) { const k = 0.6 + 0.4 * Math.sin(t * 7 + a.ph); R(g, x - 1, y - 1, 2, 2, 'rgba(255,' + Math.round(120 + 60 * k) + ',40,' + (0.5 + 0.5 * k).toFixed(2) + ')'); if (k > 0.8) R(g, x - 2, y - 2, 4, 4, 'rgba(255,170,60,0.25)'); } },
     glint: { layer: 'ground', tile: (c) => c === '.', when: (tod, w) => w !== 'snow' && w !== 'fog',
       make: (r) => ({ ph: r() * 9, per: 2 + r() * 3 }),
       step() {},
@@ -2373,11 +2387,11 @@ const AMBIENT = (() => {
   };
   // [def, count] per climate (WEATHER.region) and per-map overrides
   const BY_REGION = {
-    town: [['butterfly', 8], ['bird', 4], ['firefly', 12]], moss: [['butterfly', 10], ['bird', 4], ['firefly', 20]],
-    frost: [['glint', 12]], peak: [['glint', 8], ['bird', 2]], ember: [['bird', 2]], tide: [['crab', 5], ['bird', 4]]
+    town: [['butterfly', 8], ['bird', 4], ['firefly', 12], ['leaf', 6]], moss: [['butterfly', 10], ['bird', 4], ['firefly', 20], ['leaf', 14]],
+    frost: [['glint', 12]], peak: [['glint', 8], ['bird', 2]], ember: [['bird', 2], ['ember', 14]], tide: [['crab', 5], ['bird', 4], ['leaf', 4]]
   };
   const MAP_LIST = {
-    'route-mf': [['butterfly', 6], ['bird', 3], ['firefly', 12], ['glint', 6]], 'route-cm': [['butterfly', 7], ['bird', 2], ['firefly', 12]],
+    'route-mf': [['butterfly', 6], ['bird', 3], ['firefly', 12], ['glint', 6], ['leaf', 8]], 'route-cm': [['butterfly', 7], ['bird', 2], ['firefly', 12], ['leaf', 8], ['ember', 6]],
     'route-fc': [['glint', 8], ['crab', 3], ['bird', 2]], 'route-cc': [['crab', 5], ['bird', 3]]
   };
   const SPAWN = {}; let spawnFor = null, list = [];
@@ -2399,7 +2413,7 @@ const AMBIENT = (() => {
     if (spawnFor !== env.M.id) spawn(env.M);
     list.forEach((a) => {
       const d = defs[a.kind]; if (d.layer !== layer) return;
-      const should = d.when(env.tod, env.weather) ? 1 : 0;
+      const should = d.when(env.tod, env.weather, env) ? 1 : 0;
       a.vis += Math.sign(should - a.vis) * Math.min(Math.abs(should - a.vis), env.dt / 1.2);
       if (a.vis > 0.01 || should) d.step(a, env.dt, env);
       if (a.respawn) { a.respawn = false; a.fly = 0; a.vis = 0; a.x = (a.home[0] + 0.5) * env.TS; a.y = (a.home[1] + 0.7) * env.TS; a.lift = 0; }
@@ -3064,10 +3078,13 @@ const WORLD = (() => {
     MAPS[cid].arriveFrom = Object.assign({}, MAPS[cid].arriveFrom, { [id]: [p.door[0] + 0.9, p.door[1] + 1.5] });
   }));
   // Sproutvale: your home (trainer records desk) and the Lab (Dex terminal); Fern stays outside for the intro
+  // Home (Meaning: where you are kept): the lamp in the window that Mom did not light, a picture of two people one much smaller, your coat on its peg, still fitting. The Lab (being studied, and believed in): Fern's pages about a trainer with your name, a basket where small things slept and will again.
   [['home', { W: 12, H: 9, style: 'town', layout: { b: [[1, 2], [2, 2]], m: [[8, 2]], s: [[9, 2], [10, 2]], t: [[4, 5], [5, 5]], p: [[1, 7], [10, 7]], r: [3, 4, 7, 6] },
-      places: [{ id: 'desk', name: 'Trainer records', x: 8, y: 2, w: 1, h: 1, kind: 'device', door: [8, 2], open: 'badges' }] }],
+      places: [{ id: 'desk', name: 'Trainer records', x: 8, y: 2, w: 1, h: 1, kind: 'device', door: [8, 2], open: 'badges' }],
+      objects: [{ id: 'wlamp', kind: 'windowlamp', x: 5, y: 2, text: 'A lamp on the windowsill, facing the road.' }, { id: 'photo', kind: 'photo', x: 6, y: 2, text: 'A picture on the wall: two people, one much smaller, in front of this house.' }, { id: 'coat', kind: 'cloakpeg', x: 10, y: 6, text: 'Your coat on its peg. It still fits. Just.' }] }],
    ['lab', { W: 14, H: 10, style: 'lab', layout: { s: [[1, 2], [2, 2], [3, 2], [4, 2]], m: [[8, 2], [9, 2], [10, 2], [11, 2]], t: [[5, 6], [6, 6], [7, 6]], p: [[1, 8], [12, 8]], h: [[12, 5]], r: [4, 4, 9, 7] },
-      places: [{ id: 'dexpc', name: 'Dex terminal', x: 9, y: 2, w: 1, h: 1, kind: 'device', door: [9, 2], open: 'dex' }] }]].forEach(([pid, opt], i) => {
+      places: [{ id: 'dexpc', name: 'Dex terminal', x: 9, y: 2, w: 1, h: 1, kind: 'device', door: [9, 2], open: 'dex' }],
+      objects: [{ id: 'notes', kind: 'notes', x: 6, y: 2, text: 'Pages in Fern\u2019s hand, pinned in order. The newest ones are about a trainer with your name.' }, { id: 'basket', kind: 'critterbasket', x: 10, y: 8, text: 'A basket with a folded blanket. Something small slept here, and will again.' }] }]].forEach(([pid, opt], i) => {
     const P0 = MAPS.town.places.find((p) => p.id === pid), id = 'in-' + pid;
     MAPS[id] = buildInterior(id, P0, 'town', i, opt); P0.enter = id;
     MAPS.town.arriveFrom = Object.assign({}, MAPS.town.arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + 1.5] });
@@ -3434,6 +3451,7 @@ const WORLD = (() => {
     const wk = opts.weather ? opts.weather() : null; if (wk === 'storm') s = Math.min(1, s * 1.4 + 0.25); else if (wk === 'rain') s = Math.min(1, s * 1.15); else if (wk === 'fog') s *= 0.5;
     if ((opts.tint ? opts.tint() : 'day') === 'night') s *= 0.6;   // the night is calmer
     if (performance.now() < gustUntil) s = 1;
+    if (typeof window.__wind === 'number') s = window.__wind;   // test hook
     const prev = windClass, cls = s < (prev === 0 ? 0.14 : 0.1) ? 0 : (s >= (prev === 2 ? 0.66 : 0.74) ? 2 : 1); windClass = cls;   // a little hysteresis, so a strength hovering at a threshold does not flicker
     return { A: cls, fps: 1.5 + 1.5 * s, s: s };
   }
@@ -3490,7 +3508,7 @@ const WORLD = (() => {
       } });
     // ambient scenery critters + weather on the ground (ripples, whitecaps, snow caps), under the entities
     const wk = M.interior ? null : (opts.weather ? opts.weather() : null), todNow = M.interior ? 'day' : (opts.tint ? opts.tint() : 'day');
-    const ambEnv = { M: M, TS: TS, solidAt: (x, y) => solidAt(x, y), tileAt: (x, y) => (M.grid[y] ? M.grid[y][x] : 'T'), player: { x: P.x, y: P.y }, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, dt: frameDt, tod: todNow, weather: wk, still: opts.still ? opts.still() : false, on: opts.ambient ? opts.ambient() : true };
+    const ambEnv = { M: M, TS: TS, wind: lastWind ? lastWind.s : 0, solidAt: (x, y) => solidAt(x, y), tileAt: (x, y) => (M.grid[y] ? M.grid[y][x] : 'T'), player: { x: P.x, y: P.y }, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, dt: frameDt, tod: todNow, weather: wk, still: opts.still ? opts.still() : false, on: opts.ambient ? opts.ambient() : true };
     if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'ground', ambEnv);
     if (!ambEnv.still && (wk === 'rain' || wk === 'storm')) waterFx(wk, cx, cy);
     if (wk === 'snow') snowCaps(cx, cy);
@@ -3549,6 +3567,11 @@ const WORLD = (() => {
     // home: with three seals the lamp in the window is on, by day as well
     if (M.id === 'town' && opts.homeLit && opts.homeLit()) { const hp = M.places.find((q) => q.id === 'home'); if (hp) { const roofH = Math.round(hp.h * 32 * 0.5), x = snap(hp.x * TS + 16 - cx), y = snap(hp.y * TS + roofH + 8 - cy), k = 0.85 + 0.15 * Math.sin(tAnim * 1.7);
       const gr = ctx.createRadialGradient(x + 14, y + 10, 2, x + 14, y + 10, 38); gr.addColorStop(0, 'rgba(255,214,120,' + (0.6 * k).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,214,120,0)'); ctx.fillStyle = gr; ctx.fillRect(x - 28, y - 30, 84, 80); ctx.fillStyle = '#FFD86B'; ctx.fillRect(x, y, 28, 20); } }
+    // chimney smoke from the houses that keep a fire (Meaning: a lit home; the puffs lean with the wind): Sproutvale cottages, Cinderport's forge houses and the gym halls' chimneys
+    if (!M.interior && !(opts.still && opts.still())) { const arch = (PXW.PAL[M.id] || {}).arch; if (arch === 'cottage' || arch === 'forge') { const ws = lastWind ? lastWind.s : 0;
+      M.places.forEach((p) => { if (p.kind && p.kind !== 'house' && p.kind !== 'gym') return; const chx = (p.x + p.w) * TS - (arch === 'forge' ? (p.kind === 'gym' ? 24 : 20) : 26), chy = p.y * TS - (arch === 'forge' ? 26 : 4);
+        for (let i = 0; i < 3; i++) { const ph = (tAnim * 0.35 + i / 3 + (p.x * 0.37)) % 1, sx = snap(chx - cx + Math.round((ph * 10 * (0.3 + ws) + Math.sin(tAnim * 1.5 + i) * 2) / 2) * 2), sy = snap(chy - cy - Math.round(ph * 22 / 2) * 2), sz = 4 + Math.round(ph * 3) * 2;
+          if (sx < -20 || sx > vw + 20 || sy < -20 || sy > vh + 20) continue; ctx.fillStyle = arch === 'forge' ? 'rgba(90,80,80,' + (0.45 * (1 - ph)).toFixed(2) + ')' : 'rgba(240,240,248,' + (0.55 * (1 - ph)).toFixed(2) + ')'; ctx.fillRect(sx - sz / 2, sy - sz / 2, sz, sz); } }); } }
     // weather (outdoors only), under the time-of-day tint so night darkens it too
     if (typeof WEATHER !== 'undefined') WEATHER.draw(ctx, { kind: M.interior ? null : (opts.weather ? opts.weather() : null), mapId: M.id, vw: vw, vh: vh, cx: cx, cy: cy, t: tAnim, wind: lastWind ? lastWind.s : 0, still: opts.still ? opts.still() : false });
     // time of day: tint the world (tags drawn later stay crisp)
@@ -7206,7 +7229,7 @@ const APP = (() => {
     }
     const k = lampK[o.id] === undefined ? want : lampK[o.id]; lampK[o.id] = k + Math.sign(want - k) * Math.min(Math.abs(want - k), dt * 1.6); return { k: lampK[o.id] };
   }
-  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'windowlamp') { const t = timeOfDay(); return { lit: sealCount() >= 3 || t === 'night' || t === 'dusk' }; } if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');

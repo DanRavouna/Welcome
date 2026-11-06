@@ -47,6 +47,15 @@ const AMBIENT = (() => {
         R(g, x - 7, y - 2, 14, 2, 'rgba(0,0,0,0.18)'); R(g, x - 5, y - 7, 10, 5, '#D8574A'); R(g, x - 3, y - 8, 6, 2, '#E8806A');
         R(g, x - 8, y - 9 - (a.scared ? 2 : 0), 4, 4, '#D8574A'); R(g, x + 4, y - 9 - (a.scared ? 2 : 0), 4, 4, '#D8574A'); R(g, x - 3, y - 10, 2, 2, '#1E1A24'); R(g, x + 1, y - 10, 2, 2, '#1E1A24');
         R(g, x - 7, y - 3 + w, 2, 2, '#B03A30'); R(g, x + 5, y - 3 + (1 - w), 2, 2, '#B03A30'); } },
+    // things the wind carries (Meaning: wind is change; where the air moves, something passes through). They show only while the map's wind blows (env.wind), drift east with it and come round again. The cold has none.
+    leaf: { layer: 'air', tile: (c) => c === '.' || c === ',' || c === 'T', when: (tod, w, env) => (env ? env.wind : 0) > 0.25 && w !== 'storm' && w !== 'rain',
+      make: (r) => ({ ph: r() * 9, col: ['#C9A24A', '#D9842A', '#8FBF5A', '#B04A2A'][Math.floor(r() * 4)], spin: 0.6 + r() * 0.8 }),
+      step(a, dt, env) { const w = env.wind || 0; a.x += (30 + 70 * w) * dt; a.y += Math.sin(env.t * (1.2 + a.spin) + a.ph) * 14 * dt + 6 * dt; if (a.x > env.M.W * env.TS + 20) { a.x = -20; a.y = (a.home[1] + 0.5) * env.TS + (Math.random() - 0.5) * 160; } },
+      draw(g, a, x, y, t) { const f = Math.floor(t * 6 + a.ph) % 4, w = f === 1 || f === 3 ? 2 : 4; R(g, x - w / 2, y - 1, w, 2, a.col); if (f === 0) R(g, x - 1, y - 2, 2, 1, a.col); } },
+    ember: { layer: 'glow', tile: (c) => c !== '~', when: (tod, w, env) => (env ? env.wind : 0) > 0.2 || tod === 'night',
+      make: (r) => ({ ph: r() * 9, life: 2 + r() * 3 }),
+      step(a, dt, env) { const w = env.wind || 0; a.x += (10 + 50 * w) * dt + Math.sin(env.t * 2 + a.ph) * 8 * dt; a.y -= (16 + 10 * w) * dt; if (a.y < (a.home[1] + 0.5) * env.TS - 160 || a.x > env.M.W * env.TS + 20) { a.x = (a.home[0] + 0.5) * env.TS; a.y = (a.home[1] + 0.7) * env.TS; } },
+      draw(g, a, x, y, t) { const k = 0.6 + 0.4 * Math.sin(t * 7 + a.ph); R(g, x - 1, y - 1, 2, 2, 'rgba(255,' + Math.round(120 + 60 * k) + ',40,' + (0.5 + 0.5 * k).toFixed(2) + ')'); if (k > 0.8) R(g, x - 2, y - 2, 4, 4, 'rgba(255,170,60,0.25)'); } },
     glint: { layer: 'ground', tile: (c) => c === '.', when: (tod, w) => w !== 'snow' && w !== 'fog',
       make: (r) => ({ ph: r() * 9, per: 2 + r() * 3 }),
       step() {},
@@ -55,11 +64,11 @@ const AMBIENT = (() => {
   };
   // [def, count] per climate (WEATHER.region) and per-map overrides
   const BY_REGION = {
-    town: [['butterfly', 8], ['bird', 4], ['firefly', 12]], moss: [['butterfly', 10], ['bird', 4], ['firefly', 20]],
-    frost: [['glint', 12]], peak: [['glint', 8], ['bird', 2]], ember: [['bird', 2]], tide: [['crab', 5], ['bird', 4]]
+    town: [['butterfly', 8], ['bird', 4], ['firefly', 12], ['leaf', 6]], moss: [['butterfly', 10], ['bird', 4], ['firefly', 20], ['leaf', 14]],
+    frost: [['glint', 12]], peak: [['glint', 8], ['bird', 2]], ember: [['bird', 2], ['ember', 14]], tide: [['crab', 5], ['bird', 4], ['leaf', 4]]
   };
   const MAP_LIST = {
-    'route-mf': [['butterfly', 6], ['bird', 3], ['firefly', 12], ['glint', 6]], 'route-cm': [['butterfly', 7], ['bird', 2], ['firefly', 12]],
+    'route-mf': [['butterfly', 6], ['bird', 3], ['firefly', 12], ['glint', 6], ['leaf', 8]], 'route-cm': [['butterfly', 7], ['bird', 2], ['firefly', 12], ['leaf', 8], ['ember', 6]],
     'route-fc': [['glint', 8], ['crab', 3], ['bird', 2]], 'route-cc': [['crab', 5], ['bird', 3]]
   };
   const SPAWN = {}; let spawnFor = null, list = [];
@@ -81,7 +90,7 @@ const AMBIENT = (() => {
     if (spawnFor !== env.M.id) spawn(env.M);
     list.forEach((a) => {
       const d = defs[a.kind]; if (d.layer !== layer) return;
-      const should = d.when(env.tod, env.weather) ? 1 : 0;
+      const should = d.when(env.tod, env.weather, env) ? 1 : 0;
       a.vis += Math.sign(should - a.vis) * Math.min(Math.abs(should - a.vis), env.dt / 1.2);
       if (a.vis > 0.01 || should) d.step(a, env.dt, env);
       if (a.respawn) { a.respawn = false; a.fly = 0; a.vis = 0; a.x = (a.home[0] + 0.5) * env.TS; a.y = (a.home[1] + 0.7) * env.TS; a.lift = 0; }
