@@ -2198,7 +2198,7 @@ const PXW = (() => {
     door(12, 14, '#8A5A34', true);
     [[X + 8, Y + roofH + 4], [X + Wd - 22, Y + roofH + 4]].forEach(([wx, wy]) => { win(wx, wy, 14, 10, '#9CD3F5', true); R(wx - 1, wy + 11, 16, 4, ol); R(wx, wy + 12, 14, 2, '#8A5A34'); [0, 4, 8, 12].forEach((fx, i) => R(wx + fx + 1, wy + 10, 2, 2, ['#F06A6A', '#FFD86B', '#F5A3D0', '#FFFFFF'][i])); });
   }
-  // ---- player: 16x20 sprites per direction, 3 frames ----
+  // ---- player: 16x20 sprites, eight facings, 3 frames each (frame 0 is the idle). The diagonals are the same parts re-arranged, not flips of the front: hair covers more of the face from the back quarter, the face sits off-centre on the front quarter, the near hand shows. Left facings are the right ones mirrored. ----
   const PC = { o: '#1E1A2A', h: '#2B2235', s: '#F2C9A0', e: '#1E2A4A', y: '#FFD86B', Y: '#E0A830', w: '#FFFFFF', p: '#2B2F45', b: '#F5C542', c: '#D8574A' };
   const HEAD_D = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhssssshho...', '..ohsseesesho...', '..ohssssssso....', '...ossssss o....'.replace(' ', 's'), '....oooooo......'];
   function frames(pal) {
@@ -2208,16 +2208,19 @@ const PXW = (() => {
       let head;
       if (dir === 'down') head = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhssssshho...', '..ohseesseho....', '..ohssssssho....', '...ossssss o....'.replace(' ', 'o'), '....oooooo......'];
       else if (dir === 'up') head = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhhhhhhho....', '..ohhhhhhhho....', '..ohhhhhhhho....', '...ohhhhhho.....', '....oooooo......'];
+      else if (dir === 'downright' || dir === 'downleft') head = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhhsssshho...', '..ohhsesesho....', '..ohhssssssho...', '...ohsssssso....', '....oooooo......'];   // front quarter: the face a little to the side, both eyes
+      else if (dir === 'upright' || dir === 'upleft') head = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhhhhhhso....', '..ohhhhhhhsso...', '..ohhhhhhhsso...', '...ohhhhhhso....', '....oooooo......'];   // back quarter: hair, and the edge of a cheek
       else head = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhhhsssso....', '..ohhhsssesso...', '..ohhhsssssso...', '...ohhssssso....', '....oooooo......'];
-      const bodyRows = ['...ooyyyyyoo....', '..oyywwwwwyyo...', '..oyyyyyyyyyo...', '..osyyyyyyyso...', '...oyyyyyyyo....', '....oppoppo.....'];
+      const quarter = dir === 'downright' || dir === 'downleft' || dir === 'upright' || dir === 'upleft';
+      const bodyRows = quarter ? ['...ooyyyyyoo....', '..oyyywwwwyyo...', '..oyyyyyyyyyo...', '..oyyyyyyyyso...', '...oyyyyyyyo....', '....oppoppo.....'] : ['...ooyyyyyoo....', '..oyywwwwwyyo...', '..oyyyyyyyyyo...', '..osyyyyyyyso...', '...oyyyyyyyo....', '....oppoppo.....'];   // on a quarter view only the near hand shows and the stripe sits off-centre
       const legs = [['....opo.opo.....', '....opo.opo.....', '....obo.obo.....', '....ooo.ooo.....'], ['....opo..opo....', '...opo...opo....', '...obo....obo...', '...ooo....ooo...'], ['.....opo.opo....', '....opo...opo...', '....obo...obo...', '....ooo...ooo...']][f];
       let rows = head.concat(bodyRows, legs);
       if (C.cap) { rows = rows.map((r, i) => (i < 3 ? r.replace(/h/g, 'c') : r)); rows[3] = rows[3].replace(/^(..o)hh/, '$1cc').replace(/^(..o)h/, '$1c'); }
-      if (dir === 'left') { const flip = rows.map((r) => r.split('').reverse().join('')); stamp(g, 0, 0, flip, C); }
+      if (dir === 'left' || dir === 'downleft' || dir === 'upleft') { const flip = rows.map((r) => r.split('').reverse().join('')); stamp(g, 0, 0, flip, C); }
       else stamp(g, 0, 0, rows, C);
       return c;
     };
-    const out = {}; ['down', 'up', 'left', 'right'].forEach((d) => { out[d] = [0, 1, 2].map((f) => make(d, f)); }); return out;
+    const out = {}; ['down', 'up', 'left', 'right', 'downright', 'downleft', 'upright', 'upleft'].forEach((d) => { out[d] = [0, 1, 2].map((f) => make(d, f)); }); return out;
   }
   return { L, PAL, terrain, frames, bake, fill, baked, swayStamp, TREE, TUFT, FLOWER };
 })();
@@ -3232,6 +3235,8 @@ const WORLD = (() => {
   // ---------- state ----------
   const P = { x: 8.9 * TS, y: 9.4 * TS, dir: 'down', moving: false, step: 0 };
   const input = { jx: 0, jy: 0, keys: {} };
+  // eight facings from a velocity: sectors of 45 degrees around the circle (the player and the follower; NPCs keep four, their sight lines are four-way)
+  const dir8 = (vx, vy) => ['right', 'downright', 'down', 'downleft', 'left', 'upleft', 'up', 'upright'][((Math.round(Math.atan2(vy, vx) / (Math.PI / 4)) % 8) + 8) % 8];
   let canvas, ctx, vw = 0, vh = 0, dpr = 1, paused = false, tAnim = 0, opts = {};
   let zoom = 1;
   let lastTile = '', stepsSince = 0, rustle = 0, flash = 0;
@@ -3355,7 +3360,7 @@ const WORLD = (() => {
     let dist = 0, tgt = null;
     for (let i = trail.length - 1; i > 0; i--) { dist += Math.hypot(trail[i].x - trail[i - 1].x, trail[i].y - trail[i - 1].y); if (dist >= TS * 1.05) { tgt = trail[i - 1]; break; } }
     if (tgt) { const ox = FOL.x, oy = FOL.y; FOL.moving = Math.hypot(tgt.x - FOL.x, tgt.y - FOL.y) > 0.5; FOL.x += (tgt.x - FOL.x) * 0.35; FOL.y += (tgt.y - FOL.y) * 0.35;
-      const mx = FOL.x - ox, my = FOL.y - oy; if (Math.hypot(mx, my) > 0.15) { FOL.dir = Math.abs(mx) > Math.abs(my) ? (mx > 0 ? 'right' : 'left') : (my > 0 ? 'down' : 'up'); } if (FOL.moving) FOL.step = (FOL.step || 0) + 0.15; } else FOL.moving = false;
+      const mx = FOL.x - ox, my = FOL.y - oy; if (Math.hypot(mx, my) > 0.15) { FOL.dir = dir8(mx, my); } if (FOL.moving) FOL.step = (FOL.step || 0) + 0.15; } else FOL.moving = false;
   }
   // critter-lead mode (Settings, with action mode): you steer the critter; the human walks behind it. P stays "the controlled body" for collisions, interactions, exits and the camera.
   let LEAD = false;
@@ -3372,7 +3377,7 @@ const WORLD = (() => {
       const nx = P.x + vx * sp, ny = P.y + vy * sp;
       if (!collides(nx, P.y)) P.x = nx;
       if (!collides(P.x, ny)) P.y = ny;
-      P.dir = Math.abs(vx) > Math.abs(vy) ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
+      P.dir = dir8(vx, vy);
       P.moving = true; P.step += dt * 9;
     } else P.moving = false;
     // left the map through an exit?
@@ -3700,7 +3705,7 @@ const WORLD = (() => {
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },
     get npcs() { return NPCS[M.id] || []; }, allNpcs: () => NPCS, facePlayer, inSight,
     followerPos: () => (FOL ? { x: FOL.x, y: FOL.y, dir: FOL.dir || null, moving: !!FOL.moving } : null), get lead() { return LEAD; },
-    pos: () => ({ x: P.x, y: P.y }), terrainCanvas: () => terrain, windFrame: () => lastKf, windLevel: (id, t) => windLevel(id, t, typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(id) : null), gust: () => { gustUntil = performance.now() + 3500; }, wind: () => lastWind, debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
+    pos: () => ({ x: P.x, y: P.y }), facing: () => ({ player: P.dir, follower: FOL ? FOL.dir : null }), walkFrame: () => (P.moving ? (Math.floor((P.step || 0) / 1.6) % 2 ? 1 : 2) : 0), terrainCanvas: () => terrain, windFrame: () => lastKf, windLevel: (id, t) => windLevel(id, t, typeof WEATHER !== 'undefined' && WEATHER.region ? WEATHER.region(id) : null), gust: () => { gustUntil = performance.now() + 3500; }, wind: () => lastWind, debug: () => ({ player: lastPlayerScreen, cam: lastCam, tint: tintNow }), drawNow: () => draw(), setPos: (x, y) => { P.x = x; P.y = y; }, step: (dt) => update(dt), flash: () => { flash = 0.3; }
   };
 })();
 
@@ -3852,7 +3857,7 @@ const VFX = (() => {
 // Enemies are visible wild critters on maps with tall grass; they replace the random grass encounters while the mode is on.
 // world.js calls: ACT.step(env) every frame, ACT.items(env) (y-sorted drawables), ACT.drawFx(env) (slashes, numbers, bars) and ACT.active() (grass encounters off).
 const ACT = (() => {
-  const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const D7 = Math.SQRT1_2, DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0], upright: [D7, -D7], upleft: [-D7, -D7], downright: [D7, D7], downleft: [-D7, D7] };
   const CD = [0.45, 1.1, 1.4, 3.0];            // seconds: quick slash, heavy slash, guard, special
   let GH = [], H = null, hero = null, team = {}, OFF = [], orbId = 1, duel = null, armed = false, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
   const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null };

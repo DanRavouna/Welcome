@@ -168,6 +168,11 @@ Order follows the gates (zones at trainer level 1/3/6/9, climbs at 11/13, the Wa
 - Touching the light crosses into the game with the same pixelate-and-zoom as a zone change (`WORLD.go('town')` under the title fading out over 0.55 s; Fern follows at 0.65 s; `__noTransition` makes it instant).
 - The view scales with the window (`resize()` in world.js): the shorter side shows about 14 tiles whatever the screen, in half steps (a phone is 1, 1280x720 is 1.5, 1600x900 is 2), so a browser no longer shows the whole map. `WORLD.view()` reports vw, vh, zoom; `window.__zoom` overrides it. Pointer input is all DOM, so nothing maps clientX to world pixels.
 
+## Eight facings (Dan, Nov 2026: "8 directional animations for the trainer and the critters")
+- The trainer (`PXW.frames` in pxworld.js): eight facings, three frames each, frame 0 the idle. The quarter views are the same parts re-arranged the way the reference sheets do it, not flips of the front: the front quarter has the face off-centre with both eyes, the back quarter is hair with the edge of a cheek, both show only the near hand. Left facings are the right ones mirrored. NPCs use the same frames but keep four facings (their sight lines are four-way, `inSight`).
+- The facing comes from the velocity in eight 45-degree sectors (`dir8` in world.js) for the player and the follower; the attack's direction table has the diagonals (`DIRS` in action.js). `WORLD.facing()` and `WORLD.walkFrame()` are test accessors. `facingtest` (ui, smoke) checks the sectors, the frames and the walk cycle against the clock.
+- Critters: NOT done yet. Their sprites are generated from the seed, front view only, so a second facing is a generator job (back, side, diagonals from the same parts and palette), judged on a sheet of all 48.
+
 ## Watch items
 - Old cached copies of the page on another device would drop the `tower` save key (and any newer field) if THEY write; this build no longer does that to others (see Save compatibility).
 - Not yet verified on a real phone: touch feel, sound, vibration, Pixelify Sans font, real cloud sync.

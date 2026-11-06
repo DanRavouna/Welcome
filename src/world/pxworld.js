@@ -330,7 +330,7 @@ const PXW = (() => {
     door(12, 14, '#8A5A34', true);
     [[X + 8, Y + roofH + 4], [X + Wd - 22, Y + roofH + 4]].forEach(([wx, wy]) => { win(wx, wy, 14, 10, '#9CD3F5', true); R(wx - 1, wy + 11, 16, 4, ol); R(wx, wy + 12, 14, 2, '#8A5A34'); [0, 4, 8, 12].forEach((fx, i) => R(wx + fx + 1, wy + 10, 2, 2, ['#F06A6A', '#FFD86B', '#F5A3D0', '#FFFFFF'][i])); });
   }
-  // ---- player: 16x20 sprites per direction, 3 frames ----
+  // ---- player: 16x20 sprites, eight facings, 3 frames each (frame 0 is the idle). The diagonals are the same parts re-arranged, not flips of the front: hair covers more of the face from the back quarter, the face sits off-centre on the front quarter, the near hand shows. Left facings are the right ones mirrored. ----
   const PC = { o: '#1E1A2A', h: '#2B2235', s: '#F2C9A0', e: '#1E2A4A', y: '#FFD86B', Y: '#E0A830', w: '#FFFFFF', p: '#2B2F45', b: '#F5C542', c: '#D8574A' };
   const HEAD_D = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhssssshho...', '..ohsseesesho...', '..ohssssssso....', '...ossssss o....'.replace(' ', 's'), '....oooooo......'];
   function frames(pal) {
@@ -340,16 +340,19 @@ const PXW = (() => {
       let head;
       if (dir === 'down') head = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhssssshho...', '..ohseesseho....', '..ohssssssho....', '...ossssss o....'.replace(' ', 'o'), '....oooooo......'];
       else if (dir === 'up') head = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhhhhhhho....', '..ohhhhhhhho....', '..ohhhhhhhho....', '...ohhhhhho.....', '....oooooo......'];
+      else if (dir === 'downright' || dir === 'downleft') head = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhhsssshho...', '..ohhsesesho....', '..ohhssssssho...', '...ohsssssso....', '....oooooo......'];   // front quarter: the face a little to the side, both eyes
+      else if (dir === 'upright' || dir === 'upleft') head = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhhhhhhso....', '..ohhhhhhhsso...', '..ohhhhhhhsso...', '...ohhhhhhso....', '....oooooo......'];   // back quarter: hair, and the edge of a cheek
       else head = ['....oooooo......', '...ohhhhhho.....', '..ohhhhhhhho....', '..ohhhhsssso....', '..ohhhsssesso...', '..ohhhsssssso...', '...ohhssssso....', '....oooooo......'];
-      const bodyRows = ['...ooyyyyyoo....', '..oyywwwwwyyo...', '..oyyyyyyyyyo...', '..osyyyyyyyso...', '...oyyyyyyyo....', '....oppoppo.....'];
+      const quarter = dir === 'downright' || dir === 'downleft' || dir === 'upright' || dir === 'upleft';
+      const bodyRows = quarter ? ['...ooyyyyyoo....', '..oyyywwwwyyo...', '..oyyyyyyyyyo...', '..oyyyyyyyyso...', '...oyyyyyyyo....', '....oppoppo.....'] : ['...ooyyyyyoo....', '..oyywwwwwyyo...', '..oyyyyyyyyyo...', '..osyyyyyyyso...', '...oyyyyyyyo....', '....oppoppo.....'];   // on a quarter view only the near hand shows and the stripe sits off-centre
       const legs = [['....opo.opo.....', '....opo.opo.....', '....obo.obo.....', '....ooo.ooo.....'], ['....opo..opo....', '...opo...opo....', '...obo....obo...', '...ooo....ooo...'], ['.....opo.opo....', '....opo...opo...', '....obo...obo...', '....ooo...ooo...']][f];
       let rows = head.concat(bodyRows, legs);
       if (C.cap) { rows = rows.map((r, i) => (i < 3 ? r.replace(/h/g, 'c') : r)); rows[3] = rows[3].replace(/^(..o)hh/, '$1cc').replace(/^(..o)h/, '$1c'); }
-      if (dir === 'left') { const flip = rows.map((r) => r.split('').reverse().join('')); stamp(g, 0, 0, flip, C); }
+      if (dir === 'left' || dir === 'downleft' || dir === 'upleft') { const flip = rows.map((r) => r.split('').reverse().join('')); stamp(g, 0, 0, flip, C); }
       else stamp(g, 0, 0, rows, C);
       return c;
     };
-    const out = {}; ['down', 'up', 'left', 'right'].forEach((d) => { out[d] = [0, 1, 2].map((f) => make(d, f)); }); return out;
+    const out = {}; ['down', 'up', 'left', 'right', 'downright', 'downleft', 'upright', 'upleft'].forEach((d) => { out[d] = [0, 1, 2].map((f) => make(d, f)); }); return out;
   }
   return { L, PAL, terrain, frames, bake, fill, baked, swayStamp, TREE, TUFT, FLOWER };
 })();

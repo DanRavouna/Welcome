@@ -11,8 +11,8 @@ GROUP_world="forgetest slagtest wildtest maptest jittertest scaffoldtest letgote
 GROUP_battle="abilitytest nighttest ntest ptest aggrotest fxtest towertest twisttest itemtest shinytest"
 GROUP_saves="resettest compattest roundtriptest keeptest menutest dextest p14 p15 p18r ctest statstest titletest questtest p17"
 # @smoke: the quick broad set (about 30 s side by side) to run after EVERY change; the whole suite (no argument) once before pushing a batch
-GROUP_smoke="balancetest archtest housetest hallstest resettest compattest roundtriptest telltest keeptest nighttest openingtest jittertest maptest guidetest citytest hometest fxtest windtest gymtest zonespottest statstest flavortest landmarkstest evotest"
-GROUP_ui="evotest openingtest a11ytest hudcheck musictest vfxtest"
+GROUP_smoke="balancetest archtest housetest hallstest resettest compattest roundtriptest telltest keeptest nighttest openingtest facingtest jittertest maptest guidetest citytest hometest fxtest windtest gymtest zonespottest statstest flavortest landmarkstest evotest"
+GROUP_ui="evotest openingtest facingtest a11ytest hudcheck musictest vfxtest"
 expand() { for a in "$@"; do case "$a" in @*) v="GROUP_${a#@}"; for t in ${!v}; do echo $t.py; done;; *) echo "$a";; esac; done; }
 # No argument = every test once (the default list plus all groups, duplicates removed; before, the default list and the groups overlapped and half of a "full run" was repeats). Six tests run side by side by default (JOBS): the suite is mostly sleeping (about 480 s of fixed waits in 1100 s of test time), so 6 jobs on 4 cores still leave the CPU half idle.
 SERIAL="${SERIAL:- }"   # tests to run alone first, e.g. SERIAL=" perf.py " (none by default: the real-time tests held up under 6 parallel jobs)

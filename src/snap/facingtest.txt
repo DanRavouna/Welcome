@@ -1,0 +1,6 @@
+ok eight facings, three frames each | {'down': #, 'up': #, 'left': #, 'right': #, 'downright': #, 'downleft': #, 'upright': #, 'upleft': #}
+ok the facing follows the joystick angle in eight sectors | {'right': 'right', 'downright': 'downright', 'down': 'down', 'downleft': 'downleft', 'left': 'left', 'upleft': 'upleft', 'up': 'up', 'upright': 'upright'}
+ok while walking the frame alternates between # and # over real time (at least # changes in # s, never frame #) | [#, [#...]]
+ok standing still rests on the idle frame
+ok the one walking behind turns toward where it is going (a diagonal too) | {'facing': {'player': 'upright', 'follower': 'upright'}, 'f': {'x': #, 'y': #, 'dir': 'upright', 'moving': True}}
+ok no page errors | []
