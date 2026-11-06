@@ -3,7 +3,11 @@
 These rules apply to every task in this repository.
 
 ## Meaning comes first (Dan, Nov 2026: "humans function in metaphors and symbolics")
-The game has a greater meaning, the quest sits inside it, and every place sits inside the quest. Nothing is built, changed or reviewed as a map with props: it is built as a statement of its piece of the meaning, expressed by layout, what it lets you see, what it hides and what it asks of you, never by text that explains it (hint, never tell).
+The game has a greater meaning, the quest sits inside it, and every place sits inside the quest. Nothing is built, changed or reviewed as a map with props: it is built as a statement of its piece of the meaning. The rule is **hint and play the metaphor, don't tell it** (Dan, Nov 2026):
+- **Play**: the meaning is something the player does. The mechanic itself carries it (Wren's fire is tended by staying beside it; the rare thing comes to the one who stays), not a text or a prop that rhymes with it. This applies to the whole game, the daily loop included, not only to places and the quest.
+- **Every element plays it together**: a game is a whole, and playing it is experiencing all of its elements at once. The mechanic, the level layout, what you can see and what is hidden, the colours, the sounds and music, the words and the pacing of a place must all convey the same intent. An element that says something else, or nothing, is a bug of meaning.
+- **Hint first, as the introduction**: every metaphor is introduced before it is played. A hint is the first, smaller, quieter encounter with a concept (the lit window in Sproutvale before you ever keep a light; the title screen as the introduction to the whole experience; an ambiance shift before a key moment), so that when the player meets the metaphor in play they have somewhat met it already. A hint on its own, with nothing to play afterwards, is the weak form.
+- **Don't tell**: no text explains the meaning or recites a rule a sign already states. `telltest` lints the world for this.
 - Before building or changing any level, zone, route, NPC line, quest or reward, write ONE sentence in the handoff's "Meaning" section saying what it means inside the quest. If you cannot, do not build it yet.
 - Every review of existing content starts with "what does this mean?" before layout, balance or polish.
 - The working theme, quest and the draft meaning of each place are the first section of `critter-roll-handoff.md`. Dan confirmed the theme; the per-place meanings are drafts to refine with him.
