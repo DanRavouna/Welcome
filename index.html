@@ -4451,7 +4451,19 @@ const MUSIC = (() => {
     return steps;
   }
   // night versions of the place themes (Meaning: the world is quieter at night, the quiet before someone comes to a door): the same tune, slower, on a triangle wave, no drums, one bass note a bar
-  ['town', 'moss', 'frost', 'ember', 'tide', 'peak', 'mossbrook', 'frosthold', 'cinderport', 'coralbay'].forEach((id) => { const t = T[id]; T[id + '@night'] = { bpm: Math.round(t.bpm * 0.78), wave: 'triangle', chords: t.chords, bass: 'R - - - - - - -', drums: '. . . . . . . .', lead: t.lead, vol: 0.62 }; });
+  const NIGHT_LEAD = {
+    town: 'E4 - - - G4 - - - | D4 - - - - - - . | C5 - - - B4 - A4 - | A4 - - - F4 - - . | E4 - - - G4 - C5 - | D5 - - - B4 - - . | A4 - - - C5 - - - | B4 - - - - - - .',
+    moss: 'A4 - - - C5 - - - | B4 - - - G4 - - . | A4 - - - F4 - - - | D5 - - - B4 - - . | A4 - - - E5 - - - | D5 - - - B4 - - . | C5 - - - A4 - - - | G#4 - - - - - - .',
+    frost: 'E5 . . . B4 . . . | G4 . . . . . . . | D5 . . . B4 . . . | F#4 - - - . . . . | E5 . . . B4 . . . | C5 . . . G4 . . . | A4 . . . C5 . . . | B4 - - - - - - .',
+    ember: 'D4 - - - F4 - A4 - | F4 - - - D4 - - . | E4 - - - G4 - C5 - | A4 - - - C#4 - - . | D4 - - - F4 - A4 - | Bb4 - - - F4 - - . | G4 - - - Bb4 - D5 - | A4 - - - - - - .',
+    tide: 'C5 - - - A4 - - - | D4 - - - F4 - - . | D5 - - - Bb4 - - - | G4 - - - E4 - - . | C5 - - - A4 - F4 - | D5 - - - A4 - - . | G4 - - - Bb4 - D5 - | E5 - - - - - - .',
+    peak: 'D5 - - - B4 - - - | A4 - - - F#4 - - . | E5 - - - G4 - B4 - | C5 - - - E5 - - . | D5 - - - G4 - - - | F#5 - - - D5 - - . | G4 - - - E5 - C5 - | A4 - - - - - - .',
+    mossbrook: 'A4 - - - C5 - - - | E4 - - - G4 - - . | D4 - - - F4 - A4 - | F4 - - - D4 - - . | A4 - - - F5 - - - | G4 - - - E4 - - . | D5 - - - Bb4 - - - | G4 - - - - - - .',
+    frosthold: 'D4 - - - - - A4 - | Bb4 - - - - - F4 - | A4 - - - - - C5 - | G4 - - - - - E4 - | D4 - - - - - A4 - | D5 - - - - - Bb4 - | G4 - - - - - D5 - | A4 - - - - - - .',
+    cinderport: 'G4 - - - Bb4 - - - | Eb5 - - - D5 - - . | A4 - - - C5 - - - | D5 - - - F#4 - - . | G4 - - - Bb4 - D5 - | G5 - - - Eb5 - - . | C5 - - - Eb5 - - - | D5 - - - - - - .',
+    coralbay: 'G4 - - - E4 - - - | A4 - - - E4 - - . | F4 - - - A4 - C5 - | G4 - - - D4 - - . | G4 - - - E4 - C5 - | A4 - - - E4 - - . | F4 - - - D4 - A4 - | G4 - - - - - - .',
+  };   // the day's tune remembered: the same chords, fewer notes, lower and held
+  Object.keys(NIGHT_LEAD).forEach((id) => { const t = T[id]; T[id + '@night'] = { bpm: Math.round(t.bpm * 0.78), wave: 'triangle', chords: t.chords, bass: 'R - - - - - - -', drums: '. . . . . . . .', lead: NIGHT_LEAD[id], vol: 0.62 }; });
   Object.keys(T).forEach((k) => { T[k].steps = compile(T[k]); });
 
   let ac = null, master = null, bus = null, noise = null, cur = null, want = null, step = 0, nextT = 0, timer = null, enabled = true, hidden = false, unlocked = false;

@@ -29,12 +29,12 @@ battle  {'peak': 0.057, 'rms': 0.012, 'secs': 13.3}
 boss    {'peak': 0.063, 'rms': 0.0153, 'secs': 14.6}
 town@night {'peak': 0.027, 'rms': 0.0083, 'secs': 24.2}
 moss@night {'peak': 0.027, 'rms': 0.0083, 'secs': 27.2}
-frost@night {'peak': 0.027, 'rms': 0.0079, 'secs': 31.5}
-ember@night {'peak': 0.027, 'rms': 0.0084, 'secs': 20.1}
-tide@night {'peak': 0.027, 'rms': 0.008, 'secs': 22.8}
-peak@night {'peak': 0.027, 'rms': 0.0084, 'secs': 26.1}
-mossbrook@night {'peak': 0.027, 'rms': 0.0084, 'secs': 28.3}
+frost@night {'peak': 0.027, 'rms': 0.0077, 'secs': 31.5}
+ember@night {'peak': 0.027, 'rms': 0.0083, 'secs': 20.1}
+tide@night {'peak': 0.027, 'rms': 0.0083, 'secs': 22.8}
+peak@night {'peak': 0.027, 'rms': 0.0083, 'secs': 26.1}
+mossbrook@night {'peak': 0.027, 'rms': 0.0083, 'secs': 28.3}
 frosthold@night {'peak': 0.027, 'rms': 0.0084, 'secs': 29.6}
-cinderport@night {'peak': 0.026, 'rms': 0.0082, 'secs': 21.8}
-coralbay@night {'peak': 0.027, 'rms': 0.0081, 'secs': 25.1}
+cinderport@night {'peak': 0.027, 'rms': 0.0083, 'secs': 21.8}
+coralbay@night {'peak': 0.027, 'rms': 0.0083, 'secs': 25.1}
 errors: none
