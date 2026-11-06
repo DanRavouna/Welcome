@@ -786,13 +786,11 @@ const APP = (() => {
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
-    const n = advOf().clues.length;
-    toast('New clue (' + n + '/' + ADV.CLUES.length + ') in your Journal.');
-    if (n === ADV.CLUES.length) setTimeout(() => { if (!advOf().open.arch && WORLD.map.id !== 'dg-arch') toast('That is all four clues. Go back to the old arch in Highland Pass.'); }, 4800);
+    toast('You will remember this. (Journal)');
   }
   function journal() {
     const have = advOf().clues, lines = ['Clues about the Sealed Arch: ' + have.length + ' of ' + ADV.CLUES.length + '.'];
-    ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Not found yet. Try asking around ' + c.where + '.'));
+    ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Something on ' + c.where + ' you have not looked at closely.'));
     if (advOf().open.arch) { const f = advOf().flags; lines.push('The Sealed Arch: ' + (f.rubble ? 'the way north is clear.' : 'rubble blocks the way north. The empty seat, a fire bowl, a lamp and a hull lantern must mean something.') + (((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 ? ' You have beaten the Keeper.' : '') + (advOf().flags.secret ? ' The ninth seat has answered.' : '')); }
     if (advOf().open.forge) { const f = advOf().flags; lines.push('The Forge Below: ' + (f.forgeLit ? 'the great furnace is lit.' : 'the north gate opens when both hub sockets hold a core (' + ((f['sock:A'] ? 1 : 0) + (f['sock:B'] ? 1 : 0)) + '/2). One core lies in each side hall.')); } else if ((game.state.visited || []).indexOf('descent') !== -1) lines.push('The Cinder Descent leads down to a buried forge.');
     if (advOf().open.lamp) lines.push('The Lamp Tower: ' + (advOf().flags.lampLit ? 'the great lamp is lit, and its beam crosses the land.' : 'levers and gates climb to the great lamp. What opens one gate may close another.')); else if ((game.state.visited || []).indexOf('ascent') !== -1) lines.push('The Cold Ascent leads to an old beacon tower at the top of the peaks.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
@@ -801,7 +799,7 @@ const APP = (() => {
   function archUse() {
     const a = advOf();
     if (a.open.arch) { game.sfx('tap'); WORLD.go('dg-arch'); return; }
-    if (a.clues.length < ADV.CLUES.length) { showDialog('The old arch', ['Eight critters sit around one fire. A ninth seat is carved empty.', 'The stone stays cold and silent. Clues found: ' + a.clues.length + ' of ' + ADV.CLUES.length + '. Someone on the other roads may know more.']); return; }
+    if (a.clues.length < ADV.CLUES.length) { const ruin = ADV.CLUES.find((c) => c.id === 'ruin'); showDialog('The old arch', ['Eight critters sit around one fire. A ninth seat is carved empty.', 'The stone stays cold.'], null, () => gainClue(ruin)); return; }   // looking at the carvings is the first clue
     showDialog('The old arch', ['Fire for the first. Lamp for the second. Hull for the third.', 'The carved flame between the pillars begins to glow...', 'A passage opens in the old arch.'], null, () => { advSave((x) => { x.open.arch = true; }); game.sfx('claim'); setTimeout(() => { game.sfx('claim'); WORLD.go('dg-arch'); }, 200); });
   }
   function chestUse(o) {
@@ -976,6 +974,7 @@ const APP = (() => {
     if (o.kind === 'furnace') { furnaceUse(); return; }
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
     if (o.kind === 'lever') { leverUse(o); return; }
+    if (o.clue) { const c = ADV.CLUES.find((q) => q.id === o.clue); showDialog('You look closer', [o.text], null, () => { if (c) gainClue(c); }); return; }
     if (o.kind === 'gbed') { gbedUse(o); return; }
     if (o.kind === 'woodpile') { woodUse(); return; }
     if (o.kind === 'gbrazier') { brazierUse(o); return; }
@@ -1059,8 +1058,8 @@ const APP = (() => {
       showDialog(n.name, [n.lines[0], 'Could you do me a favor today? Please ' + Q.q.txt + '.', 'Progress: ' + Q.n + '/' + Q.q.n + '. Come back to me when it is done. I have a new favor every day.']); return;
     }
     if (n.kind === 'talk') {
-      const fl = n.id === 'pip' ? null : flavorLine(n), lines = fl ? [fl].concat(n.lines) : n.lines, clue = ADV.CLUES.find((c) => c.npc === n.id);
-      if (clue && advOf().clues.indexOf(clue.id) === -1) { showDialog(n.name, lines.concat(clue.lines), null, () => gainClue(clue)); return; }   // the first talk also teaches a clue about the Sealed Arch
+      const fl = n.id === 'pip' ? null : flavorLine(n), lines = fl ? [fl].concat(n.lines) : n.lines, clue = ADV.CLUES.find((c) => c.npc === n.id && advOf().clues.indexOf(c.id) === -1);   // once you have looked, they stop pointing
+      if (clue) { showDialog(n.name, lines.concat(clue.lines)); return; }   // the four people only point at what is in front of them; looking at it is what teaches you
       showDialog(n.name, lines); return;
     }
     if (n.kind === 'shop') { showDialog(n.name, n.lines, null, () => openPanel('shop')); return; } // shops stay quick: no weather remark

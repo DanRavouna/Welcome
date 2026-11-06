@@ -13,8 +13,8 @@ with sync_playwright() as p:
   for _ in range(6):
     if not pg.evaluate("!!APP.dialog"): break
     pg.evaluate("APP.advance()")
-  # the world draws nothing that points the way: sample the screen for the old gold arrow colour near the player over a few frames
-  gold=pg.evaluate("""(()=>{const c=document.querySelector('canvas');const g=c.getContext('2d');const d=WORLD.debug().player;let n=0;const r=70;const im=g.getImageData(Math.max(0,(d.x-r)*devicePixelRatio),Math.max(0,(d.y-r)*devicePixelRatio),r*2*devicePixelRatio,r*2*devicePixelRatio).data;for(let i=0;i<im.length;i+=4){if(im[i]===255&&im[i+1]===216&&im[i+2]===107)n++}return n})()""")
+  # the world draws nothing that points the way: sample the screen for the old gold arrow colour near the player over a few frames (the player's own sprite is masked out: the cap is the same gold)
+  gold=pg.evaluate("""(()=>{const c=document.querySelector('canvas');const g=c.getContext('2d');const d=WORLD.debug().player;let n=0;const r=70;const im=g.getImageData(Math.max(0,(d.x-r)*devicePixelRatio),Math.max(0,(d.y-r)*devicePixelRatio),r*2*devicePixelRatio,r*2*devicePixelRatio).data;const D=devicePixelRatio,x0=Math.max(0,(d.x-r)*D),y0=Math.max(0,(d.y-r)*D),W=r*2*D;for(let i=0;i<im.length;i+=4){const px=((i/4)%W+x0)/D-d.x,py=(Math.floor((i/4)/W)+y0)/D-d.y;if(px>-16&&px<16&&py>-48&&py<10)continue;if(im[i]===255&&im[i+1]===216&&im[i+2]===107)n++}return n})()""")
   print('old gold arrow pixels near the player:', gold)
   # travel map before / after visiting
   pg.evaluate("APP.openMenu(); document.querySelector('[data-tile=map]').click()"); pg.wait_for_timeout(250)

@@ -22,11 +22,15 @@ with sync_playwright() as p:
   pg.click('#act'); pg.wait_for_timeout(300)
   print('sealed dialogue:', pg.evaluate("APP.dialog&&APP.dialog.lines.join(' | ')")); finish()
   print('still on', pg.evaluate("WORLD.map.id"), '| open flag:', pg.evaluate("APP.game.state.adv.open.arch||false"))
-  # the four clues, from the four people
-  for mid,nid in [('route-mf','edda'),('route-cm','dell'),('route-fc','joss'),('route-cc','neri')]:
-    pg.evaluate(f"WORLD.enter('{mid}'); APP.talk(WORLD.npcs.find(x=>x.id==='{nid}'))"); first=pg.evaluate("APP.dialog&&APP.dialog.lines.length"); finish()
-    pg.evaluate(f"APP.talk(WORLD.npcs.find(x=>x.id==='{nid}'))"); again=pg.evaluate("APP.dialog&&APP.dialog.lines.length"); finish()
-    print(f'  {nid}: lines first talk {first}, second talk {again} (clue only once) | clues now {pg.evaluate("APP.game.state.adv.clues.length")}')
+  # the four clues: things you look at by the four landmarks (the arch itself, the hearthstone, the brass plate, the wreck stone); the people only point at them
+  print('  looking at the arch gave the first clue:', pg.evaluate("APP.game.state.adv.clues"))
+  for mid,nid,oid in [('route-cm','dell','clue-camp'),('route-fc','joss','clue-lighthouse'),('route-cc','neri','clue-wreck')]:
+    pg.evaluate(f"WORLD.enter('{mid}'); APP.talk(WORLD.npcs.find(x=>x.id==='{nid}'))"); talk=pg.evaluate("APP.dialog&&APP.dialog.lines.join(' / ')"); finish()
+    pg.evaluate(f"(()=>{{const o=WORLD.objects.find(x=>x.id==='{oid}');WORLD.setPos((o.x+0.5)*WORLD.TS,(o.y+1.6)*WORLD.TS)}})()")
+    for _ in range(6): pg.evaluate("WORLD.step(1/30)")
+    pg.click('#act'); pg.wait_for_timeout(200); seen=pg.evaluate("APP.dialog&&APP.dialog.lines[0]"); finish()
+    pg.click('#act'); pg.wait_for_timeout(200); finish()
+    print(f'  {nid} points ({"talking gives no clue" if "will remember" not in talk else "TALK GAVE A CLUE"}); looking at {oid}: "{(seen or "")[:50]}" | clues now {pg.evaluate("APP.game.state.adv.clues.length")} (looking twice counts once)')
   # Journal
   pg.evaluate("APP.openMenu()"); pg.wait_for_timeout(200)
   print('journal tile sub:', pg.evaluate("(document.querySelector('[data-tile=journal] .ts')||{}).textContent"))

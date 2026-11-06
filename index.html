@@ -1270,11 +1270,11 @@ const ADV = (() => {
   const TYPES = ['Ember', 'Tide', 'Moss', 'Volt', 'Frost', 'Dusk', 'Stone', 'Bloom'];
   const TCOL = { Ember: '#FF7A45', Tide: '#3E8EF7', Moss: '#4FB06D', Volt: '#F5C518', Frost: '#8FD8EA', Dusk: '#8B6CF0', Stone: '#A79C90', Bloom: '#F27BB5' };
   // The Sealed Arch: four clues, one from each person beside a route landmark
-  const CLUES = [
-    { id: 'ruin', npc: 'edda', where: 'Highland Pass', lines: ['Look at the carvings. Eight critters share one fire, and one seat is left empty.', 'I think this arch is a door, not a ruin.'], note: 'Edda: the arch shows eight critters around a fire and one empty seat. She thinks it is a door.' },
-    { id: 'camp', npc: 'dell', where: 'Ashwood Trail', lines: ['My granddad had a camp rhyme: "Fire for the first, lamp for the second, hull for the third, and the empty seat will answer."', 'I never knew what it meant.'], note: 'Dell: an old camp rhyme: "Fire for the first, lamp for the second, hull for the third, and the empty seat will answer."' },
-    { id: 'lighthouse', npc: 'joss', where: 'Glacier Coast', lines: ['Here is a secret: the lamp never pointed at the sea. It points inland, at the old arch in the pass.', 'Whoever built it wanted the door found.'], note: 'Joss: the lighthouse lamp points at the old arch in the pass, not at the sea.' },
-    { id: 'wreck', npc: 'neri', where: 'Reef Causeway', lines: ['I found a carved stone in the wreck. Eight critters at a fire, and a ninth seat with a dusty crown.', 'Same carving as the arch, I bet. Somebody wanted all four of us to find a piece.'], note: 'Neri: a stone in the wreck shows the same eight critters, and a ninth seat with a dusty crown.' }
+  const CLUES = [   // lines = what the person says (always; they only point at what is in front of them); obj = the thing you look at, which is what teaches you; note = what the Journal remembers
+    { id: 'ruin', npc: 'edda', where: 'Highland Pass', lines: ['The carvings on the arch. I come up here to draw them.', 'Look at the seats. I count them every time, and every time I get the same number.'], note: 'The arch: eight critters around one fire, and a ninth seat carved empty.' },
+    { id: 'camp', npc: 'dell', where: 'Ashwood Trail', lines: ['My camp. The hearthstone was here long before the camp was.', 'There is writing on it. My granddad used to sing it, badly.'], obj: { kind: 'rhymestone', text: 'Scratched into the hearthstone, old and shallow: "Fire for the first, lamp for the second, hull for the third, and the empty seat will answer."' }, note: 'The hearthstone at Dell\u2019s camp: "Fire for the first, lamp for the second, hull for the third, and the empty seat will answer."' },
+    { id: 'lighthouse', npc: 'joss', where: 'Glacier Coast', lines: ['There is a brass plate at the foot of the tower. Older than the lamp.'], obj: { kind: 'bearing', text: 'A brass plate set in the step, an arrow worn by many boots. It does not point to the sea. It points inland, at the pass.' }, note: 'The plate at the lighthouse: the lamp\u2019s arrow points inland, at the arch in the pass, not at the sea.' },
+    { id: 'wreck', npc: 'neri', where: 'Reef Causeway', lines: ['Half the wreck is under the sand. The carved stone is the half I dug out.', 'I keep it by the hull. The sea can have it back when it asks.'], obj: { kind: 'wreckstone', text: 'A carved stone, salt-white: eight critters at a fire, a ninth seat, and a crown with the dust still on it.' }, note: 'The stone from the wreck: the same eight critters at a fire, a ninth seat and a dusty crown.' }
   ];
   const STATUE_TEXT = {
     Ember: 'A statue of a flame critter. Its stone chest is still warm.', Tide: 'A statue of a tide critter. A little water pools at its feet.', Moss: 'A statue of a moss critter. Real moss grows on its shoulders.',
@@ -1684,6 +1684,10 @@ const ADV = (() => {
     photo(g, x, y) { R(g, x + 6, y + 4, 20, 18, OL); R(g, x + 7, y + 5, 18, 16, '#F4EAD6'); R(g, x + 8, y + 6, 16, 14, '#9CD3F5'); R(g, x + 8, y + 14, 16, 6, '#74C25C'); R(g, x + 12, y + 8, 8, 6, '#D8574A'); R(g, x + 11, y + 11, 3, 6, '#2B2F45'); R(g, x + 11, y + 9, 3, 2, '#F2C9A0'); R(g, x + 17, y + 14, 2, 4, '#2B2F45'); R(g, x + 17, y + 13, 2, 1, '#F2C9A0'); },
     notes(g, x, y) { R(g, x + 2, y + 2, 28, 24, '#5E3C22'); [[4, 4], [13, 4], [22, 4], [6, 14], [16, 14]].forEach(([nx, ny], i) => { R(g, x + nx, y + ny, 7, 9, '#F4EAD6'); R(g, x + nx + 1, y + ny + 2, 5, 1, '#5A4A38'); R(g, x + nx + 1, y + ny + 4, 4, 1, '#5A4A38'); R(g, x + nx + 1, y + ny + 6, 5, 1, i > 2 ? '#C0503A' : '#5A4A38'); R(g, x + nx + 3, y + ny - 1, 1, 1, '#C0503A'); }); },
     critterbasket(g, x, y) { R(g, x + 4, y + 27, 24, 3, 'rgba(0,0,0,0.22)'); R(g, x + 5, y + 14, 22, 13, OL); R(g, x + 6, y + 15, 20, 11, '#B07A46'); R(g, x + 6, y + 19, 20, 1, '#8A5A34'); R(g, x + 6, y + 23, 20, 1, '#8A5A34'); R(g, x + 8, y + 12, 16, 6, '#3C6FE0'); R(g, x + 8, y + 14, 16, 1, '#6A96F0'); R(g, x + 12, y + 10, 8, 3, '#F4EAD6'); },
+    // --- the clue stones (things you look at on the four roads) ---
+    rhymestone(g, x, y) { R(g, x + 4, y + 27, 24, 3, 'rgba(0,0,0,0.22)'); R(g, x + 3, y + 12, 26, 15, OL); R(g, x + 4, y + 13, 24, 13, '#8E8A86'); R(g, x + 4, y + 13, 24, 2, '#B4B0AC'); [16, 19, 22].forEach((ly, i) => R(g, x + 7, y + ly, 14 - i * 3, 1, '#4A4440')); R(g, x + 20, y + 22, 2, 2, '#FF8A3D'); },
+    bearing(g, x, y) { R(g, x + 4, y + 27, 24, 3, 'rgba(0,0,0,0.2)'); R(g, x + 5, y + 14, 22, 13, OL); R(g, x + 6, y + 15, 20, 11, '#8E98AD'); R(g, x + 9, y + 17, 14, 7, '#C8A24A'); R(g, x + 10, y + 18, 12, 5, '#E0C060'); R(g, x + 15, y + 17, 2, 7, '#5A4A1A'); R(g, x + 13, y + 17, 6, 1, '#5A4A1A'); R(g, x + 14, y + 16, 4, 1, '#5A4A1A'); R(g, x + 15, y + 15, 2, 1, '#5A4A1A'); },
+    wreckstone(g, x, y) { R(g, x + 4, y + 27, 24, 3, 'rgba(0,0,0,0.22)'); R(g, x + 5, y + 8, 22, 19, OL); R(g, x + 6, y + 9, 20, 17, '#DCE2EE'); R(g, x + 6, y + 9, 20, 2, '#F4F6FA'); for (let i = 0; i < 8; i++) { const a = i / 8 * 6.283; R(g, x + 15 + Math.round(Math.cos(a) * 5), y + 17 + Math.round(Math.sin(a) * 4), 2, 2, '#6A7488'); } R(g, x + 15, y + 16, 2, 2, '#FF8A3D'); R(g, x + 15, y + 10, 2, 2, '#C8A24A'); },
     // vines hung across a way: braided and heavy, with pale flowers, darker than tall grass
     vines(g, x, y, st, t, o) {
       const sw = Math.round(Math.sin(t * 1.4 + o.x) * 1);
@@ -2937,6 +2941,15 @@ const WORLD = (() => {
   addSpot(MAPS.frosthold, { id: 'c-kettle', kind: 'kettle', text: 'The kettle is hot. Two cups.' }, 29, 9, false);
   addSpot(MAPS.cinderport, { id: 'c-bench', kind: 'workbench', text: 'Tools, laid out for the morning.' }, 21, 11, false);
   addSpot(MAPS.coralbay, { id: 'c-lamp', kind: 'harborlamp', text: 'Left on.' }, 26, 16, false);
+  // the clue things stand beside their landmarks (the ruin's clue is the arch itself): a free tile just below or beside the prop
+  ADV.CLUES.filter((c) => c.obj).forEach((c) => {
+    const mid = { camp: 'route-cm', lighthouse: 'route-fc', wreck: 'route-cc' }[c.id], pid = { camp: 'camp', lighthouse: 'lighthouse', wreck: 'wreck' }[c.id], M2 = MAPS[mid], pr = (M2.props || []).find((q) => q.id === pid); if (!pr) return;
+    const col = (x) => { const out = []; for (let y = pr.y; y <= pr.y + pr.h + 1; y++) out.push([x, y]); return out; };
+    const cand = col(pr.x - 1).concat(col(pr.x + pr.w), [[pr.x, pr.y + pr.h + 1], [pr.x + pr.w - 1, pr.y + pr.h + 1]]);   // left of the prop first: the people who point at it all stand to its right
+    const sgx = pr.x + Math.floor((pr.w - 1) / 2), sgy = pr.y + pr.h;   // the prop's sign cell: keep the stone 2 tiles from it so the action button offers the stone, not the sign
+    const spot = cand.find(([x, y]) => M2.grid[y] && ['.', ','].indexOf(M2.grid[y][x]) !== -1 && Math.hypot(x - sgx, y - sgy) >= 2); if (!spot) return;
+    M2.grid[spot[1]][spot[0]] = 'O'; (M2.objects = M2.objects || []).push({ id: 'clue-' + c.id, kind: c.obj.kind, clue: c.id, x: spot[0], y: spot[1], reach: 1.7, text: c.obj.text });
+  });
   addSpot(MAPS.moss, { id: 'z-sprouts', kind: 'sprouts', text: 'Rows of young plants. The soil is turned.' }, 9, 6, false);
   addSpot(MAPS.frost, { id: 'z-icelamp', kind: 'icelamp', text: 'A flame, held in the ice.' }, 26, 19, false);
   addSpot(MAPS.ember, { id: 'z-hearth', kind: 'hearth', text: 'Fresh logs.' }, 10, 20, false);
@@ -3815,7 +3828,8 @@ const ACT = (() => {
     E.push({ k: k, s: s, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: rand() * 2, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1 + rand(), tick: 1, img: H.img(k) });
     return true;
   }
-  function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7); }
+  let stir = 0, stirSpent = false;   // rare grass: stand in a sparkling patch and something stirs; it comes out once per visit
+  function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; stir = 0; stirSpent = false; st.atk = null; st.cd = 0; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7); }
   const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }
@@ -4017,10 +4031,16 @@ const ACT = (() => {
     PR.slice().forEach((q) => { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; const hp1 = heroPos(); if (rand() < 0.7) VFX.trail(q.m.k.element.name, q.col, q.x, q.y);
       if (q.t > 2.4 || !tileFree(e, q.x, q.y + 12)) { PR.splice(PR.indexOf(q), 1); return; }
       if (Math.min(Math.hypot(hp1.x - q.x, hp1.y - 12 - q.y), Math.hypot(e.P.x - q.x, e.P.y - 12 - q.y)) < 0.6 * e.TS && hero.hp > 0 && st.down <= 0) { PR.splice(PR.indexOf(q), 1); if (q.m && q.m.s.hp > 0) hurtHero(q.m, q.mul); } });
+    // rare grass (Meaning: the rare thing comes to the one who stays): while your critter stands in sparkling grass and no wild critter is near, the patch stirs for about 2.2 s, then a rare one comes out of it; once per visit
+    if (!duel && wildOk(e) && !stirSpent) { const o = heroPos(), inZ = (q) => { const x = Math.floor(q.x / e.TS), y = Math.floor(q.y / e.TS), rr = e.M.rare; return (e.M.grid[y] && e.M.grid[y][x] === 'Z') || !!(rr && x >= rr.x && x < rr.x + rr.w && y >= rr.y && y < rr.y + rr.h); }, hz = inZ(o), pz = inZ(e.P), src = hz ? o : e.P, tx = Math.floor(src.x / e.TS), ty = Math.floor(src.y / e.TS), onZ = hz || pz, near = E.some((m) => Math.hypot(m.x - src.x, m.y - src.y) < 4 * e.TS);   // you or your critter in the patch
+      if (onZ && !near) { stir = Math.min(1, stir + dt / 2.2); if (stir >= 1) { stir = 0; stirSpent = true; const cells = []; for (let y = ty - 2; y <= ty + 2; y++) for (let x = tx - 2; x <= tx + 2; x++) if (e.M.grid[y] && e.M.grid[y][x] === 'Z' && (x !== tx || y !== ty)) cells.push([x, y]);
+          const c = cells.length ? cells[Math.floor(rand() * cells.length)] : [tx, ty], k = H.foe(e.M.types || [], lead(), true);
+          if (k) { const sd = H.game().newBattle(lead(), k, 0).s[1]; sd.label = 'Wild ' + k.name; E.push({ k: k, s: sd, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: 0, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0.6, tele: 0, cd: 1.5, tick: 1, img: H.img ? H.img(k) : null, id: Date.now() % 100000, rare: true, woke: true }); FX.push({ k: 'wake', x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.5) * e.TS, t: 0 }); if (H.sfx) H.sfx('claim'); } } }
+      else stir = Math.max(0, stir - dt * 1.5); }
     // respawns
     spawnT -= dt; if (spawnT <= 0) { spawnT = 6; if (!duel && E.length < 4 && wildOk(e)) spawnOne(e, 8); }
     FX.forEach((x) => { x.t += dt; if (x.k === 'puff') { x.x += x.vx * dt; x.y += x.vy * dt; x.vy += 90 * dt; } });
-    FX = FX.filter((x) => x.t < (x.k === 'slash' ? 0.22 : (x.k === 'num' ? 0.8 : 0.5)));
+    FX = FX.filter((x) => x.t < (x.k === 'slash' ? 0.22 : (x.k === 'num' ? 0.8 : (x.k === 'wake' ? 0.7 : 0.5))));
   }
   function items(e) {
     if (!on) return [];
@@ -4036,7 +4056,12 @@ const ACT = (() => {
     } }));
     return out;
   }
+  function drawStir(e) {
+    const c = e.ctx; if (stir > 0 && !stirSpent && lastEnv) { const o = heroPos(); for (let i = 0; i < 8; i++) { const ph = (e.t * 0.9 + i * 0.29) % 1, a = i * 0.785 + e.t * 0.6, r = 14 + stir * 12; const x = e.snap(o.x - e.cx + Math.cos(a) * r), y = e.snap(o.y - e.cy + 6 - ph * (16 + stir * 20)); c.fillStyle = 'rgba(255,248,200,' + (0.9 * stir * (1 - ph)).toFixed(2) + ')'; c.fillRect(x - 1, y - 1, 2, 2); if (stir > 0.6 && i % 2 === 0) c.fillRect(x - 2, y, 4, 1); } }
+    FX.forEach((f) => { if (f.k !== 'wake') return; const k = f.t / 0.7; c.strokeStyle = 'rgba(255,230,140,' + (1 - k).toFixed(2) + ')'; c.lineWidth = 2; c.beginPath(); c.arc(e.snap(f.x - e.cx), e.snap(f.y - e.cy), 6 + k * 40, 0, 6.3); c.stroke(); for (let i = 0; i < 8; i++) { const a = i * 0.785; c.fillStyle = 'rgba(255,248,200,' + (1 - k).toFixed(2) + ')'; c.fillRect(e.snap(f.x - e.cx + Math.cos(a) * (10 + k * 30)) - 1, e.snap(f.y - e.cy + Math.sin(a) * (8 + k * 24)) - 1, 2, 2); } });
+  }
   function drawFx(e) {
+    drawStir(e);
     if (!on) return; const c = e.ctx;
     // your critter: health bar and guard bubble
     const o = heroPos(), x = e.snap(o.x - e.cx), y = e.snap(o.y - e.cy);
@@ -4070,7 +4095,7 @@ const ACT = (() => {
   }
   return {
     bind, step, items, drawFx, active, attack, swapTo, startDuel, giveUp: () => abortDuel('You gave up.'), dueling: () => !!duel, canDuel: () => armed && !duel,
-    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, orbs: () => OFF, get shots() { return PR; }, BEH,
+    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), clear: () => { E = []; }, foes: () => E.map((m) => ({ x: m.x, y: m.y, rare: !!m.rare, woke: !!m.woke, name: m.k.name, rarity: m.k.rarity })), stir: () => stir, stirSpent: () => stirSpent, spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, orbs: () => OFF, get shots() { return PR; }, BEH,
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },
     get enemies() { return E; }, moves: () => (hero ? hero.k.kit.map((m, i) => ({ name: m.name, kind: m.kind, sub: m.sub, i: i })) : []),
@@ -4464,39 +4489,40 @@ const MUSIC = (() => {
 // Lookup order per condition: NPC-specific line (NPC[id][cond]) > regional lines (OUT/IN[cond][region]) > generic (OUT/IN[cond]._).
 // Regions are WEATHER.region keys: town, moss, frost, ember, tide, peak and the four routes. Add a person = add a row to NPC; add a region = add keys.
 const FLAVOR = (() => {
+  // Every line is something the speaker can see or feel right now, in the voice of the place; none explains the weather's rules or points anywhere (Meaning: hint, never tell).
   const OUT = { // said outdoors
-    rain: { _: ['Rain again! Critters do not mind a soaking, and neither do I.', 'Mind the puddles. They hide more than you would think.'],
-      moss: ['The forest drinks it all up. Tide critters wander in when it rains like this.'], tide: ['Good rain for Tide critters. They are everywhere today.'], town: ['The fountain is overflowing. It happens every time it rains.'] },
-    storm: { _: ['Did you hear that thunder? Volt critters love this weather.', 'Stay close to the trees. Or do not. Volt critters are about.'],
-      tide: ['The waves are wild today. Nobody is taking a boat out.'], ember: ['Even the embers are hissing in this storm.'] },
-    snow: { _: ['Snow! Frost critters are out and about in it.', 'Every footprint shows in this. I like that.'],
-      frost: ['Fresh snow on the peaks. My favourite kind of morning.'], peak: ['The wind up here bites. Dress warmly if you plan to climb.'] },
-    fog: { _: ['I can barely see my own critter in this fog. Dusk critters love it, though.', 'Quiet fog today. Perfect for sneaking up on a wild critter.'], moss: ['The fog hangs between the trees like a curtain.'] },
-    sun: { _: ['What a bright day! Bloom critters bask in weather like this.', 'The sun is out. Perfect for a long walk.'], ember: ['Sunny and warm. Not that it is ever cold here.'] },
-    ash: { _: ['Ashfall again. Stone critters crawl out of it every time.', 'Keep your sleeve over your nose when the ash blows.'], ember: ['The forge winds carry ash this far today.'] },
-    night: { _: ['It is late. Dusk critters roam everywhere after dark.', 'Careful out there. The grass looks different at night.'], tide: ['The harbor lights look lovely after dark.'] },
-    dawn: { _: ['Up with the sun? Early trainers meet the quietest critters.', 'First light. The best time of day, if you ask me.'] },
-    dusk: { _: ['The day is winding down. Dusk is when the shy critters come out.', 'Almost evening. Time to think about camp.'] }
+    rain: { _: ['The rain is the straight kind today.', 'Everything smells of wet stone.'],
+      moss: ['The leaves hold the rain a while, then let it go all at once.'], tide: ['Rain on the sea makes no sound at all.'], town: ['The fountain cannot tell where the rain stops and it begins.'], ember: ['Rain here is gone before it lands. You can hear it hiss.'] },
+    storm: { _: ['Count after the flash. It is getting closer.', 'The trees lean the same way as me.'],
+      tide: ['Nobody has taken a boat out. The ropes are doubled.'], ember: ['The forge wind and the storm wind argue over the roofs.'] },
+    snow: { _: ['Snow. Every footprint shows, and then it does not.', 'It falls straight. Not a breath of wind.'],
+      frost: ['Fresh snow on the peaks. Nothing has moved up there since dawn.'], peak: ['The wind up here goes through a coat like it is not there.'] },
+    fog: { _: ['I can see my own hand and not much past it.', 'Sounds come from the wrong side in fog.'], moss: ['The fog hangs between the trunks like washing.'] },
+    sun: { _: ['Warm enough to sit on the step.', 'The sun is out. Everything that was wet is steaming.'], ember: ['Sun on top of the forge heat. The stones are too hot to touch.'] },
+    ash: { _: ['Ash again. The sills are grey by noon.', 'Keep your sleeve over your nose when it blows.'], ember: ['The forge wind carries ash this far today.'] },
+    night: { _: ['It is late. The lamps are the only colour left.', 'The grass looks different after dark. Deeper.'], tide: ['The harbour lights double in the water.'] },
+    dawn: { _: ['First light. The quietest hour there is.', 'Up with the sun? So is everything else.'] },
+    dusk: { _: ['The day is folding up.', 'Almost evening. The lamps will go on soon.'] }
   };
   const IN = { // said indoors (hearing it through the walls)
-    rain: { _: ['Listen to the rain on the roof. I could stay in all day.', 'Rainy day. Good for staying in and polishing your Dex.'] },
-    storm: { _: ['That thunder rattled the windows! Glad we are inside.', 'A proper storm. Stay in until it passes, dear.'] },
-    snow: { _: ['It is snowing out there. The window is all frosted at the edges.', 'Snow on the roof. We will be cozy tonight.'] },
+    rain: { _: ['Listen to it on the roof.', 'Rainy day. The kettle is on, as it always is.'] },
+    storm: { _: ['That one rattled the windows.', 'A proper storm. The door stays shut until it passes.'] },
+    snow: { _: ['It is snowing out there. The window is frosted at the edges.', 'Snow on the roof. It will be quiet tonight.'] },
     fog: { _: ['The fog is so thick I cannot see across the street.'] },
-    sun: { _: ['Such a bright day. The sun is coming right through the window.'] },
-    ash: { _: ['Ash on the windowsill again. I just cleaned it!'] },
-    night: { _: ['It is getting late. I was about to turn in.', 'Quiet at night. I can hear the whole house breathe.'] },
-    dawn: { _: ['Up early today! The kettle is just warming.'] },
+    sun: { _: ['Such a bright day. The sun comes right across the floor.'] },
+    ash: { _: ['Ash on the windowsill again. I only just cleaned it.'] },
+    night: { _: ['It is getting late.', 'Quiet at night. You can hear the whole house breathe.'] },
+    dawn: { _: ['Up early. The kettle is only just warm.'] },
     dusk: { _: ['The lamps are coming on outside. Evening already.'] }
   };
   const NPC = { // person-specific remarks: { condition: 'line' }
-    mom: { rain: 'Take your coat if you go out, sweetie. It is pouring!', snow: 'Snow! Do not forget your scarf, sweetie.', night: 'Do not stay out too late, sweetie. Dusk critters roam at night.' },
-    remy: { rain: 'The Lab roof drums in the rain. I like it for reading.', storm: 'Thunder always makes the lab instruments hum.', night: 'I stay late at the Lab sometimes. Night is quiet for research.' },
-    dell: { rain: 'Good thing the tent is waterproof. The soup less so.', night: 'The fire keeps the dark away. Mostly.', fog: 'Fog on the trail. I will wait it out by the fire.' },
-    edda: { fog: 'Fog suits ruins. It makes the carvings look like they are moving.', night: 'I came to sketch the arch, but the dark is no good for drawing.', rain: 'Rain washes the moss off the carvings. I am torn.' },
-    joss: { night: 'Dusk is my hour. I trim the lamp, and the old light turns once more.', fog: 'Fog like this is why the lighthouse was built.', storm: 'A storm! The lamp would have mattered tonight, once.' },
-    neri: { storm: 'Storms wash up the best finds. I will be out as soon as it clears.', sun: 'Sun on the sand. Best beachcombing weather there is.', rain: 'The Tide critters love the rain, even in a wreck.' },
-    mae: { rain: 'My flowers are loving this. Look at them perk up!', sun: 'The garden is glowing in this sun.', snow: 'Snow on the flowers. They sleep now, and wake up in spring.', night: 'I water by lamplight when it is warm. Not tonight.' }
+    mom: { rain: 'Take your coat if you go out. It is pouring.', snow: 'Snow. Your scarf is on the peg.', night: 'It is late. The lamp in the window stays on.' },
+    remy: { rain: 'The Lab roof drums in the rain. Good for reading.', storm: 'Thunder always makes the instruments hum.', night: 'I stay late sometimes. Night is quiet for pages.' },
+    dell: { rain: 'Good thing the tent is waterproof. The soup less so.', night: 'The fire keeps the dark back a little way.', fog: 'Fog on the trail. I will sit by the fire until it lifts.' },
+    edda: { fog: 'Fog suits the carvings. They look like they are moving.', night: 'I came to draw, but there is no light for it.', rain: 'Rain washes the moss off the carvings. I am torn about that.' },
+    joss: { night: 'Dusk is my hour. I trim the lamp, and it turns once more.', fog: 'Fog like this is why the lamp was built.', storm: 'A storm. The lamp would have mattered tonight, once.' },
+    neri: { storm: 'Storms bring things up the beach. I will be out as soon as it clears.', sun: 'Sun on the sand. The best kind of morning for looking.', rain: 'The wreck fills and empties with every rain.' },
+    mae: { rain: 'The flowers are loving this. Look at them stand up.', sun: 'The garden is glowing.', snow: 'Snow on the flowers. They sleep now, and wake in spring.', night: 'I water by lamplight when it is warm. Not tonight.' }
   };
   function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13; return (h >>> 0); }
   function conds(weather, tod) { const c = []; if (weather && weather !== 'clear') c.push(weather); if (tod && tod !== 'day') c.push(tod); return c; }
@@ -7233,13 +7259,11 @@ const APP = (() => {
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
-    const n = advOf().clues.length;
-    toast('New clue (' + n + '/' + ADV.CLUES.length + ') in your Journal.');
-    if (n === ADV.CLUES.length) setTimeout(() => { if (!advOf().open.arch && WORLD.map.id !== 'dg-arch') toast('That is all four clues. Go back to the old arch in Highland Pass.'); }, 4800);
+    toast('You will remember this. (Journal)');
   }
   function journal() {
     const have = advOf().clues, lines = ['Clues about the Sealed Arch: ' + have.length + ' of ' + ADV.CLUES.length + '.'];
-    ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Not found yet. Try asking around ' + c.where + '.'));
+    ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Something on ' + c.where + ' you have not looked at closely.'));
     if (advOf().open.arch) { const f = advOf().flags; lines.push('The Sealed Arch: ' + (f.rubble ? 'the way north is clear.' : 'rubble blocks the way north. The empty seat, a fire bowl, a lamp and a hull lantern must mean something.') + (((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 ? ' You have beaten the Keeper.' : '') + (advOf().flags.secret ? ' The ninth seat has answered.' : '')); }
     if (advOf().open.forge) { const f = advOf().flags; lines.push('The Forge Below: ' + (f.forgeLit ? 'the great furnace is lit.' : 'the north gate opens when both hub sockets hold a core (' + ((f['sock:A'] ? 1 : 0) + (f['sock:B'] ? 1 : 0)) + '/2). One core lies in each side hall.')); } else if ((game.state.visited || []).indexOf('descent') !== -1) lines.push('The Cinder Descent leads down to a buried forge.');
     if (advOf().open.lamp) lines.push('The Lamp Tower: ' + (advOf().flags.lampLit ? 'the great lamp is lit, and its beam crosses the land.' : 'levers and gates climb to the great lamp. What opens one gate may close another.')); else if ((game.state.visited || []).indexOf('ascent') !== -1) lines.push('The Cold Ascent leads to an old beacon tower at the top of the peaks.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
@@ -7248,7 +7272,7 @@ const APP = (() => {
   function archUse() {
     const a = advOf();
     if (a.open.arch) { game.sfx('tap'); WORLD.go('dg-arch'); return; }
-    if (a.clues.length < ADV.CLUES.length) { showDialog('The old arch', ['Eight critters sit around one fire. A ninth seat is carved empty.', 'The stone stays cold and silent. Clues found: ' + a.clues.length + ' of ' + ADV.CLUES.length + '. Someone on the other roads may know more.']); return; }
+    if (a.clues.length < ADV.CLUES.length) { const ruin = ADV.CLUES.find((c) => c.id === 'ruin'); showDialog('The old arch', ['Eight critters sit around one fire. A ninth seat is carved empty.', 'The stone stays cold.'], null, () => gainClue(ruin)); return; }   // looking at the carvings is the first clue
     showDialog('The old arch', ['Fire for the first. Lamp for the second. Hull for the third.', 'The carved flame between the pillars begins to glow...', 'A passage opens in the old arch.'], null, () => { advSave((x) => { x.open.arch = true; }); game.sfx('claim'); setTimeout(() => { game.sfx('claim'); WORLD.go('dg-arch'); }, 200); });
   }
   function chestUse(o) {
@@ -7423,6 +7447,7 @@ const APP = (() => {
     if (o.kind === 'furnace') { furnaceUse(); return; }
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
     if (o.kind === 'lever') { leverUse(o); return; }
+    if (o.clue) { const c = ADV.CLUES.find((q) => q.id === o.clue); showDialog('You look closer', [o.text], null, () => { if (c) gainClue(c); }); return; }
     if (o.kind === 'gbed') { gbedUse(o); return; }
     if (o.kind === 'woodpile') { woodUse(); return; }
     if (o.kind === 'gbrazier') { brazierUse(o); return; }
@@ -7506,8 +7531,8 @@ const APP = (() => {
       showDialog(n.name, [n.lines[0], 'Could you do me a favor today? Please ' + Q.q.txt + '.', 'Progress: ' + Q.n + '/' + Q.q.n + '. Come back to me when it is done. I have a new favor every day.']); return;
     }
     if (n.kind === 'talk') {
-      const fl = n.id === 'pip' ? null : flavorLine(n), lines = fl ? [fl].concat(n.lines) : n.lines, clue = ADV.CLUES.find((c) => c.npc === n.id);
-      if (clue && advOf().clues.indexOf(clue.id) === -1) { showDialog(n.name, lines.concat(clue.lines), null, () => gainClue(clue)); return; }   // the first talk also teaches a clue about the Sealed Arch
+      const fl = n.id === 'pip' ? null : flavorLine(n), lines = fl ? [fl].concat(n.lines) : n.lines, clue = ADV.CLUES.find((c) => c.npc === n.id && advOf().clues.indexOf(c.id) === -1);   // once you have looked, they stop pointing
+      if (clue) { showDialog(n.name, lines.concat(clue.lines)); return; }   // the four people only point at what is in front of them; looking at it is what teaches you
       showDialog(n.name, lines); return;
     }
     if (n.kind === 'shop') { showDialog(n.name, n.lines, null, () => openPanel('shop')); return; } // shops stay quick: no weather remark

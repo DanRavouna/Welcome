@@ -1,16 +1,16 @@
-start: {'used': 0, 'left': 20, 'sightings': 40, 'kept': 1}
-after 1 free sighting: {'used': 0, 'left': 20, 'sightings': 39, 'kept': 1} | note: Found in the tall grass of Sproutvale. Free sighting: 39 left today.
-first-keep hint: False | Sunny in Sproutvale: Bloom critters bask in the su
-Common    -> button "Keep (free, shiny!)" disabled=False
-Uncommon  -> button "Keep (2 rolls)" disabled=False
-Rare      -> button "Keep (4 rolls)" disabled=False
-Mythic    -> button "Keep (8 rolls)" disabled=False
-keep a Rare: rolls left 20 -> 16 | kept 1 -> 2
-2 rolls left, Rare -> ['Kept', True] | tapping keep does nothing: True
-Common still keepable with 2 left -> {'used': 18, 'left': 2, 'sightings': 38, 'kept': 3}
-41st sighting: {'used': 1, 'left': 19, 'sightings': 0, 'kept': 3} | paid: True | note: ur free sightings are used up, so this one cost a roll.
+start: {'used': #, 'left': #, 'sightings': #, 'kept': #}
+after # free sighting: {'used': #, 'left': #, 'sightings': #, 'kept': #} | note: Found in the tall grass of Sproutvale. Free sighting: # left today.
+first-keep hint: False |
+Common -> button "Keep (free, shiny!)" disabled=False
+Uncommon -> button "Keep (# rolls)" disabled=False
+Rare -> button "Keep (# rolls)" disabled=False
+Mythic -> button "Keep (# rolls)" disabled=False
+keep a Rare: rolls left # -> # | kept # -> #
+# rolls left, Rare -> ['Kept', True] | tapping keep does nothing: True
+Common still keepable with # left -> {'used': #, 'left': #, 'sightings': #, 'kept': #}
+#st sighting: {'used': #, 'left': #, 'sightings': #, 'kept': #} | paid: True | note: ur free sightings are used up, so this one cost a roll.
 no sightings + no rolls -> screen opened: False | toast: The grass rustles, but your free sightings and rolls are used up for t
-shrine roll cost: 1 | keep button: Keep (2 rolls)
-after reload sightings left: 23 | count from a past day resets: 40
-test mode Mythic keep: Keep (8 rolls)
+shrine roll cost: # | keep button: Keep (# rolls)
+after reload sightings left: # | count from a past day resets: #
+test mode Mythic keep: Keep (# rolls)
 errors: none

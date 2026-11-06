@@ -40,7 +40,8 @@ const ACT = (() => {
     E.push({ k: k, s: s, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: rand() * 2, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1 + rand(), tick: 1, img: H.img(k) });
     return true;
   }
-  function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; st.atk = null; st.cd = 0; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7); }
+  let stir = 0, stirSpent = false;   // rare grass: stand in a sparkling patch and something stirs; it comes out once per visit
+  function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; stir = 0; stirSpent = false; st.atk = null; st.cd = 0; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7); }
   const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }
@@ -242,10 +243,16 @@ const ACT = (() => {
     PR.slice().forEach((q) => { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; const hp1 = heroPos(); if (rand() < 0.7) VFX.trail(q.m.k.element.name, q.col, q.x, q.y);
       if (q.t > 2.4 || !tileFree(e, q.x, q.y + 12)) { PR.splice(PR.indexOf(q), 1); return; }
       if (Math.min(Math.hypot(hp1.x - q.x, hp1.y - 12 - q.y), Math.hypot(e.P.x - q.x, e.P.y - 12 - q.y)) < 0.6 * e.TS && hero.hp > 0 && st.down <= 0) { PR.splice(PR.indexOf(q), 1); if (q.m && q.m.s.hp > 0) hurtHero(q.m, q.mul); } });
+    // rare grass (Meaning: the rare thing comes to the one who stays): while your critter stands in sparkling grass and no wild critter is near, the patch stirs for about 2.2 s, then a rare one comes out of it; once per visit
+    if (!duel && wildOk(e) && !stirSpent) { const o = heroPos(), inZ = (q) => { const x = Math.floor(q.x / e.TS), y = Math.floor(q.y / e.TS), rr = e.M.rare; return (e.M.grid[y] && e.M.grid[y][x] === 'Z') || !!(rr && x >= rr.x && x < rr.x + rr.w && y >= rr.y && y < rr.y + rr.h); }, hz = inZ(o), pz = inZ(e.P), src = hz ? o : e.P, tx = Math.floor(src.x / e.TS), ty = Math.floor(src.y / e.TS), onZ = hz || pz, near = E.some((m) => Math.hypot(m.x - src.x, m.y - src.y) < 4 * e.TS);   // you or your critter in the patch
+      if (onZ && !near) { stir = Math.min(1, stir + dt / 2.2); if (stir >= 1) { stir = 0; stirSpent = true; const cells = []; for (let y = ty - 2; y <= ty + 2; y++) for (let x = tx - 2; x <= tx + 2; x++) if (e.M.grid[y] && e.M.grid[y][x] === 'Z' && (x !== tx || y !== ty)) cells.push([x, y]);
+          const c = cells.length ? cells[Math.floor(rand() * cells.length)] : [tx, ty], k = H.foe(e.M.types || [], lead(), true);
+          if (k) { const sd = H.game().newBattle(lead(), k, 0).s[1]; sd.label = 'Wild ' + k.name; E.push({ k: k, s: sd, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: 0, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0.6, tele: 0, cd: 1.5, tick: 1, img: H.img ? H.img(k) : null, id: Date.now() % 100000, rare: true, woke: true }); FX.push({ k: 'wake', x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.5) * e.TS, t: 0 }); if (H.sfx) H.sfx('claim'); } } }
+      else stir = Math.max(0, stir - dt * 1.5); }
     // respawns
     spawnT -= dt; if (spawnT <= 0) { spawnT = 6; if (!duel && E.length < 4 && wildOk(e)) spawnOne(e, 8); }
     FX.forEach((x) => { x.t += dt; if (x.k === 'puff') { x.x += x.vx * dt; x.y += x.vy * dt; x.vy += 90 * dt; } });
-    FX = FX.filter((x) => x.t < (x.k === 'slash' ? 0.22 : (x.k === 'num' ? 0.8 : 0.5)));
+    FX = FX.filter((x) => x.t < (x.k === 'slash' ? 0.22 : (x.k === 'num' ? 0.8 : (x.k === 'wake' ? 0.7 : 0.5))));
   }
   function items(e) {
     if (!on) return [];
@@ -261,7 +268,12 @@ const ACT = (() => {
     } }));
     return out;
   }
+  function drawStir(e) {
+    const c = e.ctx; if (stir > 0 && !stirSpent && lastEnv) { const o = heroPos(); for (let i = 0; i < 8; i++) { const ph = (e.t * 0.9 + i * 0.29) % 1, a = i * 0.785 + e.t * 0.6, r = 14 + stir * 12; const x = e.snap(o.x - e.cx + Math.cos(a) * r), y = e.snap(o.y - e.cy + 6 - ph * (16 + stir * 20)); c.fillStyle = 'rgba(255,248,200,' + (0.9 * stir * (1 - ph)).toFixed(2) + ')'; c.fillRect(x - 1, y - 1, 2, 2); if (stir > 0.6 && i % 2 === 0) c.fillRect(x - 2, y, 4, 1); } }
+    FX.forEach((f) => { if (f.k !== 'wake') return; const k = f.t / 0.7; c.strokeStyle = 'rgba(255,230,140,' + (1 - k).toFixed(2) + ')'; c.lineWidth = 2; c.beginPath(); c.arc(e.snap(f.x - e.cx), e.snap(f.y - e.cy), 6 + k * 40, 0, 6.3); c.stroke(); for (let i = 0; i < 8; i++) { const a = i * 0.785; c.fillStyle = 'rgba(255,248,200,' + (1 - k).toFixed(2) + ')'; c.fillRect(e.snap(f.x - e.cx + Math.cos(a) * (10 + k * 30)) - 1, e.snap(f.y - e.cy + Math.sin(a) * (8 + k * 24)) - 1, 2, 2); } });
+  }
   function drawFx(e) {
+    drawStir(e);
     if (!on) return; const c = e.ctx;
     // your critter: health bar and guard bubble
     const o = heroPos(), x = e.snap(o.x - e.cx), y = e.snap(o.y - e.cy);
@@ -295,7 +307,7 @@ const ACT = (() => {
   }
   return {
     bind, step, items, drawFx, active, attack, swapTo, startDuel, giveUp: () => abortDuel('You gave up.'), dueling: () => !!duel, canDuel: () => armed && !duel,
-    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, orbs: () => OFF, get shots() { return PR; }, BEH,
+    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), clear: () => { E = []; }, foes: () => E.map((m) => ({ x: m.x, y: m.y, rare: !!m.rare, woke: !!m.woke, name: m.k.name, rarity: m.k.rarity })), stir: () => stir, stirSpent: () => stirSpent, spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, orbs: () => OFF, get shots() { return PR; }, BEH,
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },
     get enemies() { return E; }, moves: () => (hero ? hero.k.kit.map((m, i) => ({ name: m.name, kind: m.kind, sub: m.sub, i: i })) : []),

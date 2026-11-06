@@ -4,39 +4,40 @@
 // Lookup order per condition: NPC-specific line (NPC[id][cond]) > regional lines (OUT/IN[cond][region]) > generic (OUT/IN[cond]._).
 // Regions are WEATHER.region keys: town, moss, frost, ember, tide, peak and the four routes. Add a person = add a row to NPC; add a region = add keys.
 const FLAVOR = (() => {
+  // Every line is something the speaker can see or feel right now, in the voice of the place; none explains the weather's rules or points anywhere (Meaning: hint, never tell).
   const OUT = { // said outdoors
-    rain: { _: ['Rain again! Critters do not mind a soaking, and neither do I.', 'Mind the puddles. They hide more than you would think.'],
-      moss: ['The forest drinks it all up. Tide critters wander in when it rains like this.'], tide: ['Good rain for Tide critters. They are everywhere today.'], town: ['The fountain is overflowing. It happens every time it rains.'] },
-    storm: { _: ['Did you hear that thunder? Volt critters love this weather.', 'Stay close to the trees. Or do not. Volt critters are about.'],
-      tide: ['The waves are wild today. Nobody is taking a boat out.'], ember: ['Even the embers are hissing in this storm.'] },
-    snow: { _: ['Snow! Frost critters are out and about in it.', 'Every footprint shows in this. I like that.'],
-      frost: ['Fresh snow on the peaks. My favourite kind of morning.'], peak: ['The wind up here bites. Dress warmly if you plan to climb.'] },
-    fog: { _: ['I can barely see my own critter in this fog. Dusk critters love it, though.', 'Quiet fog today. Perfect for sneaking up on a wild critter.'], moss: ['The fog hangs between the trees like a curtain.'] },
-    sun: { _: ['What a bright day! Bloom critters bask in weather like this.', 'The sun is out. Perfect for a long walk.'], ember: ['Sunny and warm. Not that it is ever cold here.'] },
-    ash: { _: ['Ashfall again. Stone critters crawl out of it every time.', 'Keep your sleeve over your nose when the ash blows.'], ember: ['The forge winds carry ash this far today.'] },
-    night: { _: ['It is late. Dusk critters roam everywhere after dark.', 'Careful out there. The grass looks different at night.'], tide: ['The harbor lights look lovely after dark.'] },
-    dawn: { _: ['Up with the sun? Early trainers meet the quietest critters.', 'First light. The best time of day, if you ask me.'] },
-    dusk: { _: ['The day is winding down. Dusk is when the shy critters come out.', 'Almost evening. Time to think about camp.'] }
+    rain: { _: ['The rain is the straight kind today.', 'Everything smells of wet stone.'],
+      moss: ['The leaves hold the rain a while, then let it go all at once.'], tide: ['Rain on the sea makes no sound at all.'], town: ['The fountain cannot tell where the rain stops and it begins.'], ember: ['Rain here is gone before it lands. You can hear it hiss.'] },
+    storm: { _: ['Count after the flash. It is getting closer.', 'The trees lean the same way as me.'],
+      tide: ['Nobody has taken a boat out. The ropes are doubled.'], ember: ['The forge wind and the storm wind argue over the roofs.'] },
+    snow: { _: ['Snow. Every footprint shows, and then it does not.', 'It falls straight. Not a breath of wind.'],
+      frost: ['Fresh snow on the peaks. Nothing has moved up there since dawn.'], peak: ['The wind up here goes through a coat like it is not there.'] },
+    fog: { _: ['I can see my own hand and not much past it.', 'Sounds come from the wrong side in fog.'], moss: ['The fog hangs between the trunks like washing.'] },
+    sun: { _: ['Warm enough to sit on the step.', 'The sun is out. Everything that was wet is steaming.'], ember: ['Sun on top of the forge heat. The stones are too hot to touch.'] },
+    ash: { _: ['Ash again. The sills are grey by noon.', 'Keep your sleeve over your nose when it blows.'], ember: ['The forge wind carries ash this far today.'] },
+    night: { _: ['It is late. The lamps are the only colour left.', 'The grass looks different after dark. Deeper.'], tide: ['The harbour lights double in the water.'] },
+    dawn: { _: ['First light. The quietest hour there is.', 'Up with the sun? So is everything else.'] },
+    dusk: { _: ['The day is folding up.', 'Almost evening. The lamps will go on soon.'] }
   };
   const IN = { // said indoors (hearing it through the walls)
-    rain: { _: ['Listen to the rain on the roof. I could stay in all day.', 'Rainy day. Good for staying in and polishing your Dex.'] },
-    storm: { _: ['That thunder rattled the windows! Glad we are inside.', 'A proper storm. Stay in until it passes, dear.'] },
-    snow: { _: ['It is snowing out there. The window is all frosted at the edges.', 'Snow on the roof. We will be cozy tonight.'] },
+    rain: { _: ['Listen to it on the roof.', 'Rainy day. The kettle is on, as it always is.'] },
+    storm: { _: ['That one rattled the windows.', 'A proper storm. The door stays shut until it passes.'] },
+    snow: { _: ['It is snowing out there. The window is frosted at the edges.', 'Snow on the roof. It will be quiet tonight.'] },
     fog: { _: ['The fog is so thick I cannot see across the street.'] },
-    sun: { _: ['Such a bright day. The sun is coming right through the window.'] },
-    ash: { _: ['Ash on the windowsill again. I just cleaned it!'] },
-    night: { _: ['It is getting late. I was about to turn in.', 'Quiet at night. I can hear the whole house breathe.'] },
-    dawn: { _: ['Up early today! The kettle is just warming.'] },
+    sun: { _: ['Such a bright day. The sun comes right across the floor.'] },
+    ash: { _: ['Ash on the windowsill again. I only just cleaned it.'] },
+    night: { _: ['It is getting late.', 'Quiet at night. You can hear the whole house breathe.'] },
+    dawn: { _: ['Up early. The kettle is only just warm.'] },
     dusk: { _: ['The lamps are coming on outside. Evening already.'] }
   };
   const NPC = { // person-specific remarks: { condition: 'line' }
-    mom: { rain: 'Take your coat if you go out, sweetie. It is pouring!', snow: 'Snow! Do not forget your scarf, sweetie.', night: 'Do not stay out too late, sweetie. Dusk critters roam at night.' },
-    remy: { rain: 'The Lab roof drums in the rain. I like it for reading.', storm: 'Thunder always makes the lab instruments hum.', night: 'I stay late at the Lab sometimes. Night is quiet for research.' },
-    dell: { rain: 'Good thing the tent is waterproof. The soup less so.', night: 'The fire keeps the dark away. Mostly.', fog: 'Fog on the trail. I will wait it out by the fire.' },
-    edda: { fog: 'Fog suits ruins. It makes the carvings look like they are moving.', night: 'I came to sketch the arch, but the dark is no good for drawing.', rain: 'Rain washes the moss off the carvings. I am torn.' },
-    joss: { night: 'Dusk is my hour. I trim the lamp, and the old light turns once more.', fog: 'Fog like this is why the lighthouse was built.', storm: 'A storm! The lamp would have mattered tonight, once.' },
-    neri: { storm: 'Storms wash up the best finds. I will be out as soon as it clears.', sun: 'Sun on the sand. Best beachcombing weather there is.', rain: 'The Tide critters love the rain, even in a wreck.' },
-    mae: { rain: 'My flowers are loving this. Look at them perk up!', sun: 'The garden is glowing in this sun.', snow: 'Snow on the flowers. They sleep now, and wake up in spring.', night: 'I water by lamplight when it is warm. Not tonight.' }
+    mom: { rain: 'Take your coat if you go out. It is pouring.', snow: 'Snow. Your scarf is on the peg.', night: 'It is late. The lamp in the window stays on.' },
+    remy: { rain: 'The Lab roof drums in the rain. Good for reading.', storm: 'Thunder always makes the instruments hum.', night: 'I stay late sometimes. Night is quiet for pages.' },
+    dell: { rain: 'Good thing the tent is waterproof. The soup less so.', night: 'The fire keeps the dark back a little way.', fog: 'Fog on the trail. I will sit by the fire until it lifts.' },
+    edda: { fog: 'Fog suits the carvings. They look like they are moving.', night: 'I came to draw, but there is no light for it.', rain: 'Rain washes the moss off the carvings. I am torn about that.' },
+    joss: { night: 'Dusk is my hour. I trim the lamp, and it turns once more.', fog: 'Fog like this is why the lamp was built.', storm: 'A storm. The lamp would have mattered tonight, once.' },
+    neri: { storm: 'Storms bring things up the beach. I will be out as soon as it clears.', sun: 'Sun on the sand. The best kind of morning for looking.', rain: 'The wreck fills and empties with every rain.' },
+    mae: { rain: 'The flowers are loving this. Look at them stand up.', sun: 'The garden is glowing.', snow: 'Snow on the flowers. They sleep now, and wake in spring.', night: 'I water by lamplight when it is warm. Not tonight.' }
   };
   function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13; return (h >>> 0); }
   function conds(weather, tod) { const c = []; if (weather && weather !== 'clear') c.push(weather); if (tod && tod !== 'day') c.push(tod); return c; }

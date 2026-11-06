@@ -42,7 +42,7 @@ Humans read in metaphor. The game is the greater meaning; the quest is inside it
 - Gates: Moss Lv1, Frost Lv3, Ember Lv6, Tide Lv9 (test mode bypasses).
 - Trainers (size/stage/pick/level): Rowan 2/1/–/1, Ivy 3/2/0.3/4, Bram 4/2/0.5/9, Kiki 3/2/0.55/10, Marlo 4/3/0.4/19. Leaders: Wren 3/2/0.6/11, Glacia 4/2/0.75/5, Blaze 4/3/0.55/15, Coral 5/3/0.75/14. Leader first win 20/25/30/35 essence + seal; rematch 10.
 - Simulated win rates vs expected party: Ivy 66, Wren 65, Bram 72, Glacia 42, Kiki 64, Blaze 46, Marlo 70, Coral 33.
-- Encounters: 85% zone types, sparkling grass ~45% Rare+, night 25% Dusk anywhere. Shop: Potion 3, Super 7, Charm 10, Ticket 5.
+- Encounters: 85% zone types, sparkling grass ~45% Rare+, night 25% Dusk anywhere. Rare grass in action mode (`action.js` stir): stand in the sparkling patch (either body, `'Z'` tiles or the `rare` rectangle) with no wild critter within 4 tiles and it stirs for 2.2 s (motes), then one Rare+ critter wakes from a `Z` cell of the patch, once per visit; stepping out lets it fade at 1.5/s (the follower keeps it stirring until it leaves too). Meaning: the rare thing comes to the one who stays. Test `raregrasstest`. Shop: Potion 3, Super 7, Charm 10, Ticket 5.
 - New players: Fern intro, starters (Ember/Tide/Moss), objective line + gold arrow, one-time hints. Test mode hidden (tap ID 5x in menu).
 
 ## What the revamp built (each item: where the code is; the details are in the archive under the same title)
@@ -91,6 +91,10 @@ Humans read in metaphor. The game is the greater meaning; the quest is inside it
 ## Start over (Menu, Save; Dan, Nov 2026)
 - `#bk-reset` in the Save panel: the first tap arms it (button reads "Erase and start over", 15 s), the second erases every `critter-roll:*` key except the device id, freezes saving (`window.__saveFrozen`) and reloads into a new game. Refused while signed in (Supabase `CLOUD.account.email`, or claude.ai mode with a connected account): the message says to sign out first, because the account copy would come straight back on reload (or an empty save could go up). Signing out already pushes progress and keeps the account's save. `CLOUD.status` getter added. Test: `resettest.py` (runs without the seed hook, in `@smoke` and `@saves`). Not verified: the signed-in refusal against a real account (`supatest` does not cover it).
 
+## Observations, not trivia: flavor lines and the Sealed Arch clues (Nov 2026)
+- `flavor.js` (`OUT`, `IN`, `NPC`): every weather and time remark is now something the speaker can see from where they stand, in the region's voice; no line names a critter type. `flavortest` pins the longest line and the set.
+- The four Sealed Arch clues (`adventure.js` `CLUES`): Edda, Dell, Joss and Neri only point (`lines`, said every time until you have looked); the clue itself is a thing you look at: the arch carving (Highland Pass, the first look at the arch gives it), the hearthstone rhyme by Dell's camp (`rhymestone`), the brass plate at the lighthouse foot (`bearing`), the salt-white stone by the wreck (`wreckstone`). `world.js` places each stone on the left of its prop, two tiles from the prop's sign so the action button offers the stone; `app.js` `objectUse` grants the clue with "You will remember this." and the journal says "Something on <road> you have not looked at closely." `adventuretest` walks it.
+
 ## Watch items
 - Old cached copies of the page on another device would drop the `tower` save key (and any newer field) if THEY write; this build no longer does that to others (see Save compatibility).
 - Not yet verified on a real phone: touch feel, sound, vibration, Pixelify Sans font, real cloud sync.
@@ -109,9 +113,7 @@ Needs Dan (cannot be done from here):
 - GitHub Pages set to "GitHub Actions" so `index.html` can be built there instead of committed (the repo grows ~0.7 MB per push).
 - Which meaning the Reduce-motion player should keep (wind and smoke are off for them; the lamps and the window still show).
 
-Open on the meaning (the two contradictions still standing):
-- `flavor.js` weather and time remarks are type trivia ("Volt critters love this weather"); rewrite them as observations in each region's voice.
-- The four clue-givers (Edda, Dell, Joss, Neri) deliver the Sealed Arch clues as exposition; make the clues things you see at their landmarks, with the people only pointing at what is in front of them.
+Open on the meaning (one contradiction still standing):
 - The Long Watch's floor-by-floor text ("trainers", "wardens") and the weekly twist names still speak the old language.
 
 Polish, in order of what a player would notice:
@@ -120,9 +122,10 @@ Polish, in order of what a player would notice:
 - The climbs' lit posts only fade up while on screen.
 
 Process debt:
+- `guidetest`'s gold-arrow pixel check masks the player's own sprite (the cap is the same gold, `#FFD86B`); before the mask the check read 128 on every build, so its earlier 0 was not evidence. It still proves little: a redesigned arrow in another colour would pass.
 - Two stale checks print a constant False and are labelled STALE (`shinytest` sprite comparison, `towertest` "replay blocked"); rewrite or drop them.
 - A mutation pass on the older systems (saves, cloud sync, Dex, battles) to learn what the suite misses there; the only one done so far was on the revamp's new systems (5 bugs injected, 3 caught, 2 closed with `balancetest`).
 - The route-trainer balance sims (`lbal*`) were deleted; restore from git history before re-tuning route trainers.
 - `peaktest` / `towertest` "tiles changed" lines compare against the current build and prove nothing.
 
-Done this session (for orientation; details in the sections above and in the archive): meaning first; help that leaves; seals and Tower reworded; signature places on every route, zone, city and climb; the deep layer on the main path; the painted world map with fast travel; wind in three passes (edge flutter, per-map wind, weather follows it, drift and smoke); four gym trials; Start over; every city house, Home, the Lab, the Shrine, the Arena and the Watch as rooms; architecture per region; the test process (snapshots, retry, `@smoke`, mutation check, handoff split).
+Done this session (for orientation; details in the sections above and in the archive): flavor lines as observations; the Sealed Arch clues as things you look at; rare grass reworked for action mode (it stirs while you stay); meaning first; help that leaves; seals and Tower reworded; signature places on every route, zone, city and climb; the deep layer on the main path; the painted world map with fast travel; wind in three passes (edge flutter, per-map wind, weather follows it, drift and smoke); four gym trials; Start over; every city house, Home, the Lab, the Shrine, the Arena and the Watch as rooms; architecture per region; the test process (snapshots, retry, `@smoke`, mutation check, handoff split).

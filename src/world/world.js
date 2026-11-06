@@ -511,6 +511,15 @@ const WORLD = (() => {
   addSpot(MAPS.frosthold, { id: 'c-kettle', kind: 'kettle', text: 'The kettle is hot. Two cups.' }, 29, 9, false);
   addSpot(MAPS.cinderport, { id: 'c-bench', kind: 'workbench', text: 'Tools, laid out for the morning.' }, 21, 11, false);
   addSpot(MAPS.coralbay, { id: 'c-lamp', kind: 'harborlamp', text: 'Left on.' }, 26, 16, false);
+  // the clue things stand beside their landmarks (the ruin's clue is the arch itself): a free tile just below or beside the prop
+  ADV.CLUES.filter((c) => c.obj).forEach((c) => {
+    const mid = { camp: 'route-cm', lighthouse: 'route-fc', wreck: 'route-cc' }[c.id], pid = { camp: 'camp', lighthouse: 'lighthouse', wreck: 'wreck' }[c.id], M2 = MAPS[mid], pr = (M2.props || []).find((q) => q.id === pid); if (!pr) return;
+    const col = (x) => { const out = []; for (let y = pr.y; y <= pr.y + pr.h + 1; y++) out.push([x, y]); return out; };
+    const cand = col(pr.x - 1).concat(col(pr.x + pr.w), [[pr.x, pr.y + pr.h + 1], [pr.x + pr.w - 1, pr.y + pr.h + 1]]);   // left of the prop first: the people who point at it all stand to its right
+    const sgx = pr.x + Math.floor((pr.w - 1) / 2), sgy = pr.y + pr.h;   // the prop's sign cell: keep the stone 2 tiles from it so the action button offers the stone, not the sign
+    const spot = cand.find(([x, y]) => M2.grid[y] && ['.', ','].indexOf(M2.grid[y][x]) !== -1 && Math.hypot(x - sgx, y - sgy) >= 2); if (!spot) return;
+    M2.grid[spot[1]][spot[0]] = 'O'; (M2.objects = M2.objects || []).push({ id: 'clue-' + c.id, kind: c.obj.kind, clue: c.id, x: spot[0], y: spot[1], reach: 1.7, text: c.obj.text });
+  });
   addSpot(MAPS.moss, { id: 'z-sprouts', kind: 'sprouts', text: 'Rows of young plants. The soil is turned.' }, 9, 6, false);
   addSpot(MAPS.frost, { id: 'z-icelamp', kind: 'icelamp', text: 'A flame, held in the ice.' }, 26, 19, false);
   addSpot(MAPS.ember, { id: 'z-hearth', kind: 'hearth', text: 'Fresh logs.' }, 10, 20, false);
