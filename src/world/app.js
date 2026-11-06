@@ -1313,8 +1313,8 @@ const APP = (() => {
     const st = game.state;
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
-    { const di = ACT.duelInfo(); if (di && !open) return di.boss || di.tower ? 'boss' : 'battle'; }
-    if (open && st.tab === 'battle') return st.trainer && (st.trainer.tower || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
+    { const di = ACT.duelInfo(); if (di && !open) return di.boss ? 'boss' : 'battle'; }   // the Watch: only the long nights (5, 10, 15, 20) carry the heavy track; the others are nights, not bosses
+    if (open && st.tab === 'battle') return st.trainer && (st.trainer.warden || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
     const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : (WORLD.map.base || WORLD.map.id)), alias = { descent: 'ember', ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; return alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
