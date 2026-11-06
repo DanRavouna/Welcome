@@ -1,4 +1,4 @@
-# Type verbs, Frost and Ember (Meaning: Frost is stillness, Ember is the fire that has to be fed). Frost's Deep Freeze: a ring of ice forms while you stand still and widens over REAL time, holds and chills what it touches, the first step shatters it. Ember's Scorch: hold to feed the flame, release a cone that burns; a tap is a puff. Timed against the clock.
+# Type verbs (Meaning: Frost is stillness, Ember the fire that has to be fed, Tide what comes back, Moss tending). Frost's Deep Freeze: a ring of ice forms while you stand still and widens over REAL time, holds and chills what it touches, the first step shatters it. Ember's Scorch: hold to feed the flame, release a cone that burns; a tap is a puff. Timed against the clock.
 from playwright.sync_api import sync_playwright
 from chk import check, done
 errs=[]
@@ -7,7 +7,7 @@ with sync_playwright() as p:
   pg.add_init_script("window.__noTransition=true")
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1100)
   pg.evaluate("(()=>{const o=WORLD.setPaused; WORLD.setPaused=(v)=>{ if(v) window.__pauseStack=new Error().stack.split('\\n').slice(1,4).join(' | '); return o(v); }})()")
-  seeds=pg.evaluate("(()=>{const g=APP.game,o={};for(let s=1;s<200000&&!(o.Frost&&o.Ember);s+=13){const k=g.make(s,3);if(!o[k.element.name]&&k.rarity!=='Mythic')o[k.element.name]=s;}return o})()")
+  seeds=pg.evaluate("(()=>{const g=APP.game,o={};for(let s=1;s<300000&&!(o.Frost&&o.Ember&&o.Tide&&o.Moss);s+=13){const k=g.make(s,3);if(!o[k.element.name]&&k.rarity!=='Mythic')o[k.element.name]=s;}return o})()")
   def lead(seed):
     pg.evaluate("(s)=>{APP.game.update({caught:[{seed:s,stage:3,lv:20}],party:[s],fighter:s,intro:true,hints:['party','shop','evolve','weather','zone','grass','keep','battle','online']}); WORLD.enter('moss'); WORLD.setPaused(false)}", seed); pg.wait_for_timeout(500)
     for _ in range(8):
@@ -42,5 +42,24 @@ with sync_playwright() as p:
   foes=[f['hp'] for f in placed()]; pg.evaluate("ACT.chargeEnd()"); pg.wait_for_timeout(200); hp2=[[f['hp'],f['burn']] for f in placed()]
   fed=foes[0]-hp2[0][0]
   check('released fed, the cone hits far harder than the puff and burns', fed>=puff*2 and fed>0 and all(b>0 for h,b in hp2), [puff, fed, hp2])
+  # ---- Tide ----
+  lead(seeds['Tide']); check('a Tide critter leads', pg.evaluate("ACT.hero.k.element.name")=='Tide')
+  pg.evaluate("ACT.setSel(3); WORLD.input.jx=1"); pg.wait_for_timeout(120); pg.evaluate("WORLD.input.jx=0"); pg.wait_for_timeout(200)   # face right
+  foes_at(2.2); pg.wait_for_function("ACT.cdFrac()===0", timeout=5000)
+  d0=pg.evaluate("(()=>{const p=WORLD.pos();return ACT.foes().filter(f=>f.max===600).map(f=>Math.hypot(f.x-p.x,f.y-p.y)/32)})()")
+  check('the wave goes out ahead and finds the two critters', pg.evaluate("ACT.attack()") and all(f['weak']>0 for f in placed()), placed())
+  pg.wait_for_timeout(700)
+  d1=pg.evaluate("(()=>{const p=WORLD.pos();return ACT.foes().filter(f=>f.max===600).map(f=>Math.hypot(f.x-p.x,f.y-p.y)/32)})()")
+  check('it comes back with them: both dragged from about 2.2 tiles to about 1, soaked (weakened) and hurt', all(d<1.5 for d in d1) and all(d>1.8 for d in d0) and all(f['hp']<600 for f in placed()), [d0, d1])
+  # ---- Moss ----
+  lead(seeds['Moss']); check('a Moss critter leads', pg.evaluate("ACT.hero.k.element.name")=='Moss')
+  foes_at(1.5); pg.evaluate("ACT.setSel(3); ACT.enemies.forEach(m=>{m.mode='chase'}); ACT.hero.hp=Math.round(ACT.hero.max*0.5)"); pg.wait_for_function("ACT.cdFrac()===0", timeout=5000)
+  x0=pg.evaluate("ACT.foes().filter(f=>f.max===600).map(f=>[f.x,f.y])"); h0=pg.evaluate("ACT.hero.hp")
+  check('roots take the nearest critter: it is held and drained', pg.evaluate("ACT.attack()") and sum(1 for f in placed() if f['rooted'])==1 and any(f['sap']>0 for f in placed()), placed())
+  pg.wait_for_timeout(1200)
+  x1=pg.evaluate("ACT.foes().filter(f=>f.max===600).map(f=>[f.x,f.y])"); rooted=[f for f in placed() if f['rooted']]
+  moved=[abs(a[0]-b[0])+abs(a[1]-b[1]) for a,b in zip(x0,x1)]
+  check('the rooted one does not step while the roots hold (it was chasing)', rooted and min(moved)<2, [moved, [f['rooted'] for f in placed()]])
+  check('staying beside what the roots hold feeds you back (hp rose)', pg.evaluate("ACT.hero.hp")>h0, [h0, pg.evaluate("ACT.hero.hp")])
   check('no page errors', not errs, errs); b.close()
 done()

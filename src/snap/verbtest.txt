@@ -8,4 +8,9 @@ ok an Ember critter leads
 ok a tap is a puff: it starts and ends a charge of # | None
 ok the flame is fed while the button is held (charge rises over real time)
 ok released fed, the cone hits far harder than the puff and burns | [#, #, [[#...], [#...]]]
+ok a Tide critter leads
+ok it comes back with them: both dragged from about # tiles to about #, soaked (weakened) and hurt | [[#...], [#...]]
+ok a Moss critter leads
+ok the rooted one does not step while the roots hold (it was chasing) | [[#...], [True, False]]
+ok staying beside what the roots hold feeds you back (hp rose) | [#...]
 ok no page errors | []
