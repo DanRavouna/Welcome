@@ -3884,7 +3884,9 @@ const ACT = (() => {
   const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null, veil: 0 };
   // ---- type verbs (Meaning: each type's special is the thing its place plays). Frost: stand still and a ring of ice forms and widens; the first step shatters it. Ember: hold to feed the flame, release a cone that burns. ----
   let verb = null;   // { kind: 'frost', t, r, tick } or { kind: 'ember', t }
-  const VERBS = { Frost: 'frost', Ember: 'ember', Tide: 'tide', Moss: 'moss', Volt: 'volt', Dusk: 'dusk' };
+  const VERBS = { Frost: 'frost', Ember: 'ember', Tide: 'tide', Moss: 'moss', Volt: 'volt', Dusk: 'dusk', Stone: 'stone', Bloom: 'bloom' };
+  let walls = [];   // Stone's walls: { tx, ty, hp, t, life }
+  const wallAt = (x, y) => walls.find((w) => w.tx === Math.floor(x / 32) && w.ty === Math.floor(y / 32)) || null;
   const verbOf = () => (hero ? VERBS[hero.k.element.name] || null : null);
   const canVerb = () => on && lastEnv && hero && hero.hp > 0 && st.down <= 0 && !st.swapIn && st.cd <= 0 && !st.atk && !verb && st.sel === 3 && !!verbOf();
   function startFrost() { const o = heroPos(); verb = { kind: 'frost', t: 0, r: 0.6, tick: 0.25, ox: o.x, oy: o.y }; st.quiet = 0; if (H.sfx) H.sfx('tap'); }
@@ -3921,6 +3923,21 @@ const ACT = (() => {
   }
   // Dusk, Veil (Meaning: the dark you step into): the critter fades, what hunts it loses it, and the first blow out of the dark lands hard and ends the veil
   function startDusk() { st.veil = 1.6; const o = heroPos(); for (let i = 0; i < 8; i++) FX.push({ k: 'puff', x: o.x, y: o.y - 10, vx: (rand() - 0.5) * 70, vy: -10 - rand() * 40, t: 0, col: '#5B45B8' }); st.cd = st.cdTot = 0.5; if (H.sfx) H.sfx('tap'); }
+  // Stone, Bulwark (Meaning: what is kept): a wall of stone where you face; it takes the blows and the charges meant for you until it has taken enough, and nothing passes it
+  function startStone() {
+    const e = lastEnv, o = heroPos(), dir = faceVec(e), tx = Math.floor((o.x + dir[0] * 1.2 * e.TS) / e.TS), ty = Math.floor((o.y + dir[1] * 1.2 * e.TS) / e.TS);
+    if (e.solidAt(tx, ty) || wallAt(tx * e.TS + 16, ty * e.TS + 16) || E.some((m) => Math.floor(m.x / e.TS) === tx && Math.floor(m.y / e.TS) === ty)) { st.cd = st.cdTot = 0.8; if (H.sfx) H.sfx('tap'); return; }
+    walls.push({ tx: tx, ty: ty, hp: 3, t: 0, life: 7 }); VFX.impact('Stone', '#A8A29E', tx * e.TS + 16, ty * e.TS + 8, true); VFX.shake(dir[0], dir[1], 4); if (H.sfx) H.sfx('hit'); st.cd = st.cdTot = 4.5;
+  }
+  // Bloom, Soothing Scent (Meaning: gives without being asked): petals bloom around you; you and yours heal while you stand in them, and what comes near forgets the fight for a moment
+  function startBloom() { verb = { kind: 'bloom', t: 0, r: 2.0, tick: 0 }; if (H.sfx) H.sfx('tap'); }
+  function stepBloom(e, dt) {
+    const v = verb, o = heroPos(); v.t += dt; v.tick -= dt;
+    if (v.tick <= 0) { v.tick = 0.5; const h = Math.max(1, Math.round(hero.max * 0.06)); if (hero.hp > 0 && hero.hp < hero.max) { hero.hp = Math.min(hero.max, hero.hp + h); num(o.x, o.y - 34, '+' + h, '#F9A8D4'); }
+      benchSides().forEach((b) => { if (b.hp > 0 && b.hp < b.max) b.hp = Math.min(b.max, b.hp + Math.max(1, Math.round(b.max * 0.06))); });
+      E.forEach((m) => { if (Math.hypot(m.x - o.x, m.y - o.y) <= v.r * e.TS + 8) { m.calmT = 1.2; m.mode = 'idle'; m.tele = 0; m.dash = 0; } }); }
+    if (v.t >= 2.4) { verb = null; st.cd = st.cdTot = 5.0; }
+  }
   function chargeStart() { if (!canVerb() || verbOf() !== 'ember') return false; verb = { kind: 'ember', t: 0 }; if (H.sfx) H.sfx('tap'); return true; }
   function chargeCancel() { if (verb && verb.kind === 'ember') verb = null; }
   function chargeEnd() { if (!verb || verb.kind !== 'ember') return false; const ch = Math.max(0, Math.min(1, (verb.t - 0.12) / 1.2)); verb = null; fireCone(ch); return true; }
@@ -3934,9 +3951,11 @@ const ACT = (() => {
     VFX.shake(dir[0], dir[1], 2 + 5 * ch); if (H.sfx) H.sfx('slash'); st.cd = st.cdTot = 1.2 + 1.2 * ch;
   }
   function stepVerb(e, dt) {
+    walls.forEach((w) => { w.t += dt; }); walls = walls.filter((w) => w.hp > 0 && w.t < w.life);
     if (st.veil > 0) { st.veil -= dt; if (st.veil <= 0) { st.veil = 0; st.cd = st.cdTot = 3.5; } }   // the veil fades on its own, and then needs a while to gather again
     if (!verb) return; const g = H.game();
     if (verb.kind === 'volt') { stepVolt(e, dt); return; }
+    if (verb.kind === 'bloom') { stepBloom(e, dt); return; }
     if (verb.kind === 'ember') { verb.t = Math.min(1.6, verb.t + dt); if (hero.hp <= 0) verb = null; return; }
     const hp = heroPos(); if (Math.hypot(hp.x - verb.ox, hp.y - verb.oy) > 3 || hero.hp <= 0) { FX.push({ k: 'shatter', x: heroPos().x, y: heroPos().y - 8, r: verb.r * e.TS, t: 0 }); verb = null; st.cd = st.cdTot = 2.2; if (H.sfx) H.sfx('tap'); return; }   // the first step shatters it
     verb.t += dt; verb.r = Math.min(2.6, 0.6 + verb.t * 1.0); verb.tick -= dt;
@@ -3965,7 +3984,7 @@ const ACT = (() => {
     hero.guard = false; st.guard = 0; st.swapIn = null; H.setLead(seed); st.cd = st.cdTot = 0.8; if (H.sfx) H.sfx('claim'); num(heroPos().x, heroPos().y - 30, 'Go, ' + b.k.name + '!', '#FFFFFF'); return true;
   }
   function dummy() { return { k: hero.k, hp: 9999, max: 9999, burn: 0, weak: 0, daze: 0, sap: 0, fort: 0, guard: false, uses: 9, abUsed: false }; }
-  function tileFree(e, x, y) { return !e.solidAt(Math.floor((x - 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor((x + 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor(x / e.TS), Math.floor((y - 5) / e.TS)); }
+  function tileFree(e, x, y) { if (wallAt(x, y)) return false; return !e.solidAt(Math.floor((x - 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor((x + 7) / e.TS), Math.floor(y / e.TS)) && !e.solidAt(Math.floor(x / e.TS), Math.floor((y - 5) / e.TS)); }
   function spawnOne(e, far, elem, rare, at) {
     const cells = [], M = e.M, px = e.P.x / e.TS, py = e.P.y / e.TS;
     if (at) cells.push(at); else for (let y = 0; y < M.H; y++) for (let x = 0; x < M.W; x++) { const t = M.grid[y][x]; if ((t === 'W' || t === 'Z') && Math.hypot(x - px, y - py) >= far) cells.push([x, y]); }
@@ -3977,7 +3996,7 @@ const ACT = (() => {
     return true;
   }
   let stir = 0, stirSpent = false;   // rare grass: stand in a sparkling patch and something stirs; it comes out once per visit
-  function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; stir = 0; stirSpent = false; st.atk = null; st.cd = 0; verb = null; st.veil = 0; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7);
+  function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; stir = 0; stirSpent = false; st.atk = null; st.cd = 0; verb = null; st.veil = 0; walls = []; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7);
     if (wildOk(e) && e.M.id === 'town' && H.game().state.caught.length <= 1) spawnOne(e, 0, null, false, [6, 10]); }   // a new game: one wild critter waits in the grass by your door (Meaning: the first thing kept is at home)
   const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
@@ -3997,6 +4016,8 @@ const ACT = (() => {
     if (mi === 3 && verbOf() === 'ember') { if (chargeStart()) chargeEnd(); return true; }   // a tap is a puff
     if (mi === 3 && verbOf() === 'tide') { startTide(); return true; }
     if (mi === 3 && verbOf() === 'volt') { startVolt(); return true; }
+    if (mi === 3 && verbOf() === 'stone') { startStone(); return true; }
+    if (mi === 3 && verbOf() === 'bloom') { startBloom(); return true; }
     if (mi === 3 && verbOf() === 'dusk') { if (st.veil > 0) return false; startDusk(); return true; }
     if (mi === 3 && verbOf() === 'moss') { startMoss(); return true; }
     let dir = faceVec(e), tg = mv.kind === 'guard' ? null : target(e, dir);
@@ -4041,7 +4062,7 @@ const ACT = (() => {
     const r = H.onKill ? H.onKill(m.k, hero.k) : null;
     if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); } if (H.sfx) H.sfx('claim'); }
   }
-  function walk(m, e, vx, vy, dt) { if (m.rooted > 0) return; const nx = m.x + vx * dt, ny = m.y + vy * dt; if (tileFree(e, nx, m.y)) m.x = nx; if (tileFree(e, m.x, ny)) m.y = ny; }
+  function walk(m, e, vx, vy, dt) { if (m.rooted > 0) return; { const w = wallAt(m.x + vx * dt, m.y + vy * dt); if (w && m.dash > 0) { w.hp -= 1; m.dash = 0; m.kx = -vx * 0.6; m.ky = -vy * 0.6; VFX.impact('Stone', '#A8A29E', w.tx * 32 + 16, w.ty * 32 + 8, true); if (H.sfx) H.sfx('hit'); } } const nx = m.x + vx * dt, ny = m.y + vy * dt; if (tileFree(e, nx, m.y)) m.x = nx; if (tileFree(e, m.x, ny)) m.y = ny; }
   // ---- enemy behaviours: one per element (the old single melee swing is the fallback) ----
   const BEH = {
     Ember: { atk: 'dash', spd: 50, cd: 2.4, mul: 1.1, tele: 0.5, rng: 4.2 },              // winds up, then charges in a straight line
@@ -4177,6 +4198,7 @@ const ACT = (() => {
     E.slice().forEach((m) => {
       m.flash = Math.max(0, m.flash - dt); m.cd = Math.max(0, m.cd - dt); m.t += dt;
       if (m.frozen > 0) { m.frozen -= dt; return; }   // held in the ice: no step, no attack
+      if (m.calmT > 0) { m.calmT -= dt; m.mode = 'idle'; return; }   // in the petals: it has forgotten the fight for a moment
       if (m.pull > 0) m.pull -= dt;
       if (m.rooted > 0) { m.rooted -= dt; const o0 = heroPos(); if (hero.hp > 0 && hero.hp < hero.max && Math.hypot(m.x - o0.x, m.y - o0.y) < 1.6 * e.TS) { m.feed = (m.feed || 0) + dt; if (m.feed >= 0.5) { m.feed = 0; const h = Math.max(1, Math.round(hero.max * 0.02)); hero.hp = Math.min(hero.max, hero.hp + h); num(o0.x, o0.y - 34, '+' + h, '#A7F04A'); } } }   // the roots feed you back while you stay beside what they hold
       if (Math.abs(m.kx) + Math.abs(m.ky) > 1) { walk(m, e, m.kx, m.ky, dt); m.kx *= 0.82; m.ky *= 0.82; } else { m.kx = 0; m.ky = 0; }
@@ -4194,7 +4216,7 @@ const ACT = (() => {
       }
       if (o.t > o.life) OFF.splice(OFF.indexOf(o), 1); }); }
     PR.slice().forEach((q) => { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; const hp1 = heroPos(); if (rand() < 0.7) VFX.trail(q.m.k.element.name, q.col, q.x, q.y);
-      if (q.t > 2.4 || !tileFree(e, q.x, q.y + 12)) { PR.splice(PR.indexOf(q), 1); return; }
+      if (q.t > 2.4 || !tileFree(e, q.x, q.y + 12)) { const w = wallAt(q.x, q.y + 12); if (w) { w.hp -= 1; VFX.impact('Stone', '#A8A29E', q.x, q.y, false); } PR.splice(PR.indexOf(q), 1); return; }   // a wall takes the shot
       if (Math.min(Math.hypot(hp1.x - q.x, hp1.y - 12 - q.y), Math.hypot(e.P.x - q.x, e.P.y - 12 - q.y)) < 0.6 * e.TS && hero.hp > 0 && st.down <= 0) { PR.splice(PR.indexOf(q), 1); if (q.m && q.m.s.hp > 0) hurtHero(q.m, q.mul); } });
     // rare grass (Meaning: the rare thing comes to the one who stays): while your critter stands in sparkling grass and no wild critter is near, the patch stirs for about 2.2 s, then a rare one comes out of it; once per visit
     if (!duel && wildOk(e) && !stirSpent) { const o = heroPos(), inZ = (q) => { const x = Math.floor(q.x / e.TS), y = Math.floor(q.y / e.TS), rr = e.M.rare; return (e.M.grid[y] && e.M.grid[y][x] === 'Z') || !!(rr && x >= rr.x && x < rr.x + rr.w && y >= rr.y && y < rr.y + rr.h); }, hz = inZ(o), pz = inZ(e.P), src = hz ? o : e.P, tx = Math.floor(src.x / e.TS), ty = Math.floor(src.y / e.TS), onZ = hz || pz, near = E.some((m) => Math.hypot(m.x - src.x, m.y - src.y) < 4 * e.TS);   // you or your critter in the patch
@@ -4228,6 +4250,10 @@ const ACT = (() => {
   }
   function drawVerb(e) {
     const c = e.ctx, o = heroPos(), x = e.snap(o.x - e.cx), y = e.snap(o.y - e.cy);
+    walls.forEach((w) => { const wx = e.snap(w.tx * 32 - e.cx), wy = e.snap(w.ty * 32 - e.cy), k = Math.min(1, w.t / 0.15), hgt = Math.round(26 * k); c.fillStyle = '#4A4A5A'; c.fillRect(wx + 2, wy + 28 - hgt, 28, hgt); c.fillStyle = '#A8A29E'; c.fillRect(wx + 3, wy + 29 - hgt, 26, Math.max(0, hgt - 2));
+      for (let r = 0; r < 4; r++) for (let q = 0; q < 3; q++) { const bx = wx + 4 + q * 9 + (r % 2) * 4, by = wy + 30 - hgt + r * 6; if (by > wy + 2 && bx < wx + 28) { c.fillStyle = '#8E8A86'; c.fillRect(bx, by, 7, 1); c.fillRect(bx, by, 1, 5); } }
+      c.fillStyle = '#2B2235'; if (w.hp <= 2) { c.fillRect(wx + 12, wy + 8, 1, 10); c.fillRect(wx + 13, wy + 12, 3, 1); } if (w.hp <= 1) { c.fillRect(wx + 22, wy + 14, 1, 10); c.fillRect(wx + 19, wy + 20, 3, 1); c.fillRect(wx + 6, wy + 18, 4, 1); } });
+    if (verb && verb.kind === 'bloom') { const R = verb.r * e.TS; for (let i = 0; i < 18; i++) { const a = i * 0.349 + verb.t * 1.1, rr = R * (0.55 + 0.45 * ((i * 5) % 7) / 6), px = e.snap(x + Math.cos(a) * rr), py = e.snap(y - 8 + Math.sin(a) * rr * 0.75 - Math.sin(verb.t * 3 + i) * 3); c.fillStyle = i % 3 === 0 ? '#FFFFFF' : (i % 3 === 1 ? '#F9A8D4' : '#E07AB0'); c.fillRect(px - 1, py - 1, 3, 2); } }
     if (verb && verb.kind === 'frost') { const R = verb.r * e.TS; c.fillStyle = 'rgba(200,232,255,0.14)'; c.beginPath(); c.arc(x, y - 6, R, 0, 6.3); c.fill();
       for (let i = 0; i < 28; i++) { const a = i * 0.224 + verb.t * 0.3, px = e.snap(x + Math.cos(a) * R), py = e.snap(y - 6 + Math.sin(a) * R * 0.75); c.fillStyle = i % 3 === 0 ? '#FFFFFF' : '#DCEFF8'; c.fillRect(px - 1, py - 1, 2, 2); if (i % 4 === 0) c.fillRect(px - 1, py - 3, 2, 2); } }
     if (verb && verb.kind === 'ember') { const ch = Math.max(0, Math.min(1, (verb.t - 0.12) / 1.2)), d = faceVec(e), fx = e.snap(x + d[0] * 12), fy = e.snap(y - 12 + d[1] * 8), n = 2 + Math.round(ch * 6);
@@ -4275,8 +4301,8 @@ const ACT = (() => {
     });
   }
   return {
-    bind, step, items, drawFx, active, attack, swapTo, startDuel, giveUp: () => abortDuel('You gave up.'), dueling: () => !!duel, canDuel: () => armed && !duel, veiled: () => st.veil > 0, veilAlpha: () => (st.veil > 0 ? 0.35 : 1), verb: () => (verb ? { kind: verb.kind, t: verb.t, r: verb.r || 0, charge: verb.kind === 'ember' ? Math.max(0, Math.min(1, (verb.t - 0.12) / 1.2)) : 0 } : null), chargeable: () => canVerb() && verbOf() === 'ember', chargeStart, chargeEnd, chargeCancel, dawn: () => (duel && duel.night ? Math.min(1, duel.night.t / duel.night.len) : null),
-    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, dawn: duel.night ? Math.min(1, duel.night.t / duel.night.len) : null, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), clear: () => { E = []; }, foes: () => E.map((m) => ({ x: m.x, y: m.y, rare: !!m.rare, woke: !!m.woke, name: m.k.name, rarity: m.k.rarity, hp: m.s.hp, max: m.s.max, frozen: m.frozen > 0, burn: m.s.burn || 0, weak: m.s.weak || 0, sap: m.s.sap || 0, daze: m.s.daze || 0, rooted: m.rooted > 0, pull: m.pull > 0 })), stir: () => stir, stirSpent: () => stirSpent, spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, orbs: () => OFF, get shots() { return PR; }, BEH,
+    bind, step, items, drawFx, active, attack, swapTo, startDuel, giveUp: () => abortDuel('You gave up.'), dueling: () => !!duel, canDuel: () => armed && !duel, walls: () => walls.map((w) => ({ tx: w.tx, ty: w.ty, hp: w.hp, t: w.t })), veiled: () => st.veil > 0, veilAlpha: () => (st.veil > 0 ? 0.35 : 1), verb: () => (verb ? { kind: verb.kind, t: verb.t, r: verb.r || 0, charge: verb.kind === 'ember' ? Math.max(0, Math.min(1, (verb.t - 0.12) / 1.2)) : 0 } : null), chargeable: () => canVerb() && verbOf() === 'ember', chargeStart, chargeEnd, chargeCancel, dawn: () => (duel && duel.night ? Math.min(1, duel.night.t / duel.night.len) : null),
+    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, dawn: duel.night ? Math.min(1, duel.night.t / duel.night.len) : null, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), clear: () => { E = []; }, foes: () => E.map((m) => ({ x: m.x, y: m.y, rare: !!m.rare, woke: !!m.woke, name: m.k.name, rarity: m.k.rarity, hp: m.s.hp, max: m.s.max, frozen: m.frozen > 0, burn: m.s.burn || 0, weak: m.s.weak || 0, sap: m.s.sap || 0, daze: m.s.daze || 0, calm: m.calmT > 0, mode: m.mode, rooted: m.rooted > 0, pull: m.pull > 0 })), stir: () => stir, stirSpent: () => stirSpent, spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, orbs: () => OFF, get shots() { return PR; }, BEH,
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },
     get enemies() { return E; }, moves: () => (hero ? hero.k.kit.map((m, i) => ({ name: m.name, kind: m.kind, sub: m.sub, i: i })) : []),

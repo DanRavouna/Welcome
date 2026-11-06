@@ -23,4 +23,12 @@ dusk: veiled # ms in True
 dusk: veiled after False | cd #
 ok the first blow out of the dark lands and ends the veil | [#, False]
 ok it lands far harder than the same blow in the open (#x, with the roll of # to # on each) | [#...]
+ok a Stone critter leads
+ok the wall is set on the tile you face | [{'tx': #, 'ty': #, 'hp': #, 't': #}]
+ok a chasing critter cannot pass it: still more than # tiles away after # s, and you are unhurt | [#...]
+ok a shot at you breaks on the wall instead (the wall has taken a hit, you have not) | [[{'tx': #, 'ty': #, 'hp': #, 't': #}], #]
+ok a Bloom critter leads
+ok petals bloom around you
+ok you heal while you stand in them (at least #% in # s) | [#...]
+ok the petals fade after about # s
 ok no page errors | []

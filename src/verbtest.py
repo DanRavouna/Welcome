@@ -1,4 +1,4 @@
-# Type verbs (Meaning: Frost is stillness, Ember the fire that has to be fed, Tide what comes back, Moss tending, Volt the wind that passes through, Dusk the dark you step into). Frost's Deep Freeze: a ring of ice forms while you stand still and widens over REAL time, holds and chills what it touches, the first step shatters it. Ember's Scorch: hold to feed the flame, release a cone that burns; a tap is a puff. Timed against the clock.
+# Type verbs (Meaning: Frost is stillness, Ember the fire that has to be fed, Tide what comes back, Moss tending, Volt the wind that passes through, Dusk the dark you step into, Stone what is kept, Bloom gives without being asked). Frost's Deep Freeze: a ring of ice forms while you stand still and widens over REAL time, holds and chills what it touches, the first step shatters it. Ember's Scorch: hold to feed the flame, release a cone that burns; a tap is a puff. Timed against the clock.
 from playwright.sync_api import sync_playwright
 from chk import check, done
 errs=[]
@@ -7,7 +7,7 @@ with sync_playwright() as p:
   pg.add_init_script("window.__noTransition=true")
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1100)
   pg.evaluate("(()=>{const o=WORLD.setPaused; WORLD.setPaused=(v)=>{ if(v) window.__pauseStack=new Error().stack.split('\\n').slice(1,4).join(' | '); return o(v); }})()")
-  seeds=pg.evaluate("(()=>{const g=APP.game,o={};for(let s=1;s<400000&&!(o.Frost&&o.Ember&&o.Tide&&o.Moss&&o.Volt&&o.Dusk);s+=13){const k=g.make(s,3);if(!o[k.element.name]&&k.rarity!=='Mythic')o[k.element.name]=s;}return o})()")
+  seeds=pg.evaluate("(()=>{const g=APP.game,o={};for(let s=1;s<400000&&!(o.Frost&&o.Ember&&o.Tide&&o.Moss&&o.Volt&&o.Dusk&&o.Stone&&o.Bloom);s+=13){const k=g.make(s,3);if(!o[k.element.name]&&k.rarity!=='Mythic')o[k.element.name]=s;}return o})()")
   def lead(seed):
     pg.evaluate("(s)=>{APP.game.update({caught:[{seed:s,stage:3,lv:20}],party:[s],fighter:s,intro:true,hints:['party','shop','evolve','weather','zone','grass','keep','battle','online']}); WORLD.enter('moss'); WORLD.setPaused(false)}", seed); pg.wait_for_timeout(500)
     for _ in range(8):
@@ -82,5 +82,27 @@ with sync_playwright() as p:
   pg.wait_for_function("ACT.cdFrac()===0", timeout=8000); pg.evaluate("(()=>{const o=WORLD.pos();ACT.enemies.forEach(m=>{m.x=o.x+32;m.y=o.y-20;m.hx=m.x;m.hy=m.y;m.kx=0;m.ky=0;});})()"); pg.wait_for_timeout(150)   # the dark blow knocked it back: put it beside the critter again for the plain blow
   hp2=[f['hp'] for f in placed()]; pg.evaluate("ACT.attack()"); pg.wait_for_timeout(400); hp3=[f['hp'] for f in placed()]; plain=max(a-b for a,b in zip(hp2,hp3))
   check('it lands far harder than the same blow in the open (1.8x, with the roll of 0.85 to 1.15 on each)', plain>0 and dark>=plain*1.3, [dark, plain])
+  # ---- Stone ----
+  lead(seeds['Stone']); check('a Stone critter leads', pg.evaluate("ACT.hero.k.element.name")=='Stone')
+  pg.evaluate("ACT.setSel(3); WORLD.input.jx=1"); pg.wait_for_timeout(120); pg.evaluate("WORLD.input.jx=0"); pg.wait_for_timeout(200)
+  pg.evaluate("ACT.clear(); ACT.spawn(1,'Volt',false); const o=WORLD.pos(); ACT.enemies.forEach((m)=>{m.x=o.x+3.2*32; m.y=o.y; m.hx=m.x; m.hy=m.y; m.mode='chase'; m.kind='melee'; m.cd=0; m.tele=0; m.s.hp=m.s.max=600;})"); pg.wait_for_function("ACT.cdFrac()===0", timeout=5000)
+  h0=pg.evaluate("ACT.hero.hp")
+  check('the wall is set on the tile you face', pg.evaluate("ACT.attack() && ACT.walls().length===1 && ACT.walls()[0].tx===Math.floor(WORLD.pos().x/32)+1"), pg.evaluate("ACT.walls()"))
+  pg.wait_for_timeout(1800)
+  d=pg.evaluate("(()=>{const p=WORLD.pos();const f=ACT.foes()[0];return f?Math.hypot(f.x-p.x,f.y-p.y)/32:null})()")
+  check('a chasing critter cannot pass it: still more than 1.5 tiles away after 1.8 s, and you are unhurt', d is not None and d>1.5 and pg.evaluate("ACT.hero.hp")==h0, [d, h0, pg.evaluate("ACT.hero.hp")])
+  pg.evaluate("(()=>{const w=ACT.walls()[0];const o=WORLD.pos();ACT.enemies.forEach(m=>{m.x=o.x+4*32;m.y=o.y;m.kind='shoot';m.cd=0;m.tele=0.01;m.aim={x:o.x,y:o.y};}); })()")
+  pg.wait_for_timeout(1500)
+  check('a shot at you breaks on the wall instead (the wall has taken a hit, you have not)', pg.evaluate("ACT.walls().length===0 || ACT.walls()[0].hp<3") and pg.evaluate("ACT.hero.hp")==h0, [pg.evaluate("ACT.walls()"), pg.evaluate("ACT.hero.hp")])
+  # ---- Bloom ----
+  lead(seeds['Bloom']); check('a Bloom critter leads', pg.evaluate("ACT.hero.k.element.name")=='Bloom')
+  foes_at(1.4, 'Tide'); pg.evaluate("ACT.setSel(3); ACT.enemies.forEach(m=>{m.mode='chase'; m.cd=0; m.tele=0}); ACT.hero.hp=Math.round(ACT.hero.max*0.5)"); pg.wait_for_function("ACT.cdFrac()===0", timeout=5000)
+  h0=pg.evaluate("ACT.hero.hp")
+  check('petals bloom around you', pg.evaluate("ACT.attack() && ACT.verb() && ACT.verb().kind==='bloom'"))
+  pg.wait_for_timeout(1300)
+  check('you heal while you stand in them (at least 10% in 1.3 s)', pg.evaluate("ACT.hero.hp")-h0>=pg.evaluate("ACT.hero.max")*0.1, [h0, pg.evaluate("ACT.hero.hp"), pg.evaluate("ACT.hero.max")])
+  check('what came near has forgotten the fight for a moment (calm, idle)', all(f['calm'] and f['mode']=='idle' for f in placed()), placed())
+  pg.wait_for_timeout(1400)
+  check('the petals fade after about 2.4 s', pg.evaluate("ACT.verb()") is None)
   check('no page errors', not errs, errs); b.close()
 done()
