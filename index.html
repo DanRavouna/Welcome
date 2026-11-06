@@ -1125,7 +1125,7 @@ const PIX = (() => {
   // ---- facings (Dan, Nov 2026: eight directions, a real second drawing from the same parts, not a flip of the front) ----
   // Every facing is the critter's own geometry re-arranged: the back shows the parts mirrored with no face and the tail in front of the body; the profile is the body narrowed to 0.8 with one eye and the mouth at the far edge and the tail behind; the quarter views sit between (0.92 wide, the face shifted toward the facing). Left facings mirror the right ones.
   const FACE = { down: { c: 1, mirror: false, face: 'front' }, up: { c: 1, mirror: true, face: 'none', tailFront: true }, right: { c: 0.8, mirror: false, face: 'side', tailBack: true }, left: { c: 0.8, mirror: true, face: 'side', tailBack: true },
-    downright: { c: 0.92, mirror: false, face: 'quarter' }, downleft: { c: 0.92, mirror: true, face: 'quarter' }, upright: { c: 0.92, mirror: true, face: 'none', tailFront: true }, upleft: { c: 0.92, mirror: false, face: 'none', tailFront: true } };
+    downright: { c: 0.92, mirror: false, face: 'quarter' }, downleft: { c: 0.92, mirror: true, face: 'quarter' }, upright: { c: 0.92, mirror: true, face: 'none', sliver: true, tailFront: true }, upleft: { c: 0.92, mirror: false, face: 'none', sliver: true, tailFront: true } };   // sliver: the outer third of one eye shows at the far edge of the back quarter, clipped by the body
   const mirrorR = (r) => String(r).split(' / ').map((s) => { const t = s.trim().split(/\s+/); if (t.length === 1) return t[0]; if (t.length === 2) return t[1] + ' ' + t[0]; if (t.length === 3) return t[1] + ' ' + t[0] + ' ' + t[1]; return t[1] + ' ' + t[0] + ' ' + t[3] + ' ' + t[2]; }).join(' / ');
   function geometry(k, facing) {
     const F = FACE[facing] || FACE.down, c = F.c, body = k.body, isTail = (p) => p.x + p.w / 2 > body.x + body.w * 0.72 && p.y + p.h / 2 > body.y + body.h * 0.35;
@@ -1147,6 +1147,7 @@ const PIX = (() => {
     else { const lo2 = mix(body, [0, 0, 0], 0.18); g.fillStyle = css(lo2); g.beginPath(); g.ellipse(G.body.x + G.body.w / 2, G.body.y + G.body.h * 0.42, G.body.w * 0.1, G.body.h * 0.3, 0, 0, 6.3); g.fill(); }   // from behind: no face, a darker line down the back
     G.front.forEach(partFill);
     if (F.face !== 'none') G.over.forEach((o) => { g.fillStyle = o.bg; shape(g, o.x, o.y, o.w, o.h, o.r, o.rot); g.fill(); });
+    if (F.sliver && k.eyes.length) { const s0 = k.eyes[0].s, cxS = G.body.x + G.body.w * (F.mirror ? 0.04 : 0.96), cyS = k.eyeRow.y + s0 / 2; g.save(); shape(g, G.body.x, G.body.y, G.body.w, G.body.h, G.body.r, 0); g.clip(); g.fillStyle = css(ink); g.beginPath(); g.arc(cxS + (F.mirror ? -s0 * 0.22 : s0 * 0.22), cyS, s0 / 2, 0, 6.3); g.fill(); g.restore(); }   // the back quarter: a sliver of one eye at the far edge
     const eyesDrawn = F.face === 'none' ? [] : (F.face === 'side' ? [k.eyes[k.eyes.length - 1]] : k.eyes);
     const n = eyesDrawn.length, s = n ? k.eyes[0].s : 0, total = n * s + (n - 1) * 8, sx = (F.face === 'side' ? G.body.x + G.body.w * (F.mirror ? 0.2 : 0.8) - s / 2 : G.eyeRow.x + (G.eyeRow.w - total) / 2 + G.shift);
     eyesDrawn.forEach((e, i) => {
@@ -1210,7 +1211,7 @@ const PIX = (() => {
     return cache.get(key);
   }
   // what a facing does to a critter, for tests: how many eyes it draws, whether it is mirrored, how wide the body is, how many parts sit in front of the body
-  const plan = (k, facing) => { const G = geometry(k, facing || 'down'); return { face: G.F.face, eyes: G.F.face === 'none' ? 0 : (G.F.face === 'side' ? 1 : k.eyes.length), mirror: !!G.F.mirror, bodyW: Math.round(G.body.w), front: G.front.length, back: G.back.length }; };
+  const plan = (k, facing) => { const G = geometry(k, facing || 'down'); return { face: G.F.face, eyes: G.F.face === 'none' ? 0 : (G.F.face === 'side' ? 1 : k.eyes.length), sliver: !!G.F.sliver, mirror: !!G.F.mirror, bodyW: Math.round(G.body.w), front: G.front.length, back: G.back.length }; };
   return { sprite, radii, parseColor, plan, FACINGS: Object.keys(FACE) };
 })();
 

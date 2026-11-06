@@ -17,12 +17,12 @@ with sync_playwright() as p:
     const sil=async(k,f)=>{const im=await load(PIX.sprite(k,'big',f));const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);const d=x.getImageData(0,0,c.width,c.height).data;const rows=[];for(let y=0;y<c.height;y++){let row='';for(let xx=0;xx<c.width;xx++){row+=d[(y*c.width+xx)*4+3]?'#':'.';}rows.push(row);}return rows};
     const out={plan:0,mirror:0,n:0,bad:[],worst:0};
     for(const q of seeds){const k=g.make(q.s,1);out.n++;const D=PIX.plan(k,'down'),U=PIX.plan(k,'up'),R=PIX.plan(k,'right'),L=PIX.plan(k,'left'),DR=PIX.plan(k,'downright');
-      const ok=D.eyes===k.eyes.length&&U.eyes===0&&R.eyes===1&&L.eyes===1&&L.mirror&&!R.mirror&&R.bodyW===Math.round(D.bodyW*0.8)&&DR.bodyW===Math.round(D.bodyW*0.92)&&U.front+U.back===D.front+D.back;
+      const UR=PIX.plan(k,'upright');const ok=D.eyes===k.eyes.length&&U.eyes===0&&!U.sliver&&UR.eyes===0&&UR.sliver&&R.eyes===1&&L.eyes===1&&L.mirror&&!R.mirror&&R.bodyW===Math.round(D.bodyW*0.8)&&DR.bodyW===Math.round(D.bodyW*0.92)&&U.front+U.back===D.front+D.back;
       if(ok)out.plan++;else out.bad.push(['plan',k.name,D,U,R,L,DR]);
       const Rs=await sil(k,'right'),Ls=await sil(k,'left');const mir=Rs.map(r=>r.split('').reverse().join(''));let diff=0,all=0;for(let y=0;y<Ls.length;y++)for(let x=0;x<Ls[y].length;x++){if(Ls[y][x]==='#'||mir[y][x]==='#'){all++;if(Ls[y][x]!==mir[y][x])diff++;}}
       const frac=all?diff/all:0;out.worst=Math.max(out.worst,frac);if(frac<=0.03)out.mirror++;else out.bad.push(['mirror',k.name,+frac.toFixed(3)]);}
     return out}""")
-  check('for every species: all eyes on the front, none on the back, one in profile; the profile is 0.8 wide and the quarter 0.92; nothing is lost from behind', r['plan']==r['n'], [r['n'], r['plan'], [x for x in r['bad'] if x[0]=='plan'][:2]])
+  check('for every species: all eyes on the front, none on the back, a sliver on the back quarter, one in profile; the profile is 0.8 wide and the quarter 0.92; nothing is lost from behind', r['plan']==r['n'], [r['n'], r['plan'], [x for x in r['bad'] if x[0]=='plan'][:2]])
   check('left is the mirror of right in silhouette (within 3% of pixels, the rasteriser is not perfectly symmetric; shading stays lit from the top-left on purpose)', r['mirror']==r['n'], [r['n'], r['mirror'], r['worst'], [x for x in r['bad'] if x[0]=='mirror'][:3]])
   # in play: the lead critter's image follows its facing
   pg.evaluate("WORLD.enter('town'); WORLD.setPos(21.9*32, 23.6*32); WORLD.setPaused(false)"); pg.wait_for_timeout(200)
