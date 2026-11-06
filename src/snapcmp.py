@@ -22,7 +22,7 @@ def lines(path, mask=False):
     try: raw = open(path, errors='replace').read().split('\n')
     except Exception: return []
     out = [norm(l.strip()) for l in raw if l.strip()]
-    return [LISTS.sub('[#...]', MASK.sub('#', l)) for l in out] if mask else out
+    return [re.sub(r'\s+', ' ', LISTS.sub('[#...]', MASK.sub('#', l))) for l in out] if mask else out   # runs of spaces collapse too: a %3d column pads 2-digit numbers and not 3-digit ones
 mode, name = sys.argv[1], sys.argv[2]
 if mode == 'build':
     mk = volatile(name)

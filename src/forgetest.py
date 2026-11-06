@@ -9,7 +9,7 @@ with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':780}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.add_init_script("window.__noFollower = true")   # test hook: no follower, so no action mode (these suites test the older flows)
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
-  pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:16}],party:[2],fighter:2,intro:true,xp:99999,essence:10,adv:{clues:[],open:{},flags:{}},settings:Object.assign({},APP.game.state.settings,{follow:false,weather:false,ambient:false})}); document.getElementById('tip')&&(document.getElementById('tip').hidden=true); DEV.safe=true")
+  pg.evaluate("APP.game.update({hints:['party','shop','evolve','weather','zone','grass','keep','battle','online'],caught:[{seed:2,stage:3,lv:16}],party:[2],fighter:2,intro:true,xp:99999,essence:10,adv:{clues:[],open:{},flags:{}},settings:Object.assign({},APP.game.state.settings,{follow:false,weather:false,ambient:false})}); document.getElementById('tip')&&(document.getElementById('tip').hidden=true); DEV.safe=true")
   walk=lambda **t: pg.evaluate(WALK, t)
   def finish():
     for _ in range(60):

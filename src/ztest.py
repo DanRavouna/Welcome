@@ -54,7 +54,7 @@ with sync_playwright() as p:
       return {zoneTypeShare:(inT/N).toFixed(2), rarePlusNormal:(rare/N).toFixed(3), rarePlusSparkle:(rareZ/N).toFixed(3), mythicSparkle:(myth/N).toFixed(3)}; }""")
     print('distribution:', d)
     # 5. out of rolls
-    o=pg.evaluate("""async () => { const g=APP.game; g.update({settings:Object.assign({},g.state.settings,{test:false}), day:new Date().toDateString(), used:20});
+    o=pg.evaluate("""async () => { const g=APP.game; g.update({hints:['party','shop','evolve','weather','zone','grass','keep','battle','online'], settings:Object.assign({},g.state.settings,{test:false}), day:new Date().toDateString(), used:20});   // no one-time tip may land on the toast read below
       APP.encounter({types:['Frost'], rare:false, zone:'Frost Peaks'}); await new Promise(r=>setTimeout(r,400));
       const r={screenOpen:!document.getElementById('screen').hidden, toast:document.getElementById('toast').textContent};
       g.update({settings:Object.assign({},g.state.settings,{test:true}), used:0}); return r; }""")

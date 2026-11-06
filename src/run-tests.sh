@@ -14,8 +14,8 @@ GROUP_saves="compattest menutest dextest p14 p15 p18r ctest statstest titletest 
 GROUP_smoke="compattest jittertest maptest guidetest citytest hometest fxtest windtest gymtest zonespottest statstest flavortest landmarkstest evotest"
 GROUP_ui="evotest a11ytest hudcheck musictest vfxtest"
 expand() { for a in "$@"; do case "$a" in @*) v="GROUP_${a#@}"; for t in ${!v}; do echo $t.py; done;; *) echo "$a";; esac; done; }
-# No argument = every test once (the default list plus all groups, duplicates removed; before, the default list and the groups overlapped and half of a "full run" was repeats). Several tests run side by side (JOBS, default 3 of the 4 cores); tests that measure real time or speed run alone first, so load does not skew them.
-SERIAL=" perf.py windrhythmtest.py winddrifttest.py jitter.py "
+# No argument = every test once (the default list plus all groups, duplicates removed; before, the default list and the groups overlapped and half of a "full run" was repeats). Six tests run side by side by default (JOBS): the suite is mostly sleeping (about 480 s of fixed waits in 1100 s of test time), so 6 jobs on 4 cores still leave the CPU half idle.
+SERIAL="${SERIAL:- }"   # tests to run alone first, e.g. SERIAL=" perf.py " (none by default: the real-time tests held up under 6 parallel jobs)
 dedupe() { awk '!seen[$0]++'; }
 if [ $# -gt 0 ]; then TESTS="$(expand "$@" | dedupe)"; else TESTS="$( (for t in $HOOKED weathertest p17; do echo $t.py; done; expand @world @battle @saves @ui) | dedupe)"; fi
 cd /tmp
@@ -38,7 +38,7 @@ SER=""; PAR=""
 for t in $TESTS; do case "$SERIAL" in *" $t "*) SER="$SER $t";; *) PAR="$PAR $t";; esac; done
 rm -f "$LOG"/*.snapdiff; RES="$LOG/.results"; : > "$RES"
 for t in $SER; do run_one "$t" | tee -a "$RES"; done
-[ -n "$PAR" ] && echo $PAR | tr ' ' '\n' | xargs -P "${JOBS:-3}" -I{} bash -c 'run_one {}' | tee -a "$RES"
+[ -n "$PAR" ] && echo $PAR | tr ' ' '\n' | xargs -P "${JOBS:-6}" -I{} bash -c 'run_one {}' | tee -a "$RES"
 N=$(grep -c "rc=" "$RES"); F=$(grep "rc=" "$RES" | grep -vc "rc=0 flagged_lines=0"); C=$(grep -c "snap=CHANGED" "$RES")
 for c in $(grep "snap=CHANGED" "$RES" | cut -d' ' -f1); do echo "  $c: these lines are no longer printed (accept an intended change with: bash src/snap-build.sh $c):"; head -6 "$LOG/$c.snapdiff" | cut -c1-200 | sed 's/^/    /'; done
 K=$(grep -c "FLAKY" "$RES"); echo "SUMMARY: $N tests | $F failed | $C changed since the snapshot | $K flaky (passed only on retry)"
