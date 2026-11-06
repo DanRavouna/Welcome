@@ -57,8 +57,8 @@ with sync_playwright() as p:
     pg.evaluate("(m)=>{WORLD.enter(m);WORLD.setPaused(false)}", mid); pg.wait_for_timeout(150)
     pg.evaluate("(o)=>{const ob=WORLD.objects.find(x=>x.id===o);WORLD.setPos((ob.x+0.5)*WORLD.TS,(ob.y+1.4)*WORLD.TS);WORLD.step(1/30)}", oid); pg.wait_for_timeout(200)
     pg.click('#act'); pg.wait_for_timeout(200); t1=pg.inner_text('#toast'); pg.wait_for_timeout(300); pg.click('#act'); pg.wait_for_timeout(200); t2=pg.inner_text('#toast')
-    results.append(('You open the chest' in t1, 'empty' in t2))
-  print(f'{len(chests)} chests: each opens once and is empty after:', all(a and c for a,c in results))
+    results.append((mid+'/'+oid,'You open the chest' in t1, 'empty' in t2))
+  print(f'{len(chests)} chests: each opens once and is empty after:', all(a and c for _,a,c in results), '| failed:', [r for r in results if not (r[1] and r[2])])
   # people and unexplained things
   people=pg.evaluate("['brandt','hob','isla','orrin'].map(id=>{const e=Object.entries(WORLD.allNpcs()).find(([m,l])=>l.some(n=>n.id===id));if(!e)return id+' missing';const n=e[1].find(x=>x.id===id);const M=WORLD.MAPS[e[0]];return ['.',',','='].indexOf(M.grid[n.y][n.x])!==-1?'ok':id+' on '+M.grid[n.y][n.x]})")
   print('the four hermit-types stand on walkable ground:', people)

@@ -102,6 +102,7 @@ Humans read in metaphor. The game is the greater meaning; the quest is inside it
 - Flags (`world.js`, after the smoke pass): one pennant on every gym hall, on the Long Watch and on the harbour lamp post in Coralbay. The tail ripples with the trees' six poses (`lastKf`, `SIN6F`), 1 px per column; with wind under 0.12 it hangs. Drawn per frame, not baked. Meaning: wind is change; the banner shows it where a fire is kept, and in the cold it hangs still.
 - Spray (`ambient.js` `spray`): white flecks off the water on Tide Shore, Coralbay and the Reef Causeway while the map's wind is over 0.3; they rise, drift east and fall back. `ambienttest` lists it.
 - Post lamps on the climbs now ease on and off even while off screen (`world.js` object loop steps every `postlamp` state before culling), so the lamps ahead are already lit when they come into view.
+- The Reef Causeway is a causeway now (`NETS` `causeway` rectangles for `route-cc`, `route-cc-pier`, `route-cc-steam`): tall-grass pockets beside the lantern road became water, so the lamps' light travels across the dark over water. Only `W` cells turn, paths and open ground stay; a lone cell the water walls in becomes water too. Grass left: 91 / 52 / 62 cells (`ztest`). Meaning: the way home lit across the dark.
 - The grove houses' canopy is a round crown drawn row by row (`pxworld.js` `crown`), with a lighter top and three darker leaf clumps.
 
 ## Watch items
@@ -123,11 +124,12 @@ Needs Dan (cannot be done from here):
 - Which meaning the Reduce-motion player should keep (wind and smoke are off for them; the lamps and the window still show).
 
 Polish, in order of what a player would notice:
-- The small one-tile room objects may be hard to read on a phone; the Coral lamps stand beside the road rather than across water (the causeway maps have almost no water).
+- The small one-tile room objects may be hard to read on a phone.
 
 Process debt:
 - **Mutation pass on the older systems (Nov 2026):** five bugs injected one at a time. Caught: the save dropping `party` on write (`p15`), no type advantage in battle (`fxtest`), 25 rolls a day instead of 20 (`p17`, `p18r`). Missed, then closed with `roundtriptest.py` (in `@saves` and `@smoke`): the load dropping `shinies`, and the Dex species count off by one. `roundtriptest` writes every top-level save field with a distinct value, reloads and compares them (fields the game recomputes on load are checked as supersets), and pins the Dex count. Re-injecting both bugs fails it.
 - `peaktest` and `towertest` no longer compare against an old build (none exists); they check the trail stamp and the tower footprint directly, and `test-setup.sh` no longer fakes the old build. The two STALE checks (shinytest sprite comparison, towertest replay) are gone.
+- Real-clock flakiness closed (Nov 2026): `p14` pins noon for its daytime encounter case, `p18r` pins clear weather and waits for the keep hint instead of reading the toast at a fixed millisecond, `letgotest` pins clear weather under its beam pixel sample, `resettest` sorts the save keys, `wildtest` names the chest that failed. `musictest`, `titletest` and `a11ytest` still pass only on a retry now and then under six parallel jobs.
 - `guidetest`'s gold-arrow pixel check masks the player's own sprite (the cap is the same gold, `#FFD86B`); before the mask the check read 128 on every build, so its earlier 0 was not evidence. It still proves little: a redesigned arrow in another colour would pass.
 - A mutation pass on cloud sync (`cloud.js`) has not been done; it needs the live project (`supatest.py`).
 - The route-trainer balance sims are back under `src/sims/` (`lbal2` to `lbal5`, `lbalab`, restored from the commit before the test review); they are not run by `run-tests.sh` and have not been re-run since the action-mode duels, so re-check them before trusting their numbers.

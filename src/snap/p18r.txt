@@ -1,6 +1,6 @@
 start: {'used': #, 'left': #, 'sightings': #, 'kept': #}
 after # free sighting: {'used': #, 'left': #, 'sightings': #, 'kept': #} | note: Found in the tall grass of Sproutvale. Free sighting: # left today.
-first-keep hint: False |
+first-keep hint: True | Seeing critters is free (# per day). Keeping one
 Common -> button "Keep (free, shiny!)" disabled=False
 Uncommon -> button "Keep (# rolls)" disabled=False
 Rare -> button "Keep (# rolls)" disabled=False

@@ -11,7 +11,9 @@ with sync_playwright() as p:
     enc=lambda: pg.evaluate("Math.random=()=>0.999; APP.encounter({types:['Moss'],rare:false,zone:'Sproutvale'})") or pg.wait_for_timeout(450)
     print('start:', st())
     enc(); print('after 1 free sighting:', st(), '| note:', pg.evaluate("APP.game.renderVals().encounterNote"))
-    pg.wait_for_timeout(1100); print('first-keep hint:', pg.evaluate("APP.game.state.hints.includes('keep')"), '|', pg.inner_text('#toast')[:50])
+    try: pg.wait_for_function("document.getElementById('toast').textContent.indexOf('Keeping one')!==-1 && APP.game.state.hints.includes('keep')", timeout=4000)   # the hint lands on its own timer; a fixed wait read it mid-way under load
+    except Exception: pass
+    print('first-keep hint:', pg.evaluate("APP.game.state.hints.includes('keep')"), '|', pg.inner_text('#toast')[:50])
     for r in ['Common','Uncommon','Rare','Mythic']:
         pg.evaluate(f"APP.game.setState({{seed:{seeds[r]}}})"); v=pg.evaluate("(()=>{const v=APP.game.renderVals(); return [v.keepLabel, v.keepDisabled]})()")
         print(f'  {r:9s} -> button "{v[0]}" disabled={v[1]}')

@@ -4,7 +4,7 @@ errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
-  pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,npc:{done:[],beaten:{},cleared:['maren','hale','keeper'],seals:[]}}); DEV.safe=true; window.__noTransition=true; window.__tod='day'")
+  pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,npc:{done:[],beaten:{},cleared:['maren','hale','keeper'],seals:[]}}); DEV.safe=true; window.__noTransition=true; window.__tod='day'; window.__weather='clear'")   # the beam pixel sample sat under real-clock weather (snow flecks), which made it flaky
   def say(who):
     pg.evaluate("(id)=>{const all=WORLD.allNpcs();let n;for(const k in all){n=all[k].find(x=>x.id===id)||n}APP.talk(n)}",who); pg.wait_for_timeout(120)
     out=[]

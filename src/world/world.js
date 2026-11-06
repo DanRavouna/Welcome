@@ -438,6 +438,8 @@ const WORLD = (() => {
     main.spawn = main.arriveFrom[net.spawnFrom];
     (net.props || []).forEach((pr) => addProp(MAPS[pr[0]], pr[1], pr[2], pr[3]));
     (net.trail || []).forEach((t) => addTrail(MAPS[t[0]], t[1], t[2], t[3]));
+    (net.causeway || []).forEach(([mid, x1, y1, x2, y2]) => { const g = MAPS[mid].grid; for (let y = y1; y <= y2; y++) for (let x = x1; x <= x2; x++) if (g[y] && g[y][x] === 'W') g[y][x] = '~';
+      const open = (x, y) => g[y] && ['.', ',', 'W', 'Z', '='].indexOf(g[y][x]) !== -1; for (let y = y1 - 1; y <= y2 + 1; y++) for (let x = x1 - 1; x <= x2 + 1; x++) if (g[y] && ['.', ','].indexOf(g[y][x]) !== -1 && !open(x + 1, y) && !open(x - 1, y) && !open(x, y + 1) && !open(x, y - 1)) g[y][x] = '~'; });   // a lone cell the water walled in becomes water too   // the lantern road runs between water: only tall-grass cells turn to water, so every path and open cell stays
     if (net.shore) addShore(MAPS[net.shore]);
     const post = (Mp, edge, a, text) => { const xy = { n: [a + 2, 1], s: [a + 2, Mp.H - 2], w: [1, a - 1], e: [Mp.W - 2, a - 1] }[edge]; Mp.grid[xy[1]][xy[0]] = 'G'; Mp.signs.push({ x: xy[0], y: xy[1], text: text }); };
     (net.posts || []).forEach((pt) => post(MAPS[pt[0]], pt[1], pt[2], pt[3]));
@@ -491,7 +493,7 @@ const WORLD = (() => {
     props: [['route-fc-shelf', 'cairn', [24, 8], 'Frost on the south face. Dry on the north.'], ['route-fc-strand', 'cairn', [20, 9], 'Shells set in a line, smallest to largest. The last place is empty.'], ['route-fc-skerry', 'cairn', [12, 8], 'Something was weighed against these stones and taken away.']],
     posts: [['frosthold', 'e', 13, 'East: the Glacier Coast (Frost and Tide critters), the road to Coralbay.'], ['coralbay', 'n', 28, 'North: the Glacier Coast (Frost and Tide critters), the road to Frosthold.']] });
   // ---- Reef Causeway: Coralbay -> Pier Road -> the causeway proper (Mako, the wreck) -> Steamvent Flats -> Cinderport; a bypass over the Low Shoals; the Drowned Orchard is a dead end south of the causeway
-  NETS.push({ base: 'route-cc', main: 'route-cc', cityA: 'coralbay', cityB: 'cinderport', spawnFrom: 'route-cc-pier', trail: [['route-cc-pier', 'n', 's', { wave: true, step: 6, start: 5 }], ['route-cc', 'n', 'w', { wave: true, step: 6, start: 5 }], ['route-cc-steam', 'e', 'w', { wave: true, step: 6, start: 5 }]],
+  NETS.push({ base: 'route-cc', main: 'route-cc', cityA: 'coralbay', cityB: 'cinderport', spawnFrom: 'route-cc-pier', causeway: [['route-cc', 11, 2, 15, 5], ['route-cc', 3, 7, 6, 12], ['route-cc-pier', 5, 9, 9, 11], ['route-cc-pier', 14, 7, 18, 12], ['route-cc-steam', 19, 7, 23, 11], ['route-cc-steam', 7, 15, 21, 18]], trail: [['route-cc-pier', 'n', 's', { wave: true, step: 6, start: 5 }], ['route-cc', 'n', 'w', { wave: true, step: 6, start: 5 }], ['route-cc-steam', 'e', 'w', { wave: true, step: 6, start: 5 }]],
     maps: [
       { id: 'route-cc-pier', base: 'route-cc', name: 'Pier Road', seed: 8801, types: ['Tide', 'Ember'], hub: [16, 13], grass: 4, doors: [{ edge: 'n', a: 16 }, { edge: 's', a: 16 }, { edge: 'e', a: 12 }] },
       { id: 'route-cc-shoals', base: 'route-cc', name: 'Low Shoals', seed: 8802, types: ['Tide', 'Ember'], hub: [15, 14], grass: 5, doors: [{ edge: 'w', a: 12 }, { edge: 's', a: 20 }], nooks: [{ x: 26, y: 8, r: 3 }], rare: 0,
