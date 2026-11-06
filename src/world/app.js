@@ -1390,12 +1390,16 @@ const APP = (() => {
         if (best !== hover) { hover = best; [].forEach.call(wheel.querySelectorAll('.slot'), (el) => el.classList.toggle('on', +el.dataset.i === hover)); }
       }
       function closeWheel(pick) { wheelOn = false; wheel.hidden = true; if (pick && hover >= 0) { if (hover < 4) { ACT.setSel(hover); if (game.sfx) game.sfx('tap'); } else { const b = ACT.benchList()[hover - 4]; if (b) ACT.swapTo(b.seed); } } }
-      atk.addEventListener('pointerdown', (e) => { e.preventDefault(); try { atk.setPointerCapture(e.pointerId); } catch (x) {} wheelOn = false; clearTimeout(holdT); holdT = setTimeout(openWheel, 260); });
-      atk.addEventListener('pointermove', (e) => { if (wheelOn) wheelHover(e.clientX, e.clientY); });
-      atk.addEventListener('pointerup', (e) => { clearTimeout(holdT); if (wheelOn) { wheelHover(e.clientX, e.clientY); closeWheel(true); } else ACT.attack(); });
-      atk.addEventListener('pointercancel', () => { clearTimeout(holdT); if (wheelOn) closeWheel(false); });
+      // a charge move (Ember's Scorch) is fed by holding the button; the wheel then opens by dragging off the button instead of by holding
+      let charging = false, downX = 0, downY = 0;
+      atk.addEventListener('pointerdown', (e) => { e.preventDefault(); try { atk.setPointerCapture(e.pointerId); } catch (x) {} wheelOn = false; clearTimeout(holdT); downX = e.clientX; downY = e.clientY; charging = ACT.chargeable() && ACT.chargeStart(); if (!charging) holdT = setTimeout(openWheel, 260); });
+      atk.addEventListener('pointermove', (e) => { if (wheelOn) { wheelHover(e.clientX, e.clientY); return; } if (charging && Math.hypot(e.clientX - downX, e.clientY - downY) > 22) { charging = false; ACT.chargeCancel(); openWheel(); wheelHover(e.clientX, e.clientY); } });
+      atk.addEventListener('pointerup', (e) => { clearTimeout(holdT); if (wheelOn) { wheelHover(e.clientX, e.clientY); closeWheel(true); } else if (charging) { charging = false; ACT.chargeEnd(); } else ACT.attack(); });
+      atk.addEventListener('pointercancel', () => { clearTimeout(holdT); if (charging) { charging = false; ACT.chargeCancel(); } if (wheelOn) closeWheel(false); });
       atk.addEventListener('contextmenu', (e) => e.preventDefault());
-      window.addEventListener('keydown', (e) => { if (e.key === 'j' && !WORLD.paused) ACT.attack(); });
+      let jHeld = false;
+      window.addEventListener('keydown', (e) => { if (e.key !== 'j' || WORLD.paused || jHeld) return; jHeld = true; if (!(ACT.chargeable() && ACT.chargeStart())) ACT.attack(); });
+      window.addEventListener('keyup', (e) => { if (e.key !== 'j') return; jHeld = false; ACT.chargeEnd(); });
       // the catch pouch: a small icon with a count; tapping it opens the critter card (the same one grass sightings use)
       const pb = $('pouch'); let pbN = -1;
       pb.addEventListener('click', () => openPouch());

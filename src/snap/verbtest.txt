@@ -1,0 +1,11 @@
+ok the world runs (nothing left it paused) | {'dlg': False, 'tr': False, 'open': ['hud'], 'toast': '', 'stack': None}
+ok a Frost critter leads
+ok pressing the special starts the stillness verb | {'kind': 'frost', 't': #, 'r': #, 'charge': #}
+ok the ring widens over real time while you stand still (monotonic, about # tile per second) | [#...]
+ok no other attack while the ring stands
+ok the first step shatters it
+ok an Ember critter leads
+ok a tap is a puff: it starts and ends a charge of # | None
+ok the flame is fed while the button is held (charge rises over real time)
+ok released fed, the cone hits far harder than the puff and burns | [#, #, [[#...], [#...]]]
+ok no page errors | []
