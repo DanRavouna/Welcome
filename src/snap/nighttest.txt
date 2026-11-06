@@ -1,0 +1,7 @@
+ok the lobby is marked as the duel hall | in-tower
+ok night # starts as a live duel in the lobby | [True, 'in-tower', None]
+ok the visitor comes in at the door (bottom rows of the lobby, by the exit) | [[#...]]
+ok the night runs toward dawn | [#...]
+ok the duel box shows the night running out, not a body count | <b>Night #</b><span class="dawn" aria-label="until morning"><i style="width:#%"></i></span><button aria-label="Give up the duel">Give up</button>
+ok at dawn the night is kept without anyone going down: the run moves to night # | {'dueling': False, 'run': {'floor': #, 'party': [#...], 'hp': {'#': #, '#': #}}, 'best': #, 'res': None, 'dlg': 'Night # kept. +# essence for a longest watch.'}
+ok no page errors | []

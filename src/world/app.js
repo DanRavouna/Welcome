@@ -12,6 +12,7 @@ const APP = (() => {
     }
     lastLevel = lv.level;
     $('c-rolls').textContent = (game.props.testMode ? 'Test' : en.left + '/20');
+    { const oil = $('c-oil'); if (oil) { const h = game.props.testMode ? 12 : Math.max(1, Math.round(12 * en.left / 20)); oil.setAttribute('height', h); oil.setAttribute('y', 14 - h); } }   // the day's lamp: its flame goes down as the day is spent
     $('c-rolls').setAttribute('aria-label', game.props.testMode ? 'Test mode: unlimited rolls' : en.left + ' of 20 rolls left today');
     $('c-ess').textContent = st.essence || 0; $('c-ess').setAttribute('aria-label', (st.essence || 0) + ' essence');
     $('c-lv').textContent = 'Lv ' + lv.level;
@@ -28,7 +29,7 @@ const APP = (() => {
   let outNotice = 0;
   function encounter(info) {
     if (open || dlg || menuOpen || mapOpen || panel || !$('bk').hidden || !$('cf').hidden || !$('starter').hidden || !$('title').hidden) return;
-    if (game.sightingsLeft() <= 0 && game.energy().left === 0) { if (Date.now() - outNotice > 20000) { outNotice = Date.now(); hintQueue.length = 0; hintBusy = true; toast('The grass rustles, but your free sightings and rolls are used up for today. Both refill at midnight.'); setTimeout(() => { hintBusy = false; pumpHints(); }, 4600); } return; }
+    if (game.sightingsLeft() <= 0 && game.energy().left === 0) { if (Date.now() - outNotice > 20000) { outNotice = Date.now(); hintQueue.length = 0; hintBusy = true; toast('The grass rustles. The day\u2019s light is spent; tomorrow brings more. (Your free sightings and rolls are used up for today. Both refill at midnight.'); setTimeout(() => { hintBusy = false; pumpHints(); }, 4600); } return; }
     const calm = game.state.settings && game.state.settings.calm;
     WORLD.setPaused(true); if (!calm) WORLD.flash(); game.sfx('tap');
     lastOpener = document.activeElement;
@@ -790,7 +791,14 @@ const APP = (() => {
     }
     const k = lampK[o.id] === undefined ? want : lampK[o.id]; lampK[o.id] = k + Math.sign(want - k) * Math.min(Math.abs(want - k), dt * 1.6); return { k: lampK[o.id] };
   }
-  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'chamberlamp') return chamberlampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'windowlamp') { const t = timeOfDay(); return { lit: a.flags.lampLit ? a.flags.homeLit === new Date().toDateString() : (sealCount() >= 3 || t === 'night' || t === 'dusk') }; } /* after the beacon the window is lit only by you, each day */ if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  function APP_FOLLOWER() {
+    const st = game.state; if (!st.caught.length || window.__noFollower) return null;   // window.__noFollower is a test hook (the older turn-based suites)
+      const seeds = game.partySeeds(), sd = st.caught.some((e) => e.seed === st.fighter) ? st.fighter : (seeds[0] || st.caught[0].seed), e = st.caught.find((c) => c.seed === sd);
+      const key = sd + ':' + (e ? e.stage : 1);
+      if (!folCache || folCache.key !== key) { const k = game.make(sd, e ? e.stage : 1), img = new Image(); img.src = PIX.sprite(k, 'icon'); folCache = { key: key, img: img, shiny: !!k.shiny }; }
+      return folCache;
+  }
+  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'chamberlamp') return chamberlampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'windowlamp') { const t = timeOfDay(); return { lit: a.flags.lampLit ? a.flags.homeLit === new Date().toDateString() : (sealCount() >= 3 || t === 'night' || t === 'dusk') }; } /* after the beacon the window is lit only by you, each day */ if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'critterbasket') { const fl = APP_FOLLOWER(); return { img: fl ? fl.img : null }; } if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -1391,8 +1399,8 @@ const APP = (() => {
       const db = $('duel'); let dbSig = '';
       db.addEventListener('click', (ev) => { if (ev.target.closest('button')) ACT.giveUp(); });
       setInterval(() => {
-        const di = ACT.duelInfo(), sig = di ? di.name + di.defeated + '/' + di.total : '';
-        if (sig !== dbSig) { dbSig = sig; db.hidden = !di; if (di) db.innerHTML = '<b>' + esc(di.tower ? 'Night ' + di.floor : di.name) + '</b><span>' + di.defeated + ' of ' + di.total + ' down</span><button aria-label="Give up the duel">Give up</button>'; }
+        const di = ACT.duelInfo(), sig = di ? di.name + di.defeated + '/' + di.total + (di.dawn !== null && di.dawn !== undefined ? '/' + Math.round(di.dawn * 40) : '') : '';
+        if (sig !== dbSig) { dbSig = sig; db.hidden = !di; if (di) db.innerHTML = '<b>' + esc(di.tower ? 'Night ' + di.floor : di.name) + '</b>' + (di.tower && di.dawn !== null ? '<span class="dawn" aria-label="until morning"><i style="width:' + Math.round(di.dawn * 100) + '%"></i></span>' : '<span>' + di.defeated + ' of ' + di.total + ' down</span>') + '<button aria-label="Give up the duel">Give up</button>'; }
       }, 150);
       setInterval(() => {
         const show = ACT.ready() && !WORLD.paused && !open; if (atk.hidden === show) atk.hidden = !show; if (!show) { if (wheelOn) closeWheel(false); return; }
@@ -1416,13 +1424,7 @@ const APP = (() => {
       exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       critterLead: () => !!(game && game.state.caught.length && !window.__noFollower),   // you steer the critter; the human walks behind it
-      follower: () => {
-        const st = game.state; if (!st.caught.length || window.__noFollower) return null;   // window.__noFollower is a test hook (the older turn-based suites)
-        const seeds = game.partySeeds(), sd = st.caught.some((e) => e.seed === st.fighter) ? st.fighter : (seeds[0] || st.caught[0].seed), e = st.caught.find((c) => c.seed === sd);
-        const key = sd + ':' + (e ? e.stage : 1);
-        if (!folCache || folCache.key !== key) { const k = game.make(sd, e ? e.stage : 1), img = new Image(); img.src = PIX.sprite(k, 'icon'); folCache = { key: key, img: img, shiny: !!k.shiny }; }
-        return folCache;
-      },
+      follower: APP_FOLLOWER,
       onLocked: (e) => ROUTE_GATES[e.to] ? toast(mapName(e.to) + ' opens at trainer level ' + ROUTE_GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.') : e.to === 'peak' ? toast("The trail to Vigil Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.') : toast(ZONE_NAMES[e.to] + ' opens at trainer level ' + GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.'),
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,

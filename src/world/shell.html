@@ -95,6 +95,7 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 #atk .ring::after{content:'';position:absolute;inset:0;background:rgba(14,26,56,.62);clip-path:inset(calc((1 - var(--cd,0))*100%) 0 0 0);pointer-events:none}
 #atk-label{padding:2px 9px;border-radius:999px;background:var(--glass);color:#fff;font-size:11px;font-weight:800;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis}
 #duel{position:absolute;left:50%;transform:translateX(-50%);top:calc(112px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;padding:6px 8px 6px 14px;border-radius:999px;background:var(--glass);border:2px solid #FF8A7A;color:#fff;z-index:5;white-space:nowrap}
+#duel .dawn{display:inline-block;width:56px;height:6px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden;vertical-align:middle}#duel .dawn i{display:block;height:100%;background:#FFD27A}
 #duel b{font-size:13px;font-weight:900}#duel span{font-size:11px;font-weight:700;color:#C9D6F2}#duel button{border:0;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;font:inherit;font-size:11px;font-weight:800;padding:4px 10px;cursor:pointer}
 #pouch{position:absolute;right:calc(14px + env(safe-area-inset-right,0px));top:calc(122px + env(safe-area-inset-top,0px));width:50px;height:50px;border-radius:50%;border:2.5px solid #FFC94D;background:radial-gradient(circle at 40% 30%,#3A4A78 0%,#1E2A4A 70%);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:5}
 #pouch b{position:absolute;right:-5px;top:-5px;min-width:20px;height:20px;border-radius:10px;background:#FFC94D;color:#2A1B00;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #fff;padding:0 3px}
@@ -228,7 +229,7 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
 </div>
       <div class="rcol">
       <div class="chips">
-        <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A7F04A" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"></path></svg><span id="c-rolls"></span></span>
+        <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="7" y="18" width="10" height="4" rx="1" fill="#C9D6F2"/><rect x="10.5" y="14" width="3" height="4" fill="#C9D6F2"/><rect id="c-oil" x="8" y="2" width="8" height="12" rx="3" fill="#FFD27A"/></svg><span id="c-rolls"></span></span>
         <span class="chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A8FF" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 9-8 9-8-9z"></path></svg><span id="c-ess"></span></span>
         <span class="chip" id="c-lv"></span>
           <button class="mbtn" id="b-menu" aria-label="Open menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"></path></svg>Menu<span class="dot" id="b-menu-dot" hidden></span></button>

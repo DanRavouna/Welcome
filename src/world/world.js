@@ -629,7 +629,7 @@ const WORLD = (() => {
     ['b', 's', 't', 'p', 'k', 'h', 'm', 'a', 'x', 'n'].forEach((k) => (LY[k] || []).forEach(([x, y]) => { m[y][x] = k; }));
     m[H - 1][dx] = 'd'; m[H - 1][dx + 1] = 'd';
     const objects = (opt.objects || []).map((o) => { m[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });   // things to look at, drawn with the adventure art
-    return { id: id, name: place.name, interior: true, objects: objects, rug: LY.r || null, parent: cityId, style: ROOM_STYLE[opt.style || cityId], theme: { bg: '#1A1424' }, grid: m, W: W, H: H, places: opt.places || [], signs: [], types: [], rate: 0,
+    return { id: id, name: place.name, interior: true, duelHall: !!opt.duelHall, objects: objects, rug: LY.r || null, parent: cityId, style: ROOM_STYLE[opt.style || cityId], theme: { bg: '#1A1424' }, grid: m, W: W, H: H, places: opt.places || [], signs: [], types: [], rate: 0,
       exits: [{ edge: 's', a: dx, b: dx + 1, to: cityId }], arrive: { s: [dx + 0.9, H - 1.6] }, spawn: [dx + 0.9, H - 1.6] };
   }
   // Mossbrook's three houses are built by hand (Meaning, Mossbrook: being tended while you grow). Each room is a statement, made of things to look at, never a line that explains it:
@@ -680,7 +680,7 @@ const WORLD = (() => {
       objects: [{ id: 'offer', kind: 'offerings', x: 2, y: 5, text: 'A bowl by the altar: petals, a button, a blue stone, a bottle cap. Left by people who were here before you.' }, { id: 'cand', kind: 'candles', x: 9, y: 5, text: 'Candles in a row. None has burned to the end. Somebody replaces them.' }] }],
    ['town', 'arena', 'in-arena', { W: 14, H: 10, style: 'arena', layout: { n: [[6, 2]], r: [3, 3, 10, 7] }, places: [{ id: 'bell', name: 'Arena bell', x: 6, y: 2, w: 1, h: 1, kind: 'device', door: [6, 2], open: 'battle' }],
       objects: [{ id: 'names', kind: 'namewall', x: 2, y: 2, text: 'Names scratched into the wall in every kind of hand. None is crossed out.' }, { id: 'bench', kind: 'bench', x: 11, y: 2, text: 'A bench facing the ring, worn in two places side by side.' }, { id: 'pail', kind: 'bucket', x: 12, y: 8, text: 'A bucket of water and a cloth, for after.' }] }],
-   ['peak', 'tower', 'in-tower', { W: 12, H: 9, style: 'watch', layout: { x: [[5, 2], [6, 2]], r: [4, 4, 7, 6] }, places: [{ id: 'stair', name: 'The stair', x: 5, y: 2, w: 2, h: 1, kind: 'device', door: [5, 2], open: 'tower' }],
+   ['peak', 'tower', 'in-tower', { W: 12, H: 9, style: 'watch', duelHall: true, layout: { x: [[5, 2], [6, 2]], r: [4, 4, 7, 6] }, places: [{ id: 'stair', name: 'The stair', x: 5, y: 2, w: 2, h: 1, kind: 'device', door: [5, 2], open: 'tower' }],
       objects: [{ id: 'wl1', kind: 'walllamp', x: 2, y: 2, text: 'A lamp on the wall. It does not go out.' }, { id: 'wl2', kind: 'walllamp', x: 9, y: 2, text: 'A lamp on the wall. It does not go out.' }, { id: 'bb', kind: 'blanketbench', x: 1, y: 6, text: 'A bench with a folded blanket. Somebody sleeps here between watches.' }, { id: 'wlog', kind: 'logbook', x: 10, y: 6, text: 'A book of names and floors, one line a night. The last line is from last night.' }] }]].forEach(([pm, pid, id, opt], i) => {
     const P0 = MAPS[pm].places.find((p) => p.id === pid); MAPS[id] = buildInterior(id, P0, pm, i, opt); P0.enter = id;
     MAPS[pm].arriveFrom = Object.assign({}, MAPS[pm].arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + 1.5] });

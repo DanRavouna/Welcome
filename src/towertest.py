@@ -7,7 +7,8 @@ def adv(pg):
     pg.evaluate('APP.advance()')
 with sync_playwright() as p:
   b=p.chromium.launch(); ctx=b.new_context(viewport={'width':390,'height':844},device_scale_factor=2,has_touch=True)
-  pg=ctx.new_page(); pg.on('pageerror',lambda e:errs.append(str(e))); pg.on('console',lambda m: errs.append(m.text) if m.type=='error' and 'ERR_NAME' not in m.text and 'fonts' not in m.text else None)
+  pg=ctx.new_page(); pg.add_init_script("window.__noFollower = true")   # the turn-based Watch (the live one, with dawn, is nighttest and acttest5)
+  pg.on('pageerror',lambda e:errs.append(str(e))); pg.on('console',lambda m: errs.append(m.text) if m.type=='error' and 'ERR_NAME' not in m.text and 'fonts' not in m.text else None)
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1100)
   pk=pg.evaluate("(()=>{const M=WORLD.MAPS.peak,t=M.places.find(p=>p.kind==='tower');return {g:M.grid.map(r=>r.join('')),t:t,door:t.door}})()")
   t=pk['t']; dx,dy=pk['door']

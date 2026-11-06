@@ -167,7 +167,8 @@ const ACT = (() => {
   function spawnDuelFoe(e) {
     const d = duel, g = H.game(), k = g.make(d.queue[d.idx], d.tr.stage, d.tr.lv || 1); d.idx += 1;
     const s = g.newBattle(lead(), k, 0).s[1]; s.label = d.tr.name + "'s " + k.name; d.lastFoe = s; s.max = Math.round(s.max * duelK().hp); s.hp = s.max;
-    const p = e.P, n = d.npc, bx = n ? (n.x + 0.5) * e.TS : p.x, by = n ? (n.y + 0.9) * e.TS : p.y, a0 = Math.atan2(p.y - by, p.x - bx); let best = null;
+    const p = e.P, n = d.npc, ex = d.tr.tower && e.M.exits && e.M.exits[0], door = ex && (ex.edge === 's' || ex.edge === 'n') ? { x: ((ex.a + ex.b) / 2 + 0.5) * e.TS, y: (ex.edge === 's' ? e.M.H - 1.6 : 1.6) * e.TS } : null;   // a visitor comes in at the door
+    const bx = door ? door.x : (n ? (n.x + 0.5) * e.TS : p.x), by = door ? door.y : (n ? (n.y + 0.9) * e.TS : p.y), a0 = Math.atan2(p.y - by, p.x - bx); let best = null;
     for (const r of [2.2, 1.6, 3, 1]) for (let i = 0; i < 8 && !best; i++) { const a = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.5, x = bx + Math.cos(a) * r * e.TS, y = by + Math.sin(a) * r * e.TS; if (tileFree(e, x, y)) best = { x: x, y: y }; }
     if (!best) best = { x: bx, y: by };
     E.push({ k: k, s: s, x: best.x, y: best.y, hx: best.x, hy: best.y, mode: 'chase', t: 0, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1.2, tick: 1, img: H.img(k), duel: true });
@@ -176,7 +177,8 @@ const ACT = (() => {
   // o = { tr (the same object the battle screen uses), npc, party (Tower: the run's critters), hp (Tower: their HP), surge (Tower twist type) }
   function startDuel(o) {
     if (!armed || !hero || duel || !lastEnv) return false;
-    const e = lastEnv; duel = { tr: o.tr, npc: o.npc || null, queue: o.tr.team.slice(), idx: 0, down: 0, part: {}, koXp: {}, next: 0.9, party: o.party || null, surge: o.surge || null, lastFoe: null };
+    const e = lastEnv; duel = { tr: o.tr, npc: o.npc || null, queue: o.tr.team.slice(), idx: 0, down: 0, part: {}, koXp: {}, next: 0.9, party: o.party || null, surge: o.surge || null, lastFoe: null,
+      night: o.tr.tower ? { len: window.__nightS || (28 + 1.6 * (o.tr.floor || 1) + (o.tr.warden ? 10 : 0)), t: 0 } : null };   // a night of the Watch is kept by lasting it: at dawn the visitors go
     mapId = e.M.id; E = []; PR = []; OFF = []; FX = []; st.calm = 0; st.swapIn = null;
     if (o.party) {
       o.party.forEach((sd) => { const k = H.kOf(sd); if (k) { const side = sideFor(k); if (o.hp && o.hp[sd] !== undefined) side.hp = Math.max(0, Math.min(side.max, o.hp[sd])); } });
@@ -197,7 +199,7 @@ const ACT = (() => {
   function step(e) {
     on = false; lastEnv = e;
     armed = false;
-    if (!enabled() || !e.fol || e.M.interior) { VFX.clear(); if (duel) abortDuel(''); if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; VFX.clear(); } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
+    if (!enabled() || !e.fol || (e.M.interior && !e.M.duelHall)) { /* the Watch's lobby is the one room a duel runs in */ VFX.clear(); if (duel) abortDuel(''); if (E.length) { E = []; FX = []; PR = []; OFF = []; mapId = ''; VFX.clear(); } if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }
     mkHero(); if (!hero) return; armed = true;
     if (!wildOk(e) && !duel) { VFX.clear(); if (E.length) { E = []; FX = []; PR = []; OFF = []; } mapId = ''; if (e.FOL) { e.FOL.ox = 0; e.FOL.oy = 0; } return; }   // a quiet place (city, cave): nothing roams here
     on = true; const dt = e.dt, g = H.game();
@@ -213,6 +215,7 @@ const ACT = (() => {
     if (duel) {   // a trainer duel: the trainer's critters come out one at a time
       duel.part[hero.k.seed] = true; g._surge = duel.surge || null;
       if (!E.some((m) => m.duel) && duel.idx < duel.queue.length) { duel.next -= dt; if (duel.next <= 0) spawnDuelFoe(e); }
+      if (duel && duel.night) { duel.night.t += dt; if (duel.night.t >= duel.night.len) { duel.dawn = true; endDuel(true); } }
     }
     // the swing
     const f = e.FOL, a = st.atk; f.ox = 0; f.oy = 0;
@@ -306,8 +309,8 @@ const ACT = (() => {
     });
   }
   return {
-    bind, step, items, drawFx, active, attack, swapTo, startDuel, giveUp: () => abortDuel('You gave up.'), dueling: () => !!duel, canDuel: () => armed && !duel,
-    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), clear: () => { E = []; }, foes: () => E.map((m) => ({ x: m.x, y: m.y, rare: !!m.rare, woke: !!m.woke, name: m.k.name, rarity: m.k.rarity })), stir: () => stir, stirSpent: () => stirSpent, spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, orbs: () => OFF, get shots() { return PR; }, BEH,
+    bind, step, items, drawFx, active, attack, swapTo, startDuel, giveUp: () => abortDuel('You gave up.'), dueling: () => !!duel, canDuel: () => armed && !duel, dawn: () => (duel && duel.night ? Math.min(1, duel.night.t / duel.night.len) : null),
+    duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, dawn: duel.night ? Math.min(1, duel.night.t / duel.night.len) : null, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), clear: () => { E = []; }, foes: () => E.map((m) => ({ x: m.x, y: m.y, rare: !!m.rare, woke: !!m.woke, name: m.k.name, rarity: m.k.rarity })), stir: () => stir, stirSpent: () => stirSpent, spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, orbs: () => OFF, get shots() { return PR; }, BEH,
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },
     get enemies() { return E; }, moves: () => (hero ? hero.k.kit.map((m, i) => ({ name: m.name, kind: m.kind, sub: m.sub, i: i })) : []),

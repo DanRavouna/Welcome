@@ -9,7 +9,7 @@ keep a Rare: rolls left # -> # | kept # -> #
 # rolls left, Rare -> ['Kept', True] | tapping keep does nothing: True
 Common still keepable with # left -> {'used': #, 'left': #, 'sightings': #, 'kept': #}
 #st sighting: {'used': #, 'left': #, 'sightings': #, 'kept': #} | paid: True | note: ur free sightings are used up, so this one cost a roll.
-no sightings + no rolls -> screen opened: False | toast: The grass rustles, but your free sightings and rolls are used up for t
+no sightings + no rolls -> screen opened: False | toast: The grass rustles. The day’s light is spent; tomorrow brings more. (Yo
 shrine roll cost: # | keep button: Keep (# rolls)
 after reload sightings left: # | count from a past day resets: #
 test mode Mythic keep: Keep (# rolls)
