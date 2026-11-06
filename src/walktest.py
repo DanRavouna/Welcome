@@ -43,17 +43,17 @@ with sync_playwright() as p:
   for target in ['chest1','crown','chest2','keeper']:
     r=walk(adj=target); print(f'Sealed Arch -> {target}:', r)
     if target=='crown': print('   standing under the crown, the action button is for:', r['near'], '(must be the crown, not the Keeper)')
-  # 3) the Lamp Tower, by hand: pull each lever with the real action button, then up to the great lamp and all the way back out
+  # 3) the Lamp Tower, by hand: walk to each chamber's lamp and stay beside it until it takes, then up to the great lamp and all the way back out
   at('dg-lamp'); pg.evaluate("APP.game.update({adv:{clues:[],open:{lamp:true},flags:{}}})"); pg.evaluate("WORLD.enter('dg-lamp'); WORLD.npcs.forEach(n=>n.declined=true); WORLD.map.rate=0")
   gates=lambda: pg.evaluate("['g1','g2','g3'].map(g=>g+':'+(WORLD.objects.filter(x=>x.gate===g).every(x=>x.hidden)?'open':'shut')).join(' ')")
-  def pull(lv):
-    r=walk(adj=lv); pg.wait_for_timeout(250); assert pg.evaluate("(WORLD.nearest()||{}).kind")=='object', r; pg.click('#act'); pg.wait_for_timeout(250); return r
+  def keep(lv):   # the tending is in staying: no button, 2.4 s beside the lamp
+    r=walk(adj=lv); pg.evaluate("WORLD.input.jx=0;WORLD.input.jy=0"); pg.wait_for_timeout(2900); assert pg.evaluate("(WORLD.nearest()||{}).kind")=='object', r; return r
   print('tower start:', gates(), '| the way up is shut:', walk(adj='L2')['ok']==False)
-  pull('L1'); print('pulled L1:', gates()); r=walk(adj='L2'); print('  walk to L2 (through g1):', r)
-  pull('L2'); print('pulled L2:', gates()); r=walk(adj='L3'); print('  walk to L3 (through g2):', r)
-  pull('L3'); print('pulled L3:', gates()); r=walk(adj='greatlamp'); print('  walk to the great lamp (through g3):', r)
+  keep('L1'); print('kept L1:', gates()); r=walk(adj='L2'); print('  walk to L2 (through g1):', r)
+  keep('L2'); print('kept L2:', gates()); r=walk(adj='L3'); print('  walk to L3 (through g2):', r)
+  keep('L3'); print('kept L3:', gates()); r=walk(adj='greatlamp'); print('  walk to the great lamp (through g3):', r)
   print('--- and back out')
-  pull('L3'); print('flip L3 back:', gates()); pull('L2'); print('flip L2 back:', gates()); pull('L1'); print('flip L1 back:', gates())
+  print('nothing closes behind you:', gates())
   r=walk(tile=[10,52]); print('  back to the entrance:', r)
   pg.evaluate("WORLD.setPos(10.9*WORLD.TS,53.2*WORLD.TS); WORLD.input.jy=1")
   for _ in range(14): pg.evaluate("WORLD.step(1/30)")

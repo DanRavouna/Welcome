@@ -1,7 +1,8 @@
+title screen first: shown True | the light is a button: Touch the light in the window | HUD hidden: True
 new player: test mode False | rolls chip: 20/20 | intro dialog: Professor Fern
 starter screen open: True | cards: ['Mornub | Ember type · Fierce nature | Strong vs moss and frost | Power 267 | Choose Mornub', 'Nibbris | Tide type · Jolly nature | Strong vs ember and stone | Power 277 | Choose Nibbris', 'Elmtuft | Moss type · Hardy nature | Strong vs tide and stone | Power 278 | Choose Elmtuft']
 starter types: ['Ember', 'Tide', 'Moss'] | same on reload: [32171, 82444, 132619]
-after choosing: {'caught': [{'seed': 82444, 'stage': 1}], 'party': [82444], 'intro': True, 'seen': 1, 'xp': 28} | Fern says: A wonderful choice! Nibbris will be a loyal partner.
+after choosing: {'caught': [{'seed': 82444, 'stage': 1}], 'party': [82444], 'intro': True, 'seen': 1, 'xp': 28} | Fern says: A good choice. Nibbris will walk with you.
 no goal pill, no arrow: True
 grass hint first time: Tall grass hides wild critters. Keep walking  | shown again? no | hints saved: ['grass']
 zone hint: True

@@ -126,8 +126,8 @@ const ADV = (() => {
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
     return { name: 'Coral\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'coralbay' }, types: [], rate: 0, spots: { coral: [10, 3] }, dark: { r: 3.2 } };
   }
-  // ---- the Lamp Tower: a bright climb through four chambers. Levers flip gates (a gate is open when an odd number of its levers are ON), so going forward closes
-  // the way behind you, and flipping a lever back always undoes it (you can never be locked in). Guards in chambers 2 and 3, the Warden and the great lamp at the top. ----
+  // ---- the Lamp Tower (Meaning: the way home is lit by you). A dark climb through four chambers. Each chamber has a lamp on a stand: stay beside it until it takes, and the gate above opens;
+  // the great lamp at the top lights only from the three you kept below it. Guards in chambers 2 and 3, the Warden and the great lamp at the top. Nothing ever closes behind you. ----
   function lampTower() {
     const W = 22, H = 54, rows = [], objects = [];
     for (let y = 0; y < H; y++) rows.push(new Array(W).fill('C'));
@@ -139,15 +139,15 @@ const ADV = (() => {
     [[6, 40], [15, 40], [6, 44], [15, 44], [6, 28], [15, 28], [6, 16], [15, 19], [6, 4], [15, 6]].forEach(([x, y]) => set(x, y, 'C'));   // pillars
     // gates: two tiles across each corridor; `levers` lists the levers that flip it
     const gate = (id, y, levers) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, levers: levers, x: 10, y: y, reach: 1.9, text: 'An iron gate. Somewhere a lever works it.' }, { id: id + 'b', kind: 'gate', gate: id, levers: levers, x: 11, y: y, reach: 1.9, text: 'An iron gate. Somewhere a lever works it.' }); };
-    gate('g1', 35, ['L1', 'L2']); gate('g2', 23, ['L2', 'L3']); gate('g3', 11, ['L3']);
-    objects.push({ id: 'L1', kind: 'lever', x: 16, y: 44, text: 'A lever.' }, { id: 'L2', kind: 'lever', x: 5, y: 30, text: 'A lever.' }, { id: 'L3', kind: 'lever', x: 16, y: 18, text: 'A lever.' });
-    objects.push({ id: 'tab1', kind: 'plaque', x: 6, y: 47, label: 'Read the tablet', text: 'Carved in the stone: "Three levers, three gates. What opens one may close another. Climb, and the lamp will know you."' });
+    gate('g1', 35, ['L1']); gate('g2', 23, ['L2']); gate('g3', 11, ['L3']);
+    objects.push({ id: 'L1', kind: 'chamberlamp', x: 16, y: 44, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' }, { id: 'L2', kind: 'chamberlamp', x: 5, y: 30, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' }, { id: 'L3', kind: 'chamberlamp', x: 16, y: 18, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' });
+    objects.push({ id: 'tab1', kind: 'plaque', x: 6, y: 47, label: 'Read the tablet', text: 'Carved in the stone: "The way up is lit by the one who climbs it."' });
     objects.push({ id: 'chest1', kind: 'chest', x: 16, y: 27, reward: { super: 2, essence: 6 }, text: 'A frosty chest.' }, { id: 'chest2', kind: 'chest', x: 16, y: 3, reward: { charm: 1, essence: 12 }, text: 'The Warden’s chest.' });
-    [[5, 38], [16, 38], [5, 26], [16, 33], [5, 14], [15, 14], [5, 2], [14, 2]].forEach(([x, y], i) => objects.push({ id: 'tr' + i, kind: 'brazier', x: x, y: y, text: 'A torch burns steadily.' }));
+    [[5, 38], [16, 38]].forEach(([x, y], i) => objects.push({ id: 'tr' + i, kind: 'brazier', x: x, y: y, text: 'A torch by the door. Someone lit it for whoever comes.' }));   // only the entrance is lit for you; the rest you light
     objects.push({ id: 'greatlamp', kind: 'greatlamp', x: 10, y: 2, text: 'The great lamp.' });
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
     return { name: 'The Lamp Tower', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'ascent' },
-      gates: { g1: ['L1', 'L2'], g2: ['L2', 'L3'], g3: ['L3'] }, spots: { guard1: [10, 29], guard2: [10, 16], warden: [10, 5] } };
+      gates: { g1: ['L1'], g2: ['L2'], g3: ['L3'] }, dark: { r: 2.8 }, spots: { guard1: [10, 29], guard2: [10, 16], warden: [10, 5] } };
   }
   // ---- the Forge Below: a hub with two side halls. Each hall holds a guard and a glowing core; carry both back to the hub sockets and the north gate opens onto the Forgemaster.
   // Non-linear (either hall first). Gates here follow RULES (all listed flags set), not lever parity. ----
@@ -341,6 +341,13 @@ const ADV = (() => {
       R(g, x, y + 2, 32, 26, OL); R(g, x + 1, y + 3, 30, 24, '#3A2A24'); R(g, x + 1, y + 3, 30, 3, '#5A4A40'); [[4, 9], [14, 14], [22, 8], [9, 20], [24, 20]].forEach(([px, py]) => { R(g, x + px, y + py, 5, 3, '#2A1C18'); R(g, x + px + 1, y + py + 1, 2, 1, '#5E3A2A'); });
     },
     // a lamp on a post in the dark hall (Coral); st.lit 0..1
+    // a lamp on a stand in the Lamp Tower; st.lit is 0 to 1 while it takes, 1 once kept
+    chamberlamp(g, x, y, st, t, o) {
+      const k = Math.max(0, Math.min(1, st.lit || 0));
+      R(g, x + 9, y + 28, 14, 3, 'rgba(0,0,0,0.3)'); R(g, x + 11, y + 24, 10, 4, OL); R(g, x + 12, y + 25, 8, 2, '#6A7A98'); R(g, x + 14, y + 12, 4, 13, OL); R(g, x + 15, y + 12, 2, 13, '#8E98AD');
+      R(g, x + 10, y + 2, 12, 11, OL); R(g, x + 11, y + 3, 10, 9, k > 0.5 ? '#FFD27A' : '#3A3340'); if (k > 0.5) R(g, x + 14, y + 5, 4, 5, '#FFF6D0'); else if (k > 0.02) R(g, x + 15, y + 7, 2, 3, 'rgba(255,200,100,' + (k * 1.4).toFixed(2) + ')');
+      if (k > 0.02) { const gl = g.createRadialGradient(x + 16, y + 7, 1, x + 16, y + 7, 12 + k * 34); gl.addColorStop(0, 'rgba(255,220,130,' + (0.7 * k).toFixed(2) + ')'); gl.addColorStop(1, 'rgba(255,220,130,0)'); g.fillStyle = gl; g.fillRect(x - 34, y - 38, 100, 96); }
+    },
     callamp(g, x, y, st, t, o) {
       const k = Math.max(0, Math.min(1, st.lit || 0));
       R(g, x + 10, y + 28, 12, 3, 'rgba(0,0,0,0.3)'); R(g, x + 14, y + 10, 4, 18, OL); R(g, x + 15, y + 10, 2, 18, '#4A5878'); R(g, x + 9, y + 2, 14, 3, OL); R(g, x + 10, y + 3, 12, 1, '#6A7A98');
@@ -419,6 +426,7 @@ const ADV = (() => {
     walllamp(g, x, y, st, t, o) { const k = 0.85 + 0.15 * Math.sin(t * 2 + o.x), gl = g.createRadialGradient(x + 16, y + 10, 1, x + 16, y + 10, 26); gl.addColorStop(0, 'rgba(255,220,130,' + (0.5 * k).toFixed(2) + ')'); gl.addColorStop(1, 'rgba(255,220,130,0)'); g.fillStyle = gl; g.fillRect(x - 12, y - 18, 56, 56); R(g, x + 10, y + 4, 12, 13, OL); R(g, x + 11, y + 5, 10, 11, '#FFD27A'); R(g, x + 14, y + 8, 4, 5, '#FFF6D0'); R(g, x + 13, y + 17, 6, 3, '#4A5878'); },
     // --- home and the Lab ---
     windowlamp(g, x, y, st, t, o) { const lit = !!st.lit; R(g, x + 4, y + 18, 24, 4, OL); R(g, x + 5, y + 19, 22, 2, '#B07A46'); R(g, x + 12, y + 8, 8, 10, OL); R(g, x + 13, y + 9, 6, 8, lit ? '#FFD27A' : '#5A5468'); R(g, x + 10, y + 5, 12, 4, OL); R(g, x + 11, y + 6, 10, 2, '#C0503A'); if (lit) { const gl = g.createRadialGradient(x + 16, y + 12, 1, x + 16, y + 12, 24); gl.addColorStop(0, 'rgba(255,214,120,0.55)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 10, y - 14, 52, 52); R(g, x + 15, y + 11, 2, 3, '#FFF6D0'); } },
+    twochairs(g, x, y) { [[3, 8], [19, 8]].forEach(([cx, cy]) => { R(g, x + cx, y + cy, 10, 16, OL); R(g, x + cx + 1, y + cy + 1, 8, 6, '#8A5A34'); R(g, x + cx + 1, y + cy + 8, 8, 4, '#A87A48'); R(g, x + cx + 1, y + cy + 12, 2, 3, '#5E3C22'); R(g, x + cx + 7, y + cy + 12, 2, 3, '#5E3C22'); }); R(g, x + 20, y + 10, 8, 3, '#D8574A'); },   // two chairs; one has a cushion
     photo(g, x, y) { R(g, x + 6, y + 4, 20, 18, OL); R(g, x + 7, y + 5, 18, 16, '#F4EAD6'); R(g, x + 8, y + 6, 16, 14, '#9CD3F5'); R(g, x + 8, y + 14, 16, 6, '#74C25C'); R(g, x + 12, y + 8, 8, 6, '#D8574A'); R(g, x + 11, y + 11, 3, 6, '#2B2F45'); R(g, x + 11, y + 9, 3, 2, '#F2C9A0'); R(g, x + 17, y + 14, 2, 4, '#2B2F45'); R(g, x + 17, y + 13, 2, 1, '#F2C9A0'); },
     notes(g, x, y) { R(g, x + 2, y + 2, 28, 24, '#5E3C22'); [[4, 4], [13, 4], [22, 4], [6, 14], [16, 14]].forEach(([nx, ny], i) => { R(g, x + nx, y + ny, 7, 9, '#F4EAD6'); R(g, x + nx + 1, y + ny + 2, 5, 1, '#5A4A38'); R(g, x + nx + 1, y + ny + 4, 4, 1, '#5A4A38'); R(g, x + nx + 1, y + ny + 6, 5, 1, i > 2 ? '#C0503A' : '#5A4A38'); R(g, x + nx + 3, y + ny - 1, 1, 1, '#C0503A'); }); },
     critterbasket(g, x, y) { R(g, x + 4, y + 27, 24, 3, 'rgba(0,0,0,0.22)'); R(g, x + 5, y + 14, 22, 13, OL); R(g, x + 6, y + 15, 20, 11, '#B07A46'); R(g, x + 6, y + 19, 20, 1, '#8A5A34'); R(g, x + 6, y + 23, 20, 1, '#8A5A34'); R(g, x + 8, y + 12, 16, 6, '#3C6FE0'); R(g, x + 8, y + 14, 16, 1, '#6A96F0'); R(g, x + 12, y + 10, 8, 3, '#F4EAD6'); },
@@ -565,6 +573,6 @@ const ADV = (() => {
       for (let i = 0; i < 4; i++) { const on = i < n; g.save(); g.globalAlpha = on ? (st.open ? 1 : 0.6 + 0.4 * k) : 1; R(g, x + 12, y + 11 + i * 4, 8, 2, on ? '#FFD86B' : '#4A4860'); g.restore(); }
     }
   };
-  const LIGHT = { gbrazier: (o, st) => (st && st.burn > 0 ? 1.6 + 2.4 * st.burn : 0.6), callamp: (o, st) => (st && st.lit > 0.02 ? 1.2 + 2.6 * st.lit : 0.5), furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
+  const LIGHT = { chamberlamp: (o, st) => (st && st.lit > 0.02 ? 1.4 + 2.8 * st.lit : 0.5), gbrazier: (o, st) => (st && st.burn > 0 ? 1.6 + 2.4 * st.burn : 0.6), callamp: (o, st) => (st && st.lit > 0.02 ? 1.2 + 2.6 * st.lit : 0.5), furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
   return { CLUES, DUNGEONS, ART, LIGHT, TCOL, TYPES };
 })();

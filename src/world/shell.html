@@ -54,6 +54,14 @@ button:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
 @keyframes hitB{0%{transform:translateX(0)}20%{transform:translateX(-7px);filter:brightness(1.6)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}100%{transform:translateX(0);filter:brightness(1)}}
 .hit-a{animation:hitA 420ms ease-out}.hit-b{animation:hitB 420ms ease-out}
 @media (prefers-reduced-motion: reduce){.shiny-burst,.shiny-still,.reveal-a,.reveal-b,.glow-a,.glow-b,.hit-a,.hit-b{animation:none}}
+
+#title.ovl{background:#0B1026;backdrop-filter:none}.title-sky{position:relative;width:256px;margin:0 auto;padding-top:18vh;text-align:center}
+.title-house{display:block;image-rendering:pixelated}.title-glow{animation:tglow 2.6s ease-in-out infinite}
+@keyframes tglow{0%,100%{opacity:0.22}50%{opacity:0.42}}
+.title-btn{position:absolute;left:62px;top:calc(18vh + 86px);width:52px;height:52px;border:0;background:transparent;border-radius:50%;cursor:pointer}
+.title-btn:focus-visible{outline:2px solid #FFE08A;outline-offset:4px}
+.title-name{margin:18px 0 4px;font-size:22px;font-weight:900;color:#E8E8F0;letter-spacing:0.02em}.title-cap{margin:0;font-size:13px;color:#8A93B0}
+@media (prefers-reduced-motion: reduce){.title-glow{animation:none;opacity:0.36}}
 </style>
 
 <style>
@@ -141,7 +149,7 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 .rail{display:flex;flex-direction:column;gap:10px;padding:8px 6px;border-radius:999px;background:rgba(14,26,56,.55);border:1.5px solid rgba(255,255,255,.4);align-self:flex-start}
 .rail button{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.8);background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .rail button[aria-pressed="false"]{opacity:.6}
-#starter[hidden],#cf[hidden],#party[hidden],#bag[hidden],#shop[hidden],#wmap[hidden],#bk[hidden],#dev[hidden],#menu[hidden],#dlg[hidden],#dlg-choices[hidden],.dmore[hidden]{display:none}
+#title[hidden],#starter[hidden],#cf[hidden],#party[hidden],#bag[hidden],#shop[hidden],#wmap[hidden],#bk[hidden],#dev[hidden],#menu[hidden],#dlg[hidden],#dlg-choices[hidden],.dmore[hidden]{display:none}
 #dlg{position:fixed;inset:0;z-index:7;display:flex;align-items:flex-end;justify-content:center;padding:0 10px calc(14px + env(safe-area-inset-bottom,0px))}
 .dwrap{width:min(520px,100%);display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 #dlg-box{position:relative;width:100%;min-height:118px;padding:24px 18px 18px;text-align:left;cursor:pointer;background:#F8F8F8;border:4px solid #1E2A4A;box-shadow:inset 0 0 0 3px #8FA3C8,0 6px 0 rgba(0,0,0,.25);font:inherit;color:#1E2A4A;image-rendering:pixelated}
@@ -237,6 +245,23 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
     <div id="toast" role="status" aria-live="polite" hidden></div>
   </div>
   </section>
+  <div id="title" role="dialog" aria-modal="true" aria-label="Critter Roll" hidden class="ovl title-ovl">
+    <div class="title-sky">
+      <svg class="title-house" viewBox="0 0 64 48" width="256" height="192" aria-hidden="true" shape-rendering="crispEdges">
+        <rect x="0" y="40" width="64" height="8" fill="#141A30"/>
+        <rect x="14" y="20" width="36" height="20" fill="#1E2644"/>
+        <polygon points="10,21 32,6 54,21" fill="#2A3358"/>
+        <rect x="40" y="9" width="4" height="8" fill="#1E2644"/>
+        <rect x="29" y="30" width="6" height="10" fill="#121830"/>
+        <circle class="title-glow" cx="22" cy="28" r="9" fill="#FFD27A" opacity="0.28"/>
+        <rect x="18" y="24" width="8" height="8" fill="#FFE08A"/>
+        <rect x="21" y="24" width="1" height="8" fill="#C9962A"/><rect x="18" y="27" width="8" height="1" fill="#C9962A"/>
+      </svg>
+      <button id="title-light" class="title-btn" aria-label="Touch the light in the window"></button>
+      <h1 class="title-name">Critter Roll</h1>
+      <p class="title-cap">Touch the light</p>
+    </div>
+  </div>
   <div id="starter" role="dialog" aria-modal="true" aria-labelledby="st-title" hidden class="ovl">
     <div class="wm-panel">
       <div class="wm-head"><h2 id="st-title">Choose your partner</h2></div>

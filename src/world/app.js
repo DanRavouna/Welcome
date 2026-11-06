@@ -27,7 +27,7 @@ const APP = (() => {
   }
   let outNotice = 0;
   function encounter(info) {
-    if (open || dlg || menuOpen || mapOpen || panel || !$('bk').hidden || !$('cf').hidden || !$('starter').hidden) return;
+    if (open || dlg || menuOpen || mapOpen || panel || !$('bk').hidden || !$('cf').hidden || !$('starter').hidden || !$('title').hidden) return;
     if (game.sightingsLeft() <= 0 && game.energy().left === 0) { if (Date.now() - outNotice > 20000) { outNotice = Date.now(); hintQueue.length = 0; hintBusy = true; toast('The grass rustles, but your free sightings and rolls are used up for today. Both refill at midnight.'); setTimeout(() => { hintBusy = false; pumpHints(); }, 4600); } return; }
     const calm = game.state.settings && game.state.settings.calm;
     WORLD.setPaused(true); if (!calm) WORLD.flash(); game.sfx('tap');
@@ -398,7 +398,7 @@ const APP = (() => {
     keeper: [() => advOf().flags.secret, ['The seat is empty again, and it is not sad.', 'I held it so long. It is lighter than I expected.']],
     joss: [() => advOf().flags.lampLit, ['I did not light it tonight. It lit.', 'I think I am out of work. I do not mind.']],
     brandt: [() => advOf().flags.lampLit, ['One cup tonight.']],
-    mom: [() => advOf().flags.lampLit, ['There was a light across the ceiling last night. It went the whole way over the roof.', 'I did not worry. Is that not odd?']]
+    mom: [() => advOf().flags.lampLit, ['There was a light across the ceiling last night. It went the whole way over the roof.', 'I did not worry. Is that not odd?', 'The window was dark when I came down. I left it.']]
   };
   const letGoLines = (n) => { const r = LETGO[n.id]; return r && r[0]() ? r[1] : null; };
   const scaffoldLines = (n) => { const rows = SCAFFOLD[n.id]; if (!rows) return null; const c = sealCount(); let out = null; rows.forEach((r) => { if (c >= r[0]) out = r[1]; }); return out; };
@@ -427,7 +427,14 @@ const APP = (() => {
     if (game.state.intro || game.state.caught.length) return;
     await Promise.race([CLOUD.ready, new Promise((r) => setTimeout(r, 12000))]);
     if (game.state.intro || game.state.caught.length) return;
-    showDialog('Professor Fern', ['Welcome to Sproutvale! I am Professor Fern.', 'Critters live all over this land: in the tall grass, the forests, the peaks and the shore.', 'Every trainer starts with a partner. Here are three. Each one is strong against one of the others.'], null, openStarter);
+    showTitle(() => showDialog('Professor Fern', ['Welcome to Sproutvale. I am Professor Fern.', 'Every trainer starts with a partner. Here are three.'], null, openStarter));
+  }
+  // the title screen (Meaning: the introduction to everything: one lit window in the dark, kept before you did anything; the game begins when you touch that light)
+  function showTitle(then) {
+    if (window.__noTitle) { then(); return; }
+    $('title').hidden = false; $('hud').hidden = true; WORLD.setPaused(true);
+    const btn = $('title-light');
+    btn.onclick = () => { btn.onclick = null; $('title').hidden = true; game.sfx('claim'); then(); };
   }
   function openStarter() {
     const seeds = game.starters(), power = (k) => k.stats.reduce((x, q) => x + q.value, 0);
@@ -443,7 +450,7 @@ const APP = (() => {
     game.update({ caught: [{ seed: s, stage: 1 }], party: [s], fighter: s, intro: true, seen: [k.speciesNo] }, [{ t: 'keep' }, { t: 'species' }]);
     game.sfx('claim');
     $('starter').hidden = true;
-    showDialog('Professor Fern', ['A wonderful choice! ' + k.name + ' will be a loyal partner.', 'The world is yours to explore. Start by finding more critters in the tall grass, and talk to people: they know more than the signs do. Good luck!'], null);
+    showDialog('Professor Fern', ['A good choice. ' + k.name + ' will walk with you.', 'The tall grass past the gate is where most people start. Talk to people on the way; they know more than the signs do.'], null);
   }
   // ---------- party, bag, shop ----------
   const ITEMS = {
@@ -767,8 +774,9 @@ const APP = (() => {
   function lampState(o) {
     const M = WORLD.map, tr = M && M.trail, now = performance.now(); if (now - lampStamp > 5) { lampDt = Math.min(0.1, (now - lampStamp) / 1000); lampStamp = now; } const dt = lampDt; let want = 0;
     const tod = timeOfDay(), dark = tod === 'night' || tod === 'dusk';
+    const mine = o.own || (!o.wave && !o.always && !!advOf().flags.lampLit);   // after the beacon no lamp lights itself ahead of you: a post lights when you pass it and stays lit (the roads are kept by you now)
     if (o.always) want = dark ? 1 : 0;
-    else if (o.own) {
+    else if (mine) {
       const f = advOf().flags, key = 'own:' + o.id;
       if (!f[key] && tr) { const P = WORLD.pos(), px = P.x / 32, py = P.y / 32; let pi = 0, bd = 1e9; tr.cells.forEach((c, i) => { const d = (c[0] - px) * (c[0] - px) + (c[1] - py) * (c[1] - py); if (d < bd) { bd = d; pi = i; } }); if (bd < 36 && pi >= o.trail) advSave((a) => { a.flags[key] = true; }); }
       want = advOf().flags[key] ? 1 : 0;
@@ -782,7 +790,7 @@ const APP = (() => {
     }
     const k = lampK[o.id] === undefined ? want : lampK[o.id]; lampK[o.id] = k + Math.sign(want - k) * Math.min(Math.abs(want - k), dt * 1.6); return { k: lampK[o.id] };
   }
-  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'windowlamp') { const t = timeOfDay(); return { lit: sealCount() >= 3 || t === 'night' || t === 'dusk' }; } if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'chamberlamp') return chamberlampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'windowlamp') { const t = timeOfDay(); return { lit: a.flags.lampLit ? a.flags.homeLit === new Date().toDateString() : (sealCount() >= 3 || t === 'night' || t === 'dusk') }; } /* after the beacon the window is lit only by you, each day */ if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -793,7 +801,7 @@ const APP = (() => {
     ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Something on ' + c.where + ' you have not looked at closely.'));
     if (advOf().open.arch) { const f = advOf().flags; lines.push('The Sealed Arch: ' + (f.rubble ? 'the way north is clear.' : 'rubble blocks the way north. The empty seat, a fire bowl, a lamp and a hull lantern must mean something.') + (((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 ? ' You have beaten the Keeper.' : '') + (advOf().flags.secret ? ' The ninth seat has answered.' : '')); }
     if (advOf().open.forge) { const f = advOf().flags; lines.push('The Forge Below: ' + (f.forgeLit ? 'the great furnace is lit.' : 'the north gate opens when both hub sockets hold a core (' + ((f['sock:A'] ? 1 : 0) + (f['sock:B'] ? 1 : 0)) + '/2). One core lies in each side hall.')); } else if ((game.state.visited || []).indexOf('descent') !== -1) lines.push('The Cinder Descent leads down to a buried forge.');
-    if (advOf().open.lamp) lines.push('The Lamp Tower: ' + (advOf().flags.lampLit ? 'the great lamp is lit, and its beam crosses the land.' : 'levers and gates climb to the great lamp. What opens one gate may close another.')); else if ((game.state.visited || []).indexOf('ascent') !== -1) lines.push('The Cold Ascent leads to an old beacon tower at the top of the peaks.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
+    if (advOf().open.lamp) lines.push('The Lamp Tower: ' + (advOf().flags.lampLit ? 'the great lamp is lit, and its beam crosses the land.' : ['L1', 'L2', 'L3'].filter(lampKept).length + ' of the three lamps below the great lamp burn.')); else if ((game.state.visited || []).indexOf('ascent') !== -1) lines.push('The Cold Ascent leads to an old beacon tower at the top of the peaks.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
     showDialog('Journal', lines);
   }
   function archUse() {
@@ -837,7 +845,18 @@ const APP = (() => {
     setTimeout(() => { openScreen('dex'); game.setState({ selected: seed, dexView: 'mine', armed: false }); }, 900);   // openScreen clears the selection, so select after opening
   }
   // ---- the Lamp Tower: levers flip gates (open = an odd number of its levers are ON), the beacon door leads in, the great lamp ends the climb ----
-  function applyLamp() { const m = WORLD.MAPS['dg-lamp']; if (!m || !m.gates) return; const f = advOf().flags; Object.keys(m.gates).forEach((gid) => WORLD.setGate('dg-lamp', gid, m.gates[gid].filter((l) => f['lv:' + l]).length % 2 === 1)); }
+  // the Lamp Tower (Meaning: the way home is lit by you): a gate opens once the lamp of its chamber has been kept; a lamp takes while you stay beside it (about CL_S seconds), and a kept lamp is saved. Lighting the beacon counts every lamp as kept (old saves).
+  const CL_S = 2.4, CL_REACH = 1.9; let clK = {}, clStamp = 0;
+  const lampKept = (id) => !!(advOf().flags['cl:' + id] || advOf().flags.lampLit);
+  function applyLamp() { const m = WORLD.MAPS['dg-lamp']; if (!m || !m.gates) return; Object.keys(m.gates).forEach((gid) => WORLD.setGate('dg-lamp', gid, m.gates[gid].every(lampKept))); }
+  function chamberlampState(o) {
+    if (lampKept(o.id)) return { lit: 1 };
+    const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - clStamp) / 1000)); clStamp = now;
+    const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)), near = d <= CL_REACH && !WORLD.moving();
+    let k = clK[o.id] || 0; k = near ? Math.min(1, k + dt / CL_S) : Math.max(0, k - dt * 0.8); clK[o.id] = k;
+    if (k >= 1) { advSave((a) => { a.flags['cl:' + o.id] = true; }); applyLamp(); game.sfx('claim'); }
+    return { lit: k };
+  }
   // ---- Wren's Gym: the trial of being tended (Meaning: you grew because someone stayed with you). Press Tend by a seedling, then STAY: it grows about one stage per 2.5 s, two stages to bloom.
   // Step away and it stops, keeping what it grew (a stage is saved the moment it is reached, nothing is ever lost). All four in bloom and the vines draw back. Old saves (Wren beaten, or her seal) find the way open. ----
   const BED_STAGE_S = 2.5, BED_REACH = 1.9; let tending = null, tendP = 0, tendStamp = 0;
@@ -924,7 +943,6 @@ const APP = (() => {
     if (tending === o.id) { toast('You are already here.'); return; }
     tending = o.id; tendP = 0; tendStamp = performance.now(); game.sfx('tap'); toast('You kneel by the bed.');
   }
-  function leverUse(o) { const key = 'lv:' + o.id, on = !advOf().flags[key]; advSave((a) => { a.flags[key] = on; }); applyLamp(); game.sfx('tap'); toast('You pull the lever. Somewhere, a gate grinds.'); }
   function beaconDoorUse() {
     if (advOf().open.lamp) { game.sfx('tap'); WORLD.go('dg-lamp'); return; }
     showDialog('The Beacon', ['The great door is not locked. It never was.', 'It only waited for someone to climb all the way up.'], null, () => { advSave((x) => { x.open.lamp = true; }); game.sfx('claim'); setTimeout(() => WORLD.go('dg-lamp'), 200); });
@@ -933,6 +951,7 @@ const APP = (() => {
     const beaten = ((game.state.npc && game.state.npc.cleared) || []).indexOf('maren') !== -1;
     if (!beaten) { toast('The Warden stands between you and the great lamp.'); return; }
     const lit = advOf().flags.lampLit, got = game.state.caught.some((e) => e.seed === SECRET2_SEED);
+    if (!lit && !['L1', 'L2', 'L3'].every(lampKept)) { toast('The glass stays cold.'); return; }   // the great lamp lights only from the three you kept below it
     if (lit && got) { toast('The great lamp burns steadily. Its light reaches the whole land.'); return; }
     if (lit) { showDialog('The great lamp', ['The glass glows warm under your hand. Something small stirs inside it.', 'A spark slips out of the flame, bright and curious, and lands on your shoulder.'], null, () => grantSecret(SECRET2_SEED)); return; }   // lit before Wickling existed, or by the dev tools
     showDialog('The great lamp', ['You touch the cold glass. A spark answers you.', 'The flame wakes, and a beam of light climbs out of the tower, over the peaks and across the whole land.', 'Far away, in the old arch and the lighthouse, something wakes too.', 'A spark slips out of the flame, bright and curious, and lands on your shoulder.'], null, () => {
@@ -973,8 +992,9 @@ const APP = (() => {
     if (o.kind === 'socket') { socketUse(o); return; }
     if (o.kind === 'furnace') { furnaceUse(); return; }
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
-    if (o.kind === 'lever') { leverUse(o); return; }
+    if (o.kind === 'chamberlamp') { toast(lampKept(o.id) ? 'The lamp burns steadily.' : o.text); return; }
     if (o.clue) { const c = ADV.CLUES.find((q) => q.id === o.clue); showDialog('You look closer', [o.text], null, () => { if (c) gainClue(c); }); return; }
+    if (o.kind === 'windowlamp' && advOf().flags.lampLit && advOf().flags.homeLit !== new Date().toDateString()) { advSave((a) => { a.flags.homeLit = new Date().toDateString(); }); game.sfx('claim'); showDialog('The window', ['You light the lamp in the window. It faces the road.']); return; }   // Meaning: being the keeper is a small daily act
     if (o.kind === 'gbed') { gbedUse(o); return; }
     if (o.kind === 'woodpile') { woodUse(); return; }
     if (o.kind === 'gbrazier') { brazierUse(o); return; }
@@ -1010,7 +1030,7 @@ const APP = (() => {
       '<div class="dvs">Teleport</div><div class="dvg">' + maps.map((id) => b('tp:' + id, WORLD.MAPS[id].name + (WORLD.map.id === id ? ' (here)' : ''))).join('') + '</div>' +
       '<div class="dvs">Player</div><div class="dvg">' + [5, 10, 15, 20, 30].map((n) => b('lv:' + n, 'Level ' + n)).join('') + b('ess', '+100 essence') + b('crit', 'Add a Lv 20 stage 3 critter') + '</div>' +
       '<div class="dvs">Adventure</div><div class="dvg">' + b('clues', 'All clues') + b('arch', 'Open the arch') + b('rite', 'Clear the rubble') + b('keeper', 'Beat the Keeper' + (cl.indexOf('keeper') !== -1 ? ' (done)' : '')) + b('veil', 'Get Veilcrown') +
-      b('lampdoor', 'Open the beacon door') + b('gates', 'Open all tower gates') + b('maren', 'Beat the Warden' + (cl.indexOf('maren') !== -1 ? ' (done)' : '')) + b('lit', 'Light the great lamp') + b('wick', 'Get Wickling') + b('forgedoor', 'Open the forge door') + b('cores', 'Wake both forge sockets') + b('hale', 'Beat the Forgemaster' + (cl.indexOf('hale') !== -1 ? ' (done)' : '')) + b('forgelit', 'Light the great furnace') + b('slag', 'Get Slagback') + b('resetadv', 'Reset the adventure') + '</div>' +
+      b('lampdoor', 'Open the beacon door') + b('gates', 'Keep the three tower lamps') + b('maren', 'Beat the Warden' + (cl.indexOf('maren') !== -1 ? ' (done)' : '')) + b('lit', 'Light the great lamp') + b('wick', 'Get Wickling') + b('forgedoor', 'Open the forge door') + b('cores', 'Wake both forge sockets') + b('hale', 'Beat the Forgemaster' + (cl.indexOf('hale') !== -1 ? ' (done)' : '')) + b('forgelit', 'Light the great furnace') + b('slag', 'Get Slagback') + b('resetadv', 'Reset the adventure') + '</div>' +
       '<p class="dvn">Adventure state: ' + a.clues.length + '/4 clues, arch ' + (a.open.arch ? 'open' : 'sealed') + ', rubble ' + (a.flags.rubble ? 'cleared' : 'in place') + ', beacon door ' + (a.open.lamp ? 'open' : 'shut') + ', lamp ' + (a.flags.lampLit ? 'lit' : 'dark') + ', forge ' + (a.flags.forgeLit ? 'lit' : 'cold') + '. After a reset, reload the page so cleared rubble comes back.</p>' +
       '<div class="dvs">Developer mode</div><div class="dvg">' + b('devoff', 'Hide developer tools') + '</div><p class="dvn">Tap the ID in the menu 5 times to bring them back.</p>';
   }
@@ -1027,7 +1047,7 @@ const APP = (() => {
     else if (k === 'keeper') devClear('keeper');
     else if (k === 'veil') grantSecret(SECRET_SEED, true);
     else if (k === 'lampdoor') devAdv((x) => { x.open.lamp = true; });
-    else if (k === 'gates') devAdv((x) => { x.flags['lv:L1'] = true; x.flags['lv:L2'] = false; x.flags['lv:L3'] = true; });
+    else if (k === 'gates') devAdv((x) => { x.flags['cl:L1'] = true; x.flags['cl:L2'] = true; x.flags['cl:L3'] = true; });
     else if (k === 'maren') devClear('maren');
     else if (k === 'lit') devAdv((x) => { x.flags.lampLit = true; });
     else if (k === 'wick') grantSecret(SECRET2_SEED, true);
@@ -1392,7 +1412,7 @@ const APP = (() => {
     WORLD.init($('world'), {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
-      objState: objState, carry: () => carry, relit: () => !!advOf().flags.lampLit, homeLit: () => sealCount() >= 3, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
+      objState: objState, carry: () => carry, relit: () => !!advOf().flags.lampLit, homeLit: () => (advOf().flags.lampLit ? advOf().flags.homeLit === new Date().toDateString() : sealCount() >= 3), weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
       exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       critterLead: () => !!(game && game.state.caught.length && !window.__noFollower),   // you steer the critter; the human walks behind it

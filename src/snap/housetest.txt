@@ -46,9 +46,9 @@ ok in-cb-c: the room holds its things | ['shellrows', 'smallbed', 'bucket']
 ok in-cb-c: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
 ok in-cb-c: nothing is a tip, everything is something to look at | Shells on a shelf in rows, each on its own square of cloth. One square is empty. | A small bed. Sand in the blanket. | A bucket by the door, still wet. | Pearl
 ok in-cb-c: every thing has a line
-ok in-home: the room holds its things | ['windowlamp', 'photo', 'cloakpeg']
-ok in-home: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
-ok in-home: nothing is a tip, everything is something to look at | A lamp on the windowsill, facing the road. | A picture on the wall: two people, one much smaller, in front of this house. | Your coat on its peg. It still fits.
+ok in-home: the room holds its things | ['windowlamp', 'twochairs', 'photo', 'cloakpeg']
+ok in-home: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...], [#...]]
+ok in-home: nothing is a tip, everything is something to look at | A lamp on the windowsill, facing the road. | Two chairs at the table. One of them has always been yours. | A picture on the wall: two people, one much smaller,
 ok in-home: every thing has a line
 ok in-lab: the room holds its things | ['notes', 'critterbasket']
 ok in-lab: every thing and the resident can be stood next to | [[#...], [#...], [#...]]

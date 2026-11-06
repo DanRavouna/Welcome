@@ -1,4 +1,4 @@
-# The Lamp Tower: levers/gates puzzle (state-graph search: solvable, never a trap), the beacon door, trainers, the great lamp, saving.
+# The Lamp Tower (Meaning: the way home is lit by you): dark chambers, a lamp per chamber that takes while you stay beside it and opens the gate above, nothing closes behind you, the great lamp lights only from the three kept below it; the beacon door, trainers, saving.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:
@@ -10,43 +10,36 @@ with sync_playwright() as p:
     for _ in range(60):
       if not pg.evaluate("!!APP.dialog"): break
       pg.evaluate("APP.advance()"); pg.wait_for_timeout(40)
-  # 1) the puzzle as a state graph over (lever states, where the player stands), from the raw map data (independent of the app code)
-  G=pg.evaluate("""()=>{const M=WORLD.MAPS['dg-lamp'];const gates=M.gates,levers=[...new Set(Object.values(gates).flat())].sort();const W=M.W,H=M.H;
-    const solidC=(c)=>['C','O','T','X','~','F','G','R'].indexOf(c)!==-1;const open=(g,st)=>gates[g].filter(l=>(st>>levers.indexOf(l))&1).length%2===1;
-    const objAt=new Map();M.objects.forEach(o=>objAt.set(o.x+','+o.y,o));
-    const free=(x,y,st)=>{if(x<0||y<0||x>=W||y>=H)return false;const o=objAt.get(x+','+y);if(o)return !!(o.gate&&open(o.gate,st));return !solidC(M.grid[y][x])};
-    const leverAdj=levers.map(l=>{const o=objAt.get([...objAt.keys()].find(k=>objAt.get(k).id===l));return o});
-    const sp=[Math.floor(M.spawn[0]),Math.floor(M.spawn[1])];const lamp=M.objects.find(o=>o.id==='greatlamp');
-    const id=(st,x,y)=>(st*H+y)*W+x, N=(1<<levers.length)*W*H;
-    const nbrs=(st,x,y)=>{const out=[];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){if(free(x+dx,y+dy,st))out.push(id(st,x+dx,y+dy))}
-      leverAdj.forEach((o,i)=>{if(Math.abs(o.x-x)+Math.abs(o.y-y)===1)out.push(id(st^(1<<i),x,y))});return out};
-    // forward reachability from (all OFF, spawn)
-    const start=id(0,sp[0],sp[1]);const fwd=new Uint8Array(N);fwd[start]=1;const q=[start];const adjList=new Map();let goal=false;
-    while(q.length){const n=q.shift();const x=n%W,y=Math.floor(n/W)%H,st=Math.floor(n/(W*H));const ns=nbrs(st,x,y);adjList.set(n,ns);
-      if(Math.abs(lamp.x-x)+Math.abs(lamp.y-y)===1)goal=true;ns.forEach(m=>{if(!fwd[m]){fwd[m]=1;q.push(m)}})}
-    // reverse reachability to the start: every state reachable going forward must be able to come back (moves are reversible, so this holds unless a gate closes on you)
-    const rev=new Map();adjList.forEach((ns,n)=>ns.forEach(m=>{if(!rev.has(m))rev.set(m,[]);rev.get(m).push(n)}));const back=new Uint8Array(N);back[start]=1;const bq=[start];
-    while(bq.length){const n=bq.shift();(rev.get(n)||[]).forEach(m=>{if(!back[m]){back[m]=1;bq.push(m)}})}
-    let reach=0,trapped=0;for(let n=0;n<N;n++)if(fwd[n]){reach++;if(!back[n])trapped++}
-    // the same search without the lever flips: the top must NOT be reachable by walking alone
-    return {levers,gates,positionsReachable:reach,trappedPositions:trapped,topReachableWithLevers:goal}}""")
-  print('puzzle graph:', G)
+  # 1) the climb from the raw map data: with no lamp kept the top is out of reach; each kept lamp opens exactly its gate and never closes one
+  G=pg.evaluate("""()=>{const M=WORLD.MAPS['dg-lamp'];const W=M.W,H=M.H;const solidC=(c)=>['C','O','T','X','~','F','G','R'].indexOf(c)!==-1;
+    const objAt=new Map();M.objects.forEach(o=>objAt.set(o.x+','+o.y,o));const lamp=M.objects.find(o=>o.id==='greatlamp');
+    const reach=(kept)=>{const free=(x,y)=>{if(x<0||y<0||x>=W||y>=H)return false;const o=objAt.get(x+','+y);if(o)return !!(o.gate&&M.gates[o.gate].every(l=>kept.indexOf(l)!==-1));return !solidC(M.grid[y][x])};
+      const sp=[Math.floor(M.spawn[0]),Math.floor(M.spawn[1])];const seen=new Set([sp.join()]);const q=[sp];let top=false;const lamps=[];
+      while(q.length){const [x,y]=q.shift();if(Math.abs(lamp.x-x)+Math.abs(lamp.y-y)===1)top=true;M.objects.forEach(o=>{if(o.kind==='chamberlamp'&&Math.abs(o.x-x)+Math.abs(o.y-y)===1&&lamps.indexOf(o.id)===-1)lamps.push(o.id)});
+        for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const a=x+dx,b=y+dy,k=a+','+b;if(!seen.has(k)&&free(a,b)){seen.add(k);q.push([a,b])}}}
+      return {n:seen.size,top,lamps:lamps.sort()}};
+    return {none:reach([]),L1:reach(['L1']),L12:reach(['L1','L2']),all:reach(['L1','L2','L3']),dark:!!M.dark,gates:M.gates}}""")
+  print('climb graph:', G)
+  print('no lamp kept: the top is out of reach and only L1 can be reached:', (not G['none']['top']) and G['none']['lamps']==['L1'])
+  print('each kept lamp opens the next chamber (L1 -> L2, L1+L2 -> L3), all three -> the top:', G['L1']['lamps']==['L1','L2'] and G['L12']['lamps']==['L1','L2','L3'] and G['all']['top'])
+  print('nothing closes: reachable cells only grow:', G['none']['n']<G['L1']['n']<G['L12']['n']<G['all']['n'], '| the climb is dark:', G['dark'])
   # 2) the real tower: door on the Ascent, then the levers pulled by hand
   pg.evaluate("WORLD.enter('ascent')"); pg.evaluate("(()=>{const o=WORLD.objects.find(x=>x.id==='beacon-door');WORLD.setPos((o.x+0.5)*WORLD.TS,(o.y+1.6)*WORLD.TS)})()"); pg.evaluate("[0,1,2,3].forEach(()=>WORLD.step(1/30))"); pg.wait_for_timeout(300)
   print('door label:', pg.inner_text('#act-label')); pg.click('#act'); pg.wait_for_timeout(300); print('first visit dialogue:', pg.evaluate("APP.dialog&&APP.dialog.lines[0]")); finish(); pg.wait_for_timeout(700)
   print('inside:', pg.evaluate("WORLD.map.id"), '| open.lamp saved:', pg.evaluate("JSON.parse(localStorage.getItem('critter-roll:v2')).adv.open.lamp"))
   gates=lambda: pg.evaluate("(()=>{const o=WORLD.objects;return ['g1','g2','g3'].map(g=>g+':'+(o.filter(x=>x.gate===g).every(x=>x.hidden)?'open':'shut')).join(' ')})()")
-  def use(oid):
-    pg.evaluate(f"(()=>{{const o=WORLD.objects.find(x=>x.id==='{oid}');WORLD.setPos((o.x+0.5)*WORLD.TS,(o.y+1.5)*WORLD.TS)}})()")
-    for _ in range(4): pg.evaluate("WORLD.step(1/30)")
-    pg.wait_for_timeout(120); pg.click('#act'); pg.wait_for_timeout(250)
+  def keep(oid, secs):   # stand beside a lamp for a while (the tending is in staying, not in a button)
+    pg.evaluate(f"(()=>{{const o=WORLD.objects.find(x=>x.id==='{oid}');WORLD.setPos((o.x+0.5)*WORLD.TS,(o.y+1.5)*WORLD.TS);WORLD.input.jx=0;WORLD.input.jy=0}})()"); pg.wait_for_timeout(int(secs*1000))
   print('start:', gates())
-  use('L1'); print('after L1 :', gates()); use('L2'); print('after L2 :', gates()); use('L3'); print('after L3 :', gates())
+  keep('L1', 1.0); print('after 1 s by L1 (not yet):', gates(), '| kept flag:', pg.evaluate("!!APP.game.state.adv.flags['cl:L1']"))
+  pg.evaluate("(()=>{const o=WORLD.objects.find(x=>x.id==='L1');WORLD.setPos((o.x+0.5)*WORLD.TS,(o.y+4.5)*WORLD.TS)})()"); pg.wait_for_timeout(600); keep('L1', 2.8)
+  print('walk away and back, 2.8 s more: fades then takes:', gates(), '| kept flag:', pg.evaluate("!!APP.game.state.adv.flags['cl:L1']"))
+  keep('L2', 2.8); print('after L2 :', gates()); keep('L3', 2.8); print('after L3 :', gates())
   REACH="""(ids)=>{const M=WORLD.map;const S=(x,y)=>x<0||y<0||x>=M.W||y>=M.H||WORLD.solidAt(x,y)||WORLD.npcs.some(o=>o.x===x&&o.y===y);const sp=[Math.floor(M.spawn[0]),Math.floor(M.spawn[1])];const seen=new Set([sp.join()]);const q=[sp];
     while(q.length){const [x,y]=q.shift();for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const a=x+dx,b=y+dy,k=a+','+b;if(a>=0&&b>=0&&a<M.W&&b<M.H&&!seen.has(k)&&!S(a,b)){seen.add(k);q.push([a,b])}}}
     const adj=(o)=>[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>seen.has((o.x+dx)+','+(o.y+dy)));const things=WORLD.objects.concat(WORLD.npcs);const out={};ids.forEach(id=>{const o=things.find(t=>t.id===id);out[id]=o?adj(o):'missing'});return out}"""
-  print('with all three levers ON, reachable (walls of the real map, NPCs solid):', pg.evaluate(REACH, ['bex','odo','maren','greatlamp','chest2']))
-  use('L3'); use('L2'); use('L1'); print('all OFF again:', gates(), '| reachable:', pg.evaluate(REACH, ['bex','maren']))
+  print('with all three lamps kept, reachable (walls of the real map, NPCs solid):', pg.evaluate(REACH, ['bex','odo','maren','greatlamp','chest2']))
+  pg.reload(); pg.wait_for_timeout(1100); pg.evaluate("WORLD.enter('dg-lamp')"); pg.wait_for_timeout(200); print('after a reload the kept lamps stay kept:', gates())
   # 3) trainers: sight lines, boss flag, rewards
   r=pg.evaluate("""()=>{WORLD.npcs.forEach(n=>{n.declined=true});const out={};for(const id of ['bex','odo','maren']){const n=WORLD.npcs.find(x=>x.id===id);WORLD.setPos((n.x+0.5)*WORLD.TS,(n.y+3.5)*WORLD.TS);out[id]={at:[n.x,n.y],sees:WORLD.inSight(n),size:n.size,stage:n.stage,lv:n.lv,reward:n.reward,boss:!!n.boss,bonus:n.bonus||0}}return out}""")
   for k,v in r.items(): print('  ',k,v)
@@ -55,6 +48,8 @@ with sync_playwright() as p:
     pg.evaluate("(()=>{const o=WORLD.objects.find(x=>x.id==='greatlamp');WORLD.setPos((o.x-0.5)*WORLD.TS,(o.y+0.5)*WORLD.TS)})()"); pg.evaluate("[0,1,2,3].forEach(()=>WORLD.step(1/30))"); pg.wait_for_timeout(250); pg.click('#act'); pg.wait_for_timeout(300)
   lamp_use(); print('lamp before the Warden falls:', pg.inner_text('#toast')[:60])
   pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{cleared:(APP.game.state.npc.cleared||[]).concat(['maren'])})})")
+  pg.evaluate("APP.game.update({adv:Object.assign({},APP.game.state.adv,{flags:Object.assign({},APP.game.state.adv.flags,{'cl:L3':false})})})"); lamp_use(); print('Warden down but one lamp below unkept:', pg.inner_text('#toast')[:40])
+  pg.evaluate("APP.game.update({adv:Object.assign({},APP.game.state.adv,{flags:Object.assign({},APP.game.state.adv.flags,{'cl:L3':true})})})")
   e0=pg.evaluate("APP.game.state.essence"); lamp_use(); print('lamp dialogue:', pg.evaluate("APP.dialog&&APP.dialog.lines.length"), 'lines'); finish(); pg.wait_for_timeout(400)
   print('lit:', pg.evaluate("APP.game.state.adv.flags.lampLit"), '| essence +', pg.evaluate("APP.game.state.essence")-e0, '| title:', pg.evaluate("APP.game.state.titles.indexOf('lamp')!==-1"))
   e1=pg.evaluate("APP.game.state.essence"); lamp_use(); print('again:', pg.inner_text('#toast')[:50], '| essence unchanged:', pg.evaluate("APP.game.state.essence")==e1)

@@ -6,6 +6,8 @@ with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(viewport={'width':390,'height':844}, device_scale_factor=2, has_touch=True)
     pg=ctx.new_page(); pg.on('pageerror', lambda e: errors.append(str(e))); pg.on('console', lambda m: errors.append(m.text) if m.type=='error' and 'ERR_NAME' not in m.text else None)
     pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1500)
+    print('title screen first: shown', pg.is_visible('#title'), '| the light is a button:', pg.evaluate("document.getElementById('title-light').getAttribute('aria-label')"), '| HUD hidden:', pg.evaluate("document.getElementById('hud').hidden"))
+    pg.screenshot(path='/tmp/t_title.png'); pg.click('#title-light'); pg.wait_for_timeout(300)
     print('new player: test mode', pg.evaluate("APP.game.props.testMode"), '| rolls chip:', pg.inner_text('#c-rolls'), '| intro dialog:', pg.evaluate("APP.dialog && APP.dialog.name"))
     pg.screenshot(path='/tmp/t_intro.png')
     for _ in range(6): pg.evaluate("APP.advance()"); pg.wait_for_timeout(30)

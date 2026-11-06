@@ -25,7 +25,7 @@ with sync_playwright() as p:
   pg.evaluate("APP.game.update({adv:{clues:[],open:{arch:true},flags:{}}})"); print('arch open:', species())
   pg.evaluate("APP.game.update({adv:{clues:[],open:{arch:true,lamp:true},flags:{}}})"); print('beacon door open too:', species())
   # the great lamp, three ways
-  pg.evaluate("APP.game.update({adv:{clues:[],open:{arch:true,lamp:true},flags:{}}}); WORLD.enter('dg-lamp'); WORLD.npcs.forEach(n=>n.declined=true)")
+  pg.evaluate("APP.game.update({adv:{clues:[],open:{arch:true,lamp:true},flags:{'cl:L1':true,'cl:L2':true,'cl:L3':true}}}); WORLD.enter('dg-lamp'); WORLD.npcs.forEach(n=>n.declined=true)")
   def lamp():
     pg.evaluate("(()=>{const o=WORLD.objects.find(x=>x.id==='greatlamp');WORLD.setPos((o.x-0.5)*WORLD.TS,(o.y+0.5)*WORLD.TS)})()"); pg.evaluate("[0,1,2,3].forEach(()=>WORLD.step(1/30))"); pg.wait_for_timeout(300); pg.click('#act'); pg.wait_for_timeout(300)
   has=lambda: pg.evaluate("APP.game.state.caught.some(e=>e.seed===SECRET2_SEED)")

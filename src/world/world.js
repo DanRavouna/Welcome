@@ -526,6 +526,7 @@ const WORLD = (() => {
   addSpot(MAPS.frost, { id: 'z-icelamp', kind: 'icelamp', text: 'A flame, held in the ice.' }, 26, 19, false);
   addSpot(MAPS.ember, { id: 'z-hearth', kind: 'hearth', text: 'Fresh logs.' }, 10, 20, false);
   addSpot(MAPS.tide, { id: 'z-moored', kind: 'moored', text: 'The knot is a good one.' }, 26, 6, true);
+  addSpot(MAPS.tide, { id: 'z-returned', kind: 'returned', text: 'A cup, a sandal, a toy boat, set in a row above the tide line. Someone straightened them.' }, 26, 20, true);   // Meaning: what the sea gives back, met on the shore before Coral asks you to answer
   // ---------- the Cold Ascent: five switchback ledges up the peaks above Frosthold, ending under the beacon tower ----------
   // Ledges are rectangles joined by 4-wide ramps through the cliff rows between them; a packed-snow trail zig-zags up, so trainers beside it
   // see you cross. Wild snow patches (W), a glacier river with a log bridge, a rare patch near the top, and a summit plateau with the beacon.
@@ -666,7 +667,7 @@ const WORLD = (() => {
   // Home (Meaning: where you are kept): the lamp in the window that Mom did not light, a picture of two people one much smaller, your coat on its peg, still fitting. The Lab (being studied, and believed in): Fern's pages about a trainer with your name, a basket where small things slept and will again.
   [['home', { W: 12, H: 9, style: 'town', layout: { b: [[1, 2], [2, 2]], m: [[8, 2]], s: [[9, 2], [10, 2]], t: [[4, 5], [5, 5]], p: [[1, 7], [10, 7]], r: [3, 4, 7, 6] },
       places: [{ id: 'desk', name: 'Trainer records', x: 8, y: 2, w: 1, h: 1, kind: 'device', door: [8, 2], open: 'badges' }],
-      objects: [{ id: 'wlamp', kind: 'windowlamp', x: 5, y: 2, text: 'A lamp on the windowsill, facing the road.' }, { id: 'photo', kind: 'photo', x: 6, y: 2, text: 'A picture on the wall: two people, one much smaller, in front of this house.' }, { id: 'coat', kind: 'cloakpeg', x: 10, y: 6, text: 'Your coat on its peg. It still fits. Just.' }] }],
+      objects: [{ id: 'wlamp', kind: 'windowlamp', x: 5, y: 2, text: 'A lamp on the windowsill, facing the road.' }, { id: 'chairs', kind: 'twochairs', x: 6, y: 5, text: 'Two chairs at the table. One of them has always been yours.' }, { id: 'photo', kind: 'photo', x: 6, y: 2, text: 'A picture on the wall: two people, one much smaller, in front of this house.' }, { id: 'coat', kind: 'cloakpeg', x: 10, y: 6, text: 'Your coat on its peg. It still fits. Just.' }] }],
    ['lab', { W: 14, H: 10, style: 'lab', layout: { s: [[1, 2], [2, 2], [3, 2], [4, 2]], m: [[8, 2], [9, 2], [10, 2], [11, 2]], t: [[5, 6], [6, 6], [7, 6]], p: [[1, 8], [12, 8]], h: [[12, 5]], r: [4, 4, 9, 7] },
       places: [{ id: 'dexpc', name: 'Dex terminal', x: 9, y: 2, w: 1, h: 1, kind: 'device', door: [9, 2], open: 'dex' }],
       objects: [{ id: 'notes', kind: 'notes', x: 6, y: 2, text: 'Pages in Fern\u2019s hand, pinned in order. The newest ones are about a trainer with your name.' }, { id: 'basket', kind: 'critterbasket', x: 10, y: 8, text: 'A basket with a folded blanket. Something small slept here, and will again.' }] }]].forEach(([pid, opt], i) => {

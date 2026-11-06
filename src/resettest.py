@@ -20,6 +20,6 @@ with sync_playwright() as p:
   keys1=pg.evaluate("Object.keys(localStorage).filter(k=>k.startsWith('critter-roll:')).sort()")
   check('after the second tap the page reloaded as a new game (no critters, intro not done)', pg.evaluate("APP.game.state.caught.length")==0 and not pg.evaluate("!!APP.game.state.intro"), pg.evaluate("[APP.game.state.caught.length, APP.game.state.intro]"))
   check('the old save keys are gone (the device id may stay)', all(k=='critter-roll:device' or not pg.evaluate("(k)=>localStorage.getItem(k)!==null && JSON.parse(localStorage.getItem(k)||'{}').caught&&JSON.parse(localStorage.getItem(k)).caught.length>0",k) for k in keys0), keys1)
-  check('the new game shows the starter choice or the intro', pg.evaluate("!document.getElementById('starter').hidden || !!APP.dialog"))
+  check('the new game shows the title screen, the starter choice or the intro', pg.evaluate("!document.getElementById('title').hidden || !document.getElementById('starter').hidden || !!APP.dialog"))
   check('no page errors', not errs, errs); b.close()
 done()
