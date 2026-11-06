@@ -435,7 +435,8 @@ const APP = (() => {
     if (window.__noTitle) { then(); return; }
     $('title').hidden = false; $('hud').hidden = true; WORLD.setPaused(true);
     const btn = $('title-light');
-    btn.onclick = () => { btn.onclick = null; $('title').hidden = true; game.sfx('claim'); then(); };
+    btn.onclick = () => { btn.onclick = null; game.sfx('claim'); $('title').classList.add('out'); WORLD.setPaused(false); WORLD.go('town');   // the same crossing as a zone change, under the fading title
+      setTimeout(() => { $('title').hidden = true; $('title').classList.remove('out'); then(); }, window.__noTransition ? 0 : 650); };
   }
   function openStarter() {
     const seeds = game.starters(), power = (k) => k.stats.reduce((x, q) => x + q.value, 0);

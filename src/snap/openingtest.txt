@@ -1,4 +1,5 @@
 ok a new game opens on the title: one light to touch
+ok touching the light crosses into the game like a zone change
 ok Fern points at what you can see (the gate with the lamp, the grass by your door) | ['The gate with the lamp on it. Most people start in the tall grass past it, and there is some by your door. Talk to people on the way; they know more than the signs do.']
 ok you start at the door of Home | [[#...], [#...]]
 tiles to the first tall grass: # | tiles to the west gate: #
@@ -7,4 +8,6 @@ ok the open gate (west) is within # tiles and in the direction the road runs | #
 ok a lamp stands by the west gate and is lit by day | {'id': 'gate-lamp', 'kind': 'postlamp', 'day': True, 'x': #, 'y': #, 'reach': #, 'text': 'A lamp on a post by the gate. Lit, in daylight. Someone keeps it that way.'}
 ok the gate lamp burns in daylight (its level is #) | {'gate-lamp': #}
 ok the window above the door is kept lit for you at the start (by day) | None
+seconds to a wild critter within # tiles: # | to its orb in the pouch: # | to the first keep: #
+ok a real first keep happens within # s of the opening (bot, real attack, no cheats) | [#...]
 ok no page errors | []

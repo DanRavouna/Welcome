@@ -7,7 +7,9 @@ with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':780}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1500)
   check('a new game opens on the title: one light to touch', pg.is_visible('#title') and pg.is_visible('#title-light'))
-  pg.click('#title-light'); pg.wait_for_timeout(300)
+  pg.click('#title-light'); pg.wait_for_timeout(80)
+  check('touching the light crosses into the game like a zone change', pg.evaluate("WORLD.transitioning && document.getElementById('title').classList.contains('out')"))
+  pg.wait_for_timeout(1000)
   fern=[]
   for _ in range(6):
     if not pg.evaluate("!!APP.dialog"): break
@@ -34,5 +36,49 @@ with sync_playwright() as p:
   lv=pg.evaluate("APP.lampLevels()")
   check('the gate lamp burns in daylight (its level is 1)', lv and lv.get('gate-lamp')==1, lv)
   check('the window above the door is kept lit for you at the start (by day)', pg.evaluate("APP.homeLitNow()"), None)
+  # the bot: the first keep, timed for real (action mode: a wild critter near you, reached by pathing over the real grid in real time, fought with the real attack until it drops its orb, the orb collected, the pouch opened, Keep pressed)
+  import time
+  pg.evaluate("WORLD.setPaused(false)")
+  WALK=set('.,=WZ')
+  def path(a, bt):   # BFS over the town grid, tile to tile
+    if a==bt: return [bt]
+    prev={a:None}; q=deque([a])
+    while q:
+      x,y=q.popleft()
+      for dx,dy in ((1,0),(-1,0),(0,1),(0,-1)):
+        nx,ny=x+dx,y+dy
+        if 0<=nx<r['W'] and 0<=ny<r['H'] and (nx,ny) not in prev and g[ny][nx] in WALK: prev[(nx,ny)]=(x,y); q.append((nx,ny))
+        if (nx,ny)==bt: break
+      if bt in prev: break
+    if bt not in prev: return None
+    out=[]; c=bt
+    while c: out.append(c); c=prev[c]
+    return out[::-1]
+  t0=time.time(); tNear=None; tOrb=None; tKeep=None; stuck=0
+  def foe(): return pg.evaluate("(()=>{const p=WORLD.pos();const f=ACT.foes().map(m=>({x:m.x,y:m.y,d:Math.hypot(m.x-p.x,m.y-p.y)/32})).sort((a,b)=>a.d-b.d);return f[0]||null})()")
+  while time.time()-t0<60 and tKeep is None:
+    if pg.evaluate("APP.game.state.pouch.length>0"):
+      if tOrb is None: tOrb=time.time()-t0
+      pg.evaluate("WORLD.input.jx=0;WORLD.input.jy=0; document.getElementById('pouch').click()"); pg.wait_for_timeout(500)
+      pg.evaluate("APP.game.renderVals().keep && APP.game.renderVals().keep()"); pg.wait_for_timeout(400)
+      if pg.evaluate("APP.game.state.caught.length")>=2: tKeep=time.time()-t0
+      continue
+    orb=pg.evaluate("(()=>{const o=ACT.orbs();return o.length?[o[0].x,o[0].y]:null})()")
+    f=foe()
+    tgt = {'x':orb[0],'y':orb[1],'d':9} if orb else f
+    if not tgt: pg.wait_for_timeout(150); continue
+    if tNear is None and f and f['d']<6: tNear=time.time()-t0
+    if tgt['d']<=1.15 and not orb:
+      pg.evaluate("WORLD.input.jx=0;WORLD.input.jy=0;ACT.attack()"); pg.wait_for_timeout(380); continue
+    pos=pg.evaluate("WORLD.pos()"); a=(int(pos['x']//32),int(pos['y']//32)); bt=(int(tgt['x']//32),int(tgt['y']//32))
+    pth=path(a,bt)
+    if not pth: pg.wait_for_timeout(150); continue
+    nxt=pth[1] if len(pth)>1 else pth[0]
+    wx,wy=(nxt[0]+0.5)*32,(nxt[1]+0.6)*32
+    if len(pth)<=2: wx,wy=tgt['x'],tgt['y']
+    pg.evaluate("([wx,wy])=>{const p=WORLD.pos();const dx=wx-p.x,dy=wy-p.y,d=Math.hypot(dx,dy)||1;WORLD.input.jx=dx/d;WORLD.input.jy=dy/d}", [wx,wy]); pg.wait_for_timeout(100)
+  pg.evaluate("WORLD.input.jx=0;WORLD.input.jy=0")
+  print('seconds to a wild critter within 6 tiles:', None if tNear is None else round(tNear,1), '| to its orb in the pouch:', None if tOrb is None else round(tOrb,1), '| to the first keep:', None if tKeep is None else round(tKeep,1))
+  check('a real first keep happens within 60 s of the opening (bot, real attack, no cheats)', tKeep is not None and tKeep<=60, [tNear, tOrb, tKeep])
   check('no page errors', not errs, errs); b.close()
 done()

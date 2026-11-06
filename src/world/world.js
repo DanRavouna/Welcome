@@ -761,6 +761,7 @@ const WORLD = (() => {
   const P = { x: 8.9 * TS, y: 9.4 * TS, dir: 'down', moving: false, step: 0 };
   const input = { jx: 0, jy: 0, keys: {} };
   let canvas, ctx, vw = 0, vh = 0, dpr = 1, paused = false, tAnim = 0, opts = {};
+  let zoom = 1;
   let lastTile = '', stepsSince = 0, rustle = 0, flash = 0;
 
   function collides(nx, ny) {
@@ -1199,7 +1200,8 @@ const WORLD = (() => {
   }
   let last = 0, frameDt = 0.016;
   function frame(t) { const dt = Math.min(0.05, (t - last) / 1000 || 0); last = t; frameDt = dt; tAnim += dt; if (TR) stepTR(dt); update(dt); draw(); requestAnimationFrame(frame); }
-  function resize() { vw = canvas.clientWidth; vh = canvas.clientHeight; dpr = Math.min(3, window.devicePixelRatio || 1); canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr); if (!terrain || terrainFor !== M.id) prerender(); }
+  // the view scales with the window: the shorter side shows about 14 tiles whatever the screen, in half steps so pixels stay even (a phone is 1, a laptop about 1.5 to 2). window.__zoom overrides it (tests).
+  function resize() { const cw = canvas.clientWidth, ch = canvas.clientHeight; zoom = typeof window.__zoom === 'number' ? window.__zoom : Math.max(1, Math.floor(Math.min(cw, ch) / 448 * 2) / 2); vw = cw / zoom; vh = ch / zoom; dpr = Math.min(3, window.devicePixelRatio || 1) * zoom; canvas.width = Math.round(cw * Math.min(3, window.devicePixelRatio || 1)); canvas.height = Math.round(ch * Math.min(3, window.devicePixelRatio || 1)); if (!terrain || terrainFor !== M.id) prerender(); }
   function init(cv, o) {
     canvas = cv; ctx = cv.getContext('2d'); opts = Object.assign({ random: () => Math.random() }, o);
     if (o.npcs) setupNpcs(o.npcs);
@@ -1222,6 +1224,7 @@ const WORLD = (() => {
     openTiles: (mapId, cells, objIds) => { const m = MAPS[mapId]; if (!m) return; cells.forEach(([x, y]) => { if (m.grid[y]) m.grid[y][x] = '.'; }); m.objects = (m.objects || []).filter((o) => objIds.indexOf(o.id) === -1); if (M === m && canvas) prerender(); }, setFish: (f) => { fishAt = f; }, follower: () => FOL,
     addProp, PROPS, get map() { return M; }, get PLACES() { return M.places; }, get SIGNS() { return M.signs; },
     solidAt: (x, y) => solidAt(x, y),
+    get zoom() { return zoom; }, view: () => ({ vw: vw, vh: vh, zoom: zoom }),
     setPaused: (v) => { paused = v; if (v) { input.jx = 0; input.jy = 0; input.keys = {}; } }, get paused() { return paused; }, get transitioning() { return !!TR; },
     get npcs() { return NPCS[M.id] || []; }, allNpcs: () => NPCS, facePlayer, inSight,
     followerPos: () => (FOL ? { x: FOL.x, y: FOL.y, dir: FOL.dir || null, moving: !!FOL.moving } : null), get lead() { return LEAD; },

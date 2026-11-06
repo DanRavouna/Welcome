@@ -55,7 +55,7 @@ button:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
 .hit-a{animation:hitA 420ms ease-out}.hit-b{animation:hitB 420ms ease-out}
 @media (prefers-reduced-motion: reduce){.shiny-burst,.shiny-still,.reveal-a,.reveal-b,.glow-a,.glow-b,.hit-a,.hit-b{animation:none}}
 
-#title.ovl{background:#0B1026;backdrop-filter:none}.title-sky{position:relative;width:256px;margin:0 auto;padding-top:18vh;text-align:center}
+#title.ovl{background:#0B1026;backdrop-filter:none;transition:opacity .55s ease}#title.out{opacity:0;pointer-events:none}.title-sky{position:relative;width:256px;margin:0 auto;padding-top:18vh;text-align:center}
 .title-house{display:block;image-rendering:pixelated}.title-glow{animation:tglow 2.6s ease-in-out infinite}
 @keyframes tglow{0%,100%{opacity:0.22}50%{opacity:0.42}}
 .title-btn{position:absolute;left:62px;top:calc(18vh + 86px);width:52px;height:52px;border:0;background:transparent;border-radius:50%;cursor:pointer}
