@@ -191,9 +191,9 @@ const WORLD = (() => {
     const places = [
       { id: 'gym-wren', name: "Wren's Gym", x: 13, y: 2, w: 10, h: 6, kind: 'gym', door: [17, 7], open: 'gym', leader: 'wren', color: '#4FB06D', roof: '#4E8A3A' },
       { id: 'herbs', name: 'Herb Hut', x: 4, y: 6, w: 5, h: 4, kind: 'house', door: [6, 9], open: 'shop', roof: '#8E5BC8', wall: '#E8D7B0' },
-      { id: 'house-fennel', name: "Fennel's House", x: 26, y: 5, w: 5, h: 4, kind: 'house', door: [28, 8], open: 'house', roof: '#C0503A', wall: '#E8D7B0', text: 'A teapot whistles somewhere inside. Nobody answers.' },
+      { id: 'house-fennel', name: "Fennel's House", x: 26, y: 5, w: 5, h: 4, kind: 'house', door: [28, 8], open: 'house', roof: '#C0503A', wall: '#E8D7B0', text: 'A kettle whistles inside.' },
       { id: 'house-moss', name: 'Mosscap Cottage', x: 6, y: 18, w: 5, h: 4, kind: 'house', door: [8, 21], open: 'house', roof: '#5E8E3A', wall: '#D9C29A', text: 'A note on the door: "Out foraging. Back by dusk."' },
-      { id: 'house-bryn', name: "Bryn's House", x: 25, y: 18, w: 5, h: 4, kind: 'house', door: [27, 21], open: 'house', roof: '#D9A03A', wall: '#E8D7B0', text: 'Crayon drawings of critters cover the window.' }
+      { id: 'house-bryn', name: "Bryn's House", x: 25, y: 18, w: 5, h: 4, kind: 'house', door: [27, 21], open: 'house', roof: '#D9A03A', wall: '#E8D7B0', text: 'Crayon drawings of critters cover the window. Every one has stars around it.' }
     ];
     places.forEach((p) => { for (let y = p.y; y < p.y + p.h; y++) for (let x = p.x; x < p.x + p.w; x++) set(x, y, 'X'); });
     path(17, 8, 18, 10); path(6, 10, 7, 13); path(28, 9, 29, 13); path(11, 15, 12, 23); path(8, 22, 12, 23); path(31, 15, 32, 23); path(27, 22, 32, 23);
@@ -616,11 +616,23 @@ const WORLD = (() => {
     if (LY.r) for (let y = LY.r[1]; y <= LY.r[3]; y++) for (let x = LY.r[0]; x <= LY.r[2]; x++) m[y][x] = 'r';
     ['b', 's', 't', 'p', 'k', 'h', 'm'].forEach((k) => (LY[k] || []).forEach(([x, y]) => { m[y][x] = k; }));
     m[H - 1][dx] = 'd'; m[H - 1][dx + 1] = 'd';
-    return { id: id, name: place.name, interior: true, rug: LY.r || null, parent: cityId, style: ROOM_STYLE[opt.style || cityId], theme: { bg: '#1A1424' }, grid: m, W: W, H: H, places: opt.places || [], signs: [], types: [], rate: 0,
+    const objects = (opt.objects || []).map((o) => { m[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });   // things to look at, drawn with the adventure art
+    return { id: id, name: place.name, interior: true, objects: objects, rug: LY.r || null, parent: cityId, style: ROOM_STYLE[opt.style || cityId], theme: { bg: '#1A1424' }, grid: m, W: W, H: H, places: opt.places || [], signs: [], types: [], rate: 0,
       exits: [{ edge: 's', a: dx, b: dx + 1, to: cityId }], arrive: { s: [dx + 0.9, H - 1.6] }, spawn: [dx + 0.9, H - 1.6] };
   }
+  // Mossbrook's three houses are built by hand (Meaning, Mossbrook: being tended while you grow). Each room is a statement, made of things to look at, never a line that explains it:
+  // Clover's house (Fennel is out): someone who keeps the kettle on for a person who is not back yet. Mosscap Cottage: what the forest gives to someone who goes back every day (Wil is home only after dusk, like the note on the door says).
+  // Bryn's house: being believed in while you are still looking (every drawing is a shiny critter; the jar is for when, not if).
+  const MOSS_ROOMS = {
+    'house-fennel': { layout: { b: [[9, 2], [10, 2]], t: [[5, 4], [6, 4]], p: [[1, 7]], r: [4, 4, 7, 6] },
+      objects: [{ id: 'kettle', kind: 'kettle', x: 2, y: 2, text: 'The kettle is on. The cups are out, both of them.' }, { id: 'chair', kind: 'armchair', x: 10, y: 6, text: 'The cushion is worn in the shape of someone else.' }, { id: 'jars', kind: 'jars', x: 5, y: 2, text: 'Jars with dates on the lids. The newest says this week.' }] },
+    'house-moss': { layout: { b: [[1, 2], [2, 2]], t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] },
+      objects: [{ id: 'baskets', kind: 'baskets', x: 10, y: 7, text: 'Four baskets by the door, four kinds of mushroom. One for each day so far.' }, { id: 'herbs', kind: 'herbs', x: 6, y: 2, text: 'Bunches of herbs drying. The oldest are nearly dust; the newest still smell of rain.' }, { id: 'map', kind: 'wallmap', x: 9, y: 2, text: 'A map of the forest. One path is drawn over and over, a little differently each time.' }] },
+    'house-bryn': { layout: { b: [[1, 2], [2, 2]], t: [[8, 5], [9, 5]], p: [[10, 7]], r: [3, 4, 6, 6] },
+      objects: [{ id: 'drawings', kind: 'drawings', x: 6, y: 2, text: 'Crayon critters, pinned in rows. Every one of them has stars drawn around it.' }, { id: 'jar', kind: 'shinyjar', x: 9, y: 2, text: 'An empty jar on the shelf. The label says: for the shiny one.' }, { id: 'smallbed', kind: 'smallbed', x: 1, y: 7, text: 'A small bed. The blanket has critters on it.' }] }
+  };
   ['mossbrook', 'frosthold', 'cinderport', 'coralbay'].forEach((cid) => MAPS[cid].places.filter((p) => p.open === 'house').forEach((p, i) => {
-    const id = 'in-' + p.id; MAPS[id] = buildInterior(id, p, cid, i); p.enter = id;
+    const id = 'in-' + p.id; MAPS[id] = buildInterior(id, p, cid, i, MOSS_ROOMS[p.id] || {}); p.enter = id;
     MAPS[cid].arriveFrom = Object.assign({}, MAPS[cid].arriveFrom, { [id]: [p.door[0] + 0.9, p.door[1] + 1.5] });
   }));
   // Sproutvale: your home (trainer records desk) and the Lab (Dex terminal); Fern stays outside for the intro
@@ -716,7 +728,7 @@ const WORLD = (() => {
     });
   }
   let NPCS = {};
-  const npcAt = (tx, ty) => (NPCS[M.id] || []).some((n) => n.x === tx && n.y === ty);
+  const npcAt = (tx, ty) => (NPCS[M.id] || []).some((n) => !n.hidden && n.x === tx && n.y === ty);
   function setupNpcs(list) {
     NPCS = {};
     Object.keys(list).forEach((mapId) => {
@@ -802,7 +814,7 @@ const WORLD = (() => {
   }
   function nearest() {
     const tx = P.x / TS, ty = P.y / TS; let best = null, bd = 1.7;
-    (NPCS[M.id] || []).forEach((n) => { const d = Math.hypot(tx - (n.x + 0.5), ty - (n.y + 0.9)); if (d < 1.45 && d < bd + 0.3) { bd = Math.min(bd, d); best = { kind: 'npc', npc: n }; } });
+    (NPCS[M.id] || []).forEach((n) => { if (n.hidden) return; const d = Math.hypot(tx - (n.x + 0.5), ty - (n.y + 0.9)); if (d < 1.45 && d < bd + 0.3) { bd = Math.min(bd, d); best = { kind: 'npc', npc: n }; } });
     if (best) return best;
     M.places.forEach((p) => { const [dx, dy] = p.door; const d = Math.hypot(tx - (dx + 1), ty - (dy + 1.1)); if (d < bd) { bd = d; best = { kind: 'place', place: p }; } });
     M.signs.forEach((s) => { const d = Math.hypot(tx - (s.x + 0.5), ty - (s.y + 0.5)); if (d < Math.min(bd, 1.6)) { bd = d; best = { kind: 'sign', sign: s }; } });
@@ -867,6 +879,7 @@ const WORLD = (() => {
     rustle = Math.max(0, rustle - dt); flash = Math.max(0, flash - dt);
     // trainers watch a straight line in front of them
     (NPCS[M.id] || []).forEach((n) => {
+      if (n.hidden) return;
       if (n.trainer) {
         if (!n.declined && n.alert === 0 && opts.canChallenge && opts.canChallenge(n) && inSight(n)) {
           n.declined = true; // one sighting per visit: resets when you re-enter the map
@@ -1045,7 +1058,7 @@ const WORLD = (() => {
     if (wk === 'snow') snowCaps(cx, cy);
     const fol = opts.follower ? opts.follower() : null;
     if (!FOL) followerReset();
-    const list = (NPCS[M.id] || []).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat((M.objects || []).filter((o) => !o.hidden).map((o) => ({ y: (o.y + 0.95) * TS, o: o }))).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
+    const list = (NPCS[M.id] || []).filter((n) => !n.hidden).map((n) => ({ y: (n.y + 0.9) * TS, n: n })).concat((M.objects || []).filter((o) => !o.hidden).map((o) => ({ y: (o.y + 0.95) * TS, o: o }))).concat([{ y: P.y, p: true }]).concat(fol && fol.img && fol.img.complete ? [{ y: FOL.y, f: true }] : []).sort((a, b) => a.y - b.y);
     LEAD = critterLead(fol); if (!LEAD) { P.ox = 0; P.oy = 0; }
     const actEnv = { M: M, TS: TS, P: LEAD ? FOL : P, FOL: LEAD ? P : FOL, lead: LEAD, fol: fol, ctx: ctx, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, snap: snap };
     if (typeof ACT !== 'undefined') ACT.items(actEnv).forEach((a) => list.push(a));

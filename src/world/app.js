@@ -695,9 +695,9 @@ const APP = (() => {
     ];
     // residents of the house interiors
     const RES = {
-      'house-fennel': ['Grandma Clover', ['Oh, a visitor! Fennel is out by the green again.', 'Take your time. Critters like a calm trainer.']],
-      'house-moss': ['Forager Wil', ['Just back from foraging. Moss Forest was full of Bloom critters today.', 'Tip: the sparkling grass patches hold the rare ones.']],
-      'house-bryn': ["Bryn's Dad", ['Bryn talks about shiny critters all day. One in two hundred, they say.', 'If you ever find one, show Bryn. It would make the whole week.']],
+      'house-fennel': ['Grandma Clover', ['You are not Fennel. Sit anyway. The kettle does not mind who.', 'She said she would be back by supper. She says it every day, and every day I pour two cups.']],
+      'house-moss': ['Forager Wil', ['Back before dark, like the note says.', 'Same path every day. A different basket every day.']],
+      'house-bryn': ["Bryn's Dad", ['Those on the wall are all Bryn\u2019s. Every one of them is a shiny one.', 'The jar is for when. Not if.']],
       'fh-a': ['Guard Brann', ['Hm? I was not sleeping. I was resting my eyes.', 'The palisade has held for a hundred winters. It will hold one more.']],
       'fh-b': ['Trader Ylva', ['Closed for the blizzard season, but you can warm up by the fire.', 'Highland Pass to the west links us to Mossbrook. Glacier Coast to the east goes to Coralbay.']],
       'fh-c': ['Old Ingrid', ['Soup? There is always soup.', 'My grandson climbed the Tower once. Floor six! He still talks about it.']],
@@ -711,7 +711,7 @@ const APP = (() => {
     out['in-home'] = [{ id: 'mom', name: 'Mom', x: 6, y: 4, dir: 'down', kind: 'talk', pal: { h: '#8A5A34', y: '#D8574A', Y: '#A8382E' }, lines: ['Welcome home, sweetie! Did you eat?', 'Your trainer records are on the desk. I keep them tidy for you.'] }];
     out['in-lab'] = [{ id: 'remy', name: 'Lab Aide Remy', x: 3, y: 5, dir: 'down', kind: 'talk', pal: { h: '#3A2A1A', y: '#E8EEF8', Y: '#9AA3B5' }, lines: ['Professor Fern is usually just outside, greeting new trainers.', 'The Dex terminal records every species you keep. Use it any time.'] }];
     const RPAL = [{ h: '#8A5A34', y: '#C0503A', Y: '#8A3A28' }, { h: '#E8E8F0', y: '#4A6A9A', Y: '#2E4A66' }, { h: '#3A2A1A', y: '#4FB06D', Y: '#2E6A2C' }, { h: '#C0392B', y: '#E0A0B8', Y: '#C07898' }];
-    Object.keys(RES).forEach((pid, i) => { out['in-' + pid] = [{ id: 'res-' + pid, name: RES[pid][0], x: 7, y: 3, dir: 'down', kind: 'talk', pal: RPAL[i % RPAL.length], lines: RES[pid][1] }]; });
+    Object.keys(RES).forEach((pid, i) => { out['in-' + pid] = [Object.assign({ id: 'res-' + pid, name: RES[pid][0], x: 7, y: 3, dir: 'down', kind: 'talk', pal: RPAL[i % RPAL.length], lines: RES[pid][1] }, pid === 'house-moss' ? { x: 4, y: 5, late: true } : {})]; });   // Wil is home only from dusk (the note on the door): `late` is read by the 500 ms rules
     Object.values(out).forEach((list) => list.forEach((n) => { if (n.trainer) n.reward = 3 + 2 * n.size + (n.stage - 1) * 2; if (n.leader) n.reward = 10; }));
     return out;
   }
@@ -1303,7 +1303,9 @@ const APP = (() => {
     // things that only exist at certain hours (a lantern at night, ribbons at dusk, a boat at dawn, a light in the water at night): [gate id, true while the thing is GONE]
     const WILD_RULES = { 'route-mf-hollow': [['night', (t) => t !== 'night']], 'route-cm-crossing': [['dusk', (t) => t !== 'dusk']], 'route-fc-skerry': [['dawn', (t) => t !== 'dawn']], 'route-cc-drowned': [['night', (t) => t !== 'night']], 'route-fc': [['dawn', (t) => t !== 'dawn']] };
     let ruleState = {}; const applyRules = () => { if (!game || !WORLD.map) return; const id = WORLD.map.id, rules = WILD_RULES[id]; if (!rules) { ruleState = {}; return; } const t = timeOfDay(); rules.forEach((r) => { const gone = !!r[1](t); if (ruleState[id + r[0]] !== gone) { ruleState[id + r[0]] = gone; WORLD.setGate(id, r[0], gone); } }); };
-    setInterval(applyRules, 500);
+    // people who keep hours: a `late` resident is away by day and home from dusk
+    const applyHours = () => { const all = WORLD.allNpcs(), t = timeOfDay(), home = t === 'dusk' || t === 'night'; Object.keys(all).forEach((k) => all[k].forEach((n) => { if (n.late) n.hidden = !home; })); };
+    setInterval(() => { applyRules(); applyHours(); }, 500); applyHours();
     // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel
     {
       let leadCache = { key: '', k: null }; const foePool = {}, benchCache = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');

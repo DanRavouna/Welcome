@@ -1,0 +1,23 @@
+ok in-house-fennel: the room holds its three things | ['kettle', 'armchair', 'jars']
+ok in-house-fennel: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-house-fennel: nothing is a tip, everything is something to look at | The kettle is on. The cups are out, both of them. | The cushion is worn in the shape of someone else. | Jars with dates on the lids. The newest says this week.
+ok in-house-fennel: every thing has a line
+ok in-house-moss: the room holds its three things | ['baskets', 'herbs', 'wallmap']
+ok in-house-moss: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-house-moss: nothing is a tip, everything is something to look at | Four baskets by the door, four kinds of mushroom. One for each day so far. | Bunches of herbs drying. The oldest are nearly dust; the newest still smell of rain
+ok in-house-moss: every thing has a line
+ok in-house-bryn: the room holds its three things | ['drawings', 'shinyjar', 'smallbed']
+ok in-house-bryn: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-house-bryn: nothing is a tip, everything is something to look at | Crayon critters, pinned in rows. Every one of them has stars drawn around it. | An empty jar on the shelf. The label says: for the shiny one. | A small bed. The
+ok in-house-bryn: every thing has a line
+ok Clover's door: a kettle whistles, and nobody is said to be absent | [['house-fennel', 'A kettle whistles inside.'], ['house-moss', 'A note on the door: "Out foraging. Back by dusk."'], ['house-bryn', 'Crayon drawings of critters cover the window. Every one has stars around it.']]
+ok Bryn's door: the drawings have stars, like the ones inside
+ok by day Wil is away (hidden) | {'hidden': True, 'x': #, 'y': #}
+ok by day his spot is not a person to talk to | Walk up to a place
+ok by day you can walk through where he stands (he is not there) | #
+ok from dusk Wil is home and you can talk to him | Talk to Forager Wil
+ok and at night
+ok Clover and Bryn's dad are always home
+ok by the armchair the action is Examine | Examine
+ok and it says what you see | The cushion is worn in the shape of someone else.
+ok no page errors | []

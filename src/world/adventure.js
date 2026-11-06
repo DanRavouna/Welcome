@@ -351,6 +351,43 @@ const ADV = (() => {
     chain(g, x, y, st, t, o) {
       R(g, x, y + 12, 32, 6, OL); for (let i = 0; i < 4; i++) { R(g, x + i * 8 + 1, y + 13, 6, 4, i % 2 ? '#8E98AD' : '#6A7488'); R(g, x + i * 8 + 3, y + 14, 2, 2, OL); } R(g, x + 6, y + 18, 3, 3, 'rgba(120,170,220,0.5)');
     },
+    // an armchair with a worn cushion
+    armchair(g, x, y) {
+      R(g, x + 3, y + 27, 26, 3, 'rgba(0,0,0,0.22)'); R(g, x + 4, y + 6, 24, 22, OL); R(g, x + 5, y + 7, 22, 20, '#8E5BC8'); R(g, x + 5, y + 7, 22, 2, '#A97AE0'); R(g, x + 5, y + 16, 4, 11, '#7A4AB0'); R(g, x + 23, y + 16, 4, 11, '#7A4AB0');
+      R(g, x + 9, y + 17, 14, 8, '#B08AE0'); R(g, x + 12, y + 19, 8, 4, '#9A74CC');   // the cushion, worn in the middle
+    },
+    // a shelf of jars with dated lids
+    jars(g, x, y) {
+      R(g, x + 1, y + 4, 30, 24, OL); R(g, x + 2, y + 5, 28, 22, '#8A5A34'); R(g, x + 2, y + 14, 28, 2, '#5E3C22'); R(g, x + 2, y + 25, 28, 2, '#5E3C22');
+      [[4, 6, '#C8A24A'], [11, 6, '#8E5BC8'], [18, 6, '#C0503A'], [24, 6, '#4FB06D'], [5, 16, '#D9A066'], [13, 16, '#C8A24A'], [21, 16, '#8E5BC8']].forEach(([jx, jy, c]) => { R(g, x + jx, jy + y, 6, 8, OL); R(g, x + jx + 1, jy + y + 1, 4, 6, c); R(g, x + jx + 1, jy + y, 4, 1, '#E8E0D0'); R(g, x + jx + 2, jy + y + 3, 2, 2, '#F4EAD6'); });
+    },
+    // foraging baskets, each with a different find
+    baskets(g, x, y) {
+      R(g, x + 1, y + 27, 30, 3, 'rgba(0,0,0,0.22)');
+      [[1, 16, '#C0503A'], [9, 18, '#E8C07A'], [17, 16, '#8E5BC8'], [24, 18, '#F4EAD6']].forEach(([bx, by, c]) => { R(g, x + bx, y + by, 8, 10, OL); R(g, x + bx + 1, y + by + 1, 6, 8, '#B07A46'); R(g, x + bx + 1, y + by + 4, 6, 1, '#8A5A34'); R(g, x + bx + 2, y + by - 1, 4, 3, c); R(g, x + bx + 3, y + by - 2, 2, 1, c); });
+    },
+    // bunches of herbs hanging to dry, oldest to newest
+    herbs(g, x, y) {
+      R(g, x + 1, y + 2, 30, 3, '#5A4A38'); [[3, '#8A7A4A', 10], [10, '#6E8A3A', 12], [17, '#4E9A3E', 14], [24, '#3E9A44', 16]].forEach(([hx, c, L]) => { R(g, x + hx, y + 5, 1, 4, '#C9B088'); R(g, x + hx - 2, y + 9, 5, L, OL); R(g, x + hx - 1, y + 10, 3, L - 2, c); R(g, x + hx - 3, y + 12, 2, 3, c); R(g, x + hx + 2, y + 15, 2, 3, c); });
+    },
+    // a map on the wall, the same path drawn many times
+    wallmap(g, x, y) {
+      R(g, x + 2, y + 2, 28, 24, OL); R(g, x + 3, y + 3, 26, 22, '#E8D7B0'); R(g, x + 6, y + 6, 8, 6, '#4FA040'); R(g, x + 18, y + 14, 7, 7, '#3F8FC8');
+      [['#6E4A2E', 0], ['#8A5A34', 1], ['#5A3A22', -1], ['#A0703C', 2]].forEach(([c, d]) => { R(g, x + 5 + d, y + 20, 10, 1, c); R(g, x + 14 + d, y + 14 + d, 1, 7, c); R(g, x + 14 + d, y + 13 + d, 9, 1, c); R(g, x + 22 + d, y + 7, 1, 7, c); });
+    },
+    // crayon drawings pinned on the wall, stars around each
+    drawings(g, x, y) {
+      [[2, 3, '#F59ACB'], [12, 2, '#FFD86B'], [22, 4, '#7CD957'], [4, 15, '#5AA8F0'], [15, 14, '#FF8A3D'], [24, 16, '#C9A8FF']].forEach(([dx, dy, c]) => { R(g, x + dx, y + dy, 8, 9, '#FFFFFF'); R(g, x + dx + 2, y + dy + 2, 4, 4, c); R(g, x + dx + 3, y + dy + 3, 1, 1, OL); R(g, x + dx + 3, y + dy, 2, 1, '#C0503A'); R(g, x + dx + 1, y + dy + 7, 1, 1, '#FFD86B'); R(g, x + dx + 6, y + dy + 1, 1, 1, '#FFD86B'); R(g, x + dx + 6, y + dy + 7, 1, 1, '#FFD86B'); });
+    },
+    // an empty jar on a shelf, with a label
+    shinyjar(g, x, y) {
+      R(g, x + 1, y + 16, 30, 4, OL); R(g, x + 2, y + 17, 28, 2, '#8A5A34'); R(g, x + 11, y + 3, 10, 14, OL); R(g, x + 12, y + 4, 8, 12, '#D8EAF4'); R(g, x + 12, y + 4, 8, 2, '#8E98AD'); R(g, x + 13, y + 9, 6, 4, '#F4EAD6'); R(g, x + 14, y + 10, 4, 1, '#5A4A38'); R(g, x + 13, y + 6, 1, 6, '#FFFFFF');
+    },
+    // a small bed with a critter blanket
+    smallbed(g, x, y) {
+      R(g, x + 2, y + 27, 28, 3, 'rgba(0,0,0,0.22)'); R(g, x + 3, y + 4, 26, 24, OL); R(g, x + 4, y + 5, 24, 22, '#E8E8F0'); R(g, x + 4, y + 12, 24, 15, '#FFD86B'); R(g, x + 4, y + 12, 24, 1, '#E0A830'); [[7, 15], [15, 19], [21, 15], [10, 22]].forEach(([bx, by]) => { R(g, x + bx, y + by, 4, 3, '#4FB06D'); R(g, x + bx + 1, y + by + 1, 1, 1, OL); });
+      R(g, x + 7, y + 6, 10, 4, '#FFFFFF');
+    },
     // vines hung across a way: braided and heavy, with pale flowers, darker than tall grass
     vines(g, x, y, st, t, o) {
       const sw = Math.round(Math.sin(t * 1.4 + o.x) * 1);
