@@ -1,0 +1,20 @@
+ok shrine door: Enter the shrine | Enter the shrine
+ok it leads into the shrine room
+ok shrine: the offerings and the candles are there
+ok by the altar: Roll a critter | Roll a critter
+ok the altar opens the Roll screen | roll
+ok shrine: no line is a tip
+ok walking out of the shrine returns to Sproutvale
+ok arena door: Enter the arena
+ok it leads into the arena
+ok arena: names on the wall, a bench, a bucket
+ok by the bell: Ring the bell | Ring the bell
+ok the bell opens the battle screen | battle
+ok tower door: Enter the Tower
+ok without four seals the door refuses and you stay outside | The Long Watch opens to trainers with all # Leader Seals. You hold #.
+ok with four seals it leads into the lobby of the Watch
+ok the lobby: two lamps that stay lit, a bench with a blanket, the book of nights
+ok by the stair: Climb | Climb
+ok the stair opens the keeper's lobby dialog | Welcome. # floors. Each one is a night, and each night someone comes to the door.
+ok walking out of the lobby returns to Vigil Peak | peak
+ok no page errors | []

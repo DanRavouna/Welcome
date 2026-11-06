@@ -1,7 +1,7 @@
 // ---- World: Sproutvale + four zones, rendering, movement, exits, encounters ----
 const WORLD = (() => {
   const TS = 32;
-  const SOLID = new Set(['T', 'X', '~', 'F', 'G', 'O', 'R', 'w', 'b', 's', 't', 'p', 'k', 'h', 'm', 'C']); // C = cave wall
+  const SOLID = new Set(['T', 'X', '~', 'F', 'G', 'O', 'R', 'w', 'b', 's', 't', 'p', 'k', 'h', 'm', 'a', 'x', 'n', 'C']);   // a = altar, x = stair, n = bell post (interiors) // C = cave wall
   function rng(a) { return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
   const THEMES = {
@@ -604,7 +604,7 @@ const WORLD = (() => {
     Rm.arriveFrom = Object.assign({}, Rm.arriveFrom, { 'dg-arch': [sx + 0.5, sy + 1.6] });
   })();
   // ---------- house interiors: every city house gets a room (door on the outside, exit through the bottom) ----------
-  const ROOM_STYLE = { town: { floor: '#B07A46', wall: '#F4EAD6', rug: '#D8574A', bed: '#D8574A', mat: 'timber' }, lab: { floor: '#C9CFDA', wall: '#E8EEF8', rug: '#3C6FE0', bed: '#3C6FE0', mat: 'timber' }, mossbrook: { floor: '#B07A46', wall: '#D9B98A', rug: '#4E8A3A', bed: '#4FB06D', mat: 'log' }, frosthold: { floor: '#9AA3B5', wall: '#C9D3E6', rug: '#3C6FE0', bed: '#8FD8EA', mat: 'stone' }, cinderport: { floor: '#4A3A38', wall: '#8A4A3A', rug: '#FF7A45', bed: '#C0503A', mat: 'brick' }, coralbay: { floor: '#D9C29A', wall: '#F4F0E6', rug: '#3C95DC', bed: '#3C95DC', mat: 'shell' } };
+  const ROOM_STYLE = { town: { floor: '#B07A46', wall: '#F4EAD6', rug: '#D8574A', bed: '#D8574A', mat: 'timber' }, lab: { floor: '#C9CFDA', wall: '#E8EEF8', rug: '#3C6FE0', bed: '#3C6FE0', mat: 'timber' }, mossbrook: { floor: '#B07A46', wall: '#D9B98A', rug: '#4E8A3A', bed: '#4FB06D', mat: 'log' }, frosthold: { floor: '#9AA3B5', wall: '#C9D3E6', rug: '#3C6FE0', bed: '#8FD8EA', mat: 'stone' }, cinderport: { floor: '#4A3A38', wall: '#8A4A3A', rug: '#FF7A45', bed: '#C0503A', mat: 'brick' }, coralbay: { floor: '#D9C29A', wall: '#F4F0E6', rug: '#3C95DC', bed: '#3C95DC', mat: 'shell' }, shrine: { floor: '#9AA3B5', wall: '#C9D3E6', rug: '#FFD86B', bed: '#FFD86B', mat: 'stone' }, arena: { floor: '#E8D3A2', wall: '#C2A06A', rug: '#D8574A', bed: '#D8574A', mat: 'timber' }, watch: { floor: '#6E6A94', wall: '#8F8BB4', rug: '#F5C542', bed: '#F5C542', mat: 'stone' } };
   const ROOM_LAYOUTS = [
     { b: [[1, 2], [2, 2]], s: [[8, 2], [9, 2], [10, 2]], t: [[5, 4], [6, 4]], p: [[1, 7], [10, 7]], r: [4, 5, 7, 6] },
     { k: [[1, 2], [2, 2], [3, 2]], t: [[8, 5], [9, 5]], b: [[9, 2], [10, 2]], p: [[1, 7]], h: [[10, 7]], r: [3, 4, 6, 6] },
@@ -614,7 +614,7 @@ const WORLD = (() => {
     opt = opt || {}; const W = opt.W || 12, H = opt.H || 9, m = [], LY = opt.layout || ROOM_LAYOUTS[i % ROOM_LAYOUTS.length], dx = Math.floor(W / 2) - 1;
     for (let y = 0; y < H; y++) { const row = []; for (let x = 0; x < W; x++) row.push(y <= 1 || x === 0 || x === W - 1 || y === H - 1 ? 'w' : 'f'); m.push(row); }
     if (LY.r) for (let y = LY.r[1]; y <= LY.r[3]; y++) for (let x = LY.r[0]; x <= LY.r[2]; x++) m[y][x] = 'r';
-    ['b', 's', 't', 'p', 'k', 'h', 'm'].forEach((k) => (LY[k] || []).forEach(([x, y]) => { m[y][x] = k; }));
+    ['b', 's', 't', 'p', 'k', 'h', 'm', 'a', 'x', 'n'].forEach((k) => (LY[k] || []).forEach(([x, y]) => { m[y][x] = k; }));
     m[H - 1][dx] = 'd'; m[H - 1][dx + 1] = 'd';
     const objects = (opt.objects || []).map((o) => { m[o.y][o.x] = 'O'; return Object.assign({ reach: 1.7 }, o); });   // things to look at, drawn with the adventure art
     return { id: id, name: place.name, interior: true, objects: objects, rug: LY.r || null, parent: cityId, style: ROOM_STYLE[opt.style || cityId], theme: { bg: '#1A1424' }, grid: m, W: W, H: H, places: opt.places || [], signs: [], types: [], rate: 0,
@@ -659,6 +659,16 @@ const WORLD = (() => {
     const P0 = MAPS.town.places.find((p) => p.id === pid), id = 'in-' + pid;
     MAPS[id] = buildInterior(id, P0, 'town', i, opt); P0.enter = id;
     MAPS.town.arriveFrom = Object.assign({}, MAPS.town.arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + 1.5] });
+  });
+  // the Roll Shrine, the Arena and the Long Watch have rooms too (Meaning, Sproutvale: where you are kept. The shrine gives without being asked, and others were here before you; the arena is where you stand with your critter in front of others; the Watch's lobby is the watch itself: a bench, a blanket, lamps that stay lit, the stair)
+  [['town', 'shrine', 'in-shrine', { W: 12, H: 9, style: 'shrine', layout: { a: [[5, 2], [6, 2]], p: [[1, 2], [10, 2]], r: [4, 3, 7, 6] }, places: [{ id: 'altar', name: 'Roll altar', x: 5, y: 2, w: 2, h: 1, kind: 'device', door: [5, 2], open: 'roll' }],
+      objects: [{ id: 'offer', kind: 'offerings', x: 2, y: 5, text: 'A bowl by the altar: petals, a button, a blue stone, a bottle cap. Left by people who were here before you.' }, { id: 'cand', kind: 'candles', x: 9, y: 5, text: 'Candles in a row. None has burned to the end. Somebody replaces them.' }] }],
+   ['town', 'arena', 'in-arena', { W: 14, H: 10, style: 'arena', layout: { n: [[6, 2]], r: [3, 3, 10, 7] }, places: [{ id: 'bell', name: 'Arena bell', x: 6, y: 2, w: 1, h: 1, kind: 'device', door: [6, 2], open: 'battle' }],
+      objects: [{ id: 'names', kind: 'namewall', x: 2, y: 2, text: 'Names scratched into the wall in every kind of hand. None is crossed out.' }, { id: 'bench', kind: 'bench', x: 11, y: 2, text: 'A bench facing the ring, worn in two places side by side.' }, { id: 'pail', kind: 'bucket', x: 12, y: 8, text: 'A bucket of water and a cloth, for after.' }] }],
+   ['peak', 'tower', 'in-tower', { W: 12, H: 9, style: 'watch', layout: { x: [[5, 2], [6, 2]], r: [4, 4, 7, 6] }, places: [{ id: 'stair', name: 'The stair', x: 5, y: 2, w: 2, h: 1, kind: 'device', door: [5, 2], open: 'tower' }],
+      objects: [{ id: 'wl1', kind: 'walllamp', x: 2, y: 2, text: 'A lamp on the wall. It does not go out.' }, { id: 'wl2', kind: 'walllamp', x: 9, y: 2, text: 'A lamp on the wall. It does not go out.' }, { id: 'bb', kind: 'blanketbench', x: 1, y: 6, text: 'A bench with a folded blanket. Somebody sleeps here between watches.' }, { id: 'wlog', kind: 'logbook', x: 10, y: 6, text: 'A book of names and floors, one line a night. The last line is from last night.' }] }]].forEach(([pm, pid, id, opt], i) => {
+    const P0 = MAPS[pm].places.find((p) => p.id === pid); MAPS[id] = buildInterior(id, P0, pm, i, opt); P0.enter = id;
+    MAPS[pm].arriveFrom = Object.assign({}, MAPS[pm].arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + 1.5] });
   });
   [['moss', ' Mossbrook lies past the far side.'], ['frost', ' The road continues north to Frosthold.'], ['ember', ' The road continues south to Cinderport.'], ['tide', ' A boardwalk leads east to Coralbay.']].forEach(([z, t]) => { MAPS[z].signs[0].text += t; });
   let M = MAPS.town;

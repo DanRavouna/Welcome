@@ -1,13 +1,16 @@
-changed tiles 0 outside tower area []
+changed tiles # outside tower area []
 near: Enter the Tower
-locked toast: The Long Watch opens to trainers with all 4 Leader Seals. You hold 2.
-lobby: Welcome. 20 floors. Each one is a night, and each night someone comes to the door. / Your party fights every floor in a row. HP carries over between floors. Essence is paid only for floors above your best. / This week: Second Wind. Your party rests 40% between floors this week (normally 30%). New-best essence is worth 25% less. / Climbs left today: 2. You will bring Kipmonarch, Tibwarden, Nibtitan.
-runs left after start: 1
-replay blocked after win (STALE: simulates the old turn-based flow, always False now; the live Tower is covered by acttest5): False
-after dialog: None
-after reload run: {"best":0,"day":"Thu Nov 05 2026","runs":1,"clears":0,"run":{"floor":1,"party":[5000,5001,5002],"hp":{"5000":129,"5001":249,"5002":123}}}
-dbg ["place",false,false,false,"Enter the Tower",true]
-resume lobby: Your climb is waiting on floor 1 of 20. / Your party: Kipmonarch 129/129, Tibwarden 249/249, Nibtitan 123/123.
-pause toast:
-hp saved mid-battle == run hp: True {"5000":129,"5001":249,"5002":123}
+locked toast: The Long Watch opens to trainers with all # Leader Seals. You hold #.
+with seals the door leads into: in-tower
+lobby: Welcome. # floors. Each one is a night, and each night someone comes to the door. / Your party fights every floor in a row. HP carries over between floors. Essence is paid only for floors above your best. / This week: Second Wind. Your party rests #% between floors this week (normally #%). New-best essence is worth #% less. / Climbs left today: #. You will bring Kipmonarch, Tibwarden, Nibtitan.
+title: Tower · Floor # | note: Second Wind: Your party rests #% between floors this week (normally #%). New-best essence is worth #% less. Floor # of #. Pip the Squire has # critters. Your HP carries over between floors. First clear: +# essence.
+runs left after start: #
+floor# result: {'over': True, 'win': True, 'res': {'kind': 'win', 'floor': #, 'reward': #, 'first': True}, 'tower': {'best': #, 'day': '<date>', 'runs': #, 'clears': #, 'run': {'floor': #, 'party': [#...], 'hp': {'#': #, '#': #, '#': #}}}, 'ess': #}
+replay blocked after win (STALE: simulates the old turn-based flow, always False now; the live Tower is covered by acttest#): True
+after dialog: Floor # cleared! +# essence for a new best. / Your party rests: Kipmonarch #/#, Tibwarden #/#, Nibtitan #/#.
+after reload run: {"best":#,"day":"<date>","runs":#,"clears":#,"run":{"floor":#,"party":[#,#,#],"hp":{"#":#,"#":#,"#":#}}}
+dbg ["place",false,false,false,"Climb",true]
+resume lobby: Your climb is waiting on floor # of #. / Your party: Kipmonarch #/#, Tibwarden #/#, Nibtitan #/#.
+pause toast: Climb paused on floor #. Your HP is kept; the floor starts over when you return.
+hp saved mid-battle == run hp: True {"#":#,"#":#,"#":#}
 errors: none

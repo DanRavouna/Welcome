@@ -23,6 +23,8 @@ with sync_playwright() as p:
   print('near:', pg.inner_text('#act-label'))
   pg.click('#act'); print('locked toast:', pg.inner_text('#toast'))
   pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{seals:['wren','glacia','blaze','coral']})})")
+  pg.click('#act'); pg.wait_for_timeout(200); print('with seals the door leads into:', pg.evaluate("WORLD.map.id"))
+  pg.evaluate("(()=>{const p=WORLD.map.places.find(q=>q.id==='stair');WORLD.setPos((p.door[0]+0.9)*WORLD.TS,(p.door[1]+1.4)*WORLD.TS);WORLD.step(1/60)})()"); pg.wait_for_timeout(100)
   pg.click('#act'); pg.wait_for_timeout(50); print('lobby:', pg.evaluate("APP.dialog.lines.join(' / ')"))
   adv(pg); pg.click('#dlg-choices button >> nth=0'); pg.wait_for_timeout(200)
   print('title:', pg.evaluate("APP.game.renderVals().screenTitle"), '| note:', pg.evaluate("APP.game.renderVals().matchupNote"))
@@ -39,7 +41,7 @@ with sync_playwright() as p:
   pg.reload(); pg.wait_for_timeout(1100)
   print('after reload run:', pg.evaluate("JSON.stringify(APP.game.state.tower)"))
   # pause mid battle keeps HP, resets foes
-  pg.evaluate("WORLD.enter('peak'); WORLD.setPos(12.9*WORLD.TS, 9.4*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(100)
+  pg.evaluate("WORLD.enter('in-tower'); const p=WORLD.map.places.find(q=>q.id==='stair'); WORLD.setPos((p.door[0]+0.9)*WORLD.TS,(p.door[1]+1.4)*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(100)   # the lobby is a room now: the stair opens the keeper's dialog
   print('dbg', pg.evaluate("JSON.stringify([WORLD.nearest()&&WORLD.nearest().kind, !!APP.dialog, document.getElementById('hud').hidden, document.getElementById('act').disabled, document.getElementById('act-label').textContent, document.getElementById('tip').hidden])")); pg.click('#act', timeout=3000); pg.wait_for_timeout(50)
   print('resume lobby:', pg.evaluate("APP.dialog.lines.join(' / ')"))
   adv(pg); pg.click('#dlg-choices button >> nth=0'); pg.wait_for_timeout(150)

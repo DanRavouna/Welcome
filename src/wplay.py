@@ -2,8 +2,12 @@
 from playwright.sync_api import sync_playwright
 errors=[]
 def go(pg, pid):
+    if pg.evaluate("!!WORLD.map.interior"): pg.evaluate("WORLD.enter(WORLD.map.parent)"); pg.wait_for_timeout(100)   # step back outside first (the shrine and the arena are rooms now)
     door=pg.evaluate(f"(()=>{{const p=WORLD.PLACES.find(x=>x.id==='{pid}'); return [p.door[0], p.door[1]+1];}})()")
     pg.evaluate('window.__r=Math.random; Math.random=()=>0.999'); pg.evaluate(open('/tmp/walk.js').read(), door); pg.evaluate('Math.random=window.__r'); pg.wait_for_timeout(80); pg.click('#act'); pg.wait_for_timeout(300)
+    # the shrine and the arena have rooms now: go in, walk up to the altar / the bell and use it
+    if pg.evaluate("WORLD.map.interior && !!WORLD.map.places.find(q=>q.kind==='device')"):
+        pg.evaluate("(()=>{const p=WORLD.map.places.find(q=>q.kind==='device');WORLD.setPos((p.door[0]+0.9)*WORLD.TS,(p.door[1]+1.4)*WORLD.TS);WORLD.step(1/60)})()"); pg.wait_for_timeout(100); pg.click('#act'); pg.wait_for_timeout(300)
 with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(viewport={'width':390,'height':844}, device_scale_factor=2, has_touch=True)
     pg=ctx.new_page(); pg.on('pageerror', lambda e: errors.append(str(e)))

@@ -1239,6 +1239,7 @@ const APP = (() => {
     if (n.kind === 'water') { fish(n); return; }
     if (n.kind === 'object') { objectUse(n.obj); return; }
     if (n.kind === 'npc') { talk(n.npc); return; }
+    if (n.place.open === 'tower' && n.place.enter) { const seals = ((game.state.npc && game.state.npc.seals) || []).length; if (seals < 4 && !game.props.noGates) { toast("The Long Watch opens to trainers with all 4 Leader Seals. You hold " + seals + '.'); return; } }   // the door itself keeps the watch for those who tended all four fires
     if (n.place.enter && n.place.open !== 'house' && WORLD.MAPS[n.place.enter]) { game.sfx('tap'); WORLD.go(n.place.enter); return; }
     if (n.place.open === 'tower') { towerLobby(); return; }
     if (n.place.open === 'gym') { const L = (WORLD.allNpcs()[WORLD.map.id] || []).find((x) => x.id === n.place.leader); if (L) talk(L); return; }
@@ -1250,7 +1251,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Roll here', arena: 'Battle here', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Enter the shrine', arena: 'Enter the arena', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex', altar: 'Roll a critter', bell: 'Ring the bell', stair: 'Climb' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
