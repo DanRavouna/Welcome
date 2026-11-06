@@ -17,7 +17,8 @@ WEATHER = re.compile(r'\b(?:Clear|Sunny|Rain|Thunderstorm|Snow|Fog|Ashfall)\b(?:
 OWN = re.compile(r'"own:[\w-]+":(?:true|false),?')   # which lanterns on a climb you happened to pass
 QUEST = re.compile(r'\{"k":"(?:see|keep|beat)"[^}]*\}')   # which of the three daily city quests is on offer rotates by date
 HINT = re.compile(r'You have more than one critter now[^|]*|Mira near your home sells[^|]*|You have enough essence to evolve a critter\. Open it in the Dex\.|Tip: sign in[^|]*')   # one-time tips land on a toast at a moment that depends on timing
-def norm(l): return HINT.sub('<tip>', OWN.sub('', QUEST.sub('<quest>', WEATHER.sub('<weather>', DATE.sub('<date>', l)))))
+NIGHT = re.compile(r'@night\b')   # the place themes have night versions chosen by the real clock
+def norm(l): return NIGHT.sub('', HINT.sub('<tip>', OWN.sub('', QUEST.sub('<quest>', WEATHER.sub('<weather>', DATE.sub('<date>', l))))))
 def lines(path, mask=False):
     try: raw = open(path, errors='replace').read().split('\n')
     except Exception: return []

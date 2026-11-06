@@ -13,4 +13,14 @@ ok it comes back with them: both dragged from about # tiles to about #, soaked (
 ok a Moss critter leads
 ok the rooted one does not step while the roots hold (it was chasing) | [[#...], [True, False]]
 ok staying beside what the roots hold feeds you back (hp rose) | [#...]
+ok a Volt critter leads
+ok the dash crosses about three tiles in about a third of a second, over real time | [#...]
+ok a Dusk critter leads
+ok the veil falls: the critter is drawn faint
+ok what hunts it has lost it: a bite from a tile away does nothing while veiled | [#...]
+dusk: veiled before the blow True | blow accepted True
+dusk: veiled # ms in True
+dusk: veiled after False | cd #
+ok the first blow out of the dark lands and ends the veil | [#, False]
+ok it lands far harder than the same blow in the open (#x, with the roll of # to # on each) | [#...]
 ok no page errors | []

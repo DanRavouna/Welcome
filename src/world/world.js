@@ -958,7 +958,7 @@ const WORLD = (() => {
     const im = fol.imgFor ? fol.imgFor(dir || 'down') : fol.img, w = 30, h = Math.round(30 * im.height / Math.max(1, im.width));
     if (isBody) lastPlayerScreen = { x: x, y: y };
     ctx.fillStyle = 'rgba(10,30,10,0.28)'; ctx.fillRect(x - 8, y - 2, 16, 3); ctx.fillRect(x - 6, y - 3, 12, 5);
-    ctx.imageSmoothingEnabled = false; ctx.drawImage(im, Math.round(x - w / 2), Math.round(y - h - hop), w, h);
+    ctx.imageSmoothingEnabled = false; const va = isBody && typeof ACT !== 'undefined' && ACT.veilAlpha ? ACT.veilAlpha() : 1; if (va < 1) ctx.globalAlpha = va; ctx.drawImage(im, Math.round(x - w / 2), Math.round(y - h - hop), w, h); if (va < 1) ctx.globalAlpha = 1;   // veiled (Dusk's verb): drawn faint
     if (fol.shiny && Math.floor(tAnim * 1.5) % 3 === 0) { const sx = x + 10 - (Math.floor(tAnim * 6) % 3) * 6, sy = y - h - 2 - hop; ctx.fillStyle = '#FFF3B0'; ctx.fillRect(sx - 1, sy - 4, 2, 8); ctx.fillRect(sx - 4, sy - 1, 8, 2); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(sx - 1, sy - 1, 2, 2); }
     if (isBody) { const t = M.grid[Math.floor(wy / TS)] && M.grid[Math.floor(wy / TS)][Math.floor(wx / TS)]; if (t === 'W' || t === 'Z') { const pal = PXW.PAL[M.id] || PXW.PAL.town, sway = rustle > 0 ? (Math.floor(tAnim * 20) % 2) * 2 : 0; for (let i = -3; i <= 3; i++) { const bx = x + i * 5 + sway; ctx.fillStyle = pal.tb; ctx.fillRect(bx - 2, y - 8, 4, 10); ctx.fillStyle = t === 'Z' ? '#FFF7D6' : pal.th; ctx.fillRect(bx - 2, y - 10, 2, 4); } } }
   }
