@@ -26,12 +26,12 @@ with sync_playwright() as p:
   check('the bell opens the battle screen', pg.evaluate("!document.getElementById('screen').hidden && APP.game.state.tab")=='battle', pg.evaluate("APP.game.state.tab")); pg.evaluate("APP.close()"); pg.wait_for_timeout(100)
   # the Long Watch
   at_door('peak','tower'); check('tower door: Enter the Tower', pg.inner_text('#act-label')=='Enter the Tower'); press()
-  check('without four seals the door refuses and you stay outside', pg.evaluate("WORLD.map.id")=='peak' and 'opens to trainers with all 4' in pg.inner_text('#toast'), pg.inner_text('#toast'))
+  check('without four seals the door refuses and you stay outside', pg.evaluate("WORLD.map.id")=='peak' and 'is for those who hold all 4' in pg.inner_text('#toast'), pg.inner_text('#toast'))
   pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{seals:['wren','glacia','blaze','coral']})})"); press()
   check('with four seals it leads into the lobby of the Watch', pg.evaluate("WORLD.map.id")=='in-tower')
   check('the lobby: two lamps that stay lit, a bench with a blanket, the book of nights', sorted(pg.evaluate("WORLD.map.objects.map(o=>o.kind)"))==['blanketbench','logbook','walllamp','walllamp'])
-  at_device('stair'); check('by the stair: Climb', pg.inner_text('#act-label')=='Climb', pg.inner_text('#act-label')); press()
-  check('the stair opens the keeper\'s lobby dialog', pg.evaluate("APP.dialog && APP.dialog.name")=='Tower Keeper' and 'floors' in pg.evaluate("APP.dialog.lines.join(' ')"), pg.evaluate("APP.dialog && APP.dialog.lines[0]"))
+  at_device('stair'); check('by the stair: Climb the stair', pg.inner_text('#act-label')=='Climb the stair', pg.inner_text('#act-label')); press()
+  check('the stair opens the keeper\'s lobby dialog', pg.evaluate("APP.dialog && APP.dialog.name")=='Keeper of the Watch' and 'nights' in pg.evaluate("APP.dialog.lines.join(' ')"), pg.evaluate("APP.dialog && APP.dialog.lines[0]"))
   for _ in range(12):
     if not pg.evaluate("!!APP.dialog"): break
     pg.evaluate("APP.advance()"); pg.wait_for_timeout(40)

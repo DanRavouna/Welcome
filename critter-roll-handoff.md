@@ -15,7 +15,7 @@ Humans read in metaphor. The game is the greater meaning; the quest is inside it
   - Tide Shore / Coralbay: what the sea gives back; return; the last fire, where the road home begins.
   - The routes: the roads between the fires, kept walkable by people you mostly never meet; every route holds one sign of someone tending.
   - The Sealed Arch / Lamp Tower / Forge Below: the seat, the light, the fire.
-  - Vigil Peak and the Long Watch: the long watch, where the floors are nights kept, not rivals beaten (built: names, keeper lines, a lobby room; the floor-by-floor fight text still calls them trainers and wardens).
+  - Vigil Peak and the Long Watch: the long watch, where the floors are nights kept, not rivals beaten (built: names, keeper lines, a lobby room; every floor is a night, the visitors have plain names, the weekly rules are weathers of the nights).
   - Emphasis question settled by Dan (see theme): independence, you no longer need it kept for you.
 - Revamp order, all five steps done (Nov 2026): the rule and this section; the spine and seals reworded; a meaning-bearing place per route, zone and city (then the gyms as trials, then every house); the Tower decided; the deep layer on the main path. What remains is listed under "To do" at the end.
 
@@ -95,6 +95,9 @@ Humans read in metaphor. The game is the greater meaning; the quest is inside it
 - `flavor.js` (`OUT`, `IN`, `NPC`): every weather and time remark is now something the speaker can see from where they stand, in the region's voice; no line names a critter type. `flavortest` pins the longest line and the set.
 - The four Sealed Arch clues (`adventure.js` `CLUES`): Edda, Dell, Joss and Neri only point (`lines`, said every time until you have looked); the clue itself is a thing you look at: the arch carving (Highland Pass, the first look at the arch gives it), the hearthstone rhyme by Dell's camp (`rhymestone`), the brass plate at the lighthouse foot (`bearing`), the salt-white stone by the wreck (`wreckstone`). `world.js` places each stone on the left of its prop, two tiles from the prop's sign so the action button offers the stone; `app.js` `objectUse` grants the clue with "You will remember this." and the journal says "Something on <road> you have not looked at closely." `adventuretest` walks it.
 
+## The Long Watch speaks of nights (Nov 2026)
+- Floors are nights, runs are watches, a loss is the lamp going out, the best is the longest watch, the top is morning. Visitors have plain names (`TOWER_NAMES`: Pip on night 1, Sable / Onyx / Aurora on the long nights 5, 10, 15, Vale on night 20; the `warden` flag and the floor curve are unchanged). The weekly twists are weathers of the nights: Storm nights (surge), Cold nights (iron), Mild nights (wind), Nights of one kind (mono); ids, multipliers and heal values unchanged, the rule text still states the numbers. Keeper is 'Keeper of the Watch'. Text lives in `data.js` (TWISTS, TOWER_NAMES, the Watchkeeper title), `game.js` (`towerFloor` winLines, the battle screen title, note and button), `app.js` (lobby, after-floor and pause lines), `action.js` (give-up toast), `world.js` (the Vigil Peak sign). Tests: `towertest`, `twisttest`, `acttest5` snapshots.
+
 ## Watch items
 - Old cached copies of the page on another device would drop the `tower` save key (and any newer field) if THEY write; this build no longer does that to others (see Save compatibility).
 - Not yet verified on a real phone: touch feel, sound, vibration, Pixelify Sans font, real cloud sync.
@@ -113,9 +116,6 @@ Needs Dan (cannot be done from here):
 - GitHub Pages set to "GitHub Actions" so `index.html` can be built there instead of committed (the repo grows ~0.7 MB per push).
 - Which meaning the Reduce-motion player should keep (wind and smoke are off for them; the lamps and the window still show).
 
-Open on the meaning (one contradiction still standing):
-- The Long Watch's floor-by-floor text ("trainers", "wardens") and the weekly twist names still speak the old language.
-
 Polish, in order of what a player would notice:
 - The grove houses' tree canopy is a boxy blob; the small one-tile room objects may be hard to read on a phone; the Coral lamps stand beside the road rather than across water (the causeway maps have almost no water).
 - Flags and banners that move with the wind (gyms, the Tower, the harbour); spray on the Tide Shore when it blows.
@@ -128,4 +128,4 @@ Process debt:
 - The route-trainer balance sims (`lbal*`) were deleted; restore from git history before re-tuning route trainers.
 - `peaktest` / `towertest` "tiles changed" lines compare against the current build and prove nothing.
 
-Done this session (for orientation; details in the sections above and in the archive): flavor lines as observations; the Sealed Arch clues as things you look at; rare grass reworked for action mode (it stirs while you stay); meaning first; help that leaves; seals and Tower reworded; signature places on every route, zone, city and climb; the deep layer on the main path; the painted world map with fast travel; wind in three passes (edge flutter, per-map wind, weather follows it, drift and smoke); four gym trials; Start over; every city house, Home, the Lab, the Shrine, the Arena and the Watch as rooms; architecture per region; the test process (snapshots, retry, `@smoke`, mutation check, handoff split).
+Done this session (for orientation; details in the sections above and in the archive): the Long Watch speaks of nights; flavor lines as observations; the Sealed Arch clues as things you look at; rare grass reworked for action mode (it stirs while you stay); meaning first; help that leaves; seals and Tower reworded; signature places on every route, zone, city and climb; the deep layer on the main path; the painted world map with fast travel; wind in three passes (edge flutter, per-map wind, weather follows it, drift and smoke); four gym trials; Start over; every city house, Home, the Lab, the Shrine, the Arena and the Watch as rooms; architecture per region; the test process (snapshots, retry, `@smoke`, mutation check, handoff split).

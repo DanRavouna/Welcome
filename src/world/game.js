@@ -190,7 +190,7 @@ class Game extends Component {
     const tw = this.towerTwist(), warden = f % 5 === 0; let types = [A[(f * 3) % 8], A[(f * 3 + 3) % 8]]; if (warden) types.push(A[(f * 3 + 5) % 8]);
     if (tw.id === 'mono') types = [A[(f * 5 + tw.week) % 8]];
     return { id: 'tower-' + f + (tw.id === 'mono' ? '-mono' + tw.week : ''), name: TOWER_NAMES[i], floor: f, warden: warden, types: types, size: C.size[i], stage: C.stage[i], lv: C.lv[i], pick: C.pick[i],
-      reward: Math.round((4 + f + (warden ? 5 : 0)) * tw.mult), winLine: warden ? 'The way up is yours. Few get this far.' : 'Go on, the next floor is waiting.', tower: true };
+      reward: Math.round((4 + f + (warden ? 5 : 0)) * tw.mult), winLine: warden ? 'A long one, and the lamp held. Few keep it this far.' : 'The lamp held. The next night is coming.', tower: true };
   }
   towerState() { return Object.assign({ best: 0, day: '', runs: 0, clears: 0, run: null }, this.state.tower); }
   towerRunsLeft() {
@@ -480,15 +480,15 @@ class Game extends Component {
         const party = this.towerParty(), alive = party.filter((x) => x.hp > 0);
         const lead = alive.find((x) => x.seed === st.fighter) || alive[0];
         const done = b && b.over;
-        v.screenTitle = 'Tower · Floor ' + tr.floor;
+        v.screenTitle = 'The Long Watch · Night ' + tr.floor;
         v.backLabel = done ? 'Leave' : 'Pause';
-        v.matchupNote = this.towerTwist().name + ': ' + this.towerTwist().text + ' Floor ' + tr.floor + ' of ' + TOWER.floors + (tr.warden ? ' (Warden)' : '') + '. ' + tr.name + ' has ' + tr.team.length + ' critters. Your HP carries over between floors. ' + (tr.reward ? 'First clear: +' + tr.reward + ' essence.' : 'Essence only for floors above your best.');
+        v.matchupNote = this.towerTwist().name + ': ' + this.towerTwist().text + ' Night ' + tr.floor + ' of ' + TOWER.floors + (tr.warden ? ', a long one' : '') + '. ' + tr.name + ' is at the door with ' + tr.team.length + ' critters. Your HP carries over between nights. ' + (tr.reward ? 'Kept for the first time: +' + tr.reward + ' essence.' : 'Essence only for nights past your longest watch.');
         v.rerollLabel = done ? 'Continue' : 'Not now';
         const runT = this.towerState().run, can = !!lead && !b && !!runT && runT.floor === tr.floor;
         v.cannotFight = !can;
         v.fighters = alive.map((x) => { const k = this.make(x.seed, (st.caught.find((e) => e.seed === x.seed) || {}).stage || 1), on = lead && x.seed === lead.seed;
           return { name: k.name + ' ' + x.hp + '/' + x.max, pressed: on ? 'true' : 'false', bg: on ? v.primaryBg : 'rgba(255,255,255,0.12)', fg: on ? '#2A1B00' : '#FFFFFF', pick: () => { if (!b) this.setState({ fighter: x.seed }); } }; });
-        v.fightLabel = done ? (b.win ? 'Floor cleared' : 'Run over') : (lead ? 'Battle floor ' + tr.floor : 'No critter can fight');
+        v.fightLabel = done ? (b.win ? 'Night kept' : 'The lamp went out') : (lead ? 'Answer the door' : 'No critter can fight');
         v.fightBg = can ? v.primaryBg : 'rgba(14,26,56,0.6)'; v.fightFg = can ? '#2A1B00' : '#9FB0D0'; v.fightShadow = can ? '0 4px 14px rgba(245,185,58,0.45)' : 'none';
         if (lead && !b) {
           const le = st.caught.find((e) => e.seed === lead.seed), me2 = this.make(lead.seed, le.stage);

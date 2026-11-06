@@ -1,5 +1,5 @@
-rotation over 8 weeks: ['Second Wind', 'One Element', 'Surge Week(Ember)', 'Iron Climb', 'Second Wind', 'One Element', 'Surge Week(Frost)', 'Iron Climb']
+rotation over 8 weeks: ['Mild nights', 'Nights of one kind', 'Storm nights(Ember)', 'Cold nights', 'Mild nights', 'Nights of one kind', 'Storm nights(Frost)', 'Cold nights']
 same twist all week (Mon..Sun): True
-this week: Second Wind | Your party rests 40% between floors this week (normally 30%). New-best essence is worth 25% less.
+this week: Mild nights | Your party rests 40% between nights this week (normally 30%). A new longest watch is worth 25% less essence.
 surge dmg x1.3: [21, 27, '1.29']
 errors: none

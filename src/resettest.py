@@ -17,7 +17,7 @@ with sync_playwright() as p:
   pg.click('#bk-reset'); pg.wait_for_timeout(200)
   check('one tap only arms it (nothing erased)', pg.evaluate("document.getElementById('bk-reset').textContent")=='Erase and start over' and pg.evaluate("!!localStorage.getItem('critter-roll:v2')") and 'Tap again' in pg.inner_text('#bk-msg'), pg.inner_text('#bk-msg'))
   pg.click('#bk-reset'); pg.wait_for_timeout(1500); pg.wait_for_function("typeof APP!=='undefined' && APP.game"); pg.wait_for_timeout(800)
-  keys1=pg.evaluate("Object.keys(localStorage).filter(k=>k.startsWith('critter-roll:'))")
+  keys1=pg.evaluate("Object.keys(localStorage).filter(k=>k.startsWith('critter-roll:')).sort()")
   check('after the second tap the page reloaded as a new game (no critters, intro not done)', pg.evaluate("APP.game.state.caught.length")==0 and not pg.evaluate("!!APP.game.state.intro"), pg.evaluate("[APP.game.state.caught.length, APP.game.state.intro]"))
   check('the old save keys are gone (the device id may stay)', all(k=='critter-roll:device' or not pg.evaluate("(k)=>localStorage.getItem(k)!==null && JSON.parse(localStorage.getItem(k)||'{}').caught&&JSON.parse(localStorage.getItem(k)).caught.length>0",k) for k in keys0), keys1)
   check('the new game shows the starter choice or the intro', pg.evaluate("!document.getElementById('starter').hidden || !!APP.dialog"))

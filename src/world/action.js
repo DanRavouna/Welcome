@@ -192,7 +192,7 @@ const ACT = (() => {
   function abortDuel(why) {
     const d = duel; if (!d) return; duel = null; H.game()._surge = null; E = E.filter((m) => !m.duel); PR = [];
     if (d.tr.tower && hero) H.game().actTowerHold([hero].concat(benchSides()));
-    if (why && H.toast) H.toast(why + (d.tr.tower ? ' Your HP is kept; the floor starts over.' : ' No reward.'));
+    if (why && H.toast) H.toast(why + (d.tr.tower ? ' Your HP is kept; the night starts over.' : ' No reward.'));
   }
   function step(e) {
     on = false; lastEnv = e;

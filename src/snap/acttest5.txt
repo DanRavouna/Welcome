@@ -10,9 +10,9 @@ Glacia beaten after # critters | seal: True | essence + # | seal dialog: The col
 Keeper duel in the cave: boss flag [True, True]
 Keeper beaten: True
 Tower floor # as a live duel: [True, True, #, None] | party hp ['#/#', '#/#']
-floor # cleared after # | run floor # | best # | hp now ['#/#', '#/#'] | dialog: Floor # cleared! +# essence for a new best.
-giving up a Tower floor keeps the HP in the run: [#, #] | run still on floor #
+floor # cleared after # | run floor # | best # | hp now ['#/#', '#/#'] | dialog: Night # kept. +# essence for a longest watch.
+giving up a Tower floor keeps the HP in the run: [#...] | run still on floor #
 and the next try starts from that HP: #
-Tower loss ends the run: True | dialog: Your climb ended on floor #.
+Tower loss ends the run: True | dialog: The lamp went out on night #.
 save has no duel/enemy fields: True
 errors: none

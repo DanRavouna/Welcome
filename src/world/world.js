@@ -172,7 +172,7 @@ const WORLD = (() => {
     set(15, 20, 'G');
     return {
       id: 'peak', name: "Vigil Peak", theme: THEMES.peak, grid: m, W, H, places: [tower],
-      signs: [{ x: 15, y: 20, text: "Vigil Peak. The Tower at the summit tests your party floor after floor." }],
+      signs: [{ x: 15, y: 20, text: "Vigil Peak. The Long Watch stands at the summit. Twenty nights, one lamp." }],
       types: [], rate: 0,
       exits: [{ edge: 's', a: 12, b: 13, to: 'town' }],
       arrive: { s: [12.9, H - 1.4] }, spawn: [12.9, H - 1.4]

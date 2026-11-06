@@ -115,7 +115,7 @@ const TITLES = [
   { id: 'master', name: 'Critter Master', desc: 'Discover all 48 species', essence: 40, goal: 48, of: (s) => (s.seen || []).length },
   { id: 'champion', name: 'Fire-keeper', desc: 'Earn all 4 Leader Seals', essence: 0, goal: 4, of: (s) => ((s.npc && s.npc.seals) || []).length },
   { id: 'climber', name: 'Tower Climber', desc: 'Clear floor 10 of the Tower', essence: 0, goal: 10, of: (s) => (s.tower && s.tower.best) || 0 },
-  { id: 'summit', name: 'Watchkeeper', desc: 'Clear all 20 Tower floors', essence: 0, goal: 20, of: (s) => (s.tower && s.tower.best) || 0 },
+  { id: 'summit', name: 'Watchkeeper', desc: 'Keep all 20 nights of the Long Watch', essence: 0, goal: 20, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'lamp', name: 'Lamplighter', desc: 'Relight the old beacon', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.lampLit ? 1 : 0) },
   { id: 'forge', name: 'Forge Keeper', desc: 'Relight the buried forge', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.forgeLit ? 1 : 0) },
   { id: 'secret', name: 'The Ninth Seat', desc: 'Uncover a secret', essence: 20, goal: 1, of: (s) => ((s.caught || []).some((e) => e.seed === SECRET_SEED) ? 1 : 0) },
@@ -124,13 +124,13 @@ const TITLES = [
 const TOWER = { floors: 20, runsPerDay: 2, heal: 0.3 };
 // weekly Tower twist: one rule per week (multipliers tuned with towersim.py twist runs)
 const TWISTS = [
-  { id: 'surge', name: 'Surge Week', heal: 0.3, mult: 1, about: (t) => t + ' critters deal 30% more damage this week, yours and the Tower\u2019s alike.' },
-  { id: 'iron', name: 'Iron Climb', heal: 0.15, mult: 1.5, about: () => 'Only a short rest between floors this week (15% instead of 30%), but new-best essence is worth 50% more.' },
-  { id: 'wind', name: 'Second Wind', heal: 0.4, mult: 0.75, about: () => 'Your party rests 40% between floors this week (normally 30%). New-best essence is worth 25% less.' },
-  { id: 'mono', name: 'One Element', heal: 0.3, mult: 1, about: () => 'Every floor fields a single type this week. Bring the right counters.' }
+  { id: 'surge', name: 'Storm nights', heal: 0.3, mult: 1, about: (t) => 'The storm is ' + t + ' this week: ' + t + ' critters deal 30% more damage, yours and the ones at the door alike.' },
+  { id: 'iron', name: 'Cold nights', heal: 0.15, mult: 1.5, about: () => 'Little rest between nights this week (15% instead of 30%), and a new longest watch is worth 50% more essence.' },
+  { id: 'wind', name: 'Mild nights', heal: 0.4, mult: 0.75, about: () => 'Your party rests 40% between nights this week (normally 30%). A new longest watch is worth 25% less essence.' },
+  { id: 'mono', name: 'Nights of one kind', heal: 0.3, mult: 1, about: () => 'Every night the same kind comes to the door this week. Bring what answers it.' }
 ];
 const TWIST_TYPES = ['Ember', 'Tide', 'Moss', 'Volt', 'Frost', 'Dusk', 'Stone', 'Bloom'];
-const TOWER_NAMES = ['Pip the Squire', 'Juno', 'Ash', 'Vera', 'Warden Sable', 'Theo', 'Lark', 'Rhea', 'Quill', 'Warden Onyx', 'Mika', 'Dorian', 'Sage', 'Nell', 'Warden Aurora', 'Felix', 'Iris', 'Bastian', 'Selene', 'Sovereign Vale'];
+const TOWER_NAMES = ['Pip', 'Juno', 'Ash', 'Vera', 'Sable', 'Theo', 'Lark', 'Rhea', 'Quill', 'Onyx', 'Mika', 'Dorian', 'Sage', 'Nell', 'Aurora', 'Felix', 'Iris', 'Bastian', 'Selene', 'Vale'];
 // floor curve, tuned by towersim.py (see handoff); window.__towerCurve overrides it in simulations only
 const TOWER_CURVE = { size: [3, 3, 3, 3, 4, 3, 4, 4, 4, 5, 4, 4, 4, 4, 5, 4, 5, 4, 5, 5], stage: [2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], lv: [9, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 20], pick: [0.3, 0.35, 0.4, 0.3, 0.45, 0.4, 0.4, 0.45, 0.5, 0.55, 0.5, 0.55, 0.55, 0.6, 0.65, 0.55, 0.55, 0.6, 0.6, 0.7] };
 const HABITAT = { Frost: 'Frost Peaks', Stone: 'Frost Peaks', Ember: 'Ember Fields', Volt: 'Ember Fields', Moss: 'Moss Forest', Bloom: 'Moss Forest', Tide: 'Tide Shore', Dusk: 'Tide Shore' };

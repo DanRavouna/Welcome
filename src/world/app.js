@@ -612,7 +612,7 @@ const APP = (() => {
       { lv: 8, id: 'pike', name: 'Skier Pike', x: 15, y: 19, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' }, types: ['Frost', 'Tide'], size: 4, stage: 2, pick: 0.6,
         intro: ['Halt! Nobody enters Frosthold without a snowball fight.', 'Well, a critter battle. Same thing up here.'], winLine: 'Brr, you are tough. Here is your reward.', beatenLines: ['My critters need to thaw out. Tomorrow, rematch!'] },
       { id: 'hilde', name: 'Hilde', x: 24, y: 15, kind: 'talk', pal: { h: '#E8C07A', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The palisade keeps out the wind, not the critters. They come and go as they like.', 'Some nights there is a light in the pass that is nobody\u2019s.', 'Glacia trains on the ice every morning. Her critters do not slip.'] },
-      { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['They say a tower stands on Vigil Peak, up the trail north of Sproutvale\u2019s plaza.', 'Only trainers with all four Leader Seals may climb it.', 'Before first light the shore gives back things the sea took.'] }
+      { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['They say a tower stands on Vigil Peak, up the trail north of Sproutvale\u2019s plaza.', 'Only those with all four Leader Seals go up. They say every night up there, someone comes to the door.', 'Before first light the shore gives back things the sea took.'] }
     ]);
     city('ember', 'cinderport', 'blaze', 'Welcome to Cinderport. I am Blaze, and this forge is my gym.', [
       { id: 'bea', name: 'Bellows Bea', x: 8, y: 10, kind: 'shop', pal: { h: '#3A2A1A', y: '#8A4A2A', Y: '#6A3A2A' }, lines: ['Forge Market! Same remedies as Mira\u2019s, kept warm by the furnace.'] },
@@ -1113,7 +1113,7 @@ const APP = (() => {
     openScreen('battle');
   }
   // ---------- The Long Watch ----------
-  const KEEPER = 'Tower Keeper';
+  const KEEPER = 'Keeper of the Watch';
   function partyLine() {
     return game.towerParty().map((x) => game.make(x.seed, (game.state.caught.find((e) => e.seed === x.seed) || {}).stage || 1).name + ' ' + x.hp + '/' + x.max).join(', ');
   }
@@ -1131,22 +1131,22 @@ const APP = (() => {
   }
   function towerLobby() {
     const g = game, t = g.towerState(), seals = ((g.state.npc && g.state.npc.seals) || []).length;
-    if (seals < 4 && !g.props.noGates) { toast("The Long Watch opens to trainers with all 4 Leader Seals. You hold " + seals + '.'); return; }
+    if (seals < 4 && !g.props.noGates) { toast("The Long Watch is for those who hold all 4 Leader Seals. You hold " + seals + '.'); return; }
     if (t.run) {
       if (!g.towerParty().some((x) => x.hp > 0)) { g.endTowerRun(); towerLobby(); return; }
-      showDialog(KEEPER, ['Your climb is waiting on floor ' + t.run.floor + ' of ' + TOWER.floors + '.', 'Your party: ' + partyLine() + '.'], [
-        { label: 'Climb on', fn: () => endDialog(towerFloorStart) },
-        { label: 'Give up this run', fn: () => { g.endTowerRun(); endDialog(); toast('Run ended. Best floor: ' + t.best + '.'); } },
+      showDialog(KEEPER, ['The watch is waiting on night ' + t.run.floor + ' of ' + TOWER.floors + '.', 'Your party: ' + partyLine() + '.'], [
+        { label: 'Keep watching', fn: () => endDialog(towerFloorStart) },
+        { label: 'Leave the watch', fn: () => { g.endTowerRun(); endDialog(); toast('The watch is over. Longest: ' + t.best + ' nights.'); } },
         { label: 'Not now', fn: () => endDialog() }
       ]);
       return;
     }
     const left = g.towerRunsLeft(), party = (g.partySeeds().length ? g.partySeeds() : [g.state.caught[0].seed]).map((sd) => g.make(sd, g.state.caught.find((e) => e.seed === sd).stage).name);
-    const intro = [t.best ? 'Back again. Your longest watch reached floor ' + t.best + ' of ' + TOWER.floors + '.' : 'Welcome. ' + TOWER.floors + ' floors. Each one is a night, and each night someone comes to the door.',
-      'Your party fights every floor in a row. HP carries over between floors. Essence is paid only for floors above your best.', 'This week: ' + g.towerTwist().name + '. ' + g.towerTwist().text];
-    if (!left) { showDialog(KEEPER, intro.slice(0, 1).concat(['You have used today\u2019s ' + TOWER.runsPerDay + ' climbs. Come back tomorrow.'])); return; }
-    showDialog(KEEPER, intro.concat(['Climbs left today: ' + (g.props.testMode ? 'unlimited (test mode)' : left) + '. You will bring ' + party.join(', ') + '.']), [
-      { label: 'Start a climb', fn: () => { g.startTowerRun(); endDialog(towerFloorStart); } },
+    const intro = [t.best ? 'Back again. Your longest watch was ' + t.best + ' nights of ' + TOWER.floors + '.' : 'Welcome. Twenty nights, one lamp. Each night someone comes to the door.',
+      'Your party answers every night in a row. HP carries over between nights. Essence is paid only for nights past your longest watch.', 'This week: ' + g.towerTwist().name + '. ' + g.towerTwist().text];
+    if (!left) { showDialog(KEEPER, intro.slice(0, 1).concat(['You have kept today\u2019s ' + TOWER.runsPerDay + ' watches. Come back tomorrow.'])); return; }
+    showDialog(KEEPER, intro.concat(['Watches left today: ' + (g.props.testMode ? 'unlimited (test mode)' : left) + '. You will bring ' + party.join(', ') + '.']), [
+      { label: 'Begin the watch', fn: () => { g.startTowerRun(); endDialog(towerFloorStart); } },
       { label: 'Not now', fn: () => endDialog() }
     ]);
   }
@@ -1154,15 +1154,15 @@ const APP = (() => {
     const g = game, t = g.towerState();
     open = false; $('screen').hidden = true;
     if (res.kind === 'win') {
-      const lines = ['Floor ' + res.floor + ' cleared!' + (res.reward ? ' +' + res.reward + ' essence for a new best.' : ''), 'Your party rests: ' + partyLine() + '.'];
+      const lines = ['Night ' + res.floor + ' kept.' + (res.reward ? ' +' + res.reward + ' essence for a longest watch.' : ''), 'Your party rests: ' + partyLine() + '.'];
       setTimeout(() => showDialog(KEEPER, lines, [
-        { label: 'Climb to floor ' + (res.floor + 1), fn: () => endDialog(towerFloorStart) },
-        { label: 'Rest outside', fn: () => { endDialog(); toast('Your climb is saved on floor ' + (res.floor + 1) + '.'); } }
+        { label: 'Night ' + (res.floor + 1), fn: () => endDialog(towerFloorStart) },
+        { label: 'Rest outside', fn: () => { endDialog(); toast('The watch waits on night ' + (res.floor + 1) + '.'); } }
       ]), 60);
     } else if (res.kind === 'top') {
-      setTimeout(() => showDialog(KEEPER, ['You kept the watch to the top!' + (res.reward ? ' +' + res.reward + ' essence.' : ''), res.first ? 'Nobody in Sproutvale has kept it longer. The lamp is yours until morning.' : 'Kept to the top again: ' + t.clears + ' times now.']), 60);
+      setTimeout(() => showDialog(KEEPER, ['Morning. You kept the whole watch.' + (res.reward ? ' +' + res.reward + ' essence.' : ''), res.first ? 'Nobody in Sproutvale has kept it longer. The lamp was yours all night.' : 'Kept to morning again: ' + t.clears + ' times now.']), 60);
     } else {
-      setTimeout(() => showDialog(KEEPER, ['Your climb ended on floor ' + res.floor + '.', 'Best: floor ' + Math.max(t.best, 0) + ' of ' + TOWER.floors + '. Climbs left today: ' + (g.props.testMode ? 'unlimited' : g.towerRunsLeft()) + '.']), 60);
+      setTimeout(() => showDialog(KEEPER, ['The lamp went out on night ' + res.floor + '.', 'Longest watch: ' + Math.max(t.best, 0) + ' nights of ' + TOWER.floors + '. Watches left today: ' + (g.props.testMode ? 'unlimited' : g.towerRunsLeft()) + '.']), 60);
     }
   }
   // ---------- the catch pouch (action mode): critters that dropped an orb wait here until you decide ----------
@@ -1204,7 +1204,7 @@ const APP = (() => {
     if (trw && trw.tower) {
       game.setState({ trainer: null, battle: null, towerResult: null });
       if (tres) { towerAfterClose(tres); return; }
-      if (bw && !bw.over) toast('Climb paused on floor ' + trw.floor + '. Your HP is kept; the floor starts over when you return.');
+      if (bw && !bw.over) toast('The watch is paused on night ' + trw.floor + '. Your HP is kept; the night starts over when you return.');
       open = false; $('screen').hidden = true; $('hud').hidden = false; WORLD.setPaused(false);
       return;
     }
@@ -1238,7 +1238,7 @@ const APP = (() => {
     if (n.kind === 'water') { fish(n); return; }
     if (n.kind === 'object') { objectUse(n.obj); return; }
     if (n.kind === 'npc') { talk(n.npc); return; }
-    if (n.place.open === 'tower' && n.place.enter) { const seals = ((game.state.npc && game.state.npc.seals) || []).length; if (seals < 4 && !game.props.noGates) { toast("The Long Watch opens to trainers with all 4 Leader Seals. You hold " + seals + '.'); return; } }   // the door itself keeps the watch for those who tended all four fires
+    if (n.place.open === 'tower' && n.place.enter) { const seals = ((game.state.npc && game.state.npc.seals) || []).length; if (seals < 4 && !game.props.noGates) { toast("The Long Watch is for those who hold all 4 Leader Seals. You hold " + seals + '.'); return; } }   // the door itself keeps the watch for those who tended all four fires
     if (n.place.enter && n.place.open !== 'house' && WORLD.MAPS[n.place.enter]) { game.sfx('tap'); WORLD.go(n.place.enter); return; }
     if (n.place.open === 'tower') { towerLobby(); return; }
     if (n.place.open === 'gym') { const L = (WORLD.allNpcs()[WORLD.map.id] || []).find((x) => x.id === n.place.leader); if (L) talk(L); return; }
@@ -1250,7 +1250,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Enter the shrine', arena: 'Enter the arena', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex', altar: 'Roll a critter', bell: 'Ring the bell', stair: 'Climb' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Enter the shrine', arena: 'Enter the arena', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex', altar: 'Roll a critter', bell: 'Ring the bell', stair: 'Climb the stair' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -1372,7 +1372,7 @@ const APP = (() => {
       db.addEventListener('click', (ev) => { if (ev.target.closest('button')) ACT.giveUp(); });
       setInterval(() => {
         const di = ACT.duelInfo(), sig = di ? di.name + di.defeated + '/' + di.total : '';
-        if (sig !== dbSig) { dbSig = sig; db.hidden = !di; if (di) db.innerHTML = '<b>' + esc(di.tower ? 'Floor ' + di.floor : di.name) + '</b><span>' + di.defeated + ' of ' + di.total + ' down</span><button aria-label="Give up the duel">Give up</button>'; }
+        if (sig !== dbSig) { dbSig = sig; db.hidden = !di; if (di) db.innerHTML = '<b>' + esc(di.tower ? 'Night ' + di.floor : di.name) + '</b><span>' + di.defeated + ' of ' + di.total + ' down</span><button aria-label="Give up the duel">Give up</button>'; }
       }, 150);
       setInterval(() => {
         const show = ACT.ready() && !WORLD.paused && !open; if (atk.hidden === show) atk.hidden = !show; if (!show) { if (wheelOn) closeWheel(false); return; }

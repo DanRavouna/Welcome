@@ -1,16 +1,16 @@
 changed tiles # outside tower area []
 near: Enter the Tower
-locked toast: The Long Watch opens to trainers with all # Leader Seals. You hold #.
+locked toast: The Long Watch is for those who hold all # Leader Seals. You hold #.
 with seals the door leads into: in-tower
-lobby: Welcome. # floors. Each one is a night, and each night someone comes to the door. / Your party fights every floor in a row. HP carries over between floors. Essence is paid only for floors above your best. / This week: Second Wind. Your party rests #% between floors this week (normally #%). New-best essence is worth #% less. / Climbs left today: #. You will bring Kipmonarch, Tibwarden, Nibtitan.
-title: Tower · Floor # | note: Second Wind: Your party rests #% between floors this week (normally #%). New-best essence is worth #% less. Floor # of #. Pip the Squire has # critters. Your HP carries over between floors. First clear: +# essence.
+lobby: Welcome. Twenty nights, one lamp. Each night someone comes to the door. / Your party answers every night in a row. HP carries over between nights. Essence is paid only for nights past your longest watch. / This week: Mild nights. Your party rests #% between nights this week (normally #%). A new longest watch is worth #% less essence. / Watches left today: #. You will bring Kipmonarch, Tibwarden, Nibtitan.
+title: The Long Watch · Night # | note: Mild nights: Your party rests #% between nights this week (normally #%). A new longest watch is worth #% less essence. Night # of #. Pip is at the door with # critters. Your HP carries over between nights. Kept for the first time: +# essence.
 runs left after start: #
 floor# result: {'over': True, 'win': True, 'res': {'kind': 'win', 'floor': #, 'reward': #, 'first': True}, 'tower': {'best': #, 'day': '<date>', 'runs': #, 'clears': #, 'run': {'floor': #, 'party': [#...], 'hp': {'#': #, '#': #, '#': #}}}, 'ess': #}
 replay blocked after win (STALE: simulates the old turn-based flow, always False now; the live Tower is covered by acttest#): True
-after dialog: Floor # cleared! +# essence for a new best. / Your party rests: Kipmonarch #/#, Tibwarden #/#, Nibtitan #/#.
+after dialog: Night # kept. +# essence for a longest watch. / Your party rests: Kipmonarch #/#, Tibwarden #/#, Nibtitan #/#.
 after reload run: {"best":#,"day":"<date>","runs":#,"clears":#,"run":{"floor":#,"party":[#,#,#],"hp":{"#":#,"#":#,"#":#}}}
-dbg ["place",false,false,false,"Climb",true]
-resume lobby: Your climb is waiting on floor # of #. / Your party: Kipmonarch #/#, Tibwarden #/#, Nibtitan #/#.
-pause toast: Climb paused on floor #. Your HP is kept; the floor starts over when you return.
+dbg ["place",false,false,false,"Climb the stair",true]
+resume lobby: The watch is waiting on night # of #. / Your party: Kipmonarch #/#, Tibwarden #/#, Nibtitan #/#.
+pause toast: The watch is paused on night #. Your HP is kept; the night starts over when you return.
 hp saved mid-battle == run hp: True {"#":#,"#":#,"#":#}
 errors: none
