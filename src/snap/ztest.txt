@@ -1,0 +1,61 @@
+map town {'grass': '51/51', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map peak {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map ascent {'grass': '58/58', 'rare': '9/9', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map descent {'grass': '58/58', 'rare': '9/9', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map mossbrook {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map frosthold {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map cinderport {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map coralbay {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map frost {'grass': '131/131', 'rare': '5/5', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map ember {'grass': '138/138', 'rare': '6/6', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map moss {'grass': '124/124', 'rare': '5/5', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map tide {'grass': '137/137', 'rare': '5/5', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-mf {'grass': '119/119', 'rare': '4/4', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-cm {'grass': '121/121', 'rare': '6/6', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-fc {'grass': '142/142', 'rare': '7/7', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-cc {'grass': '128/128', 'rare': '6/6', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-mf-gate {'grass': '40/40', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-mf-hollow {'grass': '99/99', 'rare': '9/9', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-mf-lookout {'grass': '68/68', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-mf-fork {'grass': '91/91', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-mf-cliff {'grass': '86/86', 'rare': '9/9', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-cm-edge {'grass': '95/95', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-cm-smoulder {'grass': '86/86', 'rare': '9/9', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-cm-crossing {'grass': '92/92', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-cm-hollow {'grass': '52/52', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-fc-shelf {'grass': '109/109', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-fc-strand {'grass': '75/75', 'rare': '8/8', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-fc-landing {'grass': '92/92', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-fc-skerry {'grass': '38/38', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-cc-pier {'grass': '82/82', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-cc-shoals {'grass': '74/74', 'rare': '9/9', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-cc-steam {'grass': '117/117', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map route-cc-drowned {'grass': '44/44', 'rare': '9/9', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map dg-arch {'grass': '40/40', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map dg-lamp {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map dg-forge {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map gym-wren {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-house-fennel {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-house-moss {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-house-bryn {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-fh-a {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-fh-b {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-fh-c {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-cp-a {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-cp-b {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-cp-c {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-cb-a {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-cb-b {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-cb-c {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-home {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-lab {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+trips: [['town->frost path', 'none'], ['now in', 'frost'], ['frost->town path', 'none'], ['back in', 'town'], ['town->ember path', 'none'], ['now in', 'ember'], ['ember->town path', 'none'], ['back in', 'town'], ['town->moss path', 'none'], ['now in', 'moss'], ['moss->town path', 'none'], ['back in', 'town'], ['town->tide path', 'none'], ['now in', 'tide'], ['tide->town path', 'none'], ['back in', 'town']]
+grass encounter: {'open': True, 'enc': 'Frost Peaks', 'type': 'Volt'}
+encounter buttons: ['Frost Peaks', 'Let it go', 'Keep (1 roll)']
+no roll button in encounter: True | seed tool hidden: True
+after keep: ['Back to exploring', 'Kept'] kept= 1
+closed: True encounter cleared: None
+out of rolls: {'screenOpen': True, 'toast': 'Tall grass hides wild critters. Keep walking through it to find one.'}
+species hint: Frost type · Blob body · lives in Frost Peaks
+after reload map: tide | label: Tide Shore
+errors: none

@@ -1,3 +1,4 @@
+# The Long Watch area: tiles changed only around the tower, label, locked toast, floors.
 from playwright.sync_api import sync_playwright
 errs=[]
 def adv(pg):
@@ -32,7 +33,7 @@ with sync_playwright() as p:
   pg.evaluate("APP.game.renderVals().fight()"); pg.wait_for_timeout(50)
   r=pg.evaluate("()=>{const g=APP.game; for(let i=0;i<300&&g.state.battle&&!g.state.battle.over;i++) g.battleAction({move:0}); const b=g.state.battle; return {over:b.over,win:b.win,res:g.state.towerResult,tower:g.state.tower, ess:g.state.essence}}")
   print('floor1 result:', r)
-  print('replay blocked after win:', pg.evaluate("()=>{const v=APP.game.renderVals(); v.fighters[1]&&v.fighters[1].pick(); const v2=APP.game.renderVals(); const e0=APP.game.state.essence; v2.fight(); return v2.cannotFight===true && !(APP.game.state.battle&&!APP.game.state.battle.over) && APP.game.state.essence===e0}"))
+  print('replay blocked after win (STALE: simulates the old turn-based flow, always False now; the live Tower is covered by acttest5):', pg.evaluate("()=>{const v=APP.game.renderVals(); v.fighters[1]&&v.fighters[1].pick(); const v2=APP.game.renderVals(); const e0=APP.game.state.essence; v2.fight(); return v2.cannotFight===true && !(APP.game.state.battle&&!APP.game.state.battle.over) && APP.game.state.essence===e0}"))
   pg.evaluate("APP.close()"); pg.wait_for_timeout(120); print('after dialog:', pg.evaluate("APP.dialog && APP.dialog.lines.join(' / ')"))
   # reload keeps run
   pg.reload(); pg.wait_for_timeout(1100)

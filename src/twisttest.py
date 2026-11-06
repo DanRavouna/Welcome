@@ -1,3 +1,4 @@
+# Weekly Tower twist: rotation over 8 weeks, same all week.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:

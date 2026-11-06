@@ -1,3 +1,4 @@
+# World map card and fast travel with level gates, here marker, travel between zones, weather and save-code import/export.
 from playwright.sync_api import sync_playwright
 errors=[]
 with sync_playwright() as p:

@@ -1,0 +1,6 @@
+old save loads: critters 2 | essence 42 | xp 500 | tower best 4
+missing newer fields get safe defaults: {"adv":{"clues":[],"open":{},"flags":{}},"visited":["town"],"titles":0,"settings":{"weather":true,"ambient":true,"bigtext":false,"contrast":false}}
+after a normal write, unknown fields kept: True | our fields written: True True | old data kept: True
+after a reload and another write: unknown fields still there: True
+corrupt stored value is replaced cleanly: True
+errors: none

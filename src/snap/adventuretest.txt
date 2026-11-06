@@ -1,0 +1,45 @@
+fresh adv state: {'clues': [], 'open': {}, 'flags': {}}
+route-mf arch object / ruin sign left: [['post-route-mf#:postlamp@#,#', 'post-route-mf#:postlamp@#,#', 'arch:plaque@#,#'], False, 'O']
+act label by the arch (# clues): Examine the arch
+sealed dialogue: Eight critters sit around one fire. A ninth seat is carved empty. | The stone stays cold and silent. Clues found: # of #. Someone on the other roads may know more.
+still on route-mf | open flag: False
+edda: lines first talk #, second talk # (clue only once) | clues now #
+dell: lines first talk #, second talk # (clue only once) | clues now #
+joss: lines first talk #, second talk # (clue only once) | clues now #
+neri: lines first talk #, second talk # (clue only once) | clues now #
+journal tile sub: #/# clues
+journal lines: # | Clues about the Sealed Arch: # of #.
+after the #th clue: map dg-arch | open flag True | saved: {'arch': True}
+wanted track in the dungeon: dg-arch | has a track of its own: True
+wanted track on Highland Pass: peak
+hall: {'name': 'The Sealed Arch', 'size': [#, #], 'dark': {'r': #}, 'kinds': {'fire': #, 'seat': #, 'statue': #, 'pyre': #, 'lamp': #, 'hull': #, 'chest': #, 'brazier': #, 'rubble': #, 'crown': #}, 'unreachable': ['br#', 'br#', 'br#', 'br#', 'br#', 'br#', 'chest#', 'crown'], 'exit': {'edge': 's', 'a': #, 'b': #, 'to': 'route-mf'}, 'floorTiles': #, 'onSolid': False}
+walked out the south gap -> route-mf at [#, #]
+act label by chest: Open the chest
+chest: potions/essence [#, #] -> [#, #] | toast: You open the chest: # Potions and # essence!
+second try: The chest is empty. | unchanged: True
+statue/seat lines: ['The ninth seat is empty. Dust li', 'A statue of a flame critter. Its', 'A statue of a tide critter. A li', 'A statue of a moss critter. Real', 'A statue of a volt critter. Your', 'A statue of a frost critter. The', 'A statue of a dusk critter. It s', 'A statue of a stone critter. It ', 'A statue of a bloom critter. A s']
+brightness near the player vs far corner: {'near': #, 'far': #, 'player': {'x': #, 'y': #}}
+before the rite, reachable from the entrance: {'chest#': True, 'rite#': True, 'rite#': True, 'rite#': True, 'pell': False, 'ione': False, 'keeper': False, 'chest#': False, 'crown': False}
+rubble touched: Rubble blocks the passage north. Something heavy fell here l
+# lamp first (wrong): The lights gutter out. The camp rhyme: fire first, then lamp, then hul | lit: []
+# fire: The fire bowl catches. One light burns. | lit: [#]
+# hull too early (wrong): The lights gutter out. The camp rhyme: fire first, then lamp, then hul | lit: []
+# fire, lamp: [#, #] | rubble flag: False
+# hull: The hull’s lantern catches. The empty seat flares gold, and far to the
+rubble cleared: True | rubble objects left: # | tile (#,#): '.'
+after the rite, reachable: {'chest#': True, 'rite#': True, 'rite#': True, 'rite#': True, 'pell': True, 'ione': True, 'keeper': True, 'chest#': True, 'crown': True}
+already lit -> The light burns steady.
+pell {'at': [#, #], 'dir': 'down', 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False}
+ione {'at': [#, #], 'dir': 'down', 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False}
+keeper {'at': [#, #], 'dir': 'down', 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': True}
+Keeper battle state: {'boss': True, 'reward': #, 'team': #, 'stage': #, 'lv': #}
+dungeon wild critters: [['Dusk', 'Stone'], #, '# moss tiles']
+crown before the Keeper falls: The Keeper stands between you and the crown.
+crown after: The crown lifts from the stone and the dust settle
+secret critter obtained: True
+chest#: You open the chest: # Rare Charm and # essence! | bag charm: #
+journal dungeon line: ['The Sealed Arch: the way north is clear. You have beaten the Keeper. The ninth seat has answered.']
+after reload adv: {"clues":["ruin","camp","lighthouse","wreck"],"open":{"arch":true},"flags":{"chest:chest#":true,"rite":[#,#,#],"rubble":true,"secret":true,"chest:chest#":true}}
+after reload the rubble is still gone: [#, '.']
+old save (no adv) loads with: {"clues":[],"open":{},"flags":{}} | caught kept: #
+errors: none

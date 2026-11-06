@@ -417,15 +417,16 @@ const WORLD = (() => {
   }
   // one signature thing per zone (Meaning, see the handoff): placed on the nearest clear ground to a hint, beside the water when asked
   function addSpot(M, o, hx, hy, needWater) {
-    const g = M.grid, W = M.W, H = M.H, clear = (x, y) => ['.', ','].indexOf((g[y] || [])[x]) !== -1;
-    for (let rad = 0; rad < 20; rad++) for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) {
-      if (Math.max(Math.abs(dx), Math.abs(dy)) !== rad) continue; const x = hx + dx, y = hy + dy; if (x < 4 || y < 4 || x > W - 5 || y > H - 5 || !clear(x, y)) continue;
-      let ok = true, water = false, path = false; for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) { const c = (g[yy] || [])[xx]; if (Math.abs(xx - x) <= 1 && Math.abs(yy - y) <= 1 && !clear(xx, yy) && !(c === '~' && (xx === x || yy === y))) ok = false; if (c === '~' && Math.abs(xx - x) + Math.abs(yy - y) <= 2) water = true; if (c === '=') path = true; }
+    // among every tile that is clear, beside a path and (when asked) beside water, take the one that is the LEAST open (most trees and rocks around it) and nearest the hint, so a thing never sits in the middle of the zone's open ground, which action fights need
+    const g = M.grid, W = M.W, H = M.H, clear = (x, y) => ['.', ','].indexOf((g[y] || [])[x]) !== -1; let best = null;
+    for (let y = 4; y < H - 4; y++) for (let x = 4; x < W - 4; x++) {
+      if (!clear(x, y)) continue;
+      let ok = true, water = false, path = false, open = 0; for (let yy = y - 3; yy <= y + 3; yy++) for (let xx = x - 3; xx <= x + 3; xx++) { const c = (g[yy] || [])[xx]; if (clear(xx, yy)) open++; if (Math.abs(xx - x) <= 2 && Math.abs(yy - y) <= 2) { if (c === '~' && Math.abs(xx - x) + Math.abs(yy - y) <= 2) water = true; if (c === '=') path = true; } if (Math.abs(xx - x) <= 1 && Math.abs(yy - y) <= 1 && !clear(xx, yy) && !(c === '~' && (xx === x || yy === y))) ok = false; }
       if (needWater) { ok = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([ax, ay]) => clear(x + ax, y + ay)); path = true; }
       if (!ok || !path || (needWater && !water)) continue;
-      g[y][x] = 'O'; (M.objects = M.objects || []).push(Object.assign({ x: x, y: y, reach: 1.7 }, o)); return true;
+      const score = open * 1.0 + (Math.abs(x - hx) + Math.abs(y - hy)) * 0.35; if (!best || score < best.score) best = { x: x, y: y, score: score };
     }
-    return false;
+    if (!best) return false; g[best.y][best.x] = 'O'; (M.objects = M.objects || []).push(Object.assign({ x: best.x, y: best.y, reach: 1.7 }, o)); return true;
   }
   function buildNet(net) {
     net.maps.forEach((sp) => { sp.keep = (net.props || []).filter((pr) => pr[0] === sp.id).map((pr) => pr[2]); const Mp = buildWild(sp); MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES[sp.base]; if (PXW.PAL[sp.base]) PXW.PAL[Mp.id] = PXW.PAL[sp.base]; });

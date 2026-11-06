@@ -1,0 +1,13 @@
+sorrel reward / first / rematch: [11, 11, 6]
+daily max essence: old world [97, 442, 271] (old / new without halving / new with halving + quests)
+mossbrook {"k":"see","map":"moss","n":5,"txt":"spot 5 wild critters in Moss Forest"}
+frosthold {"k":"beat","id":"kai","n":1,"txt":"beat Mountaineer Kai on Highland Pass"}
+cinderport {"k":"beat","id":"elm","n":1,"txt":"beat Woodcutter Elm on Ashwood Trail"}
+coralbay {"k":"keep","types":["Tide","Dusk"],"n":1,"txt":"keep a Tide or Dusk critter"}
+sightings used: 5 | quest progress: 5
+mossbrook progress: 5 / 5 done True
+bryn: You did it! Thank you so much. / Here, take this: +4 essence and some trainer experience.
+claimed: essence + 4 | xp + 30
+again: Thanks again for today! I will have a new favor tomorrow.
+after reload claimed: True
+errors: none

@@ -1,0 +1,6 @@
+follower indoors: True
+label by pond: Fish
+cast toast: You cast your line...
+label next to lava: Walk up to a place | lava tile near: True
+follow off -> follower data null: True
+errors: none

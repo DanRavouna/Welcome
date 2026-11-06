@@ -1,3 +1,4 @@
+# Party screen: add up to 4, make lead, remove and re-add, counts.
 from playwright.sync_api import sync_playwright
 errors=[]
 with sync_playwright() as p:

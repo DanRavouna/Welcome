@@ -20,6 +20,6 @@ with sync_playwright() as p:
       seen.add(tuple(pg.evaluate("(()=>{const L=APP.lampLevels();return WORLD.map.objects.filter(o=>o.wave).map(o=>(L[o.id]||0)>0.5?1:0)})()")))
     return sorted(seen)
   d=wave('day'); n=wave('night')
-  print('lamp patterns by day:', d, '| at night:', n)
+  print('lamp patterns seen by day:', len(d), '| at night more than 2 distinct patterns:', len(n)>2)
   print('day none lit; night more than one pattern (it travels) and at most two lit at once:', all(sum(x)==0 for x in d) and len(n)>2 and all(sum(x)<=2 for x in n))
   print('errors:', errs or 'none'); b.close()

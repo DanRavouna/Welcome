@@ -1,0 +1,29 @@
+door: Enter the forge
+first visit dialogue: A doorway of dry heat, cut into the crater wall.
+inside: dg-forge | open.forge saved: True | dark radius: 5.2
+at the start, reachable: {'coreA': True, 'coreB': True, 'sockA': True, 'sockB': True, 'dross': True, 'ingot': True, 'hale': False, 'furnace': False, 'chest1': True, 'chest2': False} | north gate: shut
+socket without the core: A socket for the core of flame. It belongs in one of the side halls.
+walk to core A (west hall, past Smith Dross): True object:coreA
+You lift the core of flame. It is warm in your hands. Carry it to the hub. | {"own:post-descent-8":true,"core:A":true}
+walk to socket A: True
+The core of flame settles into its socket. One more. | gate: shut
+walk to core B (east hall, past Smith Ingot): True object:coreB
+You lift the core of stone. It is warm in your hands. Carry it to the hub. | {"own:post-descent-8":true,"core:A":true,"sock:A":true,"core:B":true}
+walk to socket B: True
+You have enough essence to evolve a critter. Open it in the Dex. | gate: open
+after both sockets, reachable: {'hale': True, 'furnace': True, 'chest2': True}
+walk to the furnace (past the Forgemaster): True object:furnace
+reset: gate shut | cores back on their pedestals: True
+east first, then west -> gate: open | {"core:B":true,"sock:B":true,"core:A":true,"sock:A":true}
+dross {'at': [5, 25], 'dir': 'right', 'sees': True, 'size': 5, 'stage': 3, 'lv': 16, 'reward': 17, 'boss': False, 'bonus': 0}
+ingot {'at': [24, 25], 'dir': 'left', 'sees': True, 'size': 5, 'stage': 3, 'lv': 16, 'reward': 17, 'boss': False, 'bonus': 0}
+hale {'at': [14, 6], 'dir': 'down', 'sees': True, 'size': 5, 'stage': 3, 'lv': 18, 'reward': 17, 'boss': True, 'bonus': 10}
+furnace before the Forgemaster falls: The Forgemaster stands between you and the great furnace.
+first light: dialogue 4 lines | lit: True | essence + 50 | title: True
+Slagback handed over: True
+again: The furnace roars quietly. The whole crater glows. | unchanged: True
+chest2: You open the chest: 1 Rare Charm and 12 essence!
+journal: ['The Forge Below: the great furnace is lit.']
+music in the forge: dg-forge | own track: True
+after reload: gate open | cores hidden: True | sockets lit: {"core:B":true,"sock:B":true,"core:A":true,"sock:A":true,"forgeLit":true,"slagback":true,"chest:chest2":true}
+errors: none

@@ -1,0 +1,19 @@
+networks: [('route-mf', 6), ('route-cm', 5), ('route-fc', 5), ('route-cc', 5)]
+every door has a way back and a walkable arrival: True
+all doors / objects reachable inside every map: True  | rare patches reachable: True
+route-mf: 2 ways mossbrook -> frosthold | dead ends: ['route-mf-cliff']
+route-cm: 2 ways cinderport -> mossbrook | dead ends: ['route-cm-hollow']
+route-fc: 2 ways frosthold -> coralbay | dead ends: ['route-fc-skerry']
+route-cc: 2 ways coralbay -> cinderport | dead ends: ['route-cc-drowned']
+walking through every door lands in the right map: True
+level gate only at the city doors: True
+the four hermit-types stand on walkable ground: ['ok', 'ok', 'ok', 'ok']
+unexplained things placed: ['mf:postlamp', 'mf:postlamp', 'mf:plaque', 'cm:camp', 'cm:camp', 'fc:returned', 'fc:returned', 'fc:returned', 'fc:returned', 'fc:chair', 'cc:postlamp', 'cc:postlamp', 'cc:postlamp', 'mf-gate:doorframe', 'mf-gate:postlamp', 'mf-gate:postlamp', 'mf-hollow:lantern', 'mf-lookout:ringstones', 'mf-fork:postlamp', 'mf-fork:postlamp', 'mf-fork:postlamp', 'mf-fork:postlamp', 'mf-fork:postlamp', 'mf-cliff:cups', 'mf-cliff:postlamp', 'cm-edge:camp', 'cm-edge:camp', 'cm-smoulder:bell', 'cm-crossing:stakes', 'cm-crossing:camp', 'cm-crossing:camp', 'cm-hollow:bench', 'fc-strand:sled', 'fc-skerry:skiff', 'fc-skerry:chair', 'cc-pier:postlamp', 'cc-pier:postlamp', 'cc-pier:postlamp', 'cc-pier:postlamp', 'cc-steam:postlamp', 'cc-steam:postlamp', 'cc-steam:postlamp', 'cc-steam:postlamp', 'cc-drowned:tidelight']
+hp-lantern exists only at night: by day [False, False] -> at night [True, True] | OK
+cm-stakes exists only at dusk: by day [False, False] -> at dusk [True, True] | OK
+fc-skiff exists only at dawn: by day [False, False] -> at dawn [True, True] | OK
+cc-glow exists only at night: by day [False, False] -> at night [True, True] | OK
+no line explains, points or promises (60 texts): True
+sky follows the route on every side map: True
+music on a side map: tide
+errors: none

@@ -1,0 +1,6 @@
+open spot: [#, #]
+steering the critter is the default: lead flag True
+on: the human (trailing) is left of the critter body: True | gap tiles #
+moving down: the human is above the critter: True | human faces down
+camera follows the critter (body sits at the screen centre): True
+facing right: the enemy ahead is hit, the one behind is not: [True, True]

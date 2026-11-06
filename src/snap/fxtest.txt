@@ -1,0 +1,8 @@
+undefined class anywhere: False
+round fx: [{"burst":"weak","color":"#4FB06D","num":"-7","label":"Drained","ring":"#6EE7A8"},{"burst":"strong","color":"#FF7A45","num":"-8","label":"Strong!"}]
+dom: [['fxl fx-b', 8, '-7', 'Drained'], ['fxl fx-b', 8, '-8', 'Strong!']]
+flash on foe sprite: 2
+parity flips: fxl fx-b -> fxl fx-a
+calm: bursts 0 | layer fxl fx-a fx-calm
+ko label: ['KO!'] | over True
+errors: none

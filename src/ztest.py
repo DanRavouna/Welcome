@@ -1,3 +1,4 @@
+# Zone maps: walking trips, grass encounters, map facts.
 import json
 from playwright.sync_api import sync_playwright
 errors=[]

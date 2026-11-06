@@ -1,0 +1,6 @@
+lamps / road length per map: [['route-mf-gate', 2, 40], ['route-mf', 2, 29], ['route-mf-fork', 5, 44], ['route-mf-hollow', 0, 0], ['route-cm', 0, 0]]
+lit posts (on screen) at four spots along the road, DAY: [[], [], [], []]
+lit posts (on screen) at four spots along the road, NIGHT: [[6], [13], [], []]
+by day none lit; at night at most one lit at a time and it moves on: True
+cliff door lamp lit at night: True
+errors: none

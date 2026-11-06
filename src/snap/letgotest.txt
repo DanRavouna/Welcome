@@ -1,0 +1,9 @@
+maren before: ['now / Warden Maren / The lamp is yours to wake. Touch the glass. / The lamp is yours to wake. Touch the glass.'] | after lampLit: ['d to stand here all night. I think I will sit down. / I used to stand here all night. I think I will sit down.']
+hale before: ['Forgemaster Hale / The furnace is yours to wake. Open its door. / The furnace is yours to wake. Open its door.'] | after forgeLit: ['Rematch! / Not now / Forgemaster Hale / I will not need to watch it. / I will not need to watch it.']
+keeper before: ['atch! / Not now / Keeper Orlen / The seat is quiet now. Go and see it. / The seat is quiet now. Go and see it.'] | after secret: [' Orlen / I held it so long. It is lighter than I expected. / I held it so long. It is lighter than I expected.']
+joss before: ['he pass. / Here is a secret: the lamp never pointed at the sea. It points inland, at the old arch in the pass.'] | after lampLit: ['Lamplighter Joss / I think I am out of work. I do not mind. / I think I am out of work. I do not mind.']
+brandt before: [' is not for you, but it will not mind. / Sit if you like. The second cup is not for you, but it will not mind.'] | after lampLit: ['Hermit Brandt / One cup tonight. / One cup tonight.']
+mom before: ['s are on the desk. I keep them tidy for you. / Your trainer records are on the desk. I keep them tidy for you.'] | after lampLit: ['Mom / I did not worry. Is that not odd? / I did not worry. Is that not odd?']
+home window by day, # seals vs # seals: [#, #, #] [#, #, #] | lit only with # seals: True
+lighthouse beam above the lamp, lamp dark vs lit: [#, #, #] [#, #, #] | beam only when lit: True
+errors: none

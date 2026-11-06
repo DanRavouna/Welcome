@@ -1,3 +1,4 @@
+# A play-through with real randomness (repeat before calling a failure a regression): reveal, keep, battle rounds.
 from playwright.sync_api import sync_playwright
 errors=[]
 def go(pg, pid):

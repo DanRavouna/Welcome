@@ -1,3 +1,4 @@
+# The follower walks behind the player; fishing label and bite flow.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:

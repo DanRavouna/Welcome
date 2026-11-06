@@ -1,0 +1,9 @@
+no goal pill in the HUD: True | no objective hook or helpers in APP: True
+Pip says: Did you know? Sparkling grass hides rarer critters. / Trainers stand still and watch. If they see you, get ready to battle!
+Pip gives no directions to the next goal: True
+old gold arrow pixels near the player: 0
+map before: frosthold = Undiscovered
+map card fits (scrollW<=clientW): True [266, 266]
+visited after reload: ['town', 'frost', 'frosthold']
+map after: frosthold = Frosthold
+errors: none

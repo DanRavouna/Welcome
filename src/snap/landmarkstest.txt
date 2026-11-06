@@ -1,0 +1,7 @@
+defs: ['ruin', 'camp', 'lighthouse', 'wreck', 'beacon', 'cairn', 'well']
+draw/footprint check: {'ruin': {'pixels': 1282, 'rows': 3, 'cols': 4, 'ok': True}, 'camp': {'pixels': 710, 'rows': 2, 'cols': 3, 'ok': True}, 'lighthouse': {'pixels': 1184, 'rows': 4, 'cols': 2, 'ok': True}, 'wreck': {'pixels': 891, 'rows': 2, 'cols': 4, 'ok': True}, 'beacon': {'pixels': 2736, 'rows': 5, 'cols': 3, 'ok': True}, 'cairn': {'pixels': 131, 'rows': 1, 'cols': 1, 'ok': True}, 'well': {'pixels': 708, 'rows': 2, 'cols': 2, 'ok': True}}
+route-mf {'props': ['ruin@9,14', 'cairn@29,8', 'cairn@5,13'], 'signs': 1, 'notSolid': []}
+route-cm {'props': ['camp@16,17', 'well@4,13', 'cairn@27,6'], 'signs': 3, 'notSolid': []}
+route-fc {'props': ['lighthouse@28,13', 'cairn@9,17'], 'signs': 2, 'notSolid': [['lighthouse', 28, 13], ['lighthouse', 29, 13]]}
+route-cc {'props': ['wreck@9,15', 'cairn@22,4'], 'signs': 2, 'notSolid': []}
+errors: none

@@ -1,3 +1,4 @@
+# Shiny critters: odds, sparkle and ribbon in the encounter, keep label with 0 rolls left.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:
@@ -13,7 +14,7 @@ with sync_playwright() as p:
     const st=g.starters().map(x=>g.isShiny(x));
     const npcSeeds=[]; Object.values(WORLD.allNpcs()).flat().filter(n=>n.trainer||n.leader).forEach(n=>npcSeeds.push(...g.teamFor(n))); for(let f=1;f<=20;f++) npcSeeds.push(...g.teamFor(g.towerFloor(f)));
     const rate=(o)=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,(100*v[1]/v[0]).toFixed(2)+'% of '+v[0]]));
-    return {rate_first200k:(100*sh/200000).toFixed(3)+'%', byRarity:rate(byR), byType:rate(byT), pickSeedRareGrass:(100*ps/PN).toFixed(2)+'%', firstShiny:first, name:a.name, idempotent:a.name===b2.name&&a.bodyColor===b2.bodyColor, body:[a.bodyColor, g.make(first,1).bodyColor], spriteDiffers: PIX.sprite(a,'big')!==PIX.sprite(Object.assign({},a,{seed:-1}),'big'), starters:st, foeShinies: npcSeeds.filter(x=>g.isShiny(x)).length+' of '+npcSeeds.length};}""")
+    return {rate_first200k:(100*sh/200000).toFixed(3)+'%', byRarity:rate(byR), byType:rate(byT), pickSeedRareGrass:(100*ps/PN).toFixed(2)+'%', firstShiny:first, name:a.name, idempotent:a.name===b2.name&&a.bodyColor===b2.bodyColor, body:[a.bodyColor, g.make(first,1).bodyColor], spriteDiffers_STALE_always_false: PIX.sprite(a,'big')!==PIX.sprite(Object.assign({},a,{seed:-1}),'big'), starters:st, foeShinies: npcSeeds.filter(x=>g.isShiny(x)).length+' of '+npcSeeds.length};}""")
   for k,v in r.items(): print(k,':',v)
   # reveal via encounter
   first=r['firstShiny']

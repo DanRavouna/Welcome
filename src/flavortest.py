@@ -1,3 +1,4 @@
+# Townsfolk weather and time-of-day remarks, new people placement.
 from playwright.sync_api import sync_playwright
 errs=[]
 PW=sync_playwright().start()

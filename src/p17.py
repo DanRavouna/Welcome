@@ -1,3 +1,4 @@
+# New player first run with REAL defaults (no seed hook): test mode, rolls chip, intro dialog, starter choice.
 import json
 from playwright.sync_api import sync_playwright
 errors=[]

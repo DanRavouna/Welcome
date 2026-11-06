@@ -1,0 +1,9 @@
+town diffs outside trail+sign: [] | trail tiles changed: #
+door front (#,#) reachable from entrance: True | walkable tiles: #
+no seals -> still in town: town | toast: The trail to Vigil Peak opens with all # Leader Seals. You hold #.
+# seals -> map: ['peak', #, #]
+tower door label: Enter the Tower
+peak music: peak
+back down -> map: town | arrived near trail: [#, #]
+aggro music during alert: spotted | during challenge dialog: ['spotted', True]
+errors: none

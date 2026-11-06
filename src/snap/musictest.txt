@@ -1,0 +1,27 @@
+bar lengths ok: True
+before tap: {'cur': None, 'want': 'town', 'enabled': True, 'unlocked': False, 'hidden': False, 'running': False}
+after tap: {'cur': 'town', 'want': 'town', 'enabled': True, 'unlocked': True, 'hidden': False, 'running': True}
+ember: ember
+arena: battle
+leader: boss
+back: ember
+hidden: False
+visible again: True
+toggle off: {'cur': None, 'want': 'ember', 'enabled': False, 'unlocked': True, 'hidden': False, 'running': False}
+off kept after reload: False
+town    {'peak': 0.055, 'rms': 0.0089, 'secs': 19}
+moss    {'peak': 0.057, 'rms': 0.012, 'secs': 21.4}
+ember   {'peak': 0.064, 'rms': 0.0151, 'secs': 15.7}
+tide    {'peak': 0.058, 'rms': 0.0096, 'secs': 18}
+peak    {'peak': 0.06, 'rms': 0.0122, 'secs': 20.5}
+mossbrook {'peak': 0.064, 'rms': 0.0106, 'secs': 22.3}
+frosthold {'peak': 0.043, 'rms': 0.0135, 'secs': 23.4}
+cinderport {'peak': 0.061, 'rms': 0.0129, 'secs': 17.1}
+coralbay {'peak': 0.057, 'rms': 0.0095, 'secs': 19.7}
+dg-arch {'peak': 0.043, 'rms': 0.0135, 'secs': 27.9}
+dg-lamp {'peak': 0.053, 'rms': 0.0106, 'secs': 22.3}
+dg-forge {'peak': 0.057, 'rms': 0.0091, 'secs': 25.1}
+spotted {'peak': 0.058, 'rms': 0.012, 'secs': 12.5}
+battle  {'peak': 0.057, 'rms': 0.012, 'secs': 13.3}
+boss    {'peak': 0.063, 'rms': 0.0153, 'secs': 14.6}
+errors: none

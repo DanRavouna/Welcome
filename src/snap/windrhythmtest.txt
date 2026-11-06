@@ -1,0 +1,6 @@
+ember (# s after entering)        pose steps per second in each second: [#, #, #, #, #, #, #, #, #, #, #, #, #] | highest wind # (allowed pace up to #/s) | jumps of more than one pose: #
+route-mf (# s after entering)     pose steps per second in each second: [#, #, #, #, #, #, #, #, #, #, #, #, #] | highest wind # (allowed pace up to #/s) | jumps of more than one pose: #
+moss (# s after entering)         pose steps per second in each second: [#, #, #, #, #, #, #, #, #, #, #, #, #] | highest wind # (allowed pace up to #/s) | jumps of more than one pose: #
+route-mf again (first # s)         pose steps per second in each second: [#, #, #, #, #, #, #, #, #] | highest wind # (allowed pace up to #/s) | jumps of more than one pose: #
+steady pace (never above the wind pace plus one step, no jumps): True
+errors: none

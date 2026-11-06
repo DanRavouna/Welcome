@@ -8,8 +8,8 @@ The game has a greater meaning, the quest sits inside it, and every place sits i
 - Every review of existing content starts with "what does this mean?" before layout, balance or polish.
 - The working theme, quest and the draft meaning of each place are the first section of `critter-roll-handoff.md`. Dan confirmed the theme; the per-place meanings are drafts to refine with him.
 
-1. **Read the handoff before changing anything.** Read `critter-roll-handoff.md` first. It covers the architecture, systems, balance numbers, tests and watch items.
-2. **Test every change.** Run the full suite at the end of each phase.
+1. **Read the handoff before changing anything.** Read `critter-roll-handoff.md` first (short: meaning, architecture, key numbers, what the revamp built, how tests work, watch items). The full per-phase history is `docs/handoff-archive.md`: never read it whole, search it by section title when a task touches that system. When you add a new system, put 3 to 5 lines in the core and the long notes in the archive.
+2. **Test every change.** After each change run `bash src/run-tests.sh @smoke` (about 30 s) plus the tests of what you touched; run the whole suite (`bash src/run-tests.sh`, about 8.5 min) once before pushing a batch, and never push when its SUMMARY says anything failed or changed unexpectedly. Tests are snapshotted (see Tests below): accept an intended change with `bash src/snap-build.sh <test>` only after reading the diff.
 3. **Keep old saves loading and never break existing progress.** Save keys such as `critter-roll:v2`, `critter-roll:world` and `critter-roll:id` must keep loading. New fields need safe defaults, and no change may drop existing fields.
 4. **Never commit secrets.** The only Supabase values allowed in code are the Project URL and the publishable key below. Never add a secret or `service_role` key, a database password, or any personal access token.
 5. **Commit and push tested changes directly to `main`** so GitHub Pages updates the site.
@@ -27,7 +27,7 @@ The game has a greater meaning, the quest sits inside it, and every place sits i
 - `src/world/` holds the source pieces (`shell.html`, `screen.html`, `runtime.js`, `pixel.js`, `pxworld.js`, `landmarks.js` (reusable props), `adventure.js` (clues, dungeon layouts, object art), `world.js`, `weather.js`, `ambient.js` (scenery critters), `vfx.js` (attack visual effects), `action.js` (action mode), `cloud.js`, `music.js`, `flavor.js` (townsfolk remarks), then `base.js` (Base + Component), `data.js` (constants), `game.js` (Game class) and `app.js` (APP: HUD, menus, screens)). `logic.js`, `critter.html`, `helmet.html`, `build.py` and `reassemble.py` are older leftovers that the current build does not use.
 - `src/*.py` and `src/*.js` are the tests and balance sims from the handoff.
 - Developer tools: tap the ID in the menu 5 times, then Menu > Game > Dev tools (teleport, ignore level requirements, adventure shortcuts). See the handoff.
-- Run tests by group: `bash src/run-tests.sh @world` (also `@battle`, `@saves`, `@ui`); no argument runs EVERYTHING ONCE (about 71 tests, about 7.5 minutes on 4 cores: a few run side by side, `JOBS=n` changes how many, and the real-time ones run alone first). Do NOT also run the groups afterwards: they are already included (that mistake made a full run take 23 minutes).
+- Run tests by group (`@smoke` is the quick set for after every change): `bash src/run-tests.sh @world` (also `@battle`, `@saves`, `@ui`); no argument runs EVERYTHING ONCE (about 71 tests, about 8.5 minutes on 4 cores: a few run side by side, `JOBS=n` changes how many, and the real-time ones run alone first). Do NOT also run the groups afterwards: they are already included (that mistake made a full run take 23 minutes).
 
 ## Build
 ```bash
@@ -42,7 +42,7 @@ bash src/run-tests.sh            # full suite, one line per test; logs go to /tm
 bash src/run-tests.sh wplay.py   # one test
 ```
 - `p17`, `menutest`, `transitiontest` and `devtest` run without the `pwhook` seed hook (real defaults); every other suite runs with it. `run-tests.sh` handles both.
-- A zero exit code is not proof of a pass. Most suites print numbers that must be read and compared with the handoff.
+- Most suites only print numbers, so each has a snapshot in `src/snap/` (the lines a clean run always prints); the runner reports CHANGED when one goes missing and exits non-zero (dates, real-clock weather and the daily quest are normalised; numbers are masked in the comparison except for the tests in `src/snap/exact.txt`; a non-clean test is retried once and shown as FLAKY if the retry passes). New tests should assert with `from chk import check, done`.
 - `peaktest` and `towertest` compare against an old build (`live-before-endgame.html`) that is missing, so `test-setup.sh` uses the current build as a stand-in. Their "tiles changed" line proves nothing until a real old build is supplied.
 - `supatest.py` tests real cloud saves against the live Supabase project (two throwaway accounts, created and deleted by the test). It is not part of `run-tests.sh`. Run it whenever `cloud.js`, the account panel or the schema changes:
   ```bash

@@ -1,3 +1,4 @@
+# Dex screen: collection counts, filter chips, sorting.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:

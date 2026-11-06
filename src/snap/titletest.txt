@@ -1,0 +1,11 @@
+retro titles: ['explorer', 'collector', 'champion', 'climber'] | essence 5 -> 30 (expect 30)
+toast: New titles: Explorer (+10 essence), Collector (+15 essence), Fire-keeper, Tower Climber. Wear one from your Trainer card.
+no double award after reload: essence 30
+at 35: 4 35
+36th species -> naturalist: True | essence + 20
+shiny hunter: True [2, 172, 239]
+kept after release: True
+wearing: Shiny Hunter | locked button disabled: True
+menu title: Shiny Hunter
+after reload wearing: Shiny Hunter
+errors: none

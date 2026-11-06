@@ -1,0 +1,13 @@
+fresh state headers: ['critters:true', 'journey:false', 'game:false'] | visible tiles: ['dex', 'species', 'party', 'bag']
+after opening Journey: ['critters:true', 'journey:true', 'game:false'] | visible: ['dex', 'species', 'party', 'bag', 'map', 'quests', 'journal', 'trainer', 'badges', 'seals'] | focus kept on header: journey
+after reopen: ['critters:true', 'journey:true', 'game:false']
+collapsed Journey hides its tiles: True | badge on header: none
+collapsed Journey badge when a quest is ready: 1 ready
+Game group visible tiles: ['settings', 'backup']
+Save panel opened from menu: True
+keyboard Enter toggles: ['critters:true', 'journey:false', 'game:false']
+320px all open: overflow [False, False]  320px all closed: overflow [False, False]
+360px all open: overflow [False, False]  360px all closed: overflow [False, False]
+390px all open: overflow [False, False]  390px all closed: overflow [False, False]
+430px all open: overflow [False, False]  430px all closed: overflow [False, False]
+errors: none

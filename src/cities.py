@@ -1,3 +1,4 @@
+# Per-city checks: door reachability, NPCs on walkable ground, zone link, leader home, music.
 from playwright.sync_api import sync_playwright
 from collections import deque
 SOL=set('TXF~GOR')

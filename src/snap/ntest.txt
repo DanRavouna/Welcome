@@ -1,0 +1,68 @@
+map town {'grass': '51/51', 'exitsOk': True, 'placesOk': True, 'npcs': ['fern:true', 'pip:true', 'mira:true', 'rowan:true', 'mae:true']}
+map peak {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map ascent {'grass': '67/67', 'exitsOk': True, 'placesOk': True, 'npcs': ['reka:true', 'joran:true', 'dag:true', 'ansel:true', 'marta:true']}
+map descent {'grass': '67/67', 'exitsOk': True, 'placesOk': True, 'npcs': ['kolb:true', 'yara:true', 'brec:true', 'mirel:true', 'brand:true']}
+map mossbrook {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['juniper:true', 'sorrel:true', 'fennel:true', 'bryn:true']}
+map frosthold {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['glacia:true', 'tove:true', 'pike:true', 'hilde:true', 'olaf:true']}
+map cinderport {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['blaze:true', 'bea:true', 'tamsin:true', 'cole:true', 'ruby:true']}
+map coralbay {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['coral:true', 'marina:true', 'rafe:true', 'finn:true', 'pearl:true']}
+map frost {'grass': '136/136', 'exitsOk': True, 'placesOk': True, 'npcs': ['bram:true', 'sola:true']}
+map ember {'grass': '144/144', 'exitsOk': True, 'placesOk': True, 'npcs': ['kiki:true', 'dax:true']}
+map moss {'grass': '129/129', 'exitsOk': True, 'placesOk': True, 'npcs': ['ivy:true', 'oak:true']}
+map tide {'grass': '142/142', 'exitsOk': True, 'placesOk': True, 'npcs': ['marlo:true', 'nell:true']}
+map route-mf {'grass': '123/123', 'exitsOk': True, 'placesOk': True, 'npcs': ['kai:true', 'edda:true']}
+map route-cm {'grass': '127/127', 'exitsOk': True, 'placesOk': True, 'npcs': ['elm:true', 'dell:true']}
+map route-fc {'grass': '149/149', 'exitsOk': True, 'placesOk': True, 'npcs': ['signe:true', 'joss:true']}
+map route-cc {'grass': '134/134', 'exitsOk': True, 'placesOk': True, 'npcs': ['mako:true', 'neri:true']}
+map route-mf-gate {'grass': '40/40', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-mf-hollow {'grass': '108/108', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-mf-lookout {'grass': '68/68', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-mf-fork {'grass': '91/91', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-mf-cliff {'grass': '95/95', 'exitsOk': True, 'placesOk': True, 'npcs': ['brandt:true']}
+map route-cm-edge {'grass': '95/95', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-cm-smoulder {'grass': '95/95', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-cm-crossing {'grass': '92/92', 'exitsOk': True, 'placesOk': True, 'npcs': ['hob:true']}
+map route-cm-hollow {'grass': '52/52', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-fc-shelf {'grass': '109/109', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-fc-strand {'grass': '83/83', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-fc-landing {'grass': '92/92', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-fc-skerry {'grass': '38/38', 'exitsOk': True, 'placesOk': True, 'npcs': ['isla:true']}
+map route-cc-pier {'grass': '82/82', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-cc-shoals {'grass': '83/83', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-cc-steam {'grass': '117/117', 'exitsOk': True, 'placesOk': True, 'npcs': []}
+map route-cc-drowned {'grass': '53/53', 'exitsOk': True, 'placesOk': True, 'npcs': ['orrin:true']}
+map dg-arch {'grass': '40/40', 'exitsOk': True, 'placesOk': True, 'npcs': ['pell:true', 'ione:true', 'keeper:true']}
+map dg-lamp {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['bex:true', 'odo:true', 'maren:true']}
+map dg-forge {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['dross:true', 'ingot:true', 'hale:true']}
+map gym-wren {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['wren:true']}
+map in-house-fennel {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-house-fennel:true']}
+map in-house-moss {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-house-moss:true']}
+map in-house-bryn {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-house-bryn:true']}
+map in-fh-a {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-fh-a:true']}
+map in-fh-b {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-fh-b:true']}
+map in-fh-c {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-fh-c:true']}
+map in-cp-a {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-cp-a:true']}
+map in-cp-b {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-cp-b:true']}
+map in-cp-c {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-cp-c:true']}
+map in-cb-a {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-cb-a:true']}
+map in-cb-b {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-cb-b:true']}
+map in-cb-c {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['res-cb-c:true']}
+map in-home {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['mom:true']}
+map in-lab {'grass': '0/0', 'exitsOk': True, 'placesOk': True, 'npcs': ['remy:true']}
+teams: ['rowan: 2/2 Moss#15,Ember#2 reward 7', 'bram: 4/4 Frost#27,Stone#38,Frost#30,Stone#40 reward 13', 'kiki: 3/3 Ember#4,Volt#20,Ember#1 reward 11', 'ivy: 3/3 Moss#16,Bloom#48,Moss#13 reward 11', 'marlo: 4/4 Tide#7,Dusk#36,Tide#9,Dusk#35 reward 15', 'sorrel: 3/3 Bloom#44,Volt#20,Bloom#46 reward 11', 'pike: 4/4 Frost#30,Tide#9,Frost#27,Tide#8 reward 13', 'tamsin: 4/4 Ember#5,Stone#42,Ember#2,Stone#39 reward 13', 'rafe: 4/4 Tide#12,Volt#21,Tide#7,Volt#23 reward 15', 'kai: 4/4 Moss#16,Frost#26,Moss#18,Frost#28 reward 13', 'elm: 4/4 Ember#1,Moss#17,Ember#2,Moss#16 reward 13', 'signe: 4/4 Frost#30,Tide#8,Frost#28,Tide#9 reward 15', 'mako: 4/4 Tide#8,Ember#6,Tide#10,Ember#4 reward 15', 'dross: 5/5 Stone#40,Ember#1,Stone#41,Ember#2,Stone#38 reward 17', 'ingot: 5/5 Ember#6,Volt#24,Ember#2,Volt#22,Ember#4 reward 17', 'hale: 5/5 Ember#2,Stone#42,Ember#4,Stone#39,Ember#1 reward 17', 'bex: 5/5 Volt#21,Stone#42,Volt#23,Stone#41,Volt#19 reward 17', 'odo: 5/5 Frost#25,Tide#11,Frost#26,Tide#9,Frost#28 reward 17', 'maren: 5/5 Volt#24,Frost#28,Volt#22,Frost#27,Volt#23 reward 17', 'kolb: 3/3 Ember#4,Stone#37,Ember#1 reward 13', 'yara: 5/5 Ember#4,Volt#19,Ember#6,Volt#22,Ember#1 reward 17', 'brec: 5/5 Stone#38,Ember#2,Stone#41,Ember#6,Stone#37 reward 17', 'reka: 3/3 Frost#25,Stone#40,Frost#29 reward 13', 'joran: 4/4 Frost#25,Dusk#32,Frost#29,Dusk#31 reward 15', 'dag: 5/5 Stone#40,Volt#19,Stone#42,Volt#20,Stone#39 reward 17', 'pell: 4/4 Dusk#31,Moss#16,Dusk#35,Moss#17 reward 13', 'ione: 4/4 Stone#39,Frost#29,Stone#40,Frost#25 reward 13', 'keeper: 5/5 Dusk#35,Stone#42,Dusk#33,Stone#37,Dusk#36 reward 17']
+near pip: Talk to Pip
+dialog first line: Did you know? Sparkling grass hides rare | second shown fully: Trainers stand still and watch. If they  | closed: True | world paused: False
+fern before: 3 lines, last: You have found 0 of 5 species so far. The tal | reward 10 | repeat talk gives 0 | after line: Keep exploring. The Species page in your
+no critters -> challenge: False
+spotted -> alert: True | dialog: Rowan
+choices: ['Battle!', 'Not now']
+screen title: vs Rowan | fight button: 1
+battle: {'over': True, 'win': True, 'idx': 1, 'sent': 2, 'last': 'Corsage grew to level 2!'} | rolls used: 0
+after: {'ess': 17, 'wins': 1, 'beaten': True}
+fight button now: 1 disabled: True
+trainer cleared: None None
+beaten trainer re-challenges: False
+normal arena title: Arena | reroll label: 1
+bram spotted: True | after Not now re-challenge: False | world moving: True
+after reload beaten rowan: True | fern done: ['fern']
+errors: none

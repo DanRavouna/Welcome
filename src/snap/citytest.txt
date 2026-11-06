@@ -1,0 +1,14 @@
+mossbrook doors reachable: True | npcs reachable: True
+moss west link reaches moss east entrance: True | exits: [{"edge":"e","a":14,"b":15,"to":"town"},{"edge":"w","a":14,"b":15,"to":"mossbrook"}]
+wren home: gym-wren | moss npcs: ['ivy', 'oak']
+route town->mossbrook next hop: moss | moss->mossbrook: mossbrook | mossbrook->peak: moss
+walked west -> mossbrook [33, 14]
+music: mossbrook
+near gym label: Enter the gym
+the gym door leads inside: gym-wren
+dialog: Elder Wren | Welcome to Mossbrook, young trainer. I am Elder Wren, leader of this gym.
+wren choices: ['Battle!', 'Not now']
+house label: Go inside
+house toast: Each zone has its own two types. The sparkling patch is rare
+herb hut label: Go inside
+errors: none

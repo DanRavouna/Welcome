@@ -1,3 +1,4 @@
+# Every house interior: enter, resident, exit, music inside.
 from playwright.sync_api import sync_playwright
 from collections import deque
 import base64

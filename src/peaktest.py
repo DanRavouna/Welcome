@@ -1,3 +1,4 @@
+# Vigil Peak: only the trail and sign changed in town, the tower door is reachable, locked without 4 seals.
 from playwright.sync_api import sync_playwright
 from collections import deque
 errs=[]

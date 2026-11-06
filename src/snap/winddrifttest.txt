@@ -1,0 +1,17 @@
+frost snow                  # particles | sideways     # px/s while falling   # px/s | wind #
+frosthold snow              # particles | sideways     # px/s while falling   # px/s | wind #
+Glacier Coast snow          # particles | sideways     # px/s while falling   # px/s | wind #
+Vigil Peak snow             # particles | sideways     # px/s while falling   # px/s | wind #
+Highland Pass snow          # particles | sideways    # px/s while falling   # px/s | wind #
+Highland Pass snow, gust    # particles | sideways    # px/s while falling   # px/s | wind #
+Moss rain                  # particles | sideways   # px/s while falling  # px/s | wind #
+Moss storm                  # particles | sideways   # px/s while falling  # px/s | wind #
+frost rain                 # particles | sideways    # px/s while falling  # px/s | wind #
+Ember ash                   # particles | sideways     # px/s while falling   # px/s | wind #
+Moss fog                     # particles | sideways     # px/s while falling    # px/s | wind #
+frost fog                    # particles | sideways     # px/s while falling    # px/s | wind #
+snow in the cold falls dead straight (no sideways drift at all): True | and slower than in the wind: True
+snow in Highland Pass leans east, more in a gust: True
+rain leans east (like the trees), more in a storm, and falls straight in the cold: True
+ash drifts east in the fire lands: True | fog creeps in the cold and drifts where it blows: True
+errors: none

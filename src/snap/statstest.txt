@@ -1,0 +1,7 @@
+row survives reload: True
+days kept after 70 extra: 60
+export head:
+Critter Roll play stats (60 days). Paste or attach this in a chat with Claude for balance tuning.
+day | min | essence +/- | rolls | sightings | keeps/new | wins/losses | evolves | tower runs/best | trainer lv | species | party lv
+copy msg: Play stats copied. Paste them in your chat with Claude. | clipboard starts: Critter Roll play stats (60 da
+errors: none

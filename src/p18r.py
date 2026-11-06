@@ -1,3 +1,4 @@
+# Daily sightings and rolls: free sighting, first-keep hint, energy accounting.
 from playwright.sync_api import sync_playwright
 errors=[]
 with sync_playwright() as p:

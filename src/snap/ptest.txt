@@ -1,0 +1,17 @@
+north at Lv1 -> town | toast: Frost Peaks opens at trainer level 3. You are level 1.
+west at Lv1 -> moss
+level-up toast: Frost Peaks is now open! | level 3
+north at Lv3 -> frost
+south (Ember) at Lv3 -> town
+tide sign: sign | East: Tide Shore (Tide and Dusk critters). Follow the boardwalk past the shore to reach Admiral Coral in Coralbay. Opens at trainer level 9.
+wren before Ivy: Welcome to Mossbrook, young trainer. I am Elder Wren, leader of this gym. / Before you challenge me, prove yourself against Ivy in Moss Forest.
+leader screen: vs Elder Wren | Elder Wren has 3 critters. Your party can switch in when one faints. Win reward:
+wren battle: {'win': True, 'idx': 2, 'breath': 0, 'sent': 3} | essence + 20 | xp + 110 | seals ['wren']
+ceremony: The first fire is the easiest to keep. Frost Peaks opens at level 3. / You now hold 1 of 4 Leader Seals.
+same day: The forest needs rest. Visit me again tomorrow.
+rematch win: True | essence + 10 | seals ['wren']
+no second ceremony: True
+title shown: True | seals 4/4: True
+menu seals tile: Seals 4/4 leaders
+after reload seals: 4 | cleared: ['ivy', 'wren']
+errors: none

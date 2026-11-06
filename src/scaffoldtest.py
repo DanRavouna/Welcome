@@ -18,6 +18,6 @@ with sync_playwright() as p:
   for who in ['pip','mira','mom','remy','fern']:
     for sc in range(5): print(who,'seals',sc,':',lines(who,sc))
   # tips: with no seal a hint shows, with a seal it does not (and nothing is recorded)
-  pg.evaluate("APP.game.update({hints:[],npc:{done:[],beaten:{},cleared:[],seals:[]}})"); pg.evaluate("APP.hint('party','x tip')"); print('no seal: tip recorded:', pg.evaluate("APP.game.state.hints"))
+  pg.evaluate("APP.game.update({hints:[],npc:{done:[],beaten:{},cleared:[],seals:[]}})"); pg.evaluate("APP.hint('party','x tip')"); print('no seal: the tip is recorded:', pg.evaluate("APP.game.state.hints.includes('party')"))
   pg.evaluate("APP.game.update({hints:[],npc:{done:[],beaten:{},cleared:[],seals:['wren']}})"); pg.evaluate("APP.hint('party','x tip')"); print('one seal: tip recorded:', pg.evaluate("APP.game.state.hints"), '| the save tip still allowed:', (pg.evaluate("APP.hint('online','y');APP.game.state.hints")))
   print('errors:', errs or 'none'); b.close()

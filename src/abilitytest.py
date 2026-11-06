@@ -1,3 +1,4 @@
+# Type abilities: every type has one, effect ratios on and off in simulated fights.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:

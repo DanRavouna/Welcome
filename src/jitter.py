@@ -1,3 +1,4 @@
+# Player and camera screen position are steady at several pixel ratios and refresh rates.
 from playwright.sync_api import sync_playwright
 JS = """(hz) => {
   WORLD.enter('town'); const TS = WORLD.TS; WORLD.setPos(26 * TS, 18.6 * TS);

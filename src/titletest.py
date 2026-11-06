@@ -1,3 +1,4 @@
+# Titles: retroactive awards, essence paid once, no double award after reload, locked titles disabled.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:

@@ -1,3 +1,4 @@
+# Music: track data (bar lengths), the first tap unlocks audio, track follows the place.
 from playwright.sync_api import sync_playwright
 import struct, wave
 errs=[]

@@ -1,3 +1,4 @@
+# NPCs: trainers, teams and people per map, placement and labels.
 from playwright.sync_api import sync_playwright
 errors=[]
 with sync_playwright() as p:

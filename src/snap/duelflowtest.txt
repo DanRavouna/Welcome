@@ -1,0 +1,5 @@
+critter-lead | spotted: True | after accepting: {'paused': False, 'hud': True, 'duel': True, 'screen': False, 'foes': #, 'banner': True, 'atk': True} | can move: True
+duel won: True | win dialog shown: True
+afterwards: paused False | HUD True | can move: True
+Tower start from a paused dialog state: duel True | paused False | HUD True
+errors: none

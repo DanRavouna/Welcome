@@ -5,7 +5,7 @@ with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':780}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
   pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,settings:Object.assign({},APP.game.state.settings,{follow:true,weather:false,ambient:false})}); document.getElementById('tip')&&(document.getElementById('tip').hidden=true); DEV.safe=true")
-  pg.evaluate("APP.open('badges')"); pg.wait_for_timeout(400); t=pg.inner_text('#screen'); print('no experimental or developer switches in Settings:', not any(x in t for x in ['Action mode','Steer your critter','Real-time battles','Collect every defeated','Test mode','Critter follows you'])); pg.evaluate("APP.close()")
+  pg.evaluate("APP.game.update({settings:Object.assign({},APP.game.state.settings,{test:false})})"); pg.evaluate("APP.open('badges')"); pg.wait_for_timeout(400); t=pg.inner_text('#screen'); print('no experimental switches in Settings (the seed hook forces test mode on, whose note says "Test mode", so that text is not checked here; p17 and devtest run without the hook):', not any(x in t for x in ['Action mode','Steer your critter','Real-time battles','Collect every defeated','Critter follows you'])); pg.evaluate("APP.close()")
   pg.evaluate("WORLD.enter('moss'); WORLD.setPaused(false); window.__noFollower=true"); pg.wait_for_timeout(900)
   print('without the critter (test hook) the old game is used: no attack button, no enemies:', pg.evaluate("[document.getElementById('atk').hidden, ACT.enemies.length, ACT.active()]"))
   pg.evaluate("window.__noFollower=false"); pg.wait_for_timeout(1200)

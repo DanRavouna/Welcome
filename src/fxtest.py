@@ -1,3 +1,4 @@
+# Battle effects: classes, round fx, DOM structure, no undefined classes.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:

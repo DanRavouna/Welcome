@@ -4,7 +4,7 @@ errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=1); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
-  pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,npc:{done:[],beaten:{},cleared:[],seals:[]}}); DEV.safe=true; window.__noTransition=true")
+  pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,settings:Object.assign({},APP.game.state.settings,{calm:true}),npc:{done:[],beaten:{},cleared:[],seals:[]}}); DEV.safe=true; window.__noTransition=true")
   for _ in range(30):
     if pg.evaluate("!!APP.dialog"): pg.evaluate("APP.advance()"); pg.wait_for_timeout(40)
   pg.evaluate("APP.game.update({settings:Object.assign({},APP.game.state.settings,{ambient:false})}); WORLD.enter('moss'); WORLD.setPaused(true)"); pg.wait_for_timeout(300)

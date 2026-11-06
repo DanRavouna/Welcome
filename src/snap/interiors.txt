@@ -1,0 +1,4 @@
+houses with interiors: 12 / 12
+all 12 houses enter/resident/exit ok: True []
+music inside smithy: cinderport
+errors: none

@@ -1,0 +1,14 @@
+Wren no longer stands in the plaza: True | she waits in the gym hall: ['wren@#,#']
+gym door leads to: ['gym-wren', [#...]]
+in the hall: tended / solved / vines gone: [#, False, False] | beds left to right (size): [#...]
+Wren reachable before the trial: False
+tend size # first (wrong): [#, False, False] | toast: The leaves droop.
+tend size #: [#, False, False]
+tend size # again (no harm): [#, False, False] | toast: It is already green.
+tend size # before # (wrong): [#, False, False] | toast: The leaves droop.
+then #, #, #, # in order: [#, True, True] | toast: The vines draw back.
+Wren reachable after the trial: True
+Wren speaks: Elder Wren / Welcome to Mos / Welcome to Mossbrook, young trainer. I am Elder Wren, leader
+after a reload (solved, vines gone): [#, True, True] | reachable: True
+old save with the Moss Seal: vines gone on entering: True | reachable: True
+errors: none

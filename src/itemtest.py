@@ -1,3 +1,4 @@
+# Shops and battle items per city, lure.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:

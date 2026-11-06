@@ -1,3 +1,4 @@
+# Accessibility: big text and high contrast settings, no overflow at phone widths, axe checks.
 from playwright.sync_api import sync_playwright
 errs=[]
 AXE=open('/tmp/node_modules/axe-core/axe.min.js').read()

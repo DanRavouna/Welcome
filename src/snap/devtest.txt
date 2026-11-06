@@ -1,0 +1,18 @@
+fresh player: dev state False | Dev tools tile shown: False | overlay hidden (display none): True
+after 5 taps on the ID: dev True | tile shown: True
+panel open: True | sections: ['REQUIREMENTS', 'TELEPORT', 'PLAYER', 'ADVENTURE', 'DEVELOPER MODE']
+closed panel does not block the game (display none, act button clickable area): True
+level 1 at the Ascent gate, requirements ON -> frosthold
+Ignore level requirements pressed: true | noGates: True | test mode still off: True | rolls still limited: True
+same gate with the override -> ascent
+override is browser-only (not in the save): True | stored: {"levels":true,"safe":false}
+trainer sees you, challenges ON: True
+trainer sees you, "No trainer challenges" ON: False
+teleport buttons: 37 maps | failed: none
+Level 20 -> 20
+Level 5 afterwards keeps it (never lowers): 20
+after every shortcut: {'clues': 4, 'arch': True, 'rubble': True, 'lampdoor': True, 'lit': True, 'keeper': True, 'maren': True, 'veil': True, 'wick': True, 'forge': True, 'cores': True, 'hale': True, 'forgeLit': True, 'slag': True}
+tower gates all open: g1:open g2:open g3:open | arch rubble objects left: 0
+after Reset the adventure: {'clues': 0, 'arch': False, 'rubble': False, 'lampdoor': False, 'lit': False, 'keeper': False, 'maren': False, 'veil': False, 'wick': False, 'forge': False, 'cores': False, 'hale': False, 'forgeLit': False, 'slag': False}
+after Hide developer tools: dev False | panel closed: True | tile shown: False
+errors: none

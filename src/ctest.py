@@ -1,3 +1,4 @@
+# Cloud saves with a fake server: first load, debounced push, rapid changes collapse to one write, conflicts, lease.
 import json, time
 from playwright.sync_api import sync_playwright
 SERVER = {}; CALLS = {'set': 0, 'get': 0, 'acquire': 0}; LEASES = {}; MODE = {'down': False, 'uid': 'u_dan'}

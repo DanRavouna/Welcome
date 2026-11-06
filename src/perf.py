@@ -1,3 +1,4 @@
+# Performance numbers (4x CPU throttle): Dex render, world frame time. Compare with the handoff; machines vary.
 from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(viewport={'width':390,'height':844}, device_scale_factor=3, has_touch=True)

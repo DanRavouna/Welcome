@@ -6,7 +6,7 @@ with sync_playwright() as p:
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
   pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,settings:Object.assign({},APP.game.state.settings,{arpg:true,follow:true,weather:false,ambient:false})}); document.getElementById('tip')&&(document.getElementById('tip').hidden=true); DEV.safe=true")
   def spot():   # an open place with room around
-    return pg.evaluate("""(()=>{const M=WORLD.map;for(let y=8;y<M.H-8;y++)for(let x=8;x<M.W-8;x++){let ok=true;for(let dy=-5;dy<=5&&ok;dy++)for(let dx=-5;dx<=5&&ok;dx++)if(WORLD.solidAt(x+dx,y+dy))ok=false;if(ok){WORLD.setPos((x+.5)*32,(y+.5)*32);return [x,y]}}return null})()""")
+    return pg.evaluate("""(()=>{const M=WORLD.map;for(let y=8;y<M.H-8;y++)for(let x=8;x<M.W-8;x++){let ok=true;for(let dy=-5;dy<=5&&ok;dy++)for(let dx=-5;dx<=5&&ok;dx++)if(WORLD.solidAt(x+dx,y+dy)||(WORLD.map.objects||[]).some(o=>o.x===x+dx&&o.y===y+dy))ok=false;if(ok){WORLD.setPos((x+.5)*32,(y+.5)*32);return [x,y]}}return null})()""")
   def settle(): pg.wait_for_timeout(700)
   pg.evaluate("WORLD.enter('moss'); WORLD.setPaused(false)"); pg.wait_for_timeout(1000); print('open spot:', spot()); settle()
   def walk(jx,jy,ms):

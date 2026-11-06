@@ -1,0 +1,16 @@
+Frosthold exits: s->frost w->route-mf-fork e->route-fc-shelf n->ascent | gate sign: True
+walk from the Frosthold spawn to the north gate: {'northGateReachable': True, 'arrive': [#, #], 'otherExitsOk': #}
+level # at the north gate -> still on frosthold | toast: The Cold Ascent opens at trainer level #. You are level #.
+high level -> on ascent at [#, #]
+climb: {'door': True, 'wild': #, 'rare': #, 'types': ['Frost', 'Stone'], 'rate': #, 'props': 'beacon,camp,cairn,cairn,cairn,cairn,cairn', 'size': [#, #]}
+reka {'at': [#, #], 'reach': True, 'trailAt': #, 'lv': #, 'size': #, 'stage': #, 'reward': #}
+joran {'at': [#, #], 'reach': True, 'trailAt': #, 'lv': #, 'size': #, 'stage': #, 'reward': #}
+dag {'at': [#, #], 'reach': True, 'trailAt': #, 'lv': #, 'size': #, 'stage': #, 'reward': #}
+ansel {'at': [#, #], 'reach': True, 'trailAt': '-', 'lv': None, 'size': None, 'stage': None, 'reward': None}
+marta {'at': [#, #], 'reach': True, 'trailAt': '-', 'lv': None, 'size': None, 'stage': None, 'reward': None}
+trainers see the trail within # tiles: True | all people reachable: True
+south exit -> frosthold at [#, #]
+music on the Ascent wants: frost | weather climate: peak | visited recorded: True
+travel map lists it: True
+act label at the door: Examine the beacon door
+errors: none

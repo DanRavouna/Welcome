@@ -1,3 +1,4 @@
+# Play stats rows: today row, survives reload, 70-day cap.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:

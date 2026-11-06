@@ -46,7 +46,7 @@ with sync_playwright() as p:
   print('no rolls left:', 'Needs' in t, '| keep button disabled:', pg.evaluate("[...document.querySelectorAll('#screen button')].filter(b=>/Needs \\d/.test(b.innerText)).every(b=>b.disabled)")); pg.evaluate("APP.close(); APP.game.update({used:0})")
   # sightings used up costs one more
   print('price with / without free sightings:', pg.evaluate("(()=>{const g=APP.game,k=g.make(5,1);const a=g.actKeepCost(k).cost;g.update({sight:{day:new Date().toDateString(),n:40}});const b=g.actKeepCost(k).cost;g.update({sight:{day:new Date().toDateString(),n:0}});return [a,b]})()"))
-  pg.evaluate("APP.game.update({pouch:[]})"); foe('rare'); tap(); pg.wait_for_timeout(700); print('a rare critter drops one too:', pg.evaluate("[ACT.orbs().length + APP.game.state.pouch.length, APP.game.make(window.__k,1).rarity]"))
+  pg.evaluate("APP.game.update({pouch:[]})"); foe('rare'); tap(); pg.wait_for_timeout(700); print('a rare critter drops one too (orbs):', pg.evaluate("ACT.orbs().length + APP.game.state.pouch.length"), '| its rarity is Rare or better:', pg.evaluate("['Rare','Mythic'].includes(APP.game.make(window.__k,1).rarity)"))
   pg.evaluate("APP.game.update({pouch:[APP.game.state.caught[0].seed]})"); pg.evaluate("(()=>{ACT.enemies.splice(0);ACT.orbs().splice(0);ACT.spawn(1);const m=ACT.enemies[0];window.__own=APP.game.worthyOwned=APP.game.actWorthy({seed:APP.game.state.caught[0].seed})})()"); print('a critter you already keep does not drop one:', not pg.evaluate('window.__own'))
   # expiry, full pouch, map change
   pg.evaluate("ACT.orbs().forEach(o=>o.t=o.life-0.1)"); pg.wait_for_timeout(400); print('uncollected orbs fade away:', pg.evaluate("ACT.orbs().length"))

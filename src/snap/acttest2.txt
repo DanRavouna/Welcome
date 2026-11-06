@@ -1,0 +1,11 @@
+after #+ kills essence stops: + # | counter # | lead lv # -> #
+a new day resets the cap: + # | counter #
+xp for foe lv #/#/# vs lead lv #: [#, #, #]
+wheel has # moves + # bench slots: [#, #] | bench text: ['Loxtitan swap · #%', 'Vexwing swap · #%']
+all # slots on screen: True
+swapped: lead is now seed # | hero Loxtitan
+swap back works, and a fainted one is refused: True | lead knocked out -> next critter steps in: # -> # | toast: Velcolossus ★ was knocked out. Go, Loxtitan!
+the fainted one cannot be swapped to: False
+errors: none
+save has act counter: True
+old save without act loads: {"day":"","n":#}

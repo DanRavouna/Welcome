@@ -1,3 +1,4 @@
+# Quests: trainer rewards (first and rematch), daily essence caps, city quests.
 from playwright.sync_api import sync_playwright
 errs=[]
 def adv(pg):

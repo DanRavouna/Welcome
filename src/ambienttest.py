@@ -1,3 +1,4 @@
+# Scenery critters: how many spawn per map, none indoors, fleeing and day/night rules.
 import sys
 from playwright.sync_api import sync_playwright
 errs=[]

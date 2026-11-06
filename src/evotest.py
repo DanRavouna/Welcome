@@ -8,7 +8,7 @@ with sync_playwright() as p:
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1100)
   # 1) base blob unchanged
   got=pg.evaluate("""(()=>{const g=APP.game,H=(s)=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16)};
-    const out={};for(const s of %s){const k=g.make(s,1);const o={};for(const key of Object.keys(k)){if(typeof k[key]!=='function')o[key]=k[key]}out[s]=H(JSON.stringify(o))}return out})()"""%list(map(int,GOLD)))
+    const out={};for(const s of %s){const k=g.make(s,1);const o={};for(const key of Object.keys(k)){if(typeof k[key]!=='function'&&key!=='seedLabel')o[key]=k[key]}out[s]=H(JSON.stringify(o))}return out})()"""%list(map(int,GOLD)))
   print('stage 1 blobs identical to the golden build (20 seeds):', got==GOLD)
   # 2) evolved forms fit inside 240x210 (rotated bounding boxes), 600 seeds x 2 stages
   r=pg.evaluate("""()=>{const g=APP.game;let bad=0,n=0;const ext=(p)=>{const a=(p.rot||0)*Math.PI/180,cx=p.x+p.w/2,cy=p.y+p.h/2,pts=[[-p.w/2,-p.h/2],[p.w/2,-p.h/2],[p.w/2,p.h/2],[-p.w/2,p.h/2]].map(([x,y])=>[cx+x*Math.cos(a)-y*Math.sin(a),cy+x*Math.sin(a)+y*Math.cos(a)]);return [Math.min(...pts.map(q=>q[0])),Math.max(...pts.map(q=>q[0])),Math.min(...pts.map(q=>q[1])),Math.max(...pts.map(q=>q[1]))]};

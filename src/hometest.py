@@ -1,3 +1,4 @@
+# Your home and the Lab: door labels, residents, devices open their screens, exit.
 from playwright.sync_api import sync_playwright
 from collections import deque
 import base64

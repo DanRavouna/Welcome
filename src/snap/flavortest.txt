@@ -1,0 +1,21 @@
+new people placement:
+edda  route-mf  {'tile': '.', 'at': [14, 15], 'reachable': True, 'trainerOnTile': ['16,7']}
+dell  route-cm  {'tile': '.', 'at': [19, 17], 'reachable': True, 'trainerOnTile': ['16,7']}
+joss  route-fc  {'tile': '.', 'at': [29, 17], 'reachable': True, 'trainerOnTile': ['16,7']}
+neri  route-cc  {'tile': ',', 'at': [14, 17], 'reachable': True, 'trainerOnTile': ['16,7']}
+mae   town      {'tile': '.', 'at': [28, 14], 'reachable': True, 'trainerOnTile': ['13,20']}
+Mae, clear noon  -> ['Mind the flowers! Sproutvale is nicest in the morning.']
+Mae, rain  -> My flowers are loving this. Look at them perk up!
+Mae, storm -> Did you hear that thunder? Volt critters love this weather.
+Mae, snow  -> Snow on the flowers. They sleep now, and wake up in spring.
+Mae, fog   -> I can barely see my own critter in this fog. Dusk critters love it, though.
+Mae, sun   -> The garden is glowing in this sun.
+Mae, ash   -> Ashfall again. Stone critters crawl out of it every time.
+Mom indoors, rain -> ['Take your coat if you go out, sweetie. It is pouring!']
+Mom indoors, clear noon -> ['Welcome home, sweetie! Did you eat?']
+stable repeat: True
+flavor lines / longest: [64, 77]
+weather setting off, rain override -> no extra line (correct)
+Mae at 23:00 clear -> I water by lamplight when it is warm. Not tonight.
+day/night off at 23:00 -> no extra line (correct)
+errors: none

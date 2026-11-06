@@ -1,0 +1,4 @@
+town west exit: [16, 17, 'moss']
+map swaps during one walk: 1 | swapped while transitioning: True
+during transition (running: True ) player moved: False
+errors: none

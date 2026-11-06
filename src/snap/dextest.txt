@@ -1,0 +1,15 @@
+collection: {'seeds': [7, 8, 12, 19, 9, 2], 'shinyType': 'Dusk'}
+count line: ['Showing 6 of 6']
+chips present: True
+Ember filter -> ['Showing 2 of 6'] | all Ember: True 2
+level sort descending: [16, 13, 10, 7, 4, 1] True
+newest first (levels were 1,4,7,10,13,16): [16, 13, 10, 7, 4, 1]
+kept order ascending (oldest first): [1, 4, 7, 10, 13, 16] True
+rarity sort: ['Rare', 'Uncommon', 'Uncommon', 'Uncommon', 'Uncommon', 'Common'] True
+shiny only -> ['Showing 1 of 6'] ['St.1 · Lv 16 Velling ★ Dusk · Common · Veil']
+shiny + Ember (no match) -> message: True
+species cells all / not-yet-found: 48 42 (48 - found 6 expected)
+species detail line: ['Ability Blaze: Deals 15% more damage while below half HP.']
+all found message: True
+filters are not saved: True
+errors: none

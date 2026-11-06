@@ -1,3 +1,4 @@
+# Cities: doors and people reachable, zone links, the gym door leads inside, houses, herb hut.
 from playwright.sync_api import sync_playwright
 from collections import deque
 errs=[]

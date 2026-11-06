@@ -4,7 +4,7 @@ errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1300)
-  pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,npc:{done:[],beaten:{},cleared:[],seals:[]},adv:{clues:[],open:{},flags:{}}}); DEV.safe=true; window.__noTransition=true; window.__noFollower=true; window.__tod='day'; document.getElementById('starter').hidden=true")
+  pg.evaluate("APP.game.update({hints:['party','shop','evolve','weather','zone','grass','keep','battle','online'],caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,npc:{done:[],beaten:{},cleared:[],seals:[]},adv:{clues:[],open:{},flags:{}}}); DEV.safe=true; window.__noTransition=true; window.__noFollower=true; window.__tod='day'; document.getElementById('starter').hidden=true")
   print('Wren no longer stands in the plaza:', pg.evaluate("!(WORLD.allNpcs().mossbrook||[]).some(n=>n.id==='wren')"), '| she waits in the gym hall:', pg.evaluate("(WORLD.allNpcs()['gym-wren']||[]).map(n=>n.id+'@'+n.x+','+n.y)"))
   # the gym door leads inside
   pg.evaluate("WORLD.enter('mossbrook');WORLD.setPaused(false)"); pg.wait_for_timeout(300)

@@ -1,3 +1,4 @@
+# Progression: level gates on zones, level-up, leader and seal flow, the Fire-keeper banner, reload.
 from playwright.sync_api import sync_playwright
 errors=[]
 with sync_playwright() as p:

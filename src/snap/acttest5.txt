@@ -1,0 +1,18 @@
+duel started on the map, no battle screen: [True, True, None, True] | Rowan # of # down Give up
+wild critters are gone, the trainer sends one out: True True ["Rowan's Quillet"]
+duel foe HP carries the tuning multiplier: # (DUEL_HP = # )
+beat Rowan after # critters | duel over: True | essence + # | wins + # | cleared: True | XP/levels changed: True | dialog: Wow, you are good! Here is your reward.
+rematch essence + # (half of the first win)
+party knocked out loses the duel: True | no extra essence: True | toast: Your party was knocked out. Rowan wins this round.
+give up ends it with no reward: True | toast: You gave up. No reward.
+leaving the map ends it: True
+Glacia beaten after # critters | seal: True | essence + # | seal dialog: The cold keeps what it is given. Take the Frost Seal. It will keep. / The Frost Seal is quiet. Quiet fires last longest. Ember Fields awaits | justSealed cleared: True
+Keeper duel in the cave: boss flag [True, True]
+Keeper beaten: True
+Tower floor # as a live duel: [True, True, #, None] | party hp ['#/#', '#/#']
+floor # cleared after # | run floor # | best # | hp now ['#/#', '#/#'] | dialog: Floor # cleared! +# essence for a new best.
+giving up a Tower floor keeps the HP in the run: [#, #] | run still on floor #
+and the next try starts from that HP: #
+Tower loss ends the run: True | dialog: Your climb ended on floor #.
+save has no duel/enemy fields: True
+errors: none

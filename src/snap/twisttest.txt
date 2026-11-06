@@ -1,0 +1,5 @@
+rotation over 8 weeks: ['Second Wind', 'One Element', 'Surge Week(Ember)', 'Iron Climb', 'Second Wind', 'One Element', 'Surge Week(Frost)', 'Iron Climb']
+same twist all week (Mon..Sun): True
+this week: Second Wind | Your party rests 40% between floors this week (normally 30%). New-best essence is worth 25% less.
+surge dmg x1.3: [21, 27, '1.29']
+errors: none

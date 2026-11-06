@@ -1,3 +1,4 @@
+# Trainer sight: dialog on first sighting, no instant re-spot after a battle, re-spot after re-entering a map.
 from playwright.sync_api import sync_playwright
 errs=[]
 def adv(pg):

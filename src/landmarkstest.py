@@ -1,3 +1,4 @@
+# Landmark props: definitions, draw and footprint check per id.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:

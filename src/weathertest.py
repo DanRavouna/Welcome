@@ -1,3 +1,4 @@
+# Weather: deterministic per area and 6-hour block, kinds seen per climate, encounter tilt.
 from playwright.sync_api import sync_playwright
 errs=[]
 with sync_playwright() as p:

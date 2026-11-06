@@ -1,0 +1,21 @@
+puzzle graph: {'levers': ['L#', 'L#', 'L#'], 'gates': {'g#': ['L#', 'L#'], 'g#': ['L#', 'L#'], 'g#': ['L#']}, 'positionsReachable': #, 'trappedPositions': #, 'topReachableWithLevers': True}
+door label: Examine the beacon door
+first visit dialogue: The great door is not locked. It never was.
+inside: dg-lamp | open.lamp saved: True
+start: g#:shut g#:shut g#:shut
+after L# : g#:open g#:shut g#:shut
+after L# : g#:shut g#:open g#:shut
+after L# : g#:shut g#:shut g#:open
+with all three levers ON, reachable (walls of the real map, NPCs solid): {'bex': False, 'odo': False, 'maren': False, 'greatlamp': False, 'chest#': False}
+all OFF again: g#:shut g#:shut g#:shut | reachable: {'bex': False, 'maren': False}
+bex {'at': [#, #], 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False, 'bonus': #}
+odo {'at': [#, #], 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False, 'bonus': #}
+maren {'at': [#, #], 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': True, 'bonus': #}
+lamp before the Warden falls: The Warden stands between you and the great lamp.
+lamp dialogue: # lines
+lit: True | essence + # | title: True
+again: New title: Lamplighter (+# essence). Wear it from | essence unchanged: True
+brightness above the beacon lantern: lit # vs unlit # | brighter when lit: True
+journal: ['The Lamp Tower: the great lamp is lit, and its beam crosses ']
+music in the tower: dg-lamp | own track: True
+errors: none

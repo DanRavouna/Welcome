@@ -1,0 +1,21 @@
+every outdoor map has a place on the overview: True  | unknown ids: none | nodes overlapping: none | outside the canvas: none | nodes: 36
+new player: lit ['town'] | counts {'lit': 1, 'grey': 28, 'hidden': 7} | lit links: 0 | hidden are all secret: True | grey are all regular: True
+secret places: ['dg-arch', 'dg-forge', 'dg-lamp', 'route-cc-drowned', 'route-cm-hollow', 'route-fc-skerry', 'route-mf-cliff']
+visits recorded: ['town', 'moss', 'route-mf-gate', 'route-mf']
+the cliff before / after being found (state, link): ['hidden', False] -> ['lit', 'lit']
+a dungeon: hidden until entered: hidden -> lit
+icon colour strength: visited Sproutvale / Moss Forest / Highland Pass: 150 91 182 | unvisited Frost Peaks (grey): 20 | hidden secrets are not drawn or tappable: True
+visited places are coloured, grey ones are not: True
+count line: Explored 4 of 29 places. Tap a place to see it and travel.
+tap Sproutvale: Sproutvale | Home, Lab, Shrine, Arena | Sunny: more Bloom critters | You are here
+tap Frost Peaks (grey, you are level 99): Frost Peaks | Frost and Stone critters | 0/12 species found | Glacia: not yet beaten | Snow: more Frost critters | Travel here | travel button: True
+tap where an undiscovered dungeon would be: Frost Peaks | Frost and Stone critters | 0/12 species found | Glacia: not yet beaten | Snow: more Frost critters | Travel here
+a locked zone at level 1: Ember Fields | Ember and Volt critters | 0/12 species found | Blaze: not yet beaten | Ashfall: more Stone critters | Travel here | travel button: True
+an undiscovered city: Cinderport | Blaze’s gym | Ashfall: more Stone critters | Travel here | travel button: True
+a route you walked: Highland Pass | A path between places | Fog: more Dusk critters | Reach it on foot | travel button: False
+arrow left from Sproutvale selects: Moss Forest
+Enter travels: moss | map closed: True
+Travel button in the card works: town
+visits survive a reload: True
+an older save is inferred from progress (Ivy, Bram, Coral beaten): ['frost', 'moss', 'tide', 'town']
+errors: none

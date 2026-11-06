@@ -1,0 +1,17 @@
+deterministic: True
+kinds seen over # blocks (moss): {'clear': #, 'rain': #, 'sun': #, 'storm': #, 'fog': #}
+kinds seen over # blocks (frost): {'snow': #, 'clear': #, 'fog': #}
+indoor null: None | city = zone region: tide
+rain state {'cur': 'rain', 'k': #, 'parts': #} | icon: True
+storm state {'cur': 'storm', 'k': #, 'parts': #} | icon: True
+snow state {'cur': 'snow', 'k': #, 'parts': #} | icon: True
+fog state {'cur': 'fog', 'k': #, 'parts': #} | icon: True
+sun state {'cur': 'sun', 'k': #, 'parts': #} | icon: True
+ash state {'cur': 'ash', 'k': #, 'parts': #} | icon: True
+clear state {'cur': 'clear', 'k': #, 'parts': #} | icon: False
+tilt rate (rain, area without Tide): #
+tilt skips fixed seed: Moss
+indoor state: {'cur': None, 'k': #, 'parts': #}
+setting off -> weatherAt: None | icon empty: True
+old save has weather default on: True
+errors: none
