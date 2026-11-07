@@ -93,7 +93,7 @@
       return '<label for="' + id + '">' + esc(f.l) + '</label><input id="' + id + '" type="' + (f.t === 'num' ? 'number' : 'text') + '" value="' + esc(v) + '"' + (f.step ? ' step="' + f.step + '"' : '') + '>';
     }).join('') + '<div class="row" style="margin-top:12px"><button type="button" class="pri" id="sh-ok">Save</button>' + (extra || '') + '</div>';
     $('sh-x').onclick = closeSheet;
-    $('sh-ok').onclick = () => { const out = {}; fields.forEach((f) => { const el = $('f-' + f.k); if (f.t === 'bool') out[f.k] = el.checked; else if (f.t === 'num') out[f.k] = el.value === '' ? undefined : +el.value; else if (f.t === 'text' && f.lines) out[f.k] = el.value.split('\n').map((s) => s.trim()).filter(Boolean); else out[f.k] = el.value; }); onSave(out); closeSheet(); };
+    $('sh-ok').onclick = () => { const out = {}; fields.forEach((f) => { const el = $('f-' + f.k); if (f.t === 'bool') out[f.k] = el.checked; else if (f.t === 'num') out[f.k] = el.value === '' ? undefined : +el.value; else if (f.t === 'text' && f.lines) out[f.k] = el.value.split('\n').map((s) => s.trim()).filter(Boolean); else out[f.k] = el.value; }); closeSheet(); onSave(out); };   // close first: a save may open the next sheet
     return sh;
   }
   function closeSheet() { $('sheet').hidden = true; $('sheet').innerHTML = ''; }

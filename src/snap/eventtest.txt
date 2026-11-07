@@ -1,0 +1,12 @@
+ok nine steps were made through the forms | ['say', 'set', 'add', 'if', 'say', 'say', 'choice', 'wait', 'end']
+ok set parses true, add keeps the number, if stores zero-based targets | ({'t': 'set', 'flag': 'met', 'value': True, 'to': #}, {'t': 'add', 'flag': 'count', 'n': #, 'to': #}, {'t': 'if', 'when': 'count >= #', 'then': #, 'else': #, 'to': #})
+ok the choice holds two options with their targets | {'t': 'choice', 'who': '', 'prompt': 'Stay?', 'to': #, 'options': [{'text': 'Yes', 'to': #}, {'text': 'No', 'to': #}]}
+ok a step can be moved down
+ok a step can be edited in place
+ok the check finds a jump out of range | ['script greet step #: jumps to step # which does not exist', 'road: the sentence is not written', 'road: the last act is not written']
+ok a step can be removed
+ok walking into the trigger runs the script: the first say shows | {'who': 'Someone', 'text': 'The water moves on its own.', 'options': None}
+ok set, add and if run silently and the if jumps to "Enough." | ({'who': '', 'text': 'Enough.', 'options': None}, {'_t:first:#': True, 'met': True, 'count': #})
+ok the choice shows its options | {'who': '', 'text': 'Stay?', 'options': ['Yes', 'No'], 'to': [#...]}
+ok No jumps to the end and the script is over
+ok no page errors through the run | []
