@@ -258,6 +258,20 @@ const PXW = (() => {
     }
     // house: one architecture per region (P.arch), each a statement of the region's meaning. The footprint (p.x, p.y, p.w, p.h) and the door never move; only the drawing differs.
     drawHouse(g, p, P, X, Y, Wd, Hd, ol);
+    mark(g, p, P, X, Y, Wd, Hd, ol);
+  }
+  // Meaning: a place says what it is by how it is built, not by a word over it; the two places whose use a wall cannot show hang a symbol by the door, the way a real shop does.
+  // Shops: a hung board with a potion. The Lab: a hung board with a paw print. Everything else (home, houses, shrine, arena, gyms, board, tower) already reads from its own shape.
+  const MARK = {
+    shop: ['............', '.ffffffffff.', '.ffffnnffff.', '.ffffnnffff.', '.fffrrrrfff.', '.ffrrwrrrff.', '.ffrrrrrrff.', '.fffrrrrfff.', '.ffffffffff.', '............'],
+    dex: ['............', '.ffffffffff.', '.fffkffkfff.', '.fkkffffkkf.', '.fkkffffkkf.', '.ffffkkffff.', '.fffkkkkfff.', '.fffkkkkfff.', '.ffffffffff.', '............']
+  };
+  function mark(g, p, P, X, Y, Wd, Hd, ol) {
+    const rows = p.open === 'shop' ? MARK.shop : p.open === 'dex' ? MARK.dex : null; if (!rows) return;
+    const roofH = Math.round(Hd * 0.5), doorX = p.door[0] * L + L - 6, arch = P.arch || 'cottage';
+    const sx = arch === 'shell' ? X + 21 : doorX - 1, sy = Y + roofH + (arch === 'shell' ? 5 : 4);   // over the door; Coralbay's porthole sits there, so left of it
+    g.fillStyle = ol; g.fillRect(sx - 1, sy - 3, 14, 13); g.fillStyle = '#8A5A34'; g.fillRect(sx + 2, sy - 3, 8, 2); g.fillStyle = ol; g.fillRect(sx + 5, sy - 2, 2, 1);   // the bracket it hangs from
+    stamp(g, sx, sy, rows, { f: '#F4EAD6', n: '#8A5A34', r: '#E05A7A', w: '#FFFFFF', k: '#2B4A8E' });
   }
   // the gym hall's roof follows its region (same painters as the houses), its colour stays the leader's
   function gymRoof(R, P, p, X, Y, Wd, roofH, ol) {

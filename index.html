@@ -2146,6 +2146,20 @@ const PXW = (() => {
     }
     // house: one architecture per region (P.arch), each a statement of the region's meaning. The footprint (p.x, p.y, p.w, p.h) and the door never move; only the drawing differs.
     drawHouse(g, p, P, X, Y, Wd, Hd, ol);
+    mark(g, p, P, X, Y, Wd, Hd, ol);
+  }
+  // Meaning: a place says what it is by how it is built, not by a word over it; the two places whose use a wall cannot show hang a symbol by the door, the way a real shop does.
+  // Shops: a hung board with a potion. The Lab: a hung board with a paw print. Everything else (home, houses, shrine, arena, gyms, board, tower) already reads from its own shape.
+  const MARK = {
+    shop: ['............', '.ffffffffff.', '.ffffnnffff.', '.ffffnnffff.', '.fffrrrrfff.', '.ffrrwrrrff.', '.ffrrrrrrff.', '.fffrrrrfff.', '.ffffffffff.', '............'],
+    dex: ['............', '.ffffffffff.', '.fffkffkfff.', '.fkkffffkkf.', '.fkkffffkkf.', '.ffffkkffff.', '.fffkkkkfff.', '.fffkkkkfff.', '.ffffffffff.', '............']
+  };
+  function mark(g, p, P, X, Y, Wd, Hd, ol) {
+    const rows = p.open === 'shop' ? MARK.shop : p.open === 'dex' ? MARK.dex : null; if (!rows) return;
+    const roofH = Math.round(Hd * 0.5), doorX = p.door[0] * L + L - 6, arch = P.arch || 'cottage';
+    const sx = arch === 'shell' ? X + 21 : doorX - 1, sy = Y + roofH + (arch === 'shell' ? 5 : 4);   // over the door; Coralbay's porthole sits there, so left of it
+    g.fillStyle = ol; g.fillRect(sx - 1, sy - 3, 14, 13); g.fillStyle = '#8A5A34'; g.fillRect(sx + 2, sy - 3, 8, 2); g.fillStyle = ol; g.fillRect(sx + 5, sy - 2, 2, 1);   // the bracket it hangs from
+    stamp(g, sx, sy, rows, { f: '#F4EAD6', n: '#8A5A34', r: '#E05A7A', w: '#FFFFFF', k: '#2B4A8E' });
   }
   // the gym hall's roof follows its region (same painters as the houses), its colour stays the leader's
   function gymRoof(R, P, p, X, Y, Wd, roofH, ol) {
@@ -3683,9 +3697,7 @@ const WORLD = (() => {
     }
     if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'glow', ambEnv); // lights (fireflies) shine over the night tint
     if (M.dark) drawDark(cx, cy, pxs, pys);
-    const near = nearest();
-    M.places.forEach((p) => { const tx = (p.x + p.w / 2) * TS - cx, ty = p.y * TS - cy - (p.kind === 'board' ? 26 : 14); if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag(p.name, tx, ty, near && near.place === p); });
-    if (M.rare) { const tx = (M.rare.x + 1.5) * TS - cx, ty = M.rare.y * TS - cy - 12; if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag('Rare grass', tx, ty, true); }
+    // no words over the places or the rare grass (Dan, Nov 2026): a place reads from its shape and its mark, the rare grass from its sparkle; the name comes at the door (the action button)
     M.exits.forEach((e) => {
       const name = MAPS[e.to] ? MAPS[e.to].name : e.to;
       let tx, ty; const mid = (e.a + e.b + 1) / 2;

@@ -1188,9 +1188,7 @@ const WORLD = (() => {
     }
     if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'glow', ambEnv); // lights (fireflies) shine over the night tint
     if (M.dark) drawDark(cx, cy, pxs, pys);
-    const near = nearest();
-    M.places.forEach((p) => { const tx = (p.x + p.w / 2) * TS - cx, ty = p.y * TS - cy - (p.kind === 'board' ? 26 : 14); if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag(p.name, tx, ty, near && near.place === p); });
-    if (M.rare) { const tx = (M.rare.x + 1.5) * TS - cx, ty = M.rare.y * TS - cy - 12; if (tx > -80 && tx < vw + 80 && ty > -20 && ty < vh + 20) drawTag('Rare grass', tx, ty, true); }
+    // no words over the places or the rare grass (Dan, Nov 2026): a place reads from its shape and its mark, the rare grass from its sparkle; the name comes at the door (the action button)
     M.exits.forEach((e) => {
       const name = MAPS[e.to] ? MAPS[e.to].name : e.to;
       let tx, ty; const mid = (e.a + e.b + 1) / 2;
