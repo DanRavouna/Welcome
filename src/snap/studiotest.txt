@@ -1,0 +1,20 @@
+ok without sign-in the gate shows and the app is hidden
+ok the owner sees the list
+ok a new game opens on the road tab
+ok the road holds the sentence, the act and one station | {'sentence': 'A truth about people.', 'act': 'The last act.', 'stations': [{'name': 'First station', 'meaning': 'What it says', 'hint': 'Where it is glimpsed', 'act': 'What the player does', 'id': 'first-station'}]}
+ok the map canvas shows the placeholder map
+ok a tap with the tile tool paints the wall tile
+ok undo paints it back
+ok the person tool places a person with two lines | [{'id': 'person#', 'name': 'Someone', 'x': #, 'y': #, 'sprite': '', 'facing': 'down', 'lines': ['Hello.', 'You must press the button.'], 'script': '', 'when': ''}]
+ok the spawn tool moves the start
+ok a second map exists and is selected
+ok the exit tool places an exit to the other map | [{'x': #, 'y': #, 'w': #, 'h': #, 'to': 'room', 'tx': #, 'ty': #, 'facing': 'down'}]
+ok the check finds the line that tells | ['map first exit #: sits on a solid tile at #,# so nobody can reach it', 'map first person person#: tells instead of hinting: "You must press the button."', 'station first-station: no map plays it yet', 'map first: exit # (to room) cannot be reached from the spawn']
+ok the check finds the exit sitting in the wall and unreachable | ['map first exit #: sits on a solid tile at #,# so nobody can reach it', 'map first person person#: tells instead of hinting: "You must press the button."', 'station first-station: no map plays it yet', 'map first: exit # (to room) cannot be reached from the spawn']
+ok after the fixes only the missing art and the empty station remain | ['station first-station: no map plays it yet']
+ok the draft round-trips as JSON
+ok play starts at the spawn of the first map | {'x': #, 'y': #, 'facing': 'down', 'map': 'first'}
+ok the player walks in the draft | {'x': #, 'y': #, 'facing': 'right', 'map': 'first'}
+ok the placed person speaks in play | {'who': 'Someone', 'text': 'Hello.', 'options': None}
+ok the draft is listed after a reload
+ok no page errors through the run | []

@@ -75,7 +75,7 @@ font-size:clamp(10px,2.1vw,22px);line-height:1;text-transform:uppercase;letter-s
   for (let i = games.length; i < SLOTS; i++) { const li = document.createElement('li'); li.innerHTML = '<span class="cart empty" aria-hidden="true"><span class="win"></span><span class="slot"></span></span>'; shelf.appendChild(li); }
   // The last slot is the studio's door: five taps open it (it asks for the owner's sign-in).
   const last = shelf.lastElementChild && shelf.lastElementChild.querySelector('.cart.empty'); let taps = 0, tapT = 0;
-  if (last) last.addEventListener('click', () => { const now = Date.now(); taps = now - tapT < 1500 ? taps + 1 : 1; tapT = now; if (taps >= 5) { taps = 0; location.href = 'studio/'; } });
+  if (last) last.addEventListener('click', () => { const now = Date.now(); taps = now - tapT < 1500 ? taps + 1 : 1; tapT = now; if (taps >= 5) { taps = 0; location.href = 'studio/index.html'; } });
   // The bar names the cartridge under the hand: its number, its name, its year and the record this device holds for it.
   const pad = (n) => (n < 10 ? '0' : '') + n;
   function record(g) {

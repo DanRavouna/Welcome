@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Studio</title>
+<meta name="theme-color" content="#14121a">
+<script src="../vendor/supabase-2.118.0.js" onerror="window.__supaFailed=true"></script>
+<style>
+:root{--bg:#14121a;--panel:#1e1c27;--line:#3a3748;--ink:#f2f0f7;--dim:#a39fb3;--acc:#5bb8b2;--acc2:#f04ad8;--warn:#f0c050;--bad:#e05a5a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,sans-serif;overscroll-behavior:none}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 12px;min-height:40px}
+button.pri{background:var(--acc);color:#0b1a1a;border-color:var(--acc);font-weight:600}
+button.on{outline:2px solid var(--acc);outline-offset:-2px;background:#243a3a}
+button.danger{border-color:var(--bad);color:#ffb3b3}
+input,select,textarea{background:#0f0e14;border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%;min-height:40px}
+textarea{min-height:72px;resize:vertical}
+label{display:block;font-size:12px;color:var(--dim);margin:8px 0 4px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1 1 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;margin:8px 0}
+.muted{color:var(--dim);font-size:13px}
+#gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+#gate form{width:min(100%,360px)}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh}
+#bar{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--panel)}
+#bar .title{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tabs{display:flex;border-bottom:1px solid var(--line);background:var(--panel);overflow-x:auto}
+#tabs button{flex:1 0 auto;border:0;border-radius:0;border-bottom:3px solid transparent;background:none;padding:10px 12px;min-width:64px}
+#tabs button.on{border-bottom-color:var(--acc);outline:none;background:none}
+#view{flex:1;overflow:auto;padding:10px;-webkit-overflow-scrolling:touch}
+#status{display:flex;gap:8px;align-items:center;padding:6px 10px;border-top:1px solid var(--line);background:var(--panel);font-size:12px;color:var(--dim)}
+#status .sp{flex:1}
+.list button{display:block;width:100%;text-align:left;margin:6px 0}
+/* map editor */
+#mapwrap{position:relative;height:52vh;min-height:280px;overflow:hidden;background:#0b0b10;border:1px solid var(--line);border-radius:8px;touch-action:none}
+#mapcv{position:absolute;left:0;top:0;image-rendering:pixelated;image-rendering:crisp-edges;transform-origin:0 0}
+#mapov{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none}
+.tools{display:flex;gap:6px;overflow-x:auto;padding:6px 0}
+.tools button{flex:0 0 auto;min-width:56px}
+.tiles{display:flex;gap:6px;overflow-x:auto;padding:6px 0}
+.tiles button{flex:0 0 auto;width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center}
+.tiles canvas{image-rendering:pixelated;width:32px;height:32px}
+#sheet{position:fixed;left:0;right:0;bottom:0;max-height:70vh;overflow:auto;background:var(--panel);border-top:2px solid var(--acc);padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 24px rgba(0,0,0,.5)}
+.issues li{margin:4px 0}
+.issue{color:var(--warn)}
+/* play */
+#stage{height:70vh;min-height:320px;border:1px solid var(--line);border-radius:8px}
+</style>
+</head>
+<body>
+<div id="gate">
+  <form id="gate-form" autocomplete="on">
+    <h2 style="margin:0 0 4px">Studio</h2>
+    <p class="muted">The owner's account only.</p>
+    <label for="g-email">Email</label><input id="g-email" type="email" autocomplete="username" required>
+    <label for="g-pw">Password</label><input id="g-pw" type="password" autocomplete="current-password" required>
+    <p id="g-msg" class="muted" aria-live="polite"></p>
+    <div class="row"><button class="pri" type="submit">Sign in</button><a href="../" style="color:var(--dim);text-decoration:none;padding:8px">Back to the shelf</a></div>
+  </form>
+</div>
+<div id="app" hidden>
+  <div id="bar"><button id="b-back" type="button">◀</button><div class="title" id="b-title">Games</div><button id="b-check" type="button" hidden>Check</button><button id="b-publish" type="button" class="pri" hidden>Publish</button></div>
+  <div id="tabs" hidden></div>
+  <div id="view"></div>
+  <div id="status"><span id="s-save">—</span><span class="sp"></span><span id="s-cloud"></span><button id="b-out" type="button" style="min-height:28px;padding:2px 8px">Sign out</button></div>
+</div>
+<div id="sheet" hidden></div>
+<script src="../engine/engine.js"></script>
+<script src="studio.js"></script>
+</body>
+</html>
