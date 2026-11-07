@@ -1,6 +1,6 @@
 # 04. The mechanics: what the player does, and whether each act carries its meaning
 
-Review of `src/world-rev/` (action.js, base.js, game.js, data.js, app.js, the trial and tower parts of adventure.js and world.js), the sims (`duelsim.py` re-run tonight, `towersim.py` read) and the tests named below. Review only; nothing in the repository was changed. The sim output is kept at `/tmp/claude-0/-home-user-critter-roll/6af82fb3-3ee1-591e-8772-c856b5d98361/scratchpad/review-mechanics/duelsim-leaders.txt`.
+Review of `src/world-rev/` (action.js, base.js, game.js, data.js, app.js, the trial and tower parts of adventure.js and world.js), `duelsim.py` (re-run tonight; output in the scratchpad under `review-mechanics/duelsim-leaders.txt`) and the tests named below. Review only; nothing in the repository was changed.
 
 ## For the directors
 
@@ -57,7 +57,7 @@ Verify: `lamptest.py` times the stay over real time like `gymtest.py` does for t
 Severity: BUG OF MEANING.
 
 **M5. The withdrawn help is a dead button.**
-Where: `app.js` `ITEMS` (potion, super, herb, ward, whet: "Uses your turn"), `renderBag()` shows "In battle" for them, `renderShop()` sells them, `checkHints()` `hint('shop', 'Mira near your home sells potions and charms for essence.')`; `game.js` `itemUsable()` exists but nothing calls it from `action.js` (no item path in the live duel: grep `potion|itemUsable|boost` in action.js finds nothing), and the battle screen that used them is unreachable (`__noFollower` is a test hook only).
+Where: `app.js` `ITEMS` (potion, super, herb, ward, whet: "Uses your turn"), `renderBag()` shows "In battle" for them, `renderShop()` sells them, `hint('shop', 'Mira near your home sells potions...')`; `game.js` `itemUsable()` is called by nothing in `action.js` (grep `potion|itemUsable|boost` finds nothing), and the battle screen that used them is unreachable (`__noFollower` is a test hook).
 Now: a player buys a Potion for 3 essence and can never use it. Mira's potions were meant to be the help withdrawn as you grow; they are withdrawn on day one by accident, which is the guard rail broken ("withdrawn support must be felt, not look like a bug").
 Needs: help that works while you are kept, and leaves visibly.
 Change: either an item slot on the wheel (slot 5, the bag's first healing item; `hero.ward` and `hero.boost` are already read by `Game.hit`), or remove the five battle items from shop and bag. Either way Mira's SCAFFOLD line at two seals ("Take what you need.") must be true: prices 0 from two seals; at four the stall is gone and the shelf at Home holds three potions, refilled daily ("a shelf kept full").
@@ -73,7 +73,7 @@ Verify: `questtest.py` asserts no `release` quest over 60 generated days; `dexte
 Severity: BUG OF MEANING.
 
 **M7. The day's lamp is also a counter, and the spent day is explained in brackets.**
-Where: `app.js` `paint()` (`$('c-rolls').textContent = en.left + '/20'`, `#c-oil` height), aria "17 of 20 rolls left today", `encounter()` toast: "The grass rustles. The day's light is spent; tomorrow brings more. (Your free sightings and rolls are used up for today. Both refill at midnight." (the bracket never closes), `hint('keep', 'Seeing critters is free (40 per day). Keeping one costs rolls: 1 for Common, 2 Uncommon, 4 Rare, 8 Mythic.')`, `ITEMS.ticket` ("Gives back 1 roll today. Up to 3 per day.") and `useItem('ticket')`.
+Where: `app.js` `paint()` (`c-rolls` = `en.left + '/20'` beside the `#c-oil` flame), aria "17 of 20 rolls left today", the `encounter()` toast "The grass rustles. The day's light is spent; tomorrow brings more. (Your free sightings and rolls are used up for today. Both refill at midnight." (the bracket never closes), `hint('keep', ...)` reciting "1 for Common, 2 Uncommon, 4 Rare, 8 Mythic", `ITEMS.ticket` "Gives back 1 roll today."
 Now: the lamp is a hint (the oil goes down) stapled to a counter and three sentences of rules; a Roll Ticket buys the day's light back for 5 essence, which says a day does not hold what it holds.
 Needs: a day holds what it holds; the lamp is the day.
 Change: drop the number from the chip (keep an aria, "the day's lamp is a third down"); delete the `keep` hint (the Keep button already prices the keep); the spent-day toast keeps only "The grass rustles. The day's light is spent."; remove the Roll Ticket from the shop and from `chestUse` rewards, tickets already held stay usable. If a top-up must exist, it is the window at Home (M8).
@@ -113,7 +113,7 @@ Verify: `acttest3.py` (enemy variety) updated: a Frost foe's position does not c
 Severity: BUG OF MEANING.
 
 **M12. The Watch's weather is told as percentages, and the Watch is a high score.**
-Where: `data.js` `TWISTS[*].about` ("Little rest between nights this week (15% instead of 30%), and a new longest watch is worth 50% more essence."), `app.js` `towerLobby()` intro ("Your party answers every night in a row. HP carries over between nights. Essence is paid only for nights past your longest watch." and "Watches left today: 2"), `towerAfterClose()` ("Longest watch: N nights of 20"), `TITLES` `summit` / `climber`, `TOWER.runsPerDay`.
+Where: `data.js` `TWISTS[*].about` ("Little rest between nights this week (15% instead of 30%), and a new longest watch is worth 50% more essence."), `app.js` `towerLobby()` ("HP carries over between nights. Essence is paid only for nights past your longest watch.", "Watches left today: 2"), `towerAfterClose()` ("Longest watch: N nights of 20").
 Now: the night is kept by lasting it (built, and right), framed by a lobby speech of rules and numbers and an essence ladder paid only above `best`. The `in-tower` room already has the right object: a logbook, "one line a night. The last line is from last night."
 Needs: the long watch is a thing you do, not a record you beat; the week's weather is seen, not stated.
 Change: one observational Keeper line per twist ("The wind is on the door tonight." / "Cold one. The blanket is thin." / "A mild week." / "They are all of a kind this week."), numbers out; the weekly rule shows as weather past the door and in the wall lamps' colour; the logbook carries your nights (`objectUse`: "The last line is yours. N nights."); the lobby intro loses the two rule sentences and the counter. Essence stays; it is not announced as "for a longest watch".
@@ -172,21 +172,21 @@ Verify: `nighttest.py` asserts `duel.dawn` on every kept night and that no night
 Severity: WEAK.
 
 **W7. The Arena: play without a meaning, its rule told, its rail unchanged.**
-Where: `world.js` `buildArena()` (comment: "a road of its own; five rivals climbed one a day, in front of others"; objects `names` "None is crossed out.", `bench` "worn in two places", `pail`), `app.js` `npcList().arena` (Juno `tomorrow: ['One a day. That is the rule of the sand.']`, `notYet: ['Not you. Not yet.']`), `placeRivals()`, `objectUse` (`names` only changes once the ladder is done), `settleBattle` (step and Kindlemane).
+Where: `world.js` `buildArena()` (comment: "a road of its own; five rivals climbed one a day, in front of others"; the rail `names` "None is crossed out."), `app.js` `npcList().arena` (Juno `tomorrow: 'One a day. That is the rule of the sand.'`), `placeRivals()`, `objectUse` (`names` changes only once the ladder is done), `settleBattle` (step and Kindlemane).
 Now: five duels in a fixed order, one a day, a secret critter at the top. Juno's "I'm the only one who remembers them all" and the rail of names point at being counted (the seat's meaning), but nothing is played: the rail does not gain your name per step, the beaten rivals do not watch, the rule is stated.
 Change: decide the meaning with Dan. If it is "being counted in front of others": each climbed step scratches one more mark on the rail (`objState names: { n: step }`), the beaten rivals stand at the ring's edge during your duel (`placeRivals` while `ACT.dueling()`), and Juno's refusal is a gesture (she sits by the fire) instead of "the rule of the sand". If no meaning is found, take the Arena off the painted map (`MAP_LAYOUT`) and leave it as a place found on foot.
 Verify: `arenatest.py` adds the rail count and the rivals' positions during a duel.
 Severity: WEAK (PLAY, NO INTRO, meaning unstated).
 
 **W8. The gates are level counters told on signs, and the leaders add a second lock.**
-Where: `data.js` `GATES` / `ROUTE_GATES`, `app.js` `interact()` for signs (`' Opens at trainer level ' + GATES[to] + '.'`), `paint()` toast ("Frost Peaks is now open!"), `talk()` for leaders (`'Before you challenge me, prove yourself against ' + name + ' in ' + place`), `needs: 'ivy'` etc.
+Where: `data.js` `GATES` / `ROUTE_GATES`, `app.js` `interact()` for signs ("Opens at trainer level 3."), `paint()` toast ("Frost Peaks is now open!"), `talk()` for leaders ("Before you challenge me, prove yourself against Ivy in Moss Forest.", `needs`).
 Now: the road "kept walkable by people you never meet" opens when a number reaches 3, 6, 9, announced by a toast and a sign; the fire you tended opens nothing. Then each leader refuses, in words, until a route trainer is beaten.
 Change: gates open by fires: `frost` at 1 seal, `ember` at 2, `tide` at 3, the Watch at 4 (already). The sign loses its level sentence; the morning after a seal the barricade is gone and a lantern burns on the opened gate by day, like Sproutvale's `gate-lamp`. Drop `needs`: the leader waits behind the trial. Old saves: keep `lvNow >= GATES[z]` as an alternative for saves older than this build (`state.v2gates`), so nobody loses a zone they had.
 Verify: `ptest.py`, `walktest.py`, `openingtest.py`; `telltest.py` adds "opens at (trainer )?level".
 Severity: WEAK (told, and a counter where an act should open the road).
 
 **W9. The tips recite rules, and one describes a screen that is gone.**
-Where: `app.js` `hint()` calls: `keep` (the price table), `zone` ("Each zone has its own two types. The sparkling patch is rare grass with better odds."), `grass`, `party`, `shop`, `evolve`, `weather` ("Weather changes every 6 hours..."), `battle` ("Pick a move each turn. Special moves are limited, Guard blocks the next hit, and Switch or Bag use your turn.", fired by `openScreen('battle')`, which no player reaches).
+Where: `app.js` `hint()` calls: `keep` (the price table), `zone` ("Each zone has its own two types. The sparkling patch is rare grass with better odds."), `grass`, `party`, `shop`, `evolve`, `weather`, `battle` ("Pick a move each turn... Switch or Bag use your turn.", fired by `openScreen('battle')`, which no player reaches).
 Now: until the first seal, eight toasts explain. "Hint first" means a smaller encounter, not a sentence. The `battle` tip is dead text.
 Change: delete `battle`, `keep`, `zone`, `weather`, `evolve`; keep `online`; make `party` and `shop` a one-time dot on the menu, no text.
 Verify: `guidetest.py` asserts `state.hints` never holds those ids; `telltest.py` covers the strings.
@@ -194,30 +194,30 @@ Severity: WEAK (told).
 
 **W10. Fishing is a wait with nothing returned.**
 Where: `app.js` `fish()` (0.9 to 2.4 s, toasts "You cast your line...", "Something bit!", "No sightings or rolls left today. Fishing uses them too."), 70% Tide.
-Now: a small act of waiting, fine as a hint of patience; it means nothing on Tide Shore's own road ("what the sea gives back").
-Change: with M6, the water gives back what you let go: a cast on any shore draws first from `state.returned` (the critter comes back at the level it had); the toasts become one ("The line goes taut."). The spent-day refusal uses the same words as the grass.
+Now: a small act of waiting; it means nothing on Tide Shore's own road ("what the sea gives back").
+Change: with M6, the water gives back what you let go: a cast draws first from `state.returned`, the critter at the level it had; one toast ("The line goes taut."); the spent-day refusal uses the grass's words.
 Verify: `fishtest.py` adds a returned seed and asserts it is the catch within three casts.
 Severity: WEAK.
 
 **W11. A knockout has no consequence, at any point of the road.**
 Where: `action.js` `koHero()` (`st.down = 4`, then every side to 50% HP; toasts "Your party is knocked out. They recover in a moment.", "No penalty; you can try again." in `duelDone`).
 Now: early, being picked up after a fall is right (you are kept). It never changes, so independence is never felt here.
-Change: before the beacon as now (and without the toast: the 4 s on the ground says it). After the beacon a knocked-out party walks home: fade to Home's door with the party at 50% (`WORLD.go('town')`), and the window is dark if you had not lit it. Withdrawn support, felt.
+Change: before the beacon as now, without the toast. After the beacon a knocked-out party walks home: fade to Home's door at 50% (`WORLD.go('town')`), the window dark if you had not lit it. Withdrawn support, felt.
 Verify: `acttest2.py` adds the post-beacon case (`flags.lampLit`, all down, map is `town` within 5 s).
 Severity: WEAK.
 
 **W12. The forge and the arch tell their rules in object text and toasts.**
 Where: `adventure.js` `forgeBelow()` gate text "A slab of black iron seals the way north. Two sockets in the hub must wake first."; `app.js` `socketUse` ("It belongs in one of the side halls."), `riteUse` wrong order: "The lights gutter out. The camp rhyme: fire first, then lamp, then hull."
 Now: the mechanic (carry two cores; light three things in order) is explained by the thing itself. The Lamp Tower was rebuilt without this; its twins were not.
-Change: gate text "A slab of black iron. Two sockets stand empty behind you."; socket text "A socket, cold." / "A socket, warm."; the wrong-order toast is only "The lights gutter out." (the rhyme is on the hearthstone for those who looked).
+Change: gate "A slab of black iron. Two sockets stand empty behind you."; socket "A socket, cold." / "A socket, warm."; the wrong-order toast only "The lights gutter out." (the rhyme is on the hearthstone for those who looked).
 Verify: `forgetest.py`, `archtest.py` wording guards; `telltest.py` adds "must wake first|belongs in".
 Severity: WEAK (told).
 
 **W13. City favours are counters.**
 Where: `data.js` `CITY_QUESTS` ("spot 5 wild critters on Highland Pass"), `app.js` `talk()` ("Could you do me a favor today? Please ... Progress: 0/5. Come back to me when it is done. I have a new favor every day.").
 Now: four people a day read a progress bar aloud. Meaning: none.
-Change: each favour is a thing to bring back from the road (a keep of the city's two types, already in the list; drop `see` and `beat`), asked in one line ("Bring me something from the Pass, if one will come with you.") and thanked without the number.
-Verify: `questtest.py` / `citytest.py` wording guard: no "Progress:" in any dialog.
+Change: each favour is a thing to bring back (the `keep` kind only; drop `see` and `beat`), asked in one line ("Bring me something from the Pass, if one will come with you.") and thanked without the number.
+Verify: `citytest.py` wording guard: no "Progress:" in any dialog.
 Severity: WEAK.
 
 **W14. Rare grass stirs once per visit, silently.**
@@ -243,9 +243,9 @@ Severity: WEAK.
 
 ## 3. What I could not judge from here
 
-- Feel and tempo of every stay: `BED_STAGE_S` 2.5, `STILL_S` 0.8, `BURN_S` 14, `CL_S` 2.4, the 28 s night, the 2.2 s stir. My numbers in W3, W4 and M4 are directions, not measurements; only Dan's thumb says whether 1.6 s is waiting or boredom.
-- Whether a person, unlike the bot, wins with the verbs. `duelsim.py` never dodges; M10 is a floor, and the real fix may be smaller than written. I did not write a moving bot.
-- Whether the Keep-by-staying of M1 is reachable on a phone in the middle of a fight (three other critters chasing while you stand by the one that sat down); it needs the real device.
-- The Watch over twenty nights in a row (sixteen minutes at least); `towersim.py` models the turn-based fallback only, as the handoff says.
-- Sound and music against these acts (the `claim` sfx on every keep, the `tap` on every ice plate, the Watch track) belong to the sound review.
-- Whether Coral's call is learnable without a word: `gymtest2.py` proves it is solvable, not that a first player understands that touching answers.
+- Feel and tempo of every stay: `BED_STAGE_S` 2.5, `STILL_S` 0.8, `BURN_S` 14, `CL_S` 2.4, the 28 s night, the 2.2 s stir. The numbers in W3, W4 and M4 are directions; only Dan's thumb says whether 1.6 s is waiting or boredom.
+- Whether a person, unlike the bot, wins with the verbs. `duelsim.py` never dodges; M10 is a floor and the real fix may be smaller than written. I did not write a moving bot.
+- Whether Keep-by-staying (M1) is reachable on a phone mid-fight, with other critters chasing; it needs the device.
+- The Watch over twenty nights in a row; `towersim.py` models the turn-based fallback only.
+- Sound against these acts (the `claim` sfx on every keep, the `tap` on every ice plate) belongs to the sound review.
+- Whether Coral's call is learnable without a word: `gymtest2.py` proves it solvable, not understood.
