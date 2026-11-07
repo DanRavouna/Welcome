@@ -4,7 +4,7 @@
 #   python3 snapcmp.py compare NAME LOGFILE        -> prints "snap=ok", "snap=none" or "snap=CHANGED(n)" (missing lines go to <LOG_DIR>/NAME.snapdiff)
 #   python3 snapcmp.py build NAME LOG1 LOG2 [...]  -> writes src/snap/NAME.txt from the lines every log has
 import os, re, sys
-HERE = os.path.dirname(os.path.abspath(__file__)); SNAP = os.path.join(HERE, 'snap')
+HERE = os.path.dirname(os.path.abspath(__file__)); SNAP = os.environ.get('SNAP_DIR') or os.path.join(HERE, 'snap')   # SNAP_DIR: another snapshot folder (the review copy keeps its own)
 # Numbers are masked as # in both the snapshot and the run (many tests print live timing: duels, animation, pixels, positions), so a True/False flip, changed words or a missing line fail but timing noise does not; the few tests listed in src/snap/exact.txt have been steady across many runs and keep exact numbers.
 def volatile(name):   # masked by default; only the tests listed in src/snap/exact.txt (steady across many runs) keep exact numbers
     try: return name not in [l.strip() for l in open(os.path.join(SNAP, 'exact.txt'))]

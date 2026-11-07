@@ -1,0 +1,462 @@
+
+<div style="position: relative; width: 100%; height: 100%; overflow: hidden; color: #FFFFFF; font-family: 'Nunito', 'Trebuchet MS', system-ui, sans-serif; background: rgba(8,16,40,0.38)">
+
+
+  <sc-if value="{{isMenu}}" hint-placeholder-val="{{ false }}">
+    <div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(160deg, #F4F8FF 0%, #DCE8FB 45%, #A9C8F2 100%)"></div>
+  </sc-if>
+
+  <div style="position: relative; height: 100%; max-width: 520px; margin: 0 auto; box-sizing: border-box; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 12px">
+
+    <header style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 8px 8px 16px; border-radius: 999px; background: rgba(244,248,255,0.9); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 6px 18px rgba(20,40,100,0.22); backdrop-filter: blur(10px)">
+      <h1 style="margin: 0; font-size: 23px; font-weight: 900; letter-spacing: 0.01em; color: #1E2A4A">Critter Roll</h1>
+      <div style="display: flex; gap: 6px">
+        <span aria-label="{{energyAria}}" style="display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 12px 0 9px; border-radius: 999px; background: #1E2A4A; font-size: 13px; font-weight: 800; color: #FFFFFF; font-variant-numeric: tabular-nums">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A7F04A" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"></path></svg>{{energyText}}</span>
+        <span aria-label="{{essenceAria}}" style="display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 12px 0 9px; border-radius: 999px; background: #1E2A4A; font-size: 13px; font-weight: 800; color: #FFFFFF; font-variant-numeric: tabular-nums">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9A8FF" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 9-8 9-8-9z"></path></svg>{{essence}}</span>
+      </div>
+    </header>
+
+    <nav aria-label="Screen" style="display: flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; border-radius: 999px; background: rgba(226,236,252,0.92); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 6px 18px rgba(20,40,100,0.18)">
+      <button id="close-screen" onClick="{{closeScreen}}" style="height: 44px; padding: 0 16px 0 10px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; background: #1E2A4A; color: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+        {{backLabel}}
+      </button>
+      <span style="font-size: 16px; font-weight: 900; color: #1E2A4A">{{screenTitle}}</span>
+    </nav>
+
+    <main tabindex="0" aria-label="Screen content" style="flex: 1; min-height: 0; overflow-y: auto; padding: 2px 4px 8px 2px; display: flex; flex-direction: column; gap: 12px">
+
+      <sc-if value="{{showLevelUp}}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{dismissLevelUp}}" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1.5px solid #FFFFFF; border-radius: 18px; font-family: inherit; text-align: left; cursor: pointer; color: #2A1B00; background: {{primaryBg}}; box-shadow: 0 6px 18px rgba(245,185,58,0.5)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+          <span style="flex: 1; font-size: 15px; font-weight: 900">{{levelUpText}}</span>
+          <span style="font-size: 12px; font-weight: 800">Close</span>
+        </button>
+      </sc-if>
+
+      <sc-if value="{{showDetail}}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{closeDetail}}" style="align-self: flex-start; height: 44px; padding: 0 16px 0 10px; display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid rgba(255,255,255,0.4); border-radius: 999px; background: rgba(14,26,56,0.72); backdrop-filter: blur(10px); font-family: inherit; font-size: 15px; font-weight: 800; color: #FFFFFF; cursor: pointer">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+          Collection
+        </button>
+      </sc-if>
+
+      <sc-if value="{{showCard}}" hint-placeholder-val="{{ true }}">
+        <div style="border-radius: 24px; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: rgba(14,26,56,0.78); border: 1.5px solid rgba(255,255,255,0.35); backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(6,14,40,0.45)">
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px">
+            <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0">
+              <span style="font-size: 12px; font-weight: 700; color: #C9D6F2">#{{c.no}} {{c.speciesName}} · St.{{c.stage}} · Lv {{c.lv}}</span>
+              <h2 style="margin: 0; font-size: 30px; font-weight: 900; line-height: 1.05; color: #FFD86B; text-shadow: 0 2px 8px rgba(0,0,0,0.4)">{{c.name}}</h2>
+            </div>
+            <span style="flex-shrink: 0; padding: 5px 12px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.45); font-size: 12px; font-weight: 900; background: {{c.rarityBg}}; color: {{c.rarityFg}}">{{c.rarity}}</span>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px">
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 6px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.1); font-size: 13px; font-weight: 800; white-space: nowrap; flex-shrink: 0">
+              <span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 50%; background: {{c.element.color}}; box-shadow: 0 0 8px {{c.element.color}}"></span>{{c.element.name}} type</span>
+            <span style="white-space: nowrap; font-size: 12px; font-weight: 700; color: #C9D6F2">Seed {{c.seedLabel}} · {{c.height}} · {{c.weight}}</span>
+          </div>
+          <p style="margin: 0; font-size: 13px; font-weight: 700; line-height: 1.3; color: #C9D6F2">{{c.natureText}}</p>
+          <sc-if value="{{c.owned}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <span style="font-size: 12px; font-weight: 800; color: #E6ECF7">{{c.lvLine}}</span>
+              <div style="height: 6px; border-radius: 999px; background: rgba(255,255,255,0.16); overflow: hidden"><div style="height: 100%; width: {{c.xpPct}}%; border-radius: 999px; background: #8FE3A2"></div></div>
+            </div>
+          </sc-if>
+
+          <div style="position: relative; overflow: hidden; border-radius: 18px; padding-top: 8px; height: 222px; box-sizing: border-box; border: 2px solid {{c.stageRing}}; box-shadow: {{c.stageShadow}}; background: radial-gradient(64% 16% at 50% 90%, #3F9A33 0 92%, rgba(0,0,0,0) 93%), linear-gradient(180deg, #4F8FE0 0 22%, #6CA6EA 22% 40%, #8CC3F2 40% 58%, #B8DCF8 58% 72%, #74C25C 72% 74%, #63B852 74% 100%)">
+            <div aria-hidden="true" class="{{glowClass}}" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; background: radial-gradient(circle at 50% 62%, {{c.glow}} 0%, rgba(0,0,0,0) 62%)"></div>
+            <div class="{{revealClass}}" style="position: relative; width: 240px; height: 210px; margin: 0 auto">
+              <img src="{{c.sprite}}" alt="{{c.alt}}" width="240" height="210" style="display: block; width: 240px; height: 210px; image-rendering: pixelated">
+            </div>
+            <sc-if value="{{c.shiny}}" hint-placeholder-val="{{ false }}">
+              <div aria-hidden="true" class="{{shinyClass}}" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; background: radial-gradient(4px 4px at 22% 30%, #FFFFFF 0 60%, rgba(0,0,0,0) 100%), radial-gradient(5px 5px at 78% 24%, #FFF3B0 0 60%, rgba(0,0,0,0) 100%), radial-gradient(3px 3px at 70% 70%, #FFFFFF 0 60%, rgba(0,0,0,0) 100%), radial-gradient(4px 4px at 30% 74%, #F9D2FF 0 60%, rgba(0,0,0,0) 100%), radial-gradient(3px 3px at 50% 14%, #FFFFFF 0 60%, rgba(0,0,0,0) 100%), radial-gradient(circle at 50% 58%, rgba(255,236,150,0.35) 0%, rgba(0,0,0,0) 60%)"></div>
+              <span style="position: absolute; left: 10px; top: 10px; padding: 4px 10px; border-radius: 999px; background: linear-gradient(135deg, #FFF3B0, #FFD86B 55%, #F5B8FF); color: #3A2400; font-size: 12px; font-weight: 900; border: 1.5px solid #FFFFFF; box-shadow: 0 0 12px rgba(255,216,107,0.8)">★ Shiny</span>
+            </sc-if>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px">
+            <sc-for list="{{c.stats}}" as="s" hint-placeholder-count="4">
+              <div style="display: flex; flex-direction: column; gap: 4px">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums">
+                  <span style="color: #C9D6F2">{{s.label}}</span>
+                  <span>{{s.value}}</span>
+                </div>
+                <div style="height: 8px; border-radius: 999px; background: rgba(255,255,255,0.16); overflow: hidden">
+                  <div style="height: 100%; width: {{s.pct}}%; border-radius: 999px; background: {{c.element.color}}; box-shadow: 0 0 8px {{c.element.color}}"></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 12px; font-weight: 800; color: #C9D6F2">Ability · {{c.ability.name}}: <span style="font-weight: 700">{{c.ability.text}}</span></span>
+            <span style="font-size: 12px; font-weight: 800; color: #C9D6F2">Moves · strong vs {{c.strongVs}}</span>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+              <sc-for list="{{c.kit}}" as="m" hint-placeholder-count="4">
+                <div style="border-radius: 14px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.25)">
+                  <span style="font-size: 14px; font-weight: 800">{{m.name}}</span>
+                  <span style="font-size: 12px; font-weight: 700; line-height: 1.3; color: #C9D6F2">{{m.sub}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <p style="margin: 0; font-size: 15px; font-weight: 600; line-height: 1.45; color: #E6ECF7">{{c.flavor}}</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{showEncounterBar}}" hint-placeholder-val="{{ false }}">
+        <p style="margin: 0; padding: 10px 14px; border-radius: 16px; background: rgba(14,26,56,0.78); border: 1.5px solid rgba(255,255,255,0.35); font-size: 14px; font-weight: 700; line-height: 1.4; color: #E6ECF7">{{encounterNote}} Keep it, or let it go back into the grass.</p>
+      </sc-if>
+
+      <sc-if value="{{showRollTools}}" hint-placeholder-val="{{ true }}">
+        <div style="border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 8px; background: rgba(14,26,56,0.78); border: 1.5px solid rgba(255,255,255,0.35); backdrop-filter: blur(12px)">
+          <label for="seedField" style="font-size: 14px; font-weight: 800">Recreate a critter from its seed</label>
+          <div style="display: flex; gap: 8px">
+            <input id="seedField" type="text" inputmode="numeric" placeholder="e.g. 4127" value="{{seedInput}}" onChange="{{onSeedInput}}" style="flex: 1; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 14px; border: 1.5px solid rgba(255,255,255,0.45); border-radius: 999px; font-family: inherit; font-size: 16px; font-weight: 700; color: #FFFFFF; background: rgba(255,255,255,0.1)">
+            <button onClick="{{loadSeed}}" style="height: 48px; padding: 0 20px; border: 1.5px solid rgba(255,255,255,0.45); border-radius: 999px; background: rgba(255,255,255,0.16); color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer">Load</button>
+          </div>
+          <p style="margin: 0; font-size: 13px; font-weight: 600; line-height: 1.4; color: #C9D6F2">Loaded critters are preview-only and can't be kept. Loading doesn't use a roll.</p>
+          <sc-if value="{{isPreview}}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{backToRoll}}" style="align-self: flex-start; height: 44px; padding: 0 16px; border: 1.5px solid rgba(255,255,255,0.45); border-radius: 999px; background: rgba(255,255,255,0.16); font-family: inherit; font-size: 14px; font-weight: 800; color: #FFFFFF; cursor: pointer">Back to my roll</button>
+          </sc-if>
+          <sc-if value="{{loadError}}" hint-placeholder-val="{{ false }}">
+            <p style="margin: 0; font-size: 13px; font-weight: 700; color: #FF8A7A">Enter a whole number from 1 to 999999.</p>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{showDexToggle}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(255,255,255,0.7); border: 1.5px solid rgba(255,255,255,0.95)">
+          <sc-for list="{{dexToggle}}" as="dt" hint-placeholder-count="2">
+            <button onClick="{{dt.go}}" aria-pressed="{{dt.pressed}}" style="flex: 1; height: 44px; border: 0; border-radius: 999px; font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; background: {{dt.bg}}; color: {{dt.fg}}">{{dt.label}}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{showSpecies}}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius: 16px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: linear-gradient(90deg, #4B4FE0 0%, #3C8DF2 100%); box-shadow: 0 6px 16px rgba(40,70,180,0.3)">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 900; color: #FFFFFF; white-space: nowrap">Species</h2>
+          <span style="padding: 3px 10px; border-radius: 999px; background: rgba(14,20,80,0.4); font-size: 13px; font-weight: 900; color: #FFFFFF; white-space: nowrap">{{speciesFound}}/48 found</span>
+        </div>
+
+        <div role="group" aria-label="Species filter" style="display: flex; gap: 6px">
+          <sc-for list="{{speciesChips}}" as="ch" hint-placeholder-count="2">
+            <button onClick="{{ch.go}}" aria-pressed="{{ch.pressed}}" style="min-height: 36px; padding: 0 14px; border: 1.5px solid #1E2A4A; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; background: {{ch.bg}}; color: {{ch.fg}}">{{ch.label}}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{dexNoMissing}}" hint-placeholder-val="{{ false }}">
+          <p style="margin: 0; padding: 16px; border-radius: 16px; text-align: center; font-size: 14px; font-weight: 800; color: #3A4868; background: rgba(255,255,255,0.7); border: 1.5px dashed #6A7CA8">You have found every species. Nothing is missing.</p>
+        </sc-if>
+
+        <div aria-live="polite" style="border-radius: 20px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; background: #1E2A4A; border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 10px 26px rgba(20,30,70,0.3)">
+          <div style="flex-shrink: 0; width: 56px; height: 56px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid #F5C542; background: #EAF2FF">
+            <img src="{{spd.icon}}" alt="" width="36" height="32" style="width: 36px; height: 32px; image-rendering: pixelated">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+            <span style="font-size: 12px; font-weight: 800; color: #C9D6F2">#{{spd.no}} · {{spd.line}}</span>
+            <span style="font-size: 18px; font-weight: 900; color: #FFD86B">{{spd.name}}</span>
+            <span style="font-size: 13px; font-weight: 700; line-height: 1.3; color: #E6ECF7">{{spd.status}}</span>
+            <span style="font-size: 12px; font-weight: 700; line-height: 1.3; color: #C9D6F2">{{spd.extra}}</span>
+          </div>
+        </div>
+
+        <sc-for list="{{speciesRows}}" as="sr" hint-placeholder-count="8">
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 18px; background: rgba(255,255,255,0.62); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 4px 12px rgba(40,70,140,0.12)">
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 900; color: #1E2A4A">
+                <span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid #1E2A4A; background: {{sr.color}}"></span>{{sr.name}}</span>
+              <span style="padding: 1px 9px; border-radius: 999px; background: #1E2A4A; font-size: 12px; font-weight: 900; color: #FFFFFF">{{sr.count}}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px">
+              <sc-for list="{{sr.cells}}" as="sc" hint-placeholder-count="6">
+                <button onClick="{{sc.select}}" aria-pressed="{{sc.pressed}}" aria-label="{{sc.aria}}" style="padding: 0; border: 0; background: transparent; font-family: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px">
+                  <div style="width: 44px; height: 44px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2.5px solid {{sc.ring}}; background: #EAF2FF">
+                    <img src="{{sc.icon}}" alt="" width="36" height="32" style="width: 36px; height: 32px; image-rendering: pixelated">
+                  </div>
+                  <span style="font-size: 11px; font-weight: 900; color: #3A4868; font-variant-numeric: tabular-nums">{{sc.no}}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{showBonus}}" hint-placeholder-val="{{ false }}">
+          <span style="margin: 4px 4px 0; font-size: 12px; font-weight: 900; color: #8A6510">Bonus species · {{bonusCount}}</span>
+          <sc-for list="{{bonusList}}" as="bn" hint-placeholder-count="2">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; background: rgba(255,255,255,0.62); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 4px 12px rgba(40,70,140,0.12)">
+              <div style="flex-shrink: 0; width: 48px; height: 48px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2.5px solid #F5C542; background: #EAF2FF">
+                <img src="{{bn.icon}}" alt="" width="36" height="32" style="width: 36px; height: 32px; image-rendering: pixelated">
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+                <span style="font-size: 15px; font-weight: 900; color: #1E2A4A">{{bn.name}}</span>
+                <span style="font-size: 12px; font-weight: 700; color: #3A4868">{{bn.sub}}</span>
+              </div>
+            </div>
+          </sc-for>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{showDexList}}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius: 16px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: linear-gradient(90deg, #4B4FE0 0%, #3C8DF2 100%); box-shadow: 0 6px 16px rgba(40,70,180,0.3)">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 900; color: #FFFFFF; white-space: nowrap">Kept critters</h2>
+          <div style="display: flex; gap: 6px">
+            <span style="padding: 3px 10px; border-radius: 999px; background: rgba(14,20,80,0.4); font-size: 13px; font-weight: 900; color: #FFFFFF; white-space: nowrap">{{caughtCount}} kept</span>
+            <span style="padding: 3px 10px; border-radius: 999px; background: rgba(14,20,80,0.4); font-size: 13px; font-weight: 900; color: #FFFFFF; white-space: nowrap">{{typesFound}}/8 types</span>
+          </div>
+        </div>
+        <p style="margin: 0 4px; font-size: 13px; font-weight: 700; line-height: 1.4; color: #3A4868">Tap a critter to evolve or release it. Releasing gives essence.</p>
+        <sc-if value="{{hasCaught}}" hint-placeholder-val="{{ false }}">
+          <div role="group" aria-label="Filter by type" style="display: flex; flex-wrap: wrap; gap: 6px">
+            <sc-for list="{{dexTypeChips}}" as="ch" hint-placeholder-count="9">
+              <button onClick="{{ch.go}}" aria-pressed="{{ch.pressed}}" style="min-height: 36px; padding: 0 12px; border: 1.5px solid #1E2A4A; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: {{ch.bg}}; color: {{ch.fg}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: {{ch.dot}}"></span>{{ch.label}}</button>
+            </sc-for>
+          </div>
+          <div role="group" aria-label="Sort" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+            <sc-for list="{{dexSortChips}}" as="ch" hint-placeholder-count="6">
+              <button onClick="{{ch.go}}" aria-pressed="{{ch.pressed}}" style="min-height: 36px; padding: 0 12px; border: 1.5px solid #1E2A4A; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; background: {{ch.bg}}; color: {{ch.fg}}">{{ch.label}}</button>
+            </sc-for>
+          </div>
+          <span aria-live="polite" style="margin: 0 4px; font-size: 12px; font-weight: 800; color: #3A4868">{{dexCount}}</span>
+          <sc-if value="{{dexNoMatch}}" hint-placeholder-val="{{ false }}">
+            <p style="margin: 0; padding: 16px; border-radius: 16px; text-align: center; font-size: 14px; font-weight: 700; color: #3A4868; background: rgba(255,255,255,0.7); border: 1.5px dashed #6A7CA8">No critter matches these filters. Tap a chip again to clear it.</p>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{noCaught}}" hint-placeholder-val="{{ true }}">
+          <div style="border-radius: 20px; padding: 26px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; background: rgba(255,255,255,0.7); border: 1.5px dashed #6A7CA8">
+            <p style="margin: 0; font-size: 17px; font-weight: 900; color: #1E2A4A">Nothing kept yet</p>
+            <p style="margin: 0; font-size: 15px; font-weight: 600; line-height: 1.45; color: #3A4868">Critters live in the tall grass. Keep the ones you like and they'll line up here.</p>
+            <button onClick="{{close}}" style="height: 48px; padding: 0 22px; border: 1.5px solid rgba(255,255,255,0.9); border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #2A1B00; background: {{primaryBg}}; box-shadow: 0 4px 14px rgba(245,185,58,0.45)">Back outside</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{hasCaught}}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+            <sc-for list="{{caught}}" as="k" hint-placeholder-count="4">
+              <button onClick="{{k.open}}" style="border-radius: 20px; padding: 16px 8px 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: inherit; cursor: pointer; width: 100%; background: rgba(255,255,255,0.72); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 6px 16px rgba(40,70,140,0.16)">
+                <div style="position: relative; width: 108px; height: 116px">
+                  <div style="position: absolute; left: 0; top: 0; width: 108px; height: 108px; box-sizing: border-box; border-radius: 50%; overflow: hidden; border: 3px solid {{k.medalRing}}; box-shadow: {{k.medalGlow}}; background: radial-gradient(64% 16% at 50% 90%, #3F9A33 0 92%, rgba(0,0,0,0) 93%), linear-gradient(180deg, #4F8FE0 0 22%, #6CA6EA 22% 40%, #8CC3F2 40% 58%, #B8DCF8 58% 72%, #74C25C 72% 74%, #63B852 74% 100%)">
+                    <div style="position: absolute; left: 50%; top: 6px; width: 240px; height: 210px; transform: translateX(-50%) scale({{k.medalScale}}); transform-origin: top center">
+                      <img src="{{k.sprite}}" alt="{{k.alt}}" width="240" height="210" style="display: block; width: 240px; height: 210px; image-rendering: pixelated">
+                    </div>
+                  </div>
+                  <sc-if value="{{k.isMythic}}" hint-placeholder-val="{{ false }}">
+                    <div aria-hidden="true" style="position: absolute; left: 47px; top: -7px; width: 14px; height: 14px; transform: rotate(45deg); border-radius: 2px; background: #FFD86B; box-shadow: 0 0 8px #FFD86B"></div>
+                  </sc-if>
+                  <span style="position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); padding: 2px 10px; border-radius: 999px; background: #1E2A4A; border: 1.5px solid #FFFFFF; font-size: 12px; font-weight: 900; color: #FFFFFF; white-space: nowrap">St.{{k.stage}} · Lv {{k.lv}}</span>
+                </div>
+                <span style="font-size: 16px; font-weight: 900; color: #1E2A4A">{{k.name}}</span>
+                <span style="font-size: 12px; font-weight: 700; color: #3A4868">{{k.element.name}} · {{k.rarity}} · {{k.ability.name}}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </sc-if>
+
+
+      <sc-if value="{{showBadges}}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius: 16px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: linear-gradient(90deg, #4B4FE0 0%, #3C8DF2 100%); box-shadow: 0 6px 16px rgba(40,70,180,0.3)">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 900; color: #FFFFFF; white-space: nowrap">Trainer</h2>
+          <div style="display: flex; gap: 6px">
+            <span style="padding: 3px 10px; border-radius: 999px; background: rgba(14,20,80,0.4); font-size: 13px; font-weight: 900; color: #FFFFFF; white-space: nowrap">Lv {{trainerLevel}}</span>
+            <span style="padding: 3px 10px; border-radius: 999px; background: rgba(14,20,80,0.4); font-size: 13px; font-weight: 900; color: #FFFFFF; white-space: nowrap">{{badgeCount}}/9 badges</span>
+          </div>
+        </div>
+
+        <div style="border-radius: 20px; padding: 14px; display: flex; align-items: center; gap: 14px; background: rgba(255,255,255,0.72); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 6px 16px rgba(40,70,140,0.16)">
+          <div style="flex-shrink: 0; width: 64px; height: 64px; box-sizing: border-box; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid #F5C542; box-shadow: 0 0 12px rgba(245,197,66,0.7); background: radial-gradient(circle at 40% 30%, #3A4A78 0%, #1E2A4A 70%)">
+            <span style="font-size: 10px; font-weight: 900; color: #C9D6F2; line-height: 1">LV</span>
+            <span style="font-size: 24px; font-weight: 900; color: #FFFFFF; line-height: 1">{{trainerLevel}}</span>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0">
+            <span style="font-size: 17px; font-weight: 900; color: #1E2A4A">{{titleName}} · Lv {{trainerLevel}}</span>
+            <div style="height: 12px; border-radius: 999px; background: #C9D6EE; overflow: hidden">
+              <div style="height: 100%; width: {{xpPct}}%; border-radius: 999px; background: linear-gradient(90deg, #6BCB3A, #A7F04A)"></div>
+            </div>
+            <span style="font-size: 12px; font-weight: 800; color: #3A4868">{{xpText}} to level {{nextLevel}} · +2 essence per level</span>
+          </div>
+        </div>
+
+        <div style="border-radius: 20px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.62); border: 1.5px solid rgba(255,255,255,0.95)">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px">
+            <span style="font-size: 17px; font-weight: 900; color: #1E2A4A">Titles</span>
+            <span style="font-size: 12px; font-weight: 800; color: #3A4868">{{titleCount}}/8 earned</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+            <sc-for list="{{titleList}}" as="tt" hint-placeholder-count="8">
+              <button onClick="{{tt.pick}}" aria-pressed="{{tt.pressed}}" disabled="{{tt.disabled}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 58px; padding: 8px 10px; border: 0; border-radius: 14px; text-align: left; font-family: inherit; cursor: pointer; background: {{tt.bg}}; color: {{tt.fg}}">
+                <span style="font-size: 13px; font-weight: 900; line-height: 1.15">{{tt.name}}</span>
+                <span style="font-size: 11px; font-weight: 700; line-height: 1.2">{{tt.sub}}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="border-radius: 20px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.62); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 4px 12px rgba(40,70,140,0.12)">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px">
+            <span style="font-size: 17px; font-weight: 900; color: #1E2A4A">Leader seals</span>
+            <span style="font-size: 12px; font-weight: 800; color: #3A4868">{{sealCount}}/4 earned</span>
+          </div>
+          <sc-if value="{{champion}}" hint-placeholder-val="{{ false }}">
+            <p style="margin: 0 4px; padding: 8px 12px; border-radius: 12px; background: linear-gradient(180deg, #FFE69A, #F5B93A); font-size: 14px; font-weight: 900; color: #2A1B00">Keeper of Four Fires</p>
+          </sc-if>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+            <sc-for list="{{seals}}" as="sl" hint-placeholder-count="4">
+              <div role="img" aria-label="{{sl.aria}}" style="display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 14px; background: rgba(255,255,255,0.8)">
+                <div style="flex-shrink: 0; width: 42px; height: 42px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid {{sl.ring}}; box-shadow: {{sl.glow}}; background: {{sl.color}}">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF" stroke="#1E2A4A" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 16.6 6.5 19.5l1-6.3L3 8.9 9 8z"></path></svg>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0">
+                  <span style="font-size: 13px; font-weight: 900; line-height: 1.15; color: #1E2A4A">{{sl.name}}</span>
+                  <span style="font-size: 11px; font-weight: 700; line-height: 1.2; color: #3A4868">{{sl.status}}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="border-radius: 20px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.62); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 4px 12px rgba(40,70,140,0.12)">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px">
+            <span style="font-size: 17px; font-weight: 900; color: #1E2A4A; white-space: nowrap">Daily quests</span>
+            <span style="font-size: 12px; font-weight: 800; color: #3A4868">{{questsDone}}/3 done · new at midnight</span>
+          </div>
+          <sc-for list="{{quests}}" as="q" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 16px; background: rgba(255,255,255,0.8)">
+              <div style="flex-shrink: 0; width: 42px; height: 42px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2.5px solid {{q.ring}}; background: radial-gradient(circle at 40% 30%, #3A4A78 0%, #1E2A4A 70%)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{q.icon}}"></path></svg>
+              </div>
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+                <span style="font-size: 14px; font-weight: 900; line-height: 1.2; color: #1E2A4A">{{q.text}}</span>
+                <div style="display: flex; align-items: center; gap: 6px">
+                  <div style="flex: 1; height: 8px; border-radius: 999px; background: #C9D6EE; overflow: hidden">
+                    <div style="height: 100%; width: {{q.pct}}%; border-radius: 999px; background: #5BBF3A"></div>
+                  </div>
+                  <span style="font-size: 12px; font-weight: 900; color: #1E2A4A; font-variant-numeric: tabular-nums">{{q.progressText}}</span>
+                </div>
+                <span style="font-size: 12px; font-weight: 800; color: #3A4868">{{q.reward}}</span>
+              </div>
+              <sc-if value="{{q.canClaim}}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{q.claim}}" style="flex-shrink: 0; height: 44px; padding: 0 16px; border: 1.5px solid #FFFFFF; border-radius: 999px; font-family: inherit; font-size: 14px; font-weight: 900; cursor: pointer; color: #2A1B00; background: {{primaryBg}}; box-shadow: 0 4px 12px rgba(245,185,58,0.45)">Claim</button>
+              </sc-if>
+              <sc-if value="{{q.claimed}}" hint-placeholder-val="{{ false }}">
+                <span style="flex-shrink: 0; font-size: 13px; font-weight: 900; color: #2E7D32">Claimed</span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="padding: 2px 4px 0; display: flex; justify-content: space-between; align-items: baseline">
+          <span style="font-size: 17px; font-weight: 900; color: #1E2A4A">Badges</span>
+          <span style="font-size: 12px; font-weight: 800; color: #3A4868">{{wins}} battle wins</span>
+        </div>
+        <div aria-live="polite" style="border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: #1E2A4A; border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 10px 26px rgba(20,30,70,0.35)">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <div style="flex-shrink: 0; width: 52px; height: 52px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid {{bd.ring}}; background: radial-gradient(circle at 40% 30%, #3A4A78 0%, #141C36 75%)">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{bd.icon}}"></path></svg>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+              <span style="font-size: 19px; font-weight: 900; color: #FFFFFF">{{bd.name}}</span>
+              <span style="align-self: flex-start; padding: 2px 10px; border-radius: 999px; background: #3C6FE0; font-size: 12px; font-weight: 900; color: #FFFFFF">{{bd.row}} badge</span>
+            </div>
+          </div>
+          <p style="margin: 0; font-size: 15px; font-weight: 700; line-height: 1.4; color: #E6ECF7">{{bd.desc}}</p>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 12px; background: {{bd.barBg}}">
+            <span style="font-size: 14px; font-weight: 900; color: {{bd.barFg}}">{{bd.status}}</span>
+            <span style="font-size: 15px; font-weight: 900; color: {{bd.barFg}}; font-variant-numeric: tabular-nums">{{bd.progress}}</span>
+          </div>
+        </div>
+
+        <sc-for list="{{badgeRows}}" as="row" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 12px 10px; border-radius: 18px; background: rgba(255,255,255,0.62); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 4px 12px rgba(40,70,140,0.12)">
+            <div style="flex-shrink: 0; width: 54px; display: flex; flex-direction: column; align-items: center; gap: 4px">
+              <div style="width: 44px; height: 50px; display: flex; align-items: center; justify-content: center; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); background: linear-gradient(160deg, #6E9BFF 0%, #2B49C8 70%); font-size: 15px; font-weight: 900; color: #FFFFFF">{{row.tier}}</div>
+              <span style="font-size: 11px; font-weight: 900; color: #3A4868">{{row.name}}</span>
+            </div>
+            <div style="flex: 1; display: flex; flex-wrap: wrap; gap: 6px 4px">
+              <sc-for list="{{row.items}}" as="b" hint-placeholder-count="2">
+                <button onClick="{{b.select}}" aria-pressed="{{b.pressed}}" aria-label="{{b.aria}}" style="width: 80px; padding: 2px 0 0; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 0; background: transparent; font-family: inherit; cursor: pointer">
+                  <div style="position: relative; width: 66px; height: 72px">
+                    <div style="position: absolute; left: 0; top: 0; width: 66px; height: 66px; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 40% 30%, #3A4A78 0%, #1E2A4A 70%); border: 3px solid {{b.ring}}; box-shadow: {{b.glow}}; opacity: {{b.opacity}}">
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{b.icon}}"></path></svg>
+                    </div>
+                    <span style="position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); padding: 1px 9px; border-radius: 999px; background: #1E2A4A; border: 1.5px solid #FFFFFF; font-size: 12px; font-weight: 900; color: #FFFFFF; white-space: nowrap; font-variant-numeric: tabular-nums">{{b.progress}}</span>
+                  </div>
+                  <span style="font-size: 12px; font-weight: 900; line-height: 1.15; text-align: center; color: #1E2A4A; text-decoration: {{b.underline}}">{{b.name}}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+
+      </sc-if>
+
+      <sc-if value="{{showBadges}}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius: 20px; padding: 12px; display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.72); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 4px 12px rgba(40,70,140,0.12)">
+          <span style="padding: 0 4px; font-size: 17px; font-weight: 900; color: #1E2A4A">Settings</span>
+          <sc-for list="{{settingRows}}" as="st" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 4px">
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                <span id="{{st.id}}" style="font-size: 15px; font-weight: 900; color: #1E2A4A">{{st.label}}</span>
+                <span style="font-size: 12px; font-weight: 700; line-height: 1.3; color: #3A4868">{{st.desc}}</span>
+              </div>
+              <button role="switch" aria-checked="{{st.checked}}" aria-labelledby="{{st.id}}" onClick="{{st.toggle}}" style="flex-shrink: 0; position: relative; width: 56px; height: 44px; padding: 0; border: 0; border-radius: 999px; cursor: pointer; background: transparent">
+                <span aria-hidden="true" style="position: absolute; left: 0; top: 6px; width: 56px; height: 32px; border-radius: 999px; background: {{st.track}}"></span>
+                <span aria-hidden="true" style="position: absolute; top: 9px; left: {{st.knobLeft}}px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: left 150ms ease"></span>
+              </button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{showTestTools}}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.7); border: 1.5px dashed #6A7CA8">
+          <span style="font-size: 15px; font-weight: 900; color: #1E2A4A">Test tools</span>
+          <span style="font-size: 13px; font-weight: 600; line-height: 1.35; color: #3A4868">Test mode is on, so rolls are unlimited. Turn it off in Settings above for real play.</span>
+          <div style="display: flex; gap: 8px">
+            <button onClick="{{addEssence}}" style="flex: 1; height: 44px; border: 0; border-radius: 999px; background: #1E2A4A; font-family: inherit; font-size: 14px; font-weight: 800; color: #FFFFFF; cursor: pointer">+10 essence</button>
+            <button onClick="{{resetRolls}}" style="flex: 1; height: 44px; border: 0; border-radius: 999px; background: #1E2A4A; font-family: inherit; font-size: 14px; font-weight: 800; color: #FFFFFF; cursor: pointer">Reset rolls</button>
+          </div>
+          <button onClick="{{newQuests}}" style="height: 44px; border: 0; border-radius: 999px; background: #1E2A4A; font-family: inherit; font-size: 14px; font-weight: 800; color: #FFFFFF; cursor: pointer">New quests</button>
+        </div>
+      </sc-if>
+    </main>
+
+    <sc-if value="{{showEncounterBar}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; gap: 10px">
+        <button onClick="{{leaveGo}}" style="flex: 1; height: 56px; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #FFFFFF; background: rgba(14,26,56,0.78)">{{leaveLabel}}</button>
+        <button onClick="{{keep}}" disabled="{{keepDisabled}}" style="flex: 1.4; height: 56px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid rgba(255,255,255,0.7); border-radius: 999px; font-family: inherit; font-size: 16px; font-weight: 900; cursor: pointer; color: {{encKeepFg}}; background: {{encKeepBg}}; box-shadow: {{encKeepShadow}}">{{keepLabel}}</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showRollTools}}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; gap: 10px">
+        <button onClick="{{keep}}" disabled="{{keepDisabled}}" style="flex: 1; height: 56px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 999px; font-family: inherit; font-size: 16px; font-weight: 900; cursor: pointer; color: {{keepFg}}; background: {{keepBg}}; backdrop-filter: blur(10px)">
+          <sc-if value="{{kept}}" hint-placeholder-val="{{ false }}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg>
+          </sc-if>
+          <sc-if value="{{notKept}}" hint-placeholder-val="{{ true }}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          </sc-if>
+          {{keepLabel}}
+        </button>
+        <button onClick="{{rollAgain}}" disabled="{{noEnergy}}" style="flex: 1.6; height: 56px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid rgba(255,255,255,0.7); border-radius: 999px; font-family: inherit; font-size: 17px; font-weight: 900; cursor: pointer; color: {{rollFg}}; background: {{rollBg}}; box-shadow: {{rollShadow}}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="8" cy="8" r="1.4" fill="currentColor"></circle><circle cx="12" cy="12" r="1.4" fill="currentColor"></circle><circle cx="16" cy="16" r="1.4" fill="currentColor"></circle></svg>
+          {{rollLabel}}
+        </button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showDetail}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; gap: 10px">
+        <button onClick="{{release}}" style="flex: 1; height: 56px; border: 1.5px solid #FF8A7A; border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #FFFFFF; background: {{releaseBg}}; backdrop-filter: blur(10px)">{{releaseLabel}}</button>
+        <button onClick="{{evolve}}" disabled="{{cannotEvolve}}" style="flex: 1; height: 56px; border: 1.5px solid rgba(255,255,255,0.6); border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: {{evolveFg}}; background: {{evolveBg}}; backdrop-filter: blur(10px)">{{evolveLabel}}</button>
+      </div>
+    </sc-if>
+
+
+  </div>
+</div>
