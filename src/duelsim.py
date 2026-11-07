@@ -1,6 +1,6 @@
 # Action-mode duel simulator: the REAL ACT combat code (enemy behaviours, projectiles, swapping, Game.hit) run at simulated speed in an open arena, with a bot.
-# Bot: walks the critter to the foe's feet and taps the quick slash whenever ready (using the special wastes time: every move shares one cooldown).
-# It never dodges, so it is a fairly pessimistic stand-in for a person who moves.   Usage:
+# Bots: 'mash' walks to the foe's feet and taps the quick slash whenever ready; 'smart' plays the type's verb when its moment comes and feeds the heavy otherwise (Nov 2026, after the verbs).
+# Neither dodges, so they are pessimistic stand-ins for a person who moves.   Usage:
 #   python3 duelsim.py <heroStage> <heroLv> <n> <trainerId> [...]          (an id may be floor:N for a Tower floor)
 #   env DUEL=hp,dmg,pace (e.g. DUEL=2,1.3,0.8) overrides DUEL_HP / DUEL_DMG / DUEL_PACE to test a tuning value
 import sys, os
@@ -19,14 +19,32 @@ JS = """(cfg) => { const g = APP.game, rand = Math.random; const power = (k) => 
         const crit = { x: 400, y: 400, ox: 0, oy: 0, dir: 'right' }, human = { x: 370, y: 400, dir: 'right' }, M = { id: 'sim' + t, interior: false, cave: false, rate: 0, W: 60, H: 60, grid: [], types: [] };
         const env = { M: M, TS: 32, P: human, FOL: crit, lead: true, fol: true, dt: 0.05, solidAt: () => false };
         ACT.step(env); if (!ACT.startDuel({ tr: tr })) { res = false; }
-        let time = 0, lastSel = -1;
+        let time = 0, lastSel = -1; const sim = { hold: 0 };
         while (res === null && time < 200) {
           time += 0.05; const foe = ACT.enemies.find(m => m.duel), h = ACT.hero;
           if (foe && h) { const dx = foe.x - crit.x, dy = foe.y - crit.y, d = Math.hypot(dx, dy);
-            if (d > 36) { const sp = 134 * 0.05; crit.x += dx / d * sp; crit.y += dy / d * sp; }
+            if (d > 36 && !(ACT.verb() && (ACT.verb().kind === 'frost' || ACT.verb().kind === 'bloom'))) { const sp = 134 * 0.05; crit.x += dx / d * sp; crit.y += dy / d * sp; }   // a standing ring is not walked out of
             crit.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
-            let sel = 0; if (cfg.policy === 'smart' || policy === 'smart') { const sp = h.k.kit[3]; if (sp && sp.effect === 'heal' && h.hp < h.max * 0.45) sel = 3; else if (sp && sp.effect !== 'heal' && sp.effect !== 'fortify' && foe.s[{ burn: 'burn', weaken: 'weak', daze: 'daze', sap: 'sap' }[sp.effect]] === 0 && ACT.cdFrac() === 0) sel = 3; }
-            ACT.setSel(sel); ACT.attack(); }
+            // 'mash': the quick slash whenever ready. 'smart': the type's verb when its moment comes (Frost: stand and freeze when the foe is close; Ember: feed the flame 1 s then release; Tide: pull a far foe in;
+            // Moss: root a close foe; Volt: dash when the foe is ahead; Dusk: veil when hurt; Stone: a wall when the foe shoots or charges; Bloom: petals when hurt), the fed heavy otherwise, and the quick in between.
+            const T = h.k.element.name, v = ACT.verb(); sim.hold = sim.hold || 0;
+            if (policy === 'smart' && v && (v.kind === 'ember' || v.kind === 'heavy')) { sim.hold += 0.05; if (sim.hold >= (v.kind === 'heavy' ? 0.9 : 1.3)) { ACT.chargeEnd(); sim.hold = 0; } }
+            else if (policy === 'smart' && v) { /* a ring or petals standing: let it work */ }
+            else if (policy === 'smart' && ACT.cdFrac() === 0) {
+              const B = foe.k.element.name, ranged = B === 'Tide' || B === 'Frost' || B === 'Ember' || B === 'Bloom', moment = time - (sim.lastVerb || -9) >= 4;   // a verb at its moment, not every time the cooldown clears
+              let used = false; if (!moment) { /* fall through to the blows */ } else
+              if (T === 'Frost' && d < 64) { ACT.setSel(3); used = ACT.attack(); }
+              else if (T === 'Ember') { ACT.setSel(3); used = ACT.chargeStart(); }
+              else if (T === 'Tide' && d > 56 && d < 80) { ACT.setSel(3); used = ACT.attack(); }
+              else if (T === 'Moss' && d < 96) { ACT.setSel(3); used = ACT.attack(); }
+              else if (T === 'Volt' && d < 90) { ACT.setSel(3); used = ACT.attack(); }
+              else if (T === 'Dusk' && h.hp < h.max * 0.7 && !ACT.veiled()) { ACT.setSel(3); used = ACT.attack(); }
+              else if (T === 'Stone' && ranged && !ACT.walls().length) { ACT.setSel(3); used = ACT.attack(); }
+              else if (T === 'Bloom' && h.hp < h.max * 0.6) { ACT.setSel(3); used = ACT.attack(); }
+              if (used) sim.lastVerb = time;
+              if (!used) { if (d < 40 && Math.random() < 0.35) { ACT.setSel(1); ACT.chargeStart(); } else { ACT.setSel(0); ACT.attack(); } }
+            }
+            else if (policy === 'mash') { ACT.setSel(0); ACT.attack(); } }
           human.x = crit.x - 32; human.y = crit.y; env.dt = 0.05; ACT.step(env); }
         if (res === true) wins++; tsum += time; const h = ACT.hero; hpLeft += party.reduce((a, k) => a, 0); }
       out[id][policy] = { win: Math.round(100 * wins / cfg.n), secs: Math.round(tsum / cfg.n) }; } }
@@ -36,5 +54,5 @@ with sync_playwright() as p:
     dd = os.environ.get('DUEL')
     if dd: hp, dm, pc = [float(x) for x in dd.split(',')]; pg.evaluate('window.__duel = {hp: %s, dmg: %s, pace: %s}' % (hp, dm, pc))
     r = pg.evaluate(JS, {'hst': hst, 'hlv': hlv, 'n': N, 'ids': ids})
-    for k, v in r.items(): print(f"{k:12s} hero stage {hst} Lv {hlv}: mash bot {v['mash']['win']:3d}% (avg fight {v['mash']['secs']}s)")
+    for k, v in r.items(): print(f"{k:12s} hero stage {hst} Lv {hlv}: mash bot {v['mash']['win']:3d}% (avg fight {v['mash']['secs']}s) | smart bot (verbs) {v['smart']['win']:3d}% ({v['smart']['secs']}s)")
     b.close()

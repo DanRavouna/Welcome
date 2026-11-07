@@ -8,7 +8,7 @@ const ACT = (() => {
   const D7 = Math.SQRT1_2, DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0], upright: [D7, -D7], upleft: [-D7, -D7], downright: [D7, D7], downleft: [-D7, D7] };
   const CD = [0.45, 1.1, 1.4, 3.0];            // seconds: quick slash, heavy slash, guard, special
   let GH = [], H = null, hero = null, team = {}, OFF = [], orbId = 1, duel = null, armed = false, E = [], FX = [], mapId = '', spawnT = 0, lastEnv = null, on = false;
-  const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null, veil: 0 };
+  const st = { sel: 0, cd: 0, cdTot: 1, atk: null, down: 0, calm: 0, guard: 0, quiet: 0, swapIn: null, veil: 0, stanceOn: false, stance: 0 };
   // ---- type verbs (Meaning: each type's special is the thing its place plays). Frost: stand still and a ring of ice forms and widens; the first step shatters it. Ember: hold to feed the flame, release a cone that burns. ----
   let verb = null;   // { kind: 'frost', t, r, tick } or { kind: 'ember', t }
   const VERBS = { Frost: 'frost', Ember: 'ember', Tide: 'tide', Moss: 'moss', Volt: 'volt', Dusk: 'dusk', Stone: 'stone', Bloom: 'bloom' };
@@ -25,7 +25,7 @@ const ACT = (() => {
       const before = m.s.hp; g.hit(hero, m.s, Math.max(1, Math.round(hero.k.kit[0].power * 0.5)), rand); delete m.s.fxHits; m.s.weak = 3; hit++;
       const d = Math.hypot(vx, vy) || 1, pull = Math.max(0, d - 1.0 * e.TS); m.kx = -vx / d * pull * 11; m.ky = -vy / d * pull * 11; m.pull = 0.45; m.tele = 0; m.dash = 0; m.mode = 'chase';   // dragged back to a tile from you, no further
       const dmg = before - m.s.hp; if (dmg > 0) { num(m.x, m.y - 26, String(dmg), '#DCEBFF'); VFX.impact('Tide', HEX, m.x, m.y - 14, false); } if (m.s.hp <= 0) kill(m, e); });
-    VFX.burst('Tide', HEX, o.x + dir[0] * len * 0.6, o.y - 10 + dir[1] * len * 0.6, 10, -dir[0], -dir[1], 1.1); if (H.sfx) H.sfx(hit ? 'hit' : 'slash'); st.cd = st.cdTot = hit ? 3.0 : 1.4;
+    VFX.burst('Tide', HEX, o.x + dir[0] * len * 0.6, o.y - 10 + dir[1] * len * 0.6, 10, -dir[0], -dir[1], 1.1); if (H.sfx) H.sfx(hit ? 'hit' : 'slash'); st.cd = st.cdTot = hit ? 2.0 : 1.2;
   }
   // Moss, Root Bind (Meaning: tending): roots take the nearest critter where it stands; it cannot step while they hold, it is drained, and while you stay beside it the roots feed you back
   function startMoss() {
@@ -34,19 +34,19 @@ const ACT = (() => {
     if (!best) { const dir = faceVec(e); FX.push({ k: 'roots', x: o.x + dir[0] * 1.3 * e.TS, y: o.y + dir[1] * 1.3 * e.TS, t: 0, life: 0.5 }); st.cd = st.cdTot = 1.2; if (H.sfx) H.sfx('tap'); return; }
     const before = best.s.hp; g.hit(hero, best.s, Math.max(1, Math.round(hero.k.kit[0].power * 0.5)), rand); delete best.s.fxHits; best.s.sap = 3; best.rooted = 2.4; best.kx = 0; best.ky = 0; best.dash = 0;
     const dmg = before - best.s.hp; if (dmg > 0) num(best.x, best.y - 26, String(dmg), '#A7F04A'); VFX.impact('Moss', hero.k.element.color, best.x, best.y - 8, false); if (H.sfx) H.sfx('hit'); if (best.s.hp <= 0) kill(best, e);
-    st.cd = st.cdTot = 3.0;
+    st.cd = st.cdTot = 2.0;
   }
   // Volt, Arc Dash (Meaning: the wind that passes through): a line of light across three tiles through whatever stands there, dazing it
   function startVolt() { const e = lastEnv, o = heroPos(), dir = faceVec(e); verb = { kind: 'volt', t: 0, dir: dir, hit: [], x: o.x, y: o.y }; if (H.sfx) H.sfx('slash'); }
   function stepVolt(e, dt) {
     const g = H.game(), v = verb, spd = 10 * e.TS, o = heroPos(); v.t += dt;
     const nx = o.x + v.dir[0] * spd * dt, ny = o.y + v.dir[1] * spd * dt, free = tileFree(e, nx, ny) && (!e.solidAt || !e.solidAt(Math.floor(nx / e.TS), Math.floor(ny / e.TS)));
-    if (free && typeof WORLD !== 'undefined' && WORLD.setPos) WORLD.setPos(nx, ny);
+    if (free) { e.FOL.x = nx; e.FOL.y = ny; }   // the steered body is the world's own object, so this moves the player (and the sim's critter)
     const p2 = heroPos(); GH.push({ x: p2.x, y: p2.y, t: 0 }); VFX.trail('Volt', hero.k.element.color, p2.x, p2.y - 12);
     E.slice().forEach((m) => { if (v.hit.indexOf(m) !== -1 || Math.hypot(m.x - p2.x, m.y - p2.y) > 0.95 * e.TS) return; v.hit.push(m); const before = m.s.hp; g.hit(hero, m.s, Math.max(1, Math.round(hero.k.kit[0].power * 0.6)), rand); delete m.s.fxHits; m.s.daze = 2;
       const sx = -v.dir[1], sy = v.dir[0], side = ((m.x - p2.x) * sx + (m.y - p2.y) * sy) >= 0 ? 1 : -1; m.kx = sx * side * 5 * e.TS; m.ky = sy * side * 5 * e.TS; m.tele = 0; m.dash = 0;
       const dmg = before - m.s.hp; num(m.x, m.y - 26, String(dmg), '#FFF4C7'); if (dmg > 0) { VFX.impact('Volt', hero.k.element.color, m.x, m.y - 14, false); if (H.sfx) H.sfx('hit'); } if (m.s.hp <= 0) kill(m, e); });
-    if (!free || v.t >= 0.3) { verb = null; st.cd = st.cdTot = 2.2; }
+    if (!free || v.t >= 0.3) { verb = null; st.cd = st.cdTot = 1.4; }
   }
   // Dusk, Veil (Meaning: the dark you step into): the critter fades, what hunts it loses it, and the first blow out of the dark lands hard and ends the veil
   function startDusk() { st.veil = 1.6; const o = heroPos(); for (let i = 0; i < 8; i++) FX.push({ k: 'puff', x: o.x, y: o.y - 10, vx: (rand() - 0.5) * 70, vy: -10 - rand() * 40, t: 0, col: '#5B45B8' }); st.cd = st.cdTot = 0.5; if (H.sfx) H.sfx('tap'); }
@@ -54,7 +54,7 @@ const ACT = (() => {
   function startStone() {
     const e = lastEnv, o = heroPos(), dir = faceVec(e), tx = Math.floor((o.x + dir[0] * 1.2 * e.TS) / e.TS), ty = Math.floor((o.y + dir[1] * 1.2 * e.TS) / e.TS);
     if (e.solidAt(tx, ty) || wallAt(tx * e.TS + 16, ty * e.TS + 16) || E.some((m) => Math.floor(m.x / e.TS) === tx && Math.floor(m.y / e.TS) === ty)) { st.cd = st.cdTot = 0.8; if (H.sfx) H.sfx('tap'); return; }
-    walls.push({ tx: tx, ty: ty, hp: 3, t: 0, life: 7 }); VFX.impact('Stone', '#A8A29E', tx * e.TS + 16, ty * e.TS + 8, true); VFX.shake(dir[0], dir[1], 4); if (H.sfx) H.sfx('hit'); st.cd = st.cdTot = 4.5;
+    walls.push({ tx: tx, ty: ty, hp: 3, t: 0, life: 7 }); VFX.impact('Stone', '#A8A29E', tx * e.TS + 16, ty * e.TS + 8, true); VFX.shake(dir[0], dir[1], 4); if (H.sfx) H.sfx('hit'); st.cd = st.cdTot = 3.0;
   }
   // Bloom, Soothing Scent (Meaning: gives without being asked): petals bloom around you; you and yours heal while you stand in them, and what comes near forgets the fight for a moment
   function startBloom() { verb = { kind: 'bloom', t: 0, r: 2.0, tick: 0 }; if (H.sfx) H.sfx('tap'); }
@@ -63,11 +63,18 @@ const ACT = (() => {
     if (v.tick <= 0) { v.tick = 0.5; const h = Math.max(1, Math.round(hero.max * 0.06)); if (hero.hp > 0 && hero.hp < hero.max) { hero.hp = Math.min(hero.max, hero.hp + h); num(o.x, o.y - 34, '+' + h, '#F9A8D4'); }
       benchSides().forEach((b) => { if (b.hp > 0 && b.hp < b.max) b.hp = Math.min(b.max, b.hp + Math.max(1, Math.round(b.max * 0.06))); });
       E.forEach((m) => { if (Math.hypot(m.x - o.x, m.y - o.y) <= v.r * e.TS + 8) { m.calmT = 1.2; m.mode = 'idle'; m.tele = 0; m.dash = 0; } }); }
-    if (v.t >= 2.4) { verb = null; st.cd = st.cdTot = 5.0; }
+    if (v.t >= 2.4) { verb = null; st.cd = st.cdTot = 3.5; }
   }
-  function chargeStart() { if (!canVerb() || verbOf() !== 'ember') return false; verb = { kind: 'ember', t: 0 }; if (H.sfx) H.sfx('tap'); return true; }
-  function chargeCancel() { if (verb && verb.kind === 'ember') verb = null; }
-  function chargeEnd() { if (!verb || verb.kind !== 'ember') return false; const ch = Math.max(0, Math.min(1, (verb.t - 0.12) / 1.2)); verb = null; fireCone(ch); return true; }
+  // the heavy blow (slot 1) is fed the same way for every type: hold, then let go; a tap is the light version and it never misses
+  const canFeed = () => on && lastEnv && hero && hero.hp > 0 && st.down <= 0 && !st.swapIn && st.cd <= 0 && !st.atk && !verb && (st.sel === 1 || (st.sel === 3 && verbOf() === 'ember') || st.sel === 2);
+  function chargeStart() { if (!canFeed()) return false; if (st.sel === 2) { hero.guard = true; st.stanceOn = true; st.guard = 0; st.stance = 0; if (H.sfx) H.sfx('tap'); return true; } verb = { kind: st.sel === 1 ? 'heavy' : 'ember', t: 0 }; if (H.sfx) H.sfx('tap'); return true; }
+  function chargeCancel() { if (verb && (verb.kind === 'ember' || verb.kind === 'heavy')) verb = null; if (st.stanceOn) { st.stanceOn = false; hero.guard = false; st.guard = 0; } }
+  function chargeEnd() {
+    if (st.stanceOn) { st.stanceOn = false; if (st.stance < 0.25) { st.guard = 1.3; st.cd = st.cdTot = CD[2]; } else { hero.guard = false; st.guard = 0; st.cd = st.cdTot = 0.4; } st.stance = 0; return true; }   // let go: a quick tap leaves the short guard up, a held stance drops
+    if (!verb || (verb.kind !== 'ember' && verb.kind !== 'heavy')) return false; const kind = verb.kind, ch = Math.max(0, Math.min(1, (verb.t - 0.12) / (kind === 'heavy' ? 0.8 : 1.2))); verb = null;   // the heavy gathers in 0.8 s, the flame in 1.2
+    if (kind === 'ember') { fireCone(ch); return true; }
+    swing(1, 0.6 + 1.4 * ch); return true;   // the heavy: 0.6x when tapped, 2x when fed 1.3 s, and it never misses
+  }
   function fireCone(ch) {
     const e = lastEnv, o = heroPos(), dir = faceVec(e), len = (1.3 + 1.6 * ch) * e.TS, half = 0.62, g = H.game(), EL = 'Ember', HEX = hero.k.element.color;
     FX.push({ k: 'cone', x: o.x, y: o.y - 8, dx: dir[0], dy: dir[1], len: len, t: 0, ch: ch });
@@ -75,20 +82,21 @@ const ACT = (() => {
       const before = m.s.hp; g.hit(hero, m.s, Math.max(1, Math.round(hero.k.kit[0].power * (0.5 + 1.3 * ch))), rand); delete m.s.fxHits; m.s.burn = 3;
       const dmg = before - m.s.hp; num(m.x, m.y - 26, String(dmg), ch > 0.6 ? '#FFD86B' : '#FFFFFF'); if (dmg > 0) { VFX.impact(EL, HEX, m.x, m.y - 14, ch > 0.6); VFX.burst(EL, HEX, m.x, m.y - 14, 6 + Math.round(10 * ch), dir[0], dir[1], 1); m.flash = 0.16; m.mode = 'chase'; m.kx = dir[0] * (0.4 + ch) * e.TS * 6; m.ky = dir[1] * (0.4 + ch) * e.TS * 6; if (H.sfx) H.sfx('hit'); }
       if (m.s.hp <= 0) kill(m, e); });
-    VFX.shake(dir[0], dir[1], 2 + 5 * ch); if (H.sfx) H.sfx('slash'); st.cd = st.cdTot = 1.2 + 1.2 * ch;
+    VFX.shake(dir[0], dir[1], 2 + 5 * ch); if (H.sfx) H.sfx('slash'); st.cd = st.cdTot = 0.8 + 0.8 * ch;
   }
   function stepVerb(e, dt) {
     walls.forEach((w) => { w.t += dt; }); walls = walls.filter((w) => w.hp > 0 && w.t < w.life);
-    if (st.veil > 0) { st.veil -= dt; if (st.veil <= 0) { st.veil = 0; st.cd = st.cdTot = 3.5; } }   // the veil fades on its own, and then needs a while to gather again
+    if (st.stanceOn) { st.stance = (st.stance || 0) + dt; if (st.stance > 2.5 || hero.hp <= 0) { st.stanceOn = false; hero.guard = false; st.guard = 0; st.stance = 0; st.cd = st.cdTot = 1.5; if (H.sfx) H.sfx('tap'); } }   // the stance cannot be held forever: it breaks at 2.5 s
+    if (st.veil > 0) { st.veil -= dt; if (st.veil <= 0) { st.veil = 0; st.cd = st.cdTot = 2.5; } }   // the veil fades on its own, and then needs a while to gather again
     if (!verb) return; const g = H.game();
     if (verb.kind === 'volt') { stepVolt(e, dt); return; }
     if (verb.kind === 'bloom') { stepBloom(e, dt); return; }
-    if (verb.kind === 'ember') { verb.t = Math.min(1.6, verb.t + dt); if (hero.hp <= 0) verb = null; return; }
-    const hp = heroPos(); if (Math.hypot(hp.x - verb.ox, hp.y - verb.oy) > 3 || hero.hp <= 0) { FX.push({ k: 'shatter', x: heroPos().x, y: heroPos().y - 8, r: verb.r * e.TS, t: 0 }); verb = null; st.cd = st.cdTot = 2.2; if (H.sfx) H.sfx('tap'); return; }   // the first step shatters it
+    if (verb.kind === 'ember' || verb.kind === 'heavy') { verb.t = Math.min(1.6, verb.t + dt); if (hero.hp <= 0) verb = null; return; }
+    const hp = heroPos(); if (Math.hypot(hp.x - verb.ox, hp.y - verb.oy) > 3 || hero.hp <= 0) { FX.push({ k: 'shatter', x: heroPos().x, y: heroPos().y - 8, r: verb.r * e.TS, t: 0 }); verb = null; st.cd = st.cdTot = 1.2; if (H.sfx) H.sfx('tap'); return; }   // the first step shatters it
     verb.t += dt; verb.r = Math.min(2.6, 0.6 + verb.t * 1.0); verb.tick -= dt;
-    if (verb.tick <= 0) { verb.tick = 0.5; const o = heroPos(); E.slice().forEach((m) => { if (Math.hypot(m.x - o.x, m.y - o.y) > verb.r * e.TS + 8) return; const before = m.s.hp; g.hit(hero, m.s, Math.max(1, Math.round(hero.k.kit[0].power * 0.4)), rand); delete m.s.fxHits; m.frozen = 1.1; m.kx = 0; m.ky = 0; m.tele = 0; m.dash = 0;
+    if (verb.tick <= 0) { verb.tick = 0.5; const o = heroPos(); E.slice().forEach((m) => { if (Math.hypot(m.x - o.x, m.y - o.y) > verb.r * e.TS + 8) return; const before = m.s.hp; g.hit(hero, m.s, Math.max(1, Math.round(hero.k.kit[0].power * 0.55)), rand); delete m.s.fxHits; m.frozen = 1.1; m.kx = 0; m.ky = 0; m.tele = 0; m.dash = 0;
       const dmg = before - m.s.hp; if (dmg > 0) { num(m.x, m.y - 26, String(dmg), '#DCEFF8'); VFX.impact('Frost', '#9CC8FF', m.x, m.y - 14, false); } if (m.s.hp <= 0) kill(m, e); }); }
-    if (verb.t >= 3.2) { FX.push({ k: 'shatter', x: heroPos().x, y: heroPos().y - 8, r: verb.r * e.TS, t: 0 }); verb = null; st.cd = st.cdTot = CD[3]; }
+    if (verb.t >= 3.2) { FX.push({ k: 'shatter', x: heroPos().x, y: heroPos().y - 8, r: verb.r * e.TS, t: 0 }); verb = null; st.cd = st.cdTot = 1.5; }
   }
   const rand = Math.random;
   function bind(h) { H = h; if (typeof VFX !== 'undefined') VFX.bind(h); }
@@ -147,10 +155,16 @@ const ACT = (() => {
     if (mi === 3 && verbOf() === 'bloom') { startBloom(); return true; }
     if (mi === 3 && verbOf() === 'dusk') { if (st.veil > 0) return false; startDusk(); return true; }
     if (mi === 3 && verbOf() === 'moss') { startMoss(); return true; }
+    if (mi === 1) { if (chargeStart()) chargeEnd(); return true; }   // a tap on the heavy is its light version
+    if (mi === 2) { if (chargeStart()) { st.stanceOn = false; st.guard = 1.3; st.cd = st.cdTot = CD[2]; } return true; }   // a tap on guard is the old short guard
+    return swing(mi, 1);
+  }
+  function swing(mi, mul) {
+    const mv = hero.k.kit[mi], e = lastEnv;
     let dir = faceVec(e), tg = mv.kind === 'guard' ? null : target(e, dir);
     if (tg) { const o = heroPos(), d = Math.hypot(tg.x - o.x, tg.y - o.y) || 1; dir = [(tg.x - o.x) / d, (tg.y - o.y) / d]; }
     const o = heroPos(), reach = tg ? Math.min(Math.hypot(tg.x - o.x, tg.y - o.y) - 0.7 * e.TS, 2.1 * e.TS) : 0.5 * e.TS;
-    st.atk = { mi: mi, kind: mv.kind, t: 0, dir: dir, dash: Math.max(0, reach), done: false };
+    st.atk = { mi: mi, kind: mv.kind, t: 0, dir: dir, dash: Math.max(0, reach) * (mul > 1 ? 1.2 : 1), done: false, mul: mul };
     st.cd = st.cdTot = CD[mi] || 1; st.quiet = 0;
     if (mv.kind === 'guard') { hero.guard = true; st.guard = 1.3; }
     if (H.sfx) H.sfx(mv.kind === 'guard' ? 'tap' : 'slash');
@@ -165,9 +179,9 @@ const ACT = (() => {
     if (a.kind === 'guard') return;
     E.slice().forEach((m) => {
       if (Math.hypot(m.x - cx, m.y - cy) > rad + 8) return;
-      if (a.kind === 'attack' && rand() * 100 >= mv.acc) { num(m.x, m.y - 26, 'Miss', '#FFFFFF'); return; }
-      const fromDark = st.veil > 0 ? 1.8 : 1, before = m.s.hp, power = Math.round((a.kind === 'status' ? Math.round(hero.k.kit[0].power * 0.6) : mv.power) * fromDark);   // the first blow out of the dark lands hard
-      if (fromDark > 1) { st.veil = 0; st.cd = st.cdTot = Math.max(st.cd, 3.5); num(m.x, m.y - 42, 'From the dark', '#C9A8FF'); }
+      if (a.kind === 'attack' && a.mi !== 1 && rand() * 100 >= mv.acc) { num(m.x, m.y - 26, 'Miss', '#FFFFFF'); return; }   // the heavy never misses: it is fed, not rolled
+      const fromDark = st.veil > 0 ? 1.8 : 1, before = m.s.hp, power = Math.round((a.kind === 'status' ? Math.round(hero.k.kit[0].power * 0.6) : mv.power) * fromDark * (a.mul || 1));   // the first blow out of the dark lands hard
+      if (fromDark > 1) { st.veil = 0; st.cd = st.cdTot = Math.max(st.cd, 2.5); num(m.x, m.y - 42, 'From the dark', '#C9A8FF'); }
       g.hit(hero, m.s, power, rand); const mult = ((m.s.fxHits || [])[0] || {}).m || 1; delete m.s.fxHits;
       if (a.kind === 'status') { const key = { burn: 'burn', weaken: 'weak', daze: 'daze', sap: 'sap' }[mv.effect]; if (key) m.s[key] = mv.effect === 'daze' ? 2 : 3; else if (mv.effect === 'heal') { hero.hp = Math.min(hero.max, hero.hp + Math.round(hero.max * 0.28)); } else if (mv.effect === 'fortify') hero.fort = 4; }
       const dmg = before - m.s.hp; num(m.x, m.y - 26, String(dmg), dmg >= 40 ? '#FFD86B' : '#FFFFFF'); if (H.sfx && dmg > 0) H.sfx('hit');
@@ -205,7 +219,7 @@ const ACT = (() => {
   let PR = [];
   const duelK = () => { const o = (typeof window !== 'undefined' && window.__duel) || { hp: DUEL_HP, dmg: DUEL_DMG, pace: DUEL_PACE }, t = (duel && DUEL_TUNE[duel.tr.id]) || {}; return { hp: o.hp * (t.hp || 1), dmg: o.dmg * (t.dmg || 1), pace: o.pace * (t.pace || 1) }; };   // window.__duel is the simulator's override
   function koHero() {
-    hero.hp = 0; st.atk = null; hero.guard = false; st.guard = 0; if (H.sfx) H.sfx('lose');
+    hero.hp = 0; st.atk = null; hero.guard = false; st.guard = 0; st.stanceOn = false; if (H.sfx) H.sfx('lose');
     const alt = benchSides().filter((b) => b.hp > 0).sort((a, b) => b.hp / b.max - a.hp / a.max)[0];
     if (alt) { st.swapIn = { seed: alt.k.seed, t: 0.9 }; st.calm = 1.6; if (H.toast) H.toast(hero.k.name + ' was knocked out. Go, ' + alt.k.name + '!'); }
     else { st.down = 4; st.calm = 4; if (duel) endDuel(false); else if (H.toast) H.toast('Your party is knocked out. They recover in a moment.'); }
@@ -428,7 +442,7 @@ const ACT = (() => {
     });
   }
   return {
-    bind, step, items, drawFx, active, attack, swapTo, startDuel, giveUp: () => abortDuel('You gave up.'), dueling: () => !!duel, canDuel: () => armed && !duel, walls: () => walls.map((w) => ({ tx: w.tx, ty: w.ty, hp: w.hp, t: w.t })), veiled: () => st.veil > 0, veilAlpha: () => (st.veil > 0 ? 0.35 : 1), verb: () => (verb ? { kind: verb.kind, t: verb.t, r: verb.r || 0, charge: verb.kind === 'ember' ? Math.max(0, Math.min(1, (verb.t - 0.12) / 1.2)) : 0 } : null), chargeable: () => canVerb() && verbOf() === 'ember', chargeStart, chargeEnd, chargeCancel, dawn: () => (duel && duel.night ? Math.min(1, duel.night.t / duel.night.len) : null),
+    bind, step, items, drawFx, active, attack, swapTo, startDuel, giveUp: () => abortDuel('You gave up.'), dueling: () => !!duel, canDuel: () => armed && !duel, walls: () => walls.map((w) => ({ tx: w.tx, ty: w.ty, hp: w.hp, t: w.t })), veiled: () => st.veil > 0, veilAlpha: () => (st.veil > 0 ? 0.35 : 1), verb: () => (verb ? { kind: verb.kind, t: verb.t, r: verb.r || 0, charge: verb.kind === 'ember' || verb.kind === 'heavy' ? Math.max(0, Math.min(1, (verb.t - 0.12) / (verb.kind === 'heavy' ? 0.8 : 1.2))) : 0 } : null), chargeable: () => canFeed(), stance: () => !!st.stanceOn, chargeStart, chargeEnd, chargeCancel, dawn: () => (duel && duel.night ? Math.min(1, duel.night.t / duel.night.len) : null),
     duelParty: () => (duel ? duel.party : null), duelInfo: () => (duel ? { name: duel.tr.name, total: duel.queue.length, defeated: duel.down, dawn: duel.night ? Math.min(1, duel.night.t / duel.night.len) : null, boss: !!(duel.tr.boss || duel.tr.leader || duel.tr.warden), tower: !!duel.tr.tower, floor: duel.tr.floor } : null), clear: () => { E = []; }, foes: () => E.map((m) => ({ x: m.x, y: m.y, rare: !!m.rare, woke: !!m.woke, name: m.k.name, rarity: m.k.rarity, hp: m.s.hp, max: m.s.max, frozen: m.frozen > 0, burn: m.s.burn || 0, weak: m.s.weak || 0, sap: m.s.sap || 0, daze: m.s.daze || 0, calm: m.calmT > 0, mode: m.mode, rooted: m.rooted > 0, pull: m.pull > 0 })), stir: () => stir, stirSpent: () => stirSpent, spawn: (n, elem, rare) => { for (let i = 0; i < (n || 1) && lastEnv; i++) spawnOne(lastEnv, 7, elem, rare); }, orbs: () => OFF, get shots() { return PR; }, BEH,
     get sel() { return st.sel; }, setSel: (i) => { st.sel = Math.max(0, Math.min(3, i)); },
     cdFrac: () => (st.cdTot ? st.cd / st.cdTot : 0), get hero() { return hero; }, get down() { return st.down > 0; },

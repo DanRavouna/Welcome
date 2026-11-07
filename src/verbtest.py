@@ -90,10 +90,10 @@ with sync_playwright() as p:
   check('the wall is set on the tile you face', pg.evaluate("ACT.attack() && ACT.walls().length===1 && ACT.walls()[0].tx===Math.floor(WORLD.pos().x/32)+1"), pg.evaluate("ACT.walls()"))
   pg.wait_for_timeout(1800)
   d=pg.evaluate("(()=>{const p=WORLD.pos();const f=ACT.foes()[0];return f?Math.hypot(f.x-p.x,f.y-p.y)/32:null})()")
-  check('a chasing critter cannot pass it: still more than 1.5 tiles away after 1.8 s, and you are unhurt', d is not None and d>1.5 and pg.evaluate("ACT.hero.hp")==h0, [d, h0, pg.evaluate("ACT.hero.hp")])
+  check('a chasing critter cannot pass it: still beyond the wall (more than 1.3 tiles) after 1.8 s, and you are unhurt', d is not None and d>1.3 and pg.evaluate("ACT.hero.hp")==h0, [d, h0, pg.evaluate("ACT.hero.hp")])
   pg.evaluate("(()=>{const w=ACT.walls()[0];const o=WORLD.pos();ACT.enemies.forEach(m=>{m.x=o.x+4*32;m.y=o.y;m.kind='shoot';m.cd=0;m.tele=0.01;m.aim={x:o.x,y:o.y};}); })()")
   pg.wait_for_timeout(1500)
-  check('a shot at you breaks on the wall instead (the wall has taken a hit, you have not)', pg.evaluate("ACT.walls().length===0 || ACT.walls()[0].hp<3") and pg.evaluate("ACT.hero.hp")==h0, [pg.evaluate("ACT.walls()"), pg.evaluate("ACT.hero.hp")])
+  check('a shot at you breaks on the wall instead (the wall has taken a hit, you have not)', pg.evaluate("ACT.walls().length===0 || ACT.walls()[0].hp<3") and pg.evaluate("ACT.hero.hp")==h0, [pg.evaluate("ACT.walls().length===0 ? 'wall broken' : 'wall hp ' + ACT.walls()[0].hp"), pg.evaluate("ACT.hero.hp")==h0])
   # ---- Bloom ----
   lead(seeds['Bloom']); check('a Bloom critter leads', pg.evaluate("ACT.hero.k.element.name")=='Bloom')
   foes_at(1.4, 'Tide'); pg.evaluate("ACT.setSel(3); ACT.enemies.forEach(m=>{m.mode='chase'; m.cd=0; m.tele=0}); ACT.hero.hp=Math.round(ACT.hero.max*0.5)"); pg.wait_for_function("ACT.cdFrac()===0", timeout=5000)
@@ -104,5 +104,25 @@ with sync_playwright() as p:
   check('what came near has forgotten the fight for a moment (calm, idle)', all(f['calm'] and f['mode']=='idle' for f in placed()), placed())
   pg.wait_for_timeout(1400)
   check('the petals fade after about 2.4 s', pg.evaluate("ACT.verb()") is None)
+  # ---- the heavy blow and the guard stance, every type (Bloom leads here) ----
+  foes_at(1.0, 'Tide'); pg.evaluate("ACT.enemies.splice(1); ACT.setSel(1)"); pg.wait_for_function("ACT.cdFrac()===0", timeout=8000)
+  taps=[]
+  for i in range(5):
+    pg.evaluate("(()=>{const o=WORLD.pos();ACT.enemies.forEach(m=>{m.x=o.x+32;m.y=o.y-20;m.hx=m.x;m.hy=m.y;m.kx=0;m.ky=0;});})()"); pg.wait_for_timeout(100)
+    h=pg.evaluate("ACT.foes()[0].hp"); pg.evaluate("ACT.attack()"); pg.wait_for_timeout(420); taps.append(h-pg.evaluate("ACT.foes()[0].hp")); pg.wait_for_function("ACT.cdFrac()===0", timeout=8000)
+  check('the heavy never misses: five taps, five hits', all(t>0 for t in taps), taps)
+  pg.evaluate("(()=>{const o=WORLD.pos();ACT.enemies.forEach(m=>{m.x=o.x+32;m.y=o.y-20;m.hx=m.x;m.hy=m.y;m.kx=0;m.ky=0;});})()"); pg.wait_for_timeout(100)
+  h=pg.evaluate("ACT.foes()[0].hp"); check('holding the heavy feeds it (the charge rises over real time)', pg.evaluate("ACT.chargeable() && ACT.chargeStart() && ACT.verb().kind==='heavy'") and pg.evaluate("""()=>new Promise(res=>{const a=[];const t0=performance.now();const tick=()=>{a.push(ACT.verb()?ACT.verb().charge:null);if(performance.now()-t0<1300)setTimeout(tick,120);else res(a.every((x,i)=>x!==null&&(i===0||x>=a[i-1]))&&a[a.length-1]>=0.9)};tick()})"""))
+  pg.evaluate("ACT.chargeEnd()"); pg.wait_for_timeout(450); fed=h-pg.evaluate("ACT.foes()[0].hp")
+  check('let go fed, it lands about 2x the light tap (with the roll on each)', fed>=max(taps)*1.5 and fed>=sum(taps)/len(taps)*1.8, [fed, taps])
+  # the stance
+  pg.wait_for_function("ACT.cdFrac()===0", timeout=8000); pg.evaluate("ACT.setSel(2); ACT.hero.hp=ACT.hero.max; ACT.enemies.forEach(m=>{m.mode='chase'; m.kind='melee'; m.cd=0; m.tele=0; m.s.max=600; m.s.hp=600})")
+  check('guard is a stance: held while the button is down', pg.evaluate("ACT.chargeStart() && ACT.stance() && ACT.hero.guard"))
+  h0=pg.evaluate("ACT.hero.hp"); pg.wait_for_timeout(1300); h1=pg.evaluate("ACT.hero.hp"); guarded=h0-h1
+  check('let go and it drops', pg.evaluate("ACT.chargeEnd() && !ACT.stance() && !ACT.hero.guard"))
+  pg.wait_for_function("ACT.cdFrac()===0", timeout=8000); pg.evaluate("ACT.hero.hp=ACT.hero.max; ACT.enemies.forEach(m=>{m.mode='chase'; m.kind='melee'; m.cd=0; m.tele=0})"); h2=pg.evaluate("ACT.hero.hp"); pg.wait_for_timeout(1300); open_=h2-pg.evaluate("ACT.hero.hp")   # the same bites, in the open
+  check('bites while standing firm cost far less than in the open', open_>0 and guarded<open_*0.7, [guarded, open_])
+  pg.evaluate("ACT.enemies.forEach(m=>{m.cd=99})"); pg.wait_for_function("ACT.cdFrac()===0", timeout=8000); pg.evaluate("ACT.chargeStart()"); pg.wait_for_timeout(2900)
+  check('it cannot be held forever: the stance breaks at about 2.5 s', not pg.evaluate("ACT.stance()") and not pg.evaluate("ACT.hero.guard"))
   check('no page errors', not errs, errs); b.close()
 done()

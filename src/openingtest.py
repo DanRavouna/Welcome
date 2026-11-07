@@ -116,7 +116,7 @@ with sync_playwright() as p:
   check('the bot walks from the keep to the west gate and into Moss Forest', ok, lap)
   z=pg.evaluate("WORLD.map.rare"); ok2=ok and goto((z['x']+1,z['y']+1))
   t=time.time()
-  while ok2 and time.time()-t<40 and not pg.evaluate("ACT.stirSpent()"):   # the rare one comes only when it is quiet: the bot holds its ground in the patch and strikes only what comes within reach (real attack)
+  while ok2 and time.time()-t<60 and not pg.evaluate("ACT.stirSpent()"):   # under a full parallel run the fight for the patch can take most of a minute   # the rare one comes only when it is quiet: the bot holds its ground in the patch and strikes only what comes within reach (real attack)
     f=foe()
     if f and f['d']<1.3: pg.evaluate("ACT.attack()")
     pg.wait_for_timeout(200)
