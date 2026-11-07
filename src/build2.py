@@ -1,7 +1,7 @@
 import os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
-# Default output: index.html at the repository root (served by GitHub Pages).
-OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', 'index.html')
+# Default output: games/critter-roll/index.html (the root index.html is the shelf page that lists the games; GitHub Pages serves both).
+OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', 'games', 'critter-roll', 'index.html')
 W = os.path.join(HERE, 'world') + os.sep
 # Map edits made in the map editor (kept on its own branch, never on main) live in mapedits.json; wrapped here so the game reads them as MAPEDITS.
 mapedits = '// generated from mapedits.json by build2.py\nconst MAPEDITS = ' + open(W + 'mapedits.json').read().strip() + ';\n'

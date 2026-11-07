@@ -1,0 +1,14 @@
+ok #x#: no page errors | []
+ok #x#: # columns | #
+ok #x#: no horizontal scroll
+ok #x#: one game on the shelf | #
+ok #x#: shelf filled to # slots | #
+ok #x#: the bar names the first cartridge | ['# CRITTER ROLL', '#', '-NO RECORD-']
+ok #x#: no record on a clean device | -No record-
+ok #x#: the bar names the first cartridge | ['# CRITTER ROLL', '-NO RECORD-']
+ok a save with three critters shows as a record | # kept
+ok ArrowRight focuses the cartridge | g#
+ok axe: no violations | []
+ok Enter opens Critter Roll | file:///mnt/user-data/outputs/games/critter-roll/index.html
+ok the title screen shows the lit window
+ok the vendored Supabase library loads beside the game

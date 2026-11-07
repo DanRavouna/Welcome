@@ -1,4 +1,4 @@
-# When mapedits.json changes on main (the map editor's Submit button pushes it), rebuild index.html, run the smoke tests,
+# When mapedits.json changes on main (the map editor's Submit button pushes it), rebuild games/critter-roll/index.html, run the smoke tests,
 # commit the build and deploy. The standing rule "index.html is built and committed, never edited by hand" is kept: this is the
 # same python3 src/build2.py, run here because the editor page has no shell. If the tests fail nothing is committed and GitHub emails the owner.
 name: Build from map edits
@@ -36,7 +36,7 @@ jobs:
         run: |
           git config user.name "map editor"
           git config user.email "noreply@github.com"
-          git add index.html
+          git add games/critter-roll/index.html
           git diff --cached --quiet && echo "index.html unchanged" || git commit -m "Build index.html from map edits"
           git push
       - name: Deploy (a push made by a workflow does not start the Pages workflow by itself)

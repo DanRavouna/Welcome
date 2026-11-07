@@ -23,11 +23,11 @@ The game has a greater meaning, the quest sits inside it, and every place sits i
 - Project URL: `https://xuawpknnmozcfzgnflel.supabase.co`
 - Publishable key: `sb_publishable_iLcZK_HKfm1inXYG5MPxnQ_3ut-Hq7Z`
 - **Cloud saves are live** (email + password accounts). Schema and security rules: `supabase/001_saves.sql` (table `saves`, one row per player, row level security owner-only; `save_leases` + `acquire_save_lease()` = one writer at a time). Any schema change goes in a new numbered `.sql` file, applied through the Supabase Management API.
-- The Supabase JS library is vendored at `vendor/supabase-2.118.0.js` (from npm, pinned) and loaded next to `index.html`. If it fails to load, the game falls back to local saves.
+- The Supabase JS library is vendored at `games/critter-roll/vendor/supabase-2.118.0.js` (from npm, pinned) and loaded next to the built game. If it fails to load, the game falls back to local saves.
 - Admin/secret keys are only ever fetched into memory for tests (`SB_SECRET`), never printed, never written to a file, never committed.
 
 ## Layout
-- `index.html` is the built game that GitHub Pages serves (plus `vendor/`). Never edit it by hand.
+- `index.html` at the root is the shelf: the page that lists the games as cartridges (hand-written, static, tested by `hubtest`). `games/critter-roll/index.html` is the built game (plus `games/critter-roll/vendor/`). Never edit the built game by hand; GitHub Pages serves the root page and `games/`.
 - `src/world/` holds the source pieces (`shell.html`, `screen.html`, `runtime.js`, `pixel.js`, `pxworld.js`, `landmarks.js` (reusable props), `adventure.js` (clues, dungeon layouts, object art), `world.js`, `weather.js`, `ambient.js` (scenery critters), `vfx.js` (attack visual effects), `action.js` (action mode), `cloud.js`, `music.js`, `flavor.js` (townsfolk remarks), then `base.js` (Base + Component), `data.js` (constants), `game.js` (Game class) and `app.js` (APP: HUD, menus, screens)). `logic.js`, `critter.html`, `helmet.html`, `build.py` and `reassemble.py` are older leftovers that the current build does not use.
 - `src/*.py` and `src/*.js` are the tests and balance sims from the handoff.
 - Developer tools: tap the ID in the menu 5 times, then Menu > Game > Dev tools (teleport, ignore level requirements, adventure shortcuts). See the handoff.
@@ -35,7 +35,7 @@ The game has a greater meaning, the quest sits inside it, and every place sits i
 
 ## Build
 ```bash
-python3 src/build2.py            # writes index.html at the repo root
+python3 src/build2.py            # writes games/critter-roll/index.html
 ```
 
 ## Tests

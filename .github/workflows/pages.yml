@@ -1,7 +1,7 @@
 # Deploys the built game to GitHub Pages from a workflow we control, so a stuck deploy can be retried from the Actions tab
 # (Actions > Deploy to GitHub Pages > Run workflow) instead of waiting on GitHub's automatic branch deploy.
 # Needs Settings > Pages > Build and deployment > Source set to "GitHub Actions" (a one-time switch by the repository owner).
-# index.html is still built locally (python3 src/build2.py) and committed, as the standing rules say; this only publishes it with vendor/.
+# games/critter-roll/index.html is still built locally (python3 src/build2.py) and committed, as the standing rules say; this only publishes it with the root index.html (the shelf) and games/.
 name: Deploy to GitHub Pages
 on:
   push:
@@ -22,11 +22,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble the site (the built game and the vendored library only)
+      - name: Assemble the site (the shelf page, the built games and the vendored library only)
         run: |
           mkdir -p site
           cp index.html site/
-          cp -r vendor site/
+          cp -r games site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
