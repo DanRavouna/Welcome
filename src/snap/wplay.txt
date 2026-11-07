@@ -1,4 +1,4 @@
 kept after Keep: 1
 dex shows kept critter: 1
-after reload: {'kept': 1, 'wins': 0, 'pos': {'x': 401, 'y': 339}, 'tip': True} | position before: {'x': 401.49912874289726, 'y': 339.2}
+after reload: {'kept': 1, 'wins': 0, 'pos': {'x': 285, 'y': 301}, 'tip': True} | position before: {'x': 284.8, 'y': 300.8}
 page errors: none

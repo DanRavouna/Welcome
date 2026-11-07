@@ -101,8 +101,7 @@ with sync_playwright() as p:
   # guards and the Keeper: sight lines down the middle of their rooms, boss flag, rewards
   r=pg.evaluate("""()=>{WORLD.npcs.forEach(n=>{n.declined=true});const out={};for(const id of ['pell','ione','keeper']){const n=WORLD.npcs.find(x=>x.id===id);WORLD.setPos((n.x+0.5)*WORLD.TS,(n.y+3.5)*WORLD.TS);out[id]={at:[n.x,n.y],dir:n.dir,sees:WORLD.inSight(n),size:n.size,stage:n.stage,lv:n.lv,reward:n.reward,boss:!!n.boss}}return out}""")
   for k,v in r.items(): print('  ',k,v)
-  pg.evaluate("APP.startTrainer(WORLD.npcs.find(x=>x.id==='keeper'))"); pg.wait_for_timeout(400)
-  print('Keeper battle state:', pg.evaluate("(()=>{const t=APP.game.state.trainer;return {boss:t.boss,reward:t.reward,team:t.team.length,stage:t.stage,lv:t.lv}})()")); pg.evaluate("APP.close()")
+  print('Keeper (fought as a duel on the map, acttest5):', pg.evaluate("(()=>{const n=WORLD.npcs.find(x=>x.id==='keeper');return {boss:!!n.boss,reward:n.reward,team:APP.game.teamFor(n).length,stage:n.stage,lv:n.lv}})()"))
   # wild moss in the gallery, crown before/after the Keeper
   print('dungeon wild critters:', pg.evaluate("[WORLD.map.types,WORLD.map.rate, WORLD.map.grid.flat().filter(c=>c==='W').length+' moss tiles']"))
   pg.evaluate("(()=>{const o=WORLD.objects.find(x=>x.id==='crown');WORLD.setPos((o.x-0.5)*WORLD.TS,(o.y+0.5)*WORLD.TS)})()"); pg.evaluate("[0,1,2,3].forEach(()=>WORLD.step(1/30))"); pg.wait_for_timeout(250)

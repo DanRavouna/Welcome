@@ -1,8 +1,11 @@
-ok by the Arena bell: Ring the bell | Ring the bell
-ok the bell opens the battle screen | battle
+ok the ring is walked into through its south gate (the floor and the gate open, the stands solid) | ['TT..XX,XX..XXXXXX.......XXXXXX.,.TTT', 'TT.,.,,.,..XXXXX.O.......XXXXX..,TTT', 'TT..XX.XX..XXXXX.........XXXXX.,RTTT', 'TTT.XX.XX,.XXXXX.........XXXXX....TT', 'TT..,..,...XXXXX.........XXXXX...TTT', 'TT..,.,..,.XXXXXXO.....OXXXXXX..,.TT', 'TT.,XX.,.,..XXXXXXX...XXXXXXX..,.TTT', 'TT..XX.X.....XXXXXX...XXXXXX......TT', 'TTT...........XXXXX...XXXXX...======', 'TT.,............XXX...XXX.....======']
 ok arena: names on the rail, a bench, a bucket, out on the sand
-ok the zone is the ring: the road from the east edge runs through the gate onto the sand, the stands and the corners are solid | ['XXXXXXX............XXXXXXX', 'XXXXXXX......O.....=======', 'XXXXXXX............=======', 'XXXXXXX............XXXXXXX']
+ok the camp: five tents and a fire
 ok the Arena hangs off the Ashwood Trail, nowhere else
+ok the Arena house ar-a has its room | ['in-ar-a', ['armchair', 'tally', 'ledger']]
+ok the Arena house ar-b has its room | ['in-ar-b', ['wallmap', 'kettle', 'stool']]
+ok the Arena house ar-c has its room | ['in-ar-c', ['toolwall', 'drawings', 'smallbed']]
+ok arena rooms: no line is a tip
 ok Pip's door: Go inside | Go inside
 ok it leads into Pip's house
 ok Pip's room: a small bed, finds in jars, bowls

@@ -423,6 +423,26 @@ class Component extends Base {
         mouth: { w: 26, h: 10, r: '0 0 50% 50%', bg: 'transparent', bw: '0 0 3px 0', x: 109, y: 154 }
       };
     }
+    if (key === 'kindlemane') {   // a tawny cat with a mane of flame, ember-tipped ears, a flame at the end of its tail, four heavy paws; it sits square, facing you
+      const body = '#D99A5A', outline = '#5A2A10', mane = '#FF8A3A', mane2 = '#E0522A', petals = [];
+      for (let i = 0; i < 10; i++) { const a = -90 + i * 36, rad = a * Math.PI / 180; petals.push({ x: Math.round(120 + Math.cos(rad) * 54) - 16, y: Math.round(104 + Math.sin(rad) * 50) - 30, w: 32, h: 60, r: '50% 50% 50% 50% / 62% 62% 38% 38%', rot: a + 90, bg: i % 2 ? mane : mane2, bw: 3, bc: '#8A3A10' }); }
+      return {
+        bodyColor: body, bellyBg: 'rgba(255,230,180,0.8)', outline: outline, bodyFill: 'radial-gradient(circle at 34% 26%, #F2C27A 0%, ' + body + ' 52%, #A86A30 100%)',
+        fx: [{ x: 50, y: 60, s: 11 }, { x: 190, y: 70, s: 10 }, { x: 120, y: 24, s: 12 }, { x: 64, y: 168, s: 9 }],
+        parts: [{ x: 36, y: 20, w: 168, h: 170, r: '50%', rot: 0, bg: 'rgba(255,138,58,0.22)', bw: 0, bc: INK }].concat(petals).concat([
+          { x: 176, y: 150, w: 44, h: 18, r: '50%', rot: -28, bg: body, bw: 3, bc: outline }, { x: 204, y: 122, w: 22, h: 34, r: '50% 0 50% 50%', rot: -30, bg: mane, bw: 3, bc: '#8A3A10' }, { x: 211, y: 133, w: 10, h: 14, r: '50% 0 50% 50%', rot: -30, bg: '#FFE08A', bw: 0, bc: INK },   // the tail and its flame
+          { x: 60, y: 184, w: 34, h: 18, r: '45%', rot: 0, bg: '#C98A4A', bw: 3, bc: outline }, { x: 96, y: 188, w: 30, h: 16, r: '45%', rot: 0, bg: '#C98A4A', bw: 3, bc: outline }, { x: 128, y: 188, w: 30, h: 16, r: '45%', rot: 0, bg: '#C98A4A', bw: 3, bc: outline }, { x: 160, y: 184, w: 34, h: 18, r: '45%', rot: 0, bg: '#C98A4A', bw: 3, bc: outline }   // four paws
+        ]),
+        over: [
+          { x: 70, y: 66, w: 22, h: 30, r: '50% 50% 0 0', rot: -22, bg: body, bw: 3, bc: outline }, { x: 148, y: 66, w: 22, h: 30, r: '50% 50% 0 0', rot: 22, bg: body, bw: 3, bc: outline },   // the ears
+          { x: 76, y: 60, w: 8, h: 12, r: '50% 50% 0 0', rot: -22, bg: mane, bw: 0, bc: INK }, { x: 156, y: 60, w: 8, h: 12, r: '50% 50% 0 0', rot: 22, bg: mane, bw: 0, bc: INK },   // ember tips
+          { x: 104, y: 92, w: 32, h: 5, r: '3px', rot: 0, bg: '#A86A30' }   // the brow
+        ],
+        body: { x: 56, y: 90, w: 128, h: 102, r: '50% 50% 46% 46% / 56% 56% 44% 44%' }, belly: { x: 90, y: 142, w: 60, h: 40 },
+        eyeRow: { x: 56, y: 116, w: 128 }, eyes: [{ s: 22, ps: 10 }, { s: 22, ps: 10 }],
+        mouth: { w: 24, h: 10, r: '0 0 50% 50%', bg: 'transparent', bw: '0 0 3px 0', x: 108, y: 150 }
+      };
+    }
     if (key === 'wickling') {   // a round gold spark with a lantern on its antenna, small pale-blue wings, ice crystals on its back and a wick tail
       const body = '#FFE08A', outline = '#8A6510', wing = '#CFE6FF', wing2 = '#E8F4FF', wo = '#5A8AB8', gold = '#E8B84A';
       return {
@@ -657,6 +677,7 @@ class Component extends Base {
       if (an === 'Ember' && !SECRETS[A.k.seed] && A.hp < A.max * 0.5) abMult *= 1.15;
       if (dn === 'Frost') abMult *= 0.92;
       if (dn === 'Moss' && !D.abUsed) { abMult *= 0.7; D.abUsed = true; abNote = ' (Thick Bark)'; }
+      if (D.k.seed === SECRET4_SEED && D.hp < D.max * 0.5) { abMult *= 0.8; abNote = ' (Standfast)'; }   // Kindlemane: below half HP it takes 20% less
     }
     const dmg0 = Math.max(1, Math.round(power * (atk / (def + 40)) * mult * (0.85 + rand() * 0.3) * 0.6 * (D.guard ? 0.4 : 1) * (A.boost || 1) * (warded ? fx.ward.mult : 1) * (this._surge && A.k.element.name === this._surge ? 1.3 : 1) * abMult));
     let dmg = dmg0;
@@ -790,24 +811,6 @@ class Component extends Base {
       .concat([chip('★ Shiny only', dexShiny, () => this.setState({ dexShiny: !dexShiny }))]);
     const dexCount = 'Showing ' + caughtShown.length + ' of ' + caught.length;
 
-    const beats = this.beats();
-    const b = st.battle;
-    const inBattle = !!b && !b.over;
-    const fighterEntry = st.caught.find((e) => e.seed === st.fighter) || st.caught[0] || null;
-    const me = fighterEntry ? this.make(fighterEntry.seed, fighterEntry.stage) : null;
-    const foe = this.make(st.foeSeed, fighterEntry ? fighterEntry.stage : 1);
-    let reward = 1;
-    if (foe.rarity === 'Rare') reward += 1;
-    if (foe.rarity === 'Mythic') reward += 2;
-    if (me && beats[foe.element.name].indexOf(me.element.name) !== -1) reward += 1;
-    let matchupNote = '';
-    if (me) {
-      if (beats[me.element.name].indexOf(foe.element.name) !== -1) matchupNote = me.element.name + ' is strong against ' + foe.element.name + '. You have the edge.';
-      else if (beats[foe.element.name].indexOf(me.element.name) !== -1) matchupNote = foe.element.name + ' is strong against ' + me.element.name + '. Tough fight, bigger reward.';
-      else matchupNote = 'No type advantage either way. Stats and tactics decide it.';
-      matchupNote += ' Win reward: +' + reward + ' essence.';
-    }
-
     const rel = { Common: 1, Uncommon: 1, Rare: 2, Mythic: 4 };
     const releaseGain = detail ? rel[c.rarity] * entry.stage : 0;
     const evolveCost = detail ? (entry.stage === 1 ? 15 : 60) : 0;
@@ -899,7 +902,7 @@ class Component extends Base {
     }).filter((r) => r.cells.length > 0);
     const speciesChips = [chip('All species', !dexMissing, () => this.setState({ dexMissing: false })), chip('Not yet found', dexMissing, () => this.setState({ dexMissing: true }))];
     // the bonus species (#49, #50): each shows as ??? once its door has been opened and for good once found; never part of the 48
-    const bonusDefs = [[SECRET_SEED, !!(st.adv && st.adv.open && st.adv.open.arch)], [SECRET2_SEED, !!(st.adv && st.adv.open && st.adv.open.lamp)], [SECRET3_SEED, !!(st.adv && st.adv.open && st.adv.open.forge)]];
+    const bonusDefs = [[SECRET_SEED, !!(st.adv && st.adv.open && st.adv.open.arch)], [SECRET2_SEED, !!(st.adv && st.adv.open && st.adv.open.lamp)], [SECRET3_SEED, !!(st.adv && st.adv.open && st.adv.open.forge)], [SECRET4_SEED, !!(st.arena && st.arena.step >= 5)]];
     const bonusFound = (sd) => st.caught.some((e) => e.seed === sd);
     const bonusList = bonusDefs.map(([sd, opened]) => { const f = bonusFound(sd), S = SECRETS[sd]; return { show: (f || opened) && (!dexMissing || !f), icon: '', name: f ? S.name : '???', sub: f ? '#0' + S.speciesNo + ' · ' + S.type + ' · ' + S.ability.name : S.hint, sd: sd, f: f }; }).filter((x) => x.show);
     if (st.dexView === 'species') bonusList.forEach((x) => { x.icon = PIX.sprite(this.make(x.sd, 3, SECRETS[x.sd].lv), x.f ? 'icon' : 'silhouette'); });
@@ -919,7 +922,7 @@ class Component extends Base {
       bg: dexView === d[0] ? '#1E2A4A' : 'transparent', fg: dexView === d[0] ? '#FFFFFF' : '#1E2A4A',
       go: () => this.setState({ dexView: d[0] })
     }));
-    const tabDefs = [['roll', 'Roll'], ['dex', 'Dex (' + st.caught.length + ')'], ['battle', inBattle ? 'Battle •' : 'Battle'], ['badges', 'Trainer']];
+    const tabDefs = [['roll', 'Roll'], ['dex', 'Dex (' + st.caught.length + ')'], ['badges', 'Trainer']];
     const tabs = tabDefs.map((t) => ({
       label: t[1],
       pressed: tab === t[0] ? 'true' : 'false',
@@ -931,37 +934,6 @@ class Component extends Base {
 
     const noEnergy = en.left === 0;
     const keepDisabled = kept || isPreview;
-    const cannotReroll = !b && st.essence < 1;
-
-    const duel = !me ? [] : (b ? b.s : [{ k: me }, { k: foe }]).map((x, i) => {
-      const max = x.max ?? Math.round(x.k.stats[0].value * 1.5 + 60);
-      const now = x.hp ?? max;
-      const pct = Math.round((now / max) * 100);
-      const calm = st.settings && st.settings.calm;
-      const hitClass = !calm && b && b.fx && b.fx.hit[i] ? (b.fx.round % 2 ? 'hit-a' : 'hit-b') : '';
-      const F = b && b.fx && b.fx.side ? b.fx.side[i] : null, par = b && b.fx && b.fx.round % 2 ? 'a' : 'b';
-      const fx = F ? { layer: 'fxl fx-' + par + (calm ? ' fx-calm' : ''), burst: !calm && !!F.burst && F.burst !== 'guard', burstCls: 'fx-burst fx-' + F.burst, color: F.color || '#FFFFFF',
-        ring: !calm && !!F.ring, ringColor: F.ring || '#FFFFFF', num: F.num || '', numColor: F.heal ? '#8CFF9E' : (F.burst === 'strong' ? '#FFD86B' : '#FFFFFF'), numCls: 'fx-num' + (F.burst === 'strong' ? ' fx-big' : ''),
-        label: F.ko ? 'KO!' : (F.label || ''), labelCls: F.ko ? 'fx-label fx-ko' : 'fx-label', labelColor: F.ko ? '#FF5A5A' : (F.ring && !F.burst ? F.ring : (F.burst === 'strong' ? '#FFD86B' : (F.ring || '#C9D6F2'))) } : null;
-      const flashCls = F && F.burst && F.burst !== 'guard' && !calm ? 'fx-flash-' + par : '';
-      return { hitClass: hitClass, fx: fx, flashCls: flashCls, side: i === 0 ? 'YOU' : 'WILD', sideColor: i === 0 ? '#A7F04A' : '#FF8A7A', k: x.k, hpMax: max, hpNow: now, hpPct: pct, hpColor: pct > 50 ? '#A7F04A' : (pct > 25 ? '#FFD86B' : '#FF8A7A'), status: b ? this.statusText(x) : (x.k.element.name + ' moves: ' + x.k.kit[3].name) };
-    });
-
-    const moveButtons = inBattle ? b.s[0].k.kit.map((mv, i) => {
-      const P = b.s[0];
-      const off = (mv.kind === 'guard' && P.lastGuard) || (mv.kind === 'status' && P.uses === 0);
-      const sub = mv.kind === 'status' ? mv.sub + ' · ' + P.uses + ' left' : (mv.kind === 'guard' && P.lastGuard ? 'Not twice in a row' : mv.sub);
-      return {
-        name: mv.name, sub: sub, off: off,
-        bg: off ? offBg : (mv.kind === 'attack' ? 'rgba(14,26,56,0.78)' : (mv.kind === 'guard' ? 'rgba(46,84,160,0.85)' : 'rgba(110,80,10,0.85)')),
-        border: off ? 'rgba(255,255,255,0.2)' : (mv.kind === 'status' ? '#FFD86B' : 'rgba(255,255,255,0.5)'),
-        fg: off ? offFg : '#FFFFFF',
-        subFg: off ? offFg : (mv.kind === 'status' ? '#FFE69A' : '#C9D6F2'),
-        use: () => this.playRound(i)
-      };
-    }) : [];
-
-    const resultTitle = !b || !b.over ? '' : (b.fled ? 'You fled. No reward.' : (b.draw ? 'Draw. No essence this time.' : (b.win ? 'You won! +' + b.reward + ' essence' : 'You lost. Try another fighter or tactic.')));
 
     return {
       accent: accent,
@@ -1022,7 +994,6 @@ class Component extends Base {
       showCard: tab === 'roll' || detail,
       showDetail: detail,
       showDexList: tab === 'dex' && !detail && dexView === 'mine',
-      showBattle: tab === 'battle',
       showBadges: tab === 'badges',
       showTestTools: tab === 'badges' && testMode,
       seedInput: st.seedInput,
@@ -1033,34 +1004,6 @@ class Component extends Base {
       evolveLabel: detail && entry.stage === 3 ? 'Fully evolved' : 'Evolve (−' + evolveCost + ')',
       evolveBg: canEvolve ? primaryBg : offBg,
       evolveFg: canEvolve ? '#2A1B00' : offFg,
-      notInBattle: !inBattle,
-      inBattle: inBattle,
-      showLog: !!b,
-      roundLabel: b ? (b.over ? 'Battle log · newest first' : 'Round ' + b.round + ' · newest first') : '',
-      logLines: b ? b.log.slice(-6).reverse() : [],
-      hasResult: !!b && b.over,
-      resultTitle: resultTitle,
-      fighters: caught.slice().sort((p, q) => (me && q.seed === me.seed ? 1 : 0) - (me && p.seed === me.seed ? 1 : 0)).map((k) => ({
-        name: k.name,
-        pressed: me && k.seed === me.seed ? 'true' : 'false',
-        bg: me && k.seed === me.seed ? primaryBg : 'rgba(255,255,255,0.12)',
-        fg: me && k.seed === me.seed ? '#2A1B00' : '#FFFFFF',
-        pick: () => this.setState({ fighter: k.seed, battle: null })
-      })),
-      duel: duel,
-      matchupNote: matchupNote,
-      moveButtons: moveButtons,
-      showPreBattle: tab === 'battle' && st.caught.length > 0 && !inBattle,
-      showMoveBar: tab === 'battle' && inBattle,
-      cannotFight: noEnergy,
-      fightLabel: noEnergy ? 'Out of rolls today' : (b && b.over ? 'Fight again (1 roll)' : 'Fight (1 roll)'),
-      fightBg: noEnergy ? offBg : primaryBg,
-      fightFg: noEnergy ? offFg : '#2A1B00',
-      fightShadow: noEnergy ? 'none' : glowShadow,
-      cannotReroll: cannotReroll,
-      rerollLabel: b ? 'New foe' : 'New foe (1 essence)',
-      rerollBg: cannotReroll ? offBg : 'rgba(14,26,56,0.78)',
-      rerollFg: cannotReroll ? offFg : '#FFFFFF',
       badges: badges,
       badgeRows: badgeRows,
       bd: bd,
@@ -1131,22 +1074,6 @@ class Component extends Base {
           battle: b && b.s[0].k.seed === entry.seed ? null : b
         }, [{ t: 'evolve' }]);
       },
-      nextFoe: () => {
-        if (b) { if (b.over) this.setState({ foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null }); return; }
-        if (st.essence < 1) return;
-        this.update({ foeSeed: 1 + Math.floor(Math.random() * 999998), essence: st.essence - 1 });
-      },
-      fight: () => {
-        const e2 = this.energy();
-        if (!me || e2.left === 0 || inBattle) return;
-        this.update({ battle: this.newBattle(me, foe, reward), day: e2.today, used: e2.used + 1 });
-      },
-      flee: () => {
-        if (!inBattle) return;
-        const nb = JSON.parse(JSON.stringify(b));
-        nb.over = true; nb.fled = true; nb.log.push({ text: 'You fled the battle.' });
-        this.setState({ battle: nb });
-      },
       addEssence: () => this.update({ essence: st.essence + 10 }),
       resetRolls: () => this.update({ day: en.today, used: 0 }),
       newQuests: () => { const q = this.questsFor(st); this.update({ quests: this.makeQuests(q.day, (q.salt || 0) + 1) }); },
@@ -1154,25 +1081,5 @@ class Component extends Base {
     };
   }
 
-  playRound(i) {
-    const b = this.state.battle;
-    if (!b || b.over) return;
-    const P = b.s[0], mv = P.k.kit[i];
-    if ((mv.kind === 'guard' && P.lastGuard) || (mv.kind === 'status' && P.uses === 0)) return;
-    const hp0 = [b.s[0].hp, b.s[1].hp];
-    const nb = this.resolve(JSON.parse(JSON.stringify(b)), i, Math.random);
-    nb.fx = { round: nb.round, hit: [nb.s[0].hp < hp0[0], nb.s[1].hp < hp0[1]] };
-    if (nb.fx.hit[0] || nb.fx.hit[1]) this.sfx('hit');
-    if (nb.over && nb.win) { setTimeout(() => this.sfx('win'), 250); this.buzz([40, 30, 40]); }
-    else if (nb.over && !nb.draw) setTimeout(() => this.sfx('lose'), 250);
-    const events = mv.kind === 'status' ? [{ t: 'special' }] : [];
-    const patch = { battle: nb };
-    if (nb.over && nb.win) {
-      patch.wins = this.state.wins + 1;
-      patch.essence = this.state.essence + nb.reward;
-      events.push({ t: 'win', type: P.k.element.name, adv: this.beats()[P.k.element.name].indexOf(nb.s[1].k.element.name) !== -1 });
-    } else if (nb.over && !nb.draw && !nb.fled) events.push({ t: 'loss' });
-    this.update(patch, events);
-  }
 }
 

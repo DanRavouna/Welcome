@@ -2,7 +2,7 @@
 from playwright.sync_api import sync_playwright
 errs=[]
 AXE=open('/tmp/node_modules/axe-core/axe.min.js').read()
-SCREENS=[('menu','APP.openMenu()','menu'),('dex','APP.closeMenu&&APP.closeMenu(true);APP.open("dex")','screen'),('roll','APP.open("roll")','screen'),('battle','APP.open("battle")','screen'),('map','APP.openMap()','wmap'),('shop','APP.close();APP.openPanel("shop")','shop'),('save','APP.closePanel&&APP.closePanel();APP.openBackup()','bk')]
+SCREENS=[('menu','APP.openMenu()','menu'),('dex','APP.closeMenu&&APP.closeMenu(true);APP.open("dex")','screen'),('roll','APP.open("roll")','screen'),('map','APP.openMap()','wmap'),('shop','APP.close();APP.openPanel("shop")','shop'),('save','APP.closePanel&&APP.closePanel();APP.openBackup()','bk')]
 def reset(pg):
   pg.evaluate("try{APP.close&&APP.close();APP.closePanel&&APP.closePanel();APP.closeMenu&&APP.closeMenu(true);APP.closeMap&&APP.closeMap();const k=document.getElementById('bk');if(k&&!k.hidden)document.getElementById('bk-close').click()}catch(e){}")
 with sync_playwright() as p:

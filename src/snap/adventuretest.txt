@@ -32,7 +32,7 @@ already lit -> The light burns steady.
 pell {'at': [#...], 'dir': 'down', 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False}
 ione {'at': [#...], 'dir': 'down', 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False}
 keeper {'at': [#...], 'dir': 'down', 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': True}
-Keeper battle state: {'boss': True, 'reward': #, 'team': #, 'stage': #, 'lv': #}
+Keeper (fought as a duel on the map, acttest#): {'boss': True, 'reward': #, 'team': #, 'stage': #, 'lv': #}
 dungeon wild critters: [['Dusk', 'Stone'], #, '# moss tiles']
 crown before the Keeper falls: The Keeper stands between you and the crown.
 crown after: The crown lifts from the stone and the dust settle

@@ -6,7 +6,6 @@ devtest
 dextest
 fishtest
 flavortest
-fxtest
 guidetest
 hudcheck
 interiors
@@ -25,8 +24,7 @@ statstest
 titletest
 transitiontest
 twisttest
-vfxtest
-walktest
+vwalktest
 wicktest
 wildtest
 wplay

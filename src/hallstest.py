@@ -10,12 +10,15 @@ with sync_playwright() as p:
   def press(): pg.evaluate("document.getElementById('act').click()"); pg.wait_for_timeout(250)
   def at_device(pid): pg.evaluate("(pid)=>{const p=WORLD.map.places.find(q=>q.id===pid);WORLD.setPos((p.door[0]+0.9)*32,(p.door[1]+1.4)*32);WORLD.step(1/60)}",pid); pg.wait_for_timeout(150)
   tipwords=['tip','odds','you should','try ','better odds','rolls left']
-  # the Arena: the zone is the ring; the bell stands on the sand
-  at_door('arena','bell'); check('by the Arena bell: Ring the bell', pg.inner_text('#act-label')=='Ring the bell', pg.inner_text('#act-label')); press()
-  check('the bell opens the battle screen', pg.evaluate("!document.getElementById('screen').hidden && APP.game.state.tab")=='battle', pg.evaluate("APP.game.state.tab")); pg.evaluate("APP.close()"); pg.wait_for_timeout(100)
+  # the Arena: a place of its own; the ring fills its north, the camp its west, the town its south
+  pg.evaluate("WORLD.enter('arena')"); pg.wait_for_timeout(150)
+  check('the ring is walked into through its south gate (the floor and the gate open, the stands solid)', pg.evaluate("(()=>{const g=WORLD.map.grid; return g[13][20]==='.' && g[7][20]==='.' && g[7][13]==='X' && g[3][20]==='X';})()"), pg.evaluate("WORLD.map.grid.slice(5,15).map(r=>r.join(''))"))
   check('arena: names on the rail, a bench, a bucket, out on the sand', sorted(pg.evaluate("WORLD.map.objects.map(o=>o.kind)"))==['bench','bucket','namewall'])
-  check('the zone is the ring: the road from the east edge runs through the gate onto the sand, the stands and the corners are solid', pg.evaluate("(()=>{const g=WORLD.map.grid,W=WORLD.map.W; return g[9][W-1]==='=' && g[10][W-4]==='=' && g[9][12]==='.' && g[2][13]==='X' && g[1][1]==='X' && g[9][3]==='X';})()"), pg.evaluate("WORLD.map.grid.slice(8,12).map(r=>r.join(''))"))
+  check('the camp: five tents and a fire', sorted(pg.evaluate("(WORLD.map.props||[]).map(p=>p.id)"))==['campfire','tent','tent','tent','tent','tent'])
   check('the Arena hangs off the Ashwood Trail, nowhere else', pg.evaluate("WORLD.MAPS.arena.exits.map(e=>e.to)")==['route-cm'] and pg.evaluate("WORLD.MAPS['route-cm'].exits.some(e=>e.to==='arena') && !WORLD.MAPS.town.exits.some(e=>e.to==='arena')"))
+  for pid,kinds in [('ar-a',['armchair','ledger','tally']),('ar-b',['kettle','stool','wallmap']),('ar-c',['drawings','smallbed','toolwall'])]:
+    at_door('arena',pid); press(); check('the Arena house '+pid+' has its room', pg.evaluate("WORLD.map.id")=='in-'+pid and sorted(pg.evaluate("WORLD.map.objects.map(o=>o.kind)"))==kinds, pg.evaluate("[WORLD.map.id, WORLD.map.objects.map(o=>o.kind)]"))
+  check('arena rooms: no line is a tip', not any(w in pg.evaluate("['in-ar-a','in-ar-b','in-ar-c'].map(id=>WORLD.MAPS[id].objects.map(o=>o.text).join(' | ')).join(' | ')").lower() for w in tipwords))
   # Sproutvale's two cottages have rooms
   at_door('town','house-pip'); check("Pip's door: Go inside", pg.inner_text('#act-label')=='Go inside', pg.inner_text('#act-label')); press(); check("it leads into Pip's house", pg.evaluate("WORLD.map.id")=='in-house-pip')
   check("Pip's room: a small bed, finds in jars, bowls", sorted(pg.evaluate("WORLD.map.objects.map(o=>o.kind)"))==['bowls','jars','smallbed'])

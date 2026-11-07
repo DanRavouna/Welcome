@@ -645,81 +645,6 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
         </sc-if>
       </sc-if>
 
-      <sc-if value="{{showBattle}}" hint-placeholder-val="{{ false }}">
-        <sc-if value="{{noCaught}}" hint-placeholder-val="{{ false }}">
-          <div style="border-radius: 20px; padding: 26px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; background: rgba(14,26,56,0.78); border: 1.5px dashed rgba(255,255,255,0.5); backdrop-filter: blur(12px)">
-            <p style="margin: 0; font-size: 17px; font-weight: 900">You need a fighter</p>
-            <p style="margin: 0; font-size: 15px; font-weight: 600; line-height: 1.45; color: #C9D6F2">Keep a critter from the tall grass, then come back to battle wild ones.</p>
-            <button onClick="{{close}}" style="height: 48px; padding: 0 22px; border: 1.5px solid rgba(255,255,255,0.7); border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #2A1B00; background: {{primaryBg}}; box-shadow: 0 4px 14px rgba(245,185,58,0.45)">Back outside</button>
-          </div>
-        </sc-if>
-
-        <sc-if value="{{hasCaught}}" hint-placeholder-val="{{ true }}">
-          <sc-if value="{{notInBattle}}" hint-placeholder-val="{{ true }}">
-            <div style="border-radius: 20px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: rgba(14,26,56,0.78); border: 1.5px solid rgba(255,255,255,0.35); backdrop-filter: blur(12px)">
-              <span style="font-size: 13px; font-weight: 900; color: #FFD86B">Your fighter</span>
-              <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px">
-                <sc-for list="{{fighters}}" as="f" hint-placeholder-count="3">
-                  <button onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="flex-shrink: 0; height: 44px; padding: 0 16px; border: 1.5px solid rgba(255,255,255,0.45); border-radius: 999px; font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer; background: {{f.bg}}; color: {{f.fg}}">{{f.name}}</button>
-                </sc-for>
-              </div>
-            </div>
-          </sc-if>
-
-          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
-            <sc-for list="{{duel}}" as="d" hint-placeholder-count="2">
-              <div class="{{d.hitClass}}" style="border-radius: 18px; padding: 8px; display: flex; flex-direction: column; gap: 5px; background: rgba(14,26,56,0.78); border: 1.5px solid rgba(255,255,255,0.35); backdrop-filter: blur(12px)">
-                <span style="font-size: 11px; font-weight: 900; letter-spacing: 0.04em; color: {{d.sideColor}}">{{d.side}}</span>
-                <div style="position: relative; width: 100%; height: 106px; border-radius: 12px; overflow: hidden; background: radial-gradient(64% 16% at 50% 90%, #3F9A33 0 92%, rgba(0,0,0,0) 93%), linear-gradient(180deg, #4F8FE0 0 22%, #6CA6EA 22% 40%, #8CC3F2 40% 58%, #B8DCF8 58% 72%, #74C25C 72% 74%, #63B852 74% 100%)">
-                  <div class="{{d.flashCls}}" style="position: absolute; left: 50%; top: 2px; width: 240px; height: 210px; transform: translateX(-50%) scale(0.48); transform-origin: top center">
-                    <img src="{{d.k.sprite}}" alt="{{d.k.alt}}" width="240" height="210" style="display: block; width: 240px; height: 210px; image-rendering: pixelated">
-                  </div>
-                  <sc-if value="{{d.fx}}" hint-placeholder-val="{{ false }}">
-                    <div aria-hidden="true" class="{{d.fx.layer}}" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none">
-                      <sc-if value="{{d.fx.burst}}" hint-placeholder-val="{{ false }}">
-                        <div class="{{d.fx.burstCls}}" style="--c: {{d.fx.color}}"><i style="--a: 0deg"></i><i style="--a: 45deg"></i><i style="--a: 90deg"></i><i style="--a: 135deg"></i><i style="--a: 180deg"></i><i style="--a: 225deg"></i><i style="--a: 270deg"></i><i style="--a: 315deg"></i></div>
-                      </sc-if>
-                      <sc-if value="{{d.fx.ring}}" hint-placeholder-val="{{ false }}">
-                        <div class="fx-ring" style="--c: {{d.fx.ringColor}}"></div>
-                      </sc-if>
-                      <span class="{{d.fx.numCls}}" style="color: {{d.fx.numColor}}">{{d.fx.num}}</span>
-                      <span class="{{d.fx.labelCls}}" style="color: {{d.fx.labelColor}}">{{d.fx.label}}</span>
-                    </div>
-                  </sc-if>
-                </div>
-                <span style="font-size: 16px; font-weight: 900; color: #FFD86B">{{d.k.name}}</span>
-                <span style="font-size: 12px; font-weight: 700; color: #C9D6F2">{{d.k.element.name}} · St.{{d.k.stage}} · Lv {{d.k.lv}} · {{d.k.ability.name}}</span>
-                <div style="display: flex; flex-direction: column; gap: 3px">
-                  <span style="font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums">HP {{d.hpNow}}/{{d.hpMax}}</span>
-                  <div style="height: 10px; border-radius: 999px; background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.35); overflow: hidden">
-                    <div style="height: 100%; width: {{d.hpPct}}%; border-radius: 999px; background: {{d.hpColor}}; box-shadow: 0 0 8px {{d.hpColor}}; transition: width 300ms ease"></div>
-                  </div>
-                </div>
-                <span style="font-size: 12px; font-weight: 700; line-height: 1.3; color: #C9D6F2; min-height: 32px">{{d.status}}</span>
-              </div>
-            </sc-for>
-          </div>
-
-          <sc-if value="{{notInBattle}}" hint-placeholder-val="{{ true }}">
-            <p style="margin: 0; padding: 10px 14px; border-radius: 16px; background: rgba(14,26,56,0.78); border: 1.5px solid rgba(255,255,255,0.35); font-size: 14px; font-weight: 700; line-height: 1.4; color: #E6ECF7">{{matchupNote}}</p>
-          </sc-if>
-
-          <sc-if value="{{hasResult}}" hint-placeholder-val="{{ false }}">
-            <p style="margin: 0; padding: 10px 14px; border-radius: 16px; background: rgba(14,26,56,0.85); border: 1.5px solid #FFD86B; font-size: 18px; font-weight: 900; color: #FFD86B">{{resultTitle}}</p>
-          </sc-if>
-
-          <sc-if value="{{showLog}}" hint-placeholder-val="{{ false }}">
-            <div aria-live="polite" style="border-radius: 18px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; background: rgba(14,26,56,0.78); border: 1.5px solid rgba(255,255,255,0.35); backdrop-filter: blur(12px)">
-              <span style="font-size: 13px; font-weight: 900; color: #FFD86B">{{roundLabel}}</span>
-              <ul style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; line-height: 1.35; color: #E6ECF7">
-                <sc-for list="{{logLines}}" as="line" hint-placeholder-count="3">
-                  <li>{{line.text}}</li>
-                </sc-for>
-              </ul>
-            </div>
-          </sc-if>
-        </sc-if>
-      </sc-if>
 
       <sc-if value="{{showBadges}}" hint-placeholder-val="{{ false }}">
         <div style="border-radius: 16px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: linear-gradient(90deg, #4B4FE0 0%, #3C8DF2 100%); box-shadow: 0 6px 16px rgba(40,70,180,0.3)">
@@ -920,48 +845,7 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
       </div>
     </sc-if>
 
-    <sc-if value="{{showPreBattle}}" hint-placeholder-val="{{ false }}">
-      <div style="display: flex; gap: 10px">
-        <button onClick="{{nextFoe}}" disabled="{{cannotReroll}}" style="flex: 1.25; height: 56px; white-space: nowrap; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 999px; font-family: inherit; font-size: 14px; font-weight: 900; cursor: pointer; color: {{rerollFg}}; background: {{rerollBg}}; backdrop-filter: blur(10px)">{{rerollLabel}}</button>
-        <button onClick="{{fight}}" disabled="{{cannotFight}}" style="flex: 1; height: 56px; white-space: nowrap; border: 1.5px solid rgba(255,255,255,0.7); border-radius: 999px; font-family: inherit; font-size: 16px; font-weight: 900; cursor: pointer; color: {{fightFg}}; background: {{fightBg}}; box-shadow: {{fightShadow}}">{{fightLabel}}</button>
-      </div>
-    </sc-if>
 
-    <sc-if value="{{showMoveBar}}" hint-placeholder-val="{{ false }}">
-      <div style="display: flex; flex-direction: column; gap: 8px">
-        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
-          <sc-if value="{{showMoves}}" hint-placeholder-val="{{ true }}">
-          <sc-for list="{{moveButtons}}" as="mv" hint-placeholder-count="4">
-            <button onClick="{{mv.use}}" disabled="{{mv.off}}" style="min-height: 58px; padding: 6px 14px; border: 1.5px solid {{mv.border}}; border-radius: 18px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left; font-family: inherit; cursor: pointer; color: {{mv.fg}}; background: {{mv.bg}}; backdrop-filter: blur(10px)">
-              <span style="font-size: 14px; font-weight: 900">{{mv.name}}</span>
-              <span style="font-size: 12px; font-weight: 700; line-height: 1.25; color: {{mv.subFg}}">{{mv.sub}}</span>
-            </button>
-          </sc-for>
-          </sc-if>
-          <sc-if value="{{showSwitchList}}" hint-placeholder-val="{{ false }}">
-            <sc-for list="{{benchList}}" as="bn" hint-placeholder-count="2">
-              <button onClick="{{bn.use}}" disabled="{{bn.off}}" style="min-height: 58px; padding: 6px 14px; border-radius: 18px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left; font-family: inherit; cursor: pointer; backdrop-filter: blur(10px); border: 1.5px solid rgba(255,255,255,0.5); color: {{bn.fg}}; background: {{bn.bg}}">
-                <span style="font-size: 14px; font-weight: 900">{{bn.name}}</span>
-                <span style="font-size: 12px; font-weight: 700; line-height: 1.25; color: #C9D6F2">{{bn.sub}}</span>
-              </button>
-            </sc-for>
-          </sc-if>
-          <sc-if value="{{showBagList}}" hint-placeholder-val="{{ false }}">
-            <sc-for list="{{itemList}}" as="it" hint-placeholder-count="2">
-              <button onClick="{{it.use}}" disabled="{{it.off}}" style="min-height: 58px; padding: 6px 14px; border-radius: 18px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left; font-family: inherit; cursor: pointer; backdrop-filter: blur(10px); border: 1.5px solid #8FE3A2; color: {{it.fg}}; background: {{it.bg}}">
-                <span style="font-size: 14px; font-weight: 900">{{it.name}}</span>
-                <span style="font-size: 12px; font-weight: 700; line-height: 1.25; color: #C9D6F2">{{it.sub}}</span>
-              </button>
-            </sc-for>
-          </sc-if>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
-          <button onClick="{{toggleSwitch}}" disabled="{{cannotSwitch}}" style="height: 44px; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 900; cursor: pointer; color: {{switchFg}}; background: {{switchBg}}; backdrop-filter: blur(10px)">{{switchLabel}}</button>
-          <button onClick="{{toggleBag}}" style="height: 44px; border: 1.5px solid #8FE3A2; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 900; cursor: pointer; color: #FFFFFF; background: rgba(14,26,56,0.78); backdrop-filter: blur(10px)">{{bagLabel}}</button>
-          <button onClick="{{flee}}" style="height: 44px; border: 1.5px solid #FF8A7A; border-radius: 999px; background: rgba(14,26,56,0.72); font-family: inherit; font-size: 13px; font-weight: 900; color: #FF8A7A; cursor: pointer; backdrop-filter: blur(10px)">Flee</button>
-        </div>
-      </div>
-    </sc-if>
   </div>
 </div>
 </template>
@@ -1248,6 +1132,22 @@ const LAND = (() => {
         tent.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const c = col[row[x]]; if (c) R(g, X + 2 + x * 2, Y + 4 + y * 3, 2, 3, c); } });
         R(g, X + 2 + 16, Y + 4 + 6 * 3, 8, 12, '#2A1B14'); R(g, X + 2 + 18, Y + 4 + 6 * 3 + 2, 4, 10, '#0E0A10'); // door
         R(g, X + 34, Y + 22, 12, 4, OL); R(g, X + 35, Y + 23, 10, 2, '#7A4A2A'); R(g, X + 36, Y + 14, 8, 9, OL); R(g, X + 37, Y + 16, 6, 6, '#FF9A3A'); R(g, X + 38, Y + 18, 4, 4, '#FFD86B'); R(g, X + 39, Y + 12, 2, 4, '#FF9A3A'); // fire
+      } },
+    // a tent on its own (the Arena's camp): the camp's tent, its cloth picked by where it stands
+    tent: { w: 2, h: 2,
+      draw(g, X, Y, P, k) {
+        shadow(g, X, Y, 32, 32);
+        const cloths = [['#D8574A', '#5A2420'], ['#3C6FE0', '#1E3A7A'], ['#F5C542', '#8A6510'], ['#4FB06D', '#1E5A30'], ['#8B6CF0', '#3A2A7A']], cl = cloths[Math.floor(k * 10) % cloths.length];
+        const tent = ['.......oo.......', '......occo......', '.....occcco.....', '....occcccco....', '...occcccdcco...', '..occcccddcco...', '.occcccdddccco..', 'occccccdddcccco.', 'oooooooodddooooo'], col = { o: OL, c: cl[0], d: cl[1] };
+        tent.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const c = col[row[x]]; if (c) R(g, X + x * 2, Y + 2 + y * 3, 2, 3, c); } });
+        R(g, X + 14, Y + 20, 6, 10, '#2A1B14'); R(g, X + 16, Y + 22, 2, 8, '#0E0A10');   // the door flap
+      } },
+    // a fire on its own, ringed with stones (the Arena's camp)
+    campfire: { w: 1, h: 1,
+      draw(g, X, Y) {
+        shadow(g, X, Y, 16, 16);
+        [[1, 11], [11, 11], [0, 6], [12, 6], [4, 13], [8, 13]].forEach(([ox, oy]) => { R(g, X + ox, Y + oy, 4, 3, OL); R(g, X + ox + 1, Y + oy, 2, 2, '#8E98AD'); });
+        R(g, X + 3, Y + 9, 10, 3, OL); R(g, X + 4, Y + 10, 8, 1, '#7A4A2A'); R(g, X + 5, Y + 3, 6, 7, OL); R(g, X + 6, Y + 4, 4, 5, '#FF9A3A'); R(g, X + 7, Y + 6, 2, 2, '#FFD86B'); R(g, X + 7, Y + 1, 2, 3, '#FF9A3A');
       } },
     // a lighthouse on a rocky foot (coasts, harbors)
     lighthouse: { w: 2, h: 4, text: 'The lamp still turns every night. Ships once steered by it between the northern fort and the harbor.',
@@ -2091,10 +1991,10 @@ const PXW = (() => {
     const X = p.x * L, Y = p.y * L, Wd = p.w * L, Hd = p.h * L;
     const ol = '#2B2235';
     if (p.kind === 'arena') {   // Meaning: where you stand with your critter in front of others. A ring of stone with stands that face inward, the gate left open: anyone may step in, and someone is always watching.
-      const R = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); }, cx = X + Wd / 2, cy = Y + Hd / 2 + 2, rx = Wd / 2 - 1, ry = Hd / 2 - 3, east = p.gate === 'e', cloth = ['#D8574A', '#3C6FE0', '#F5C542', '#F5A3D0', '#FFFFFF', '#4FB06D'];
+      const R = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); }, cx = X + Wd / 2, cy = Y + Hd / 2 + 2, rx = Wd / 2 - 1, ry = Hd / 2 - 3, east = p.gate === 'e', south = p.gate === 's', cloth = ['#D8574A', '#3C6FE0', '#F5C542', '#F5A3D0', '#FFFFFF', '#4FB06D'];
       if (!east) R(X + 4, Y + Hd - 2, Wd - 8, 4, 'rgba(0,0,0,0.22)');
       for (let y = 0; y < Hd + (east ? 0 : 4); y++) for (let x = 0; x < Wd; x++) {
-        const dx = X + x - cx, dy = Y + y - cy, r = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)), gate = east ? (dx > rx * 0.45 && Math.abs(dy) < 20) : (Math.abs(dx) < 24 && dy < -ry * 0.45);
+        const dx = X + x - cx, dy = Y + y - cy, r = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)), gate = east ? (dx > rx * 0.45 && Math.abs(dy) < 20) : south ? (Math.abs(dx) < 24 && dy > ry * 0.45) : (Math.abs(dx) < 24 && dy < -ry * 0.45);
         let c = null;
         if (r > 1) { if (!east) continue; c = ((x >> 3) + (y >> 3)) % 2 ? '#5A6478' : '#626C82'; if ((x % 8 === 0) || (y % 8 === 0)) c = '#4A5468'; }   // the apron outside the wall, flagged (only when the ring is the whole map)
         else if (gate) c = r > 0.97 ? null : '#E8D3A2';
@@ -2111,6 +2011,9 @@ const PXW = (() => {
       if (east) {   // the gate in the east wall: two posts and both leaves swung open, against the apron
         const gx = X + Wd - 22; R(gx, cy - 23, 22, 3, ol); R(gx, cy + 20, 22, 3, ol); R(gx + 1, cy - 22, 20, 1, '#B7BFCF'); R(gx + 1, cy + 21, 20, 1, '#B7BFCF');
         R(gx + 10, cy - 28, 14, 5, ol); R(gx + 11, cy - 27, 12, 3, '#6B4626'); R(gx + 10, cy + 23, 14, 5, ol); R(gx + 11, cy + 24, 12, 3, '#6B4626');
+      } else if (south) {   // the gate in the south wall, toward the plaza: posts and both leaves swung open
+        R(cx - 27, Y + Hd - 20, 3, 22, ol); R(cx + 24, Y + Hd - 20, 3, 22, ol); R(cx - 26, Y + Hd - 19, 1, 20, '#B7BFCF'); R(cx + 25, Y + Hd - 19, 1, 20, '#B7BFCF');
+        R(cx - 32, Y + Hd - 10, 5, 14, ol); R(cx - 31, Y + Hd - 9, 3, 12, '#6B4626'); R(cx + 27, Y + Hd - 10, 5, 14, ol); R(cx + 28, Y + Hd - 9, 3, 12, '#6B4626');
       } else {
         R(cx - 27, Y - 2, 3, 22, ol); R(cx + 24, Y - 2, 3, 22, ol); R(cx - 26, Y - 1, 1, 20, '#B7BFCF'); R(cx + 25, Y - 1, 1, 20, '#B7BFCF');   // the gate posts
         R(cx - 32, Y - 2, 5, 14, ol); R(cx - 31, Y - 1, 3, 12, '#6B4626'); R(cx + 27, Y - 2, 5, 14, ol); R(cx + 28, Y - 1, 3, 12, '#6B4626');   // both leaves swung open
@@ -2734,29 +2637,47 @@ const WORLD = (() => {
       arrive: { s: [12.9, H - 1.4] }, spawn: [12.9, H - 1.4]
     };
   }
-  // ---------- The Arena: a zone that is the ring itself, off the Ashwood Trail (no wild critters). Meaning: where you stand with your critter in front of others; the road from the trail leads straight through the gate, and someone is always watching. ----------
+  // ---------- The Arena: a place of its own off the Ashwood Trail, mid game (no wild critters). Meaning: a road of its own; five rivals climbed one a day, in front of others.
+  // The ring fills the north; the rivals' camp (tents, a fire) is west of it; the town (three cottages, a market) south; the road comes in from the trail, east. ----------
   function buildArena() {
-    const W = 26, H = 20, m = [];
-    for (let y = 0; y < H; y++) m.push(new Array(W).fill('X'));
+    const W = 36, H = 28, r = rng(4242), m = [];
+    for (let y = 0; y < H; y++) m.push(new Array(W).fill('.'));
     const set = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < H) m[y][x] = c; };
-    const ring = { id: 'ring', name: 'The Arena', x: 0, y: 0, w: W, h: H, kind: 'arena', gate: 'e', inert: true, door: [W - 2, 9] };
-    const cx = W * 8, cy = H * 8 + 2, rx = W * 8 - 1, ry = H * 8 - 3;   // the same ellipse the painter draws (16 px tiles); the ring fills the map, the corners are its apron
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const dx = (x + 0.5) * 16 - cx, dy = (y + 0.5) * 16 - cy, rr = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)), gate = dx > rx * 0.45 && Math.abs(dy) <= 16;
-      set(x, y, gate ? '=' : rr < 0.5 ? '.' : 'X');   // the stands, the wall and the apron are solid; the floor is sand and the gate a road from the east edge
+    const path = (x0, y0, x1, y1) => { for (let y = Math.min(y0, y1); y <= Math.max(y0, y1); y++) for (let x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) set(x, y, '='); };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const e = Math.min(x, y, W - 1 - x, H - 1 - y); if (e < 2 || (e < 3 && r() < 0.6)) set(x, y, 'T'); }
+    path(3, 15, 33, 16);                 // the plaza road, below the ring, from the camp to the town's east end
+    path(30, 13, W - 1, 14);             // the road in from the trail (the east edge; linkEdge opens the border)
+    path(17, 17, 18, 23);                // down into the town
+    const ring = { id: 'ring', name: 'The Arena', x: 11, y: 1, w: 19, h: 14, kind: 'arena', gate: 's', inert: true, door: [19, 14] };
+    const cx = (ring.x + ring.w / 2) * 16, cy = (ring.y + ring.h / 2) * 16 + 2, rx = ring.w * 8 - 1, ry = ring.h * 8 - 3;   // the same ellipse the painter draws (16 px tiles)
+    for (let y = ring.y - 1; y <= ring.y + ring.h; y++) for (let x = ring.x - 1; x <= ring.x + ring.w; x++) {
+      const dx = (x + 0.5) * 16 - cx, dy = (y + 0.5) * 16 - cy, rr = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)), gate = Math.abs(dx) <= 16 && dy > ry * 0.45;
+      if (rr > 1.04) { if (m[y][x] === 'T' || m[y][x] === 'R') set(x, y, '.'); continue; }
+      set(x, y, gate || rr < 0.5 ? '.' : 'X');   // the stands and the wall are solid; the floor and the gate are walked
     }
-    const bell = { id: 'bell', name: 'Arena bell', x: 13, y: 9, w: 1, h: 1, kind: 'device', door: [12, 9], open: 'battle' };
-    set(13, 9, 'O');
+    const houses = [
+      { id: 'ar-a', name: "Vesna's House", x: 3, y: 19, w: 5, h: 4, kind: 'house', door: [5, 22], open: 'house', roof: '#8A4A2A', wall: '#E8D7B0' },
+      { id: 'ar-b', name: 'The Chalk House', x: 21, y: 19, w: 5, h: 4, kind: 'house', door: [23, 22], open: 'house', roof: '#4A6A9A', wall: '#E8D7B0' },
+      { id: 'ar-c', name: "Kit's House", x: 29, y: 19, w: 5, h: 4, kind: 'house', door: [31, 22], open: 'house', roof: '#D9A03A', wall: '#E8D7B0' }
+    ];
+    houses.forEach((p) => { for (let y = p.y; y < p.y + p.h; y++) for (let x = p.x; x < p.x + p.w; x++) set(x, y, 'X'); });
+    path(5, 23, 33, 24);                 // the town's own street, every door opens on it
+    for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) {
+      if (m[y][x] !== '.') continue;
+      if (x >= ring.x - 1 && x <= ring.x + ring.w && y >= ring.y - 1 && y <= ring.y + ring.h) continue;
+      const camp = x < 11 && y < 15; let near = false;
+      for (let yy = y - 1; yy <= y + 1; yy++) for (let xx = x - 1; xx <= x + 1; xx++) if (['=', 'X', 'O'].indexOf(m[yy][xx]) !== -1) near = true;
+      const v = r(); if (!camp && !near && v < 0.05) set(x, y, 'T'); else if (!camp && !near && v < 0.065) set(x, y, 'R'); else if (v < 0.2) set(x, y, ',');
+    }
     const objects = [
-      { id: 'names', kind: 'namewall', x: 8, y: 6, reach: 1.7, text: 'Names scratched into the rail in every kind of hand. None is crossed out.' },
-      { id: 'bench', kind: 'bench', x: 8, y: 13, reach: 1.7, text: 'A bench at the edge of the sand, worn in two places side by side.' },
-      { id: 'pail', kind: 'bucket', x: 18, y: 13, reach: 1.7, text: 'A bucket of water and a cloth, for after.' }
+      { id: 'names', kind: 'namewall', x: 17, y: 6, reach: 1.7, text: 'Names scratched into the rail in every kind of hand. None is crossed out.' },
+      { id: 'bench', kind: 'bench', x: 17, y: 10, reach: 1.7, text: 'A bench at the edge of the sand, worn in two places side by side.' },
+      { id: 'pail', kind: 'bucket', x: 23, y: 10, reach: 1.7, text: 'A bucket of water and a cloth, for after.' }
     ];
     objects.forEach((o) => set(o.x, o.y, 'O'));
     return {
-      id: 'arena', name: 'The Arena', theme: THEMES['route-cm'], grid: m, W, H, places: [ring, bell], objects: objects, signs: [],
-      types: [], rate: 0,
-      exits: [], arriveFrom: {}, arrive: {}, spawn: [W - 1.4, 10.2]
+      id: 'arena', name: 'The Arena', theme: THEMES['route-cm'], grid: m, W, H, places: [ring].concat(houses), objects: objects, signs: [],
+      types: [], rate: 0, exits: [], arriveFrom: {}, arrive: {}, spawn: [W - 1.4, 14.2]
     };
   }
   // ---------- cities ----------
@@ -3089,8 +3010,9 @@ const WORLD = (() => {
     posts: [['coralbay', 's', 28, 'South: the Reef Causeway (Tide and Ember critters), the road to Cinderport.'], ['cinderport', 'e', 13, 'East: the Reef Causeway (Tide and Ember critters), the road to Coralbay.']] });
   NETS.forEach(buildNet);
   addProp(MAPS.town, 'well', [33, 25], 'A well. The bucket is up, and full. Someone drew it before you came.');
-  connect(MAPS['route-cm'], 'w', 20, MAPS.arena, 'e', 9);   // the Arena: a clearing west of the Ashwood Trail (mid game: the trail opens at level 6)
+  connect(MAPS['route-cm'], 'w', 20, MAPS.arena, 'e', 13);   // the Arena: a clearing west of the Ashwood Trail (mid game: the trail opens at level 6)
   if (PXW.PAL['route-cm']) PXW.PAL.arena = PXW.PAL['route-cm'];
+  [[4, 3], [7, 3], [4, 7], [7, 7], [4, 11]].forEach((h) => addProp(MAPS.arena, 'tent', h)); addProp(MAPS.arena, 'campfire', [7, 12]);   // the rivals' camp: five tents and one fire
   addTrail(MAPS.ascent, 's', [14, 10], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
   addTrail(MAPS.descent, 'n', [14, 62], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
   addSpot(MAPS.mossbrook, { id: 'c-growth', kind: 'growthpost', text: 'Notches, each a little higher than the last.' }, 19, 10, false);
@@ -3220,6 +3142,14 @@ const WORLD = (() => {
   // Clover's house (Fennel is out): someone who keeps the kettle on for a person who is not back yet. Mosscap Cottage: what the forest gives to someone who goes back every day (Wil is home only after dusk, like the note on the door says).
   // Bryn's house: being believed in while you are still looking (every drawing is a shiny critter; the jar is for when, not if).
   const CITY_ROOMS = {
+    // The Arena (a road of its own). Vesna's house: the old champion, who keeps the ring in sight (a chair at the window facing the ring, a belt on the wall, a list of names that ends in hers).
+    // The Chalk House: the ladder kept by someone who never fights (a slate of five names with marks beside them, a kettle, a stool by the door). Kit's house: a child who wants in (a wooden sword, a drawing of the ring, a small bed).
+    'ar-a': { layout: { b: [[9, 2], [10, 2]], t: [[5, 5], [6, 5]], p: [[1, 7]], r: [4, 4, 7, 6] },
+      objects: [{ id: 'chair', kind: 'armchair', x: 2, y: 2, text: 'A chair under the window. It faces the ring, not the room.' }, { id: 'belt', kind: 'tally', x: 6, y: 2, text: 'A belt on the wall, the buckle worn smooth. Nothing is written under it.' }, { id: 'list', kind: 'ledger', x: 10, y: 6, text: 'A list of names, one a year. The last one is hers.' }] },
+    'ar-b': { layout: { k: [[1, 2], [2, 2], [3, 2]], t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] },
+      objects: [{ id: 'slate', kind: 'wallmap', x: 6, y: 2, text: 'A slate with five names in a column. Chalk marks beside each, the newest still dusty.' }, { id: 'kettle', kind: 'kettle', x: 10, y: 2, text: 'The kettle is on. Three cups, all used.' }, { id: 'stool', kind: 'stool', x: 10, y: 7, text: 'A stool by the door, turned to the ring.' }] },
+    'ar-c': { layout: { b: [[1, 2], [2, 2]], t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] },
+      objects: [{ id: 'sword', kind: 'toolwall', x: 6, y: 2, text: 'A wooden sword on two nails. The edge is notched.' }, { id: 'drawing', kind: 'drawings', x: 9, y: 2, text: 'A drawing of the ring from the stands. One small figure is on the sand, alone.' }, { id: 'bed', kind: 'smallbed', x: 1, y: 7, text: 'A small bed. The pillow is on the floor.' }] },
     // Sproutvale (where you are kept). Pip's house: what a child brings home is kept (a bed made, finds on the sill with their dates, a bowl that is not the same size as the others).
     // Mira's house: the shelf is kept full for whoever comes (every potion labelled in one hand, a ledger where giving runs longer than selling, a second cup).
     'house-pip': { layout: { b: [[1, 2], [2, 2]], t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] },
@@ -3249,7 +3179,7 @@ const WORLD = (() => {
     'cb-b': { layout: { b: [[9, 2], [10, 2]], r: [3, 4, 6, 6] }, objects: [{ id: 'nets', kind: 'nets', x: 3, y: 2, text: 'Nets hung to dry. The mended places are a different colour.' }, { id: 'work', kind: 'network', x: 1, y: 6, text: 'A net spread on the floor, half mended, the needle still in it.' }, { id: 'stool', kind: 'stool', x: 6, y: 5, text: 'A low stool. The legs are wrapped in net cord where they split.' }] },
     'cb-c': { layout: { t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] }, objects: [{ id: 'shells', kind: 'shellrows', x: 3, y: 2, text: 'Shells on a shelf in rows, each on its own square of cloth. One square is empty.' }, { id: 'bed', kind: 'smallbed', x: 9, y: 2, text: 'A small bed. Sand in the blanket.' }, { id: 'bucket', kind: 'bucket', x: 10, y: 7, text: 'A bucket by the door, still wet.' }] }
   };
-  ['town', 'mossbrook', 'frosthold', 'cinderport', 'coralbay'].forEach((cid) => MAPS[cid].places.filter((p) => p.open === 'house').forEach((p, i) => {
+  ['town', 'arena', 'mossbrook', 'frosthold', 'cinderport', 'coralbay'].forEach((cid) => MAPS[cid].places.filter((p) => p.open === 'house').forEach((p, i) => {
     const id = 'in-' + p.id; MAPS[id] = buildInterior(id, p, cid, i, CITY_ROOMS[p.id] || {}); p.enter = id;
     MAPS[cid].arriveFrom = Object.assign({}, MAPS[cid].arriveFrom, { [id]: [p.door[0] + 0.9, p.door[1] + 1.5] });
   }));
@@ -5283,6 +5213,26 @@ class Component extends Base {
         mouth: { w: 26, h: 10, r: '0 0 50% 50%', bg: 'transparent', bw: '0 0 3px 0', x: 109, y: 154 }
       };
     }
+    if (key === 'kindlemane') {   // a tawny cat with a mane of flame, ember-tipped ears, a flame at the end of its tail, four heavy paws; it sits square, facing you
+      const body = '#D99A5A', outline = '#5A2A10', mane = '#FF8A3A', mane2 = '#E0522A', petals = [];
+      for (let i = 0; i < 10; i++) { const a = -90 + i * 36, rad = a * Math.PI / 180; petals.push({ x: Math.round(120 + Math.cos(rad) * 54) - 16, y: Math.round(104 + Math.sin(rad) * 50) - 30, w: 32, h: 60, r: '50% 50% 50% 50% / 62% 62% 38% 38%', rot: a + 90, bg: i % 2 ? mane : mane2, bw: 3, bc: '#8A3A10' }); }
+      return {
+        bodyColor: body, bellyBg: 'rgba(255,230,180,0.8)', outline: outline, bodyFill: 'radial-gradient(circle at 34% 26%, #F2C27A 0%, ' + body + ' 52%, #A86A30 100%)',
+        fx: [{ x: 50, y: 60, s: 11 }, { x: 190, y: 70, s: 10 }, { x: 120, y: 24, s: 12 }, { x: 64, y: 168, s: 9 }],
+        parts: [{ x: 36, y: 20, w: 168, h: 170, r: '50%', rot: 0, bg: 'rgba(255,138,58,0.22)', bw: 0, bc: INK }].concat(petals).concat([
+          { x: 176, y: 150, w: 44, h: 18, r: '50%', rot: -28, bg: body, bw: 3, bc: outline }, { x: 204, y: 122, w: 22, h: 34, r: '50% 0 50% 50%', rot: -30, bg: mane, bw: 3, bc: '#8A3A10' }, { x: 211, y: 133, w: 10, h: 14, r: '50% 0 50% 50%', rot: -30, bg: '#FFE08A', bw: 0, bc: INK },   // the tail and its flame
+          { x: 60, y: 184, w: 34, h: 18, r: '45%', rot: 0, bg: '#C98A4A', bw: 3, bc: outline }, { x: 96, y: 188, w: 30, h: 16, r: '45%', rot: 0, bg: '#C98A4A', bw: 3, bc: outline }, { x: 128, y: 188, w: 30, h: 16, r: '45%', rot: 0, bg: '#C98A4A', bw: 3, bc: outline }, { x: 160, y: 184, w: 34, h: 18, r: '45%', rot: 0, bg: '#C98A4A', bw: 3, bc: outline }   // four paws
+        ]),
+        over: [
+          { x: 70, y: 66, w: 22, h: 30, r: '50% 50% 0 0', rot: -22, bg: body, bw: 3, bc: outline }, { x: 148, y: 66, w: 22, h: 30, r: '50% 50% 0 0', rot: 22, bg: body, bw: 3, bc: outline },   // the ears
+          { x: 76, y: 60, w: 8, h: 12, r: '50% 50% 0 0', rot: -22, bg: mane, bw: 0, bc: INK }, { x: 156, y: 60, w: 8, h: 12, r: '50% 50% 0 0', rot: 22, bg: mane, bw: 0, bc: INK },   // ember tips
+          { x: 104, y: 92, w: 32, h: 5, r: '3px', rot: 0, bg: '#A86A30' }   // the brow
+        ],
+        body: { x: 56, y: 90, w: 128, h: 102, r: '50% 50% 46% 46% / 56% 56% 44% 44%' }, belly: { x: 90, y: 142, w: 60, h: 40 },
+        eyeRow: { x: 56, y: 116, w: 128 }, eyes: [{ s: 22, ps: 10 }, { s: 22, ps: 10 }],
+        mouth: { w: 24, h: 10, r: '0 0 50% 50%', bg: 'transparent', bw: '0 0 3px 0', x: 108, y: 150 }
+      };
+    }
     if (key === 'wickling') {   // a round gold spark with a lantern on its antenna, small pale-blue wings, ice crystals on its back and a wick tail
       const body = '#FFE08A', outline = '#8A6510', wing = '#CFE6FF', wing2 = '#E8F4FF', wo = '#5A8AB8', gold = '#E8B84A';
       return {
@@ -5517,6 +5467,7 @@ class Component extends Base {
       if (an === 'Ember' && !SECRETS[A.k.seed] && A.hp < A.max * 0.5) abMult *= 1.15;
       if (dn === 'Frost') abMult *= 0.92;
       if (dn === 'Moss' && !D.abUsed) { abMult *= 0.7; D.abUsed = true; abNote = ' (Thick Bark)'; }
+      if (D.k.seed === SECRET4_SEED && D.hp < D.max * 0.5) { abMult *= 0.8; abNote = ' (Standfast)'; }   // Kindlemane: below half HP it takes 20% less
     }
     const dmg0 = Math.max(1, Math.round(power * (atk / (def + 40)) * mult * (0.85 + rand() * 0.3) * 0.6 * (D.guard ? 0.4 : 1) * (A.boost || 1) * (warded ? fx.ward.mult : 1) * (this._surge && A.k.element.name === this._surge ? 1.3 : 1) * abMult));
     let dmg = dmg0;
@@ -5650,24 +5601,6 @@ class Component extends Base {
       .concat([chip('★ Shiny only', dexShiny, () => this.setState({ dexShiny: !dexShiny }))]);
     const dexCount = 'Showing ' + caughtShown.length + ' of ' + caught.length;
 
-    const beats = this.beats();
-    const b = st.battle;
-    const inBattle = !!b && !b.over;
-    const fighterEntry = st.caught.find((e) => e.seed === st.fighter) || st.caught[0] || null;
-    const me = fighterEntry ? this.make(fighterEntry.seed, fighterEntry.stage) : null;
-    const foe = this.make(st.foeSeed, fighterEntry ? fighterEntry.stage : 1);
-    let reward = 1;
-    if (foe.rarity === 'Rare') reward += 1;
-    if (foe.rarity === 'Mythic') reward += 2;
-    if (me && beats[foe.element.name].indexOf(me.element.name) !== -1) reward += 1;
-    let matchupNote = '';
-    if (me) {
-      if (beats[me.element.name].indexOf(foe.element.name) !== -1) matchupNote = me.element.name + ' is strong against ' + foe.element.name + '. You have the edge.';
-      else if (beats[foe.element.name].indexOf(me.element.name) !== -1) matchupNote = foe.element.name + ' is strong against ' + me.element.name + '. Tough fight, bigger reward.';
-      else matchupNote = 'No type advantage either way. Stats and tactics decide it.';
-      matchupNote += ' Win reward: +' + reward + ' essence.';
-    }
-
     const rel = { Common: 1, Uncommon: 1, Rare: 2, Mythic: 4 };
     const releaseGain = detail ? rel[c.rarity] * entry.stage : 0;
     const evolveCost = detail ? (entry.stage === 1 ? 15 : 60) : 0;
@@ -5759,7 +5692,7 @@ class Component extends Base {
     }).filter((r) => r.cells.length > 0);
     const speciesChips = [chip('All species', !dexMissing, () => this.setState({ dexMissing: false })), chip('Not yet found', dexMissing, () => this.setState({ dexMissing: true }))];
     // the bonus species (#49, #50): each shows as ??? once its door has been opened and for good once found; never part of the 48
-    const bonusDefs = [[SECRET_SEED, !!(st.adv && st.adv.open && st.adv.open.arch)], [SECRET2_SEED, !!(st.adv && st.adv.open && st.adv.open.lamp)], [SECRET3_SEED, !!(st.adv && st.adv.open && st.adv.open.forge)]];
+    const bonusDefs = [[SECRET_SEED, !!(st.adv && st.adv.open && st.adv.open.arch)], [SECRET2_SEED, !!(st.adv && st.adv.open && st.adv.open.lamp)], [SECRET3_SEED, !!(st.adv && st.adv.open && st.adv.open.forge)], [SECRET4_SEED, !!(st.arena && st.arena.step >= 5)]];
     const bonusFound = (sd) => st.caught.some((e) => e.seed === sd);
     const bonusList = bonusDefs.map(([sd, opened]) => { const f = bonusFound(sd), S = SECRETS[sd]; return { show: (f || opened) && (!dexMissing || !f), icon: '', name: f ? S.name : '???', sub: f ? '#0' + S.speciesNo + ' · ' + S.type + ' · ' + S.ability.name : S.hint, sd: sd, f: f }; }).filter((x) => x.show);
     if (st.dexView === 'species') bonusList.forEach((x) => { x.icon = PIX.sprite(this.make(x.sd, 3, SECRETS[x.sd].lv), x.f ? 'icon' : 'silhouette'); });
@@ -5779,7 +5712,7 @@ class Component extends Base {
       bg: dexView === d[0] ? '#1E2A4A' : 'transparent', fg: dexView === d[0] ? '#FFFFFF' : '#1E2A4A',
       go: () => this.setState({ dexView: d[0] })
     }));
-    const tabDefs = [['roll', 'Roll'], ['dex', 'Dex (' + st.caught.length + ')'], ['battle', inBattle ? 'Battle •' : 'Battle'], ['badges', 'Trainer']];
+    const tabDefs = [['roll', 'Roll'], ['dex', 'Dex (' + st.caught.length + ')'], ['badges', 'Trainer']];
     const tabs = tabDefs.map((t) => ({
       label: t[1],
       pressed: tab === t[0] ? 'true' : 'false',
@@ -5791,37 +5724,6 @@ class Component extends Base {
 
     const noEnergy = en.left === 0;
     const keepDisabled = kept || isPreview;
-    const cannotReroll = !b && st.essence < 1;
-
-    const duel = !me ? [] : (b ? b.s : [{ k: me }, { k: foe }]).map((x, i) => {
-      const max = x.max ?? Math.round(x.k.stats[0].value * 1.5 + 60);
-      const now = x.hp ?? max;
-      const pct = Math.round((now / max) * 100);
-      const calm = st.settings && st.settings.calm;
-      const hitClass = !calm && b && b.fx && b.fx.hit[i] ? (b.fx.round % 2 ? 'hit-a' : 'hit-b') : '';
-      const F = b && b.fx && b.fx.side ? b.fx.side[i] : null, par = b && b.fx && b.fx.round % 2 ? 'a' : 'b';
-      const fx = F ? { layer: 'fxl fx-' + par + (calm ? ' fx-calm' : ''), burst: !calm && !!F.burst && F.burst !== 'guard', burstCls: 'fx-burst fx-' + F.burst, color: F.color || '#FFFFFF',
-        ring: !calm && !!F.ring, ringColor: F.ring || '#FFFFFF', num: F.num || '', numColor: F.heal ? '#8CFF9E' : (F.burst === 'strong' ? '#FFD86B' : '#FFFFFF'), numCls: 'fx-num' + (F.burst === 'strong' ? ' fx-big' : ''),
-        label: F.ko ? 'KO!' : (F.label || ''), labelCls: F.ko ? 'fx-label fx-ko' : 'fx-label', labelColor: F.ko ? '#FF5A5A' : (F.ring && !F.burst ? F.ring : (F.burst === 'strong' ? '#FFD86B' : (F.ring || '#C9D6F2'))) } : null;
-      const flashCls = F && F.burst && F.burst !== 'guard' && !calm ? 'fx-flash-' + par : '';
-      return { hitClass: hitClass, fx: fx, flashCls: flashCls, side: i === 0 ? 'YOU' : 'WILD', sideColor: i === 0 ? '#A7F04A' : '#FF8A7A', k: x.k, hpMax: max, hpNow: now, hpPct: pct, hpColor: pct > 50 ? '#A7F04A' : (pct > 25 ? '#FFD86B' : '#FF8A7A'), status: b ? this.statusText(x) : (x.k.element.name + ' moves: ' + x.k.kit[3].name) };
-    });
-
-    const moveButtons = inBattle ? b.s[0].k.kit.map((mv, i) => {
-      const P = b.s[0];
-      const off = (mv.kind === 'guard' && P.lastGuard) || (mv.kind === 'status' && P.uses === 0);
-      const sub = mv.kind === 'status' ? mv.sub + ' · ' + P.uses + ' left' : (mv.kind === 'guard' && P.lastGuard ? 'Not twice in a row' : mv.sub);
-      return {
-        name: mv.name, sub: sub, off: off,
-        bg: off ? offBg : (mv.kind === 'attack' ? 'rgba(14,26,56,0.78)' : (mv.kind === 'guard' ? 'rgba(46,84,160,0.85)' : 'rgba(110,80,10,0.85)')),
-        border: off ? 'rgba(255,255,255,0.2)' : (mv.kind === 'status' ? '#FFD86B' : 'rgba(255,255,255,0.5)'),
-        fg: off ? offFg : '#FFFFFF',
-        subFg: off ? offFg : (mv.kind === 'status' ? '#FFE69A' : '#C9D6F2'),
-        use: () => this.playRound(i)
-      };
-    }) : [];
-
-    const resultTitle = !b || !b.over ? '' : (b.fled ? 'You fled. No reward.' : (b.draw ? 'Draw. No essence this time.' : (b.win ? 'You won! +' + b.reward + ' essence' : 'You lost. Try another fighter or tactic.')));
 
     return {
       accent: accent,
@@ -5882,7 +5784,6 @@ class Component extends Base {
       showCard: tab === 'roll' || detail,
       showDetail: detail,
       showDexList: tab === 'dex' && !detail && dexView === 'mine',
-      showBattle: tab === 'battle',
       showBadges: tab === 'badges',
       showTestTools: tab === 'badges' && testMode,
       seedInput: st.seedInput,
@@ -5893,34 +5794,6 @@ class Component extends Base {
       evolveLabel: detail && entry.stage === 3 ? 'Fully evolved' : 'Evolve (−' + evolveCost + ')',
       evolveBg: canEvolve ? primaryBg : offBg,
       evolveFg: canEvolve ? '#2A1B00' : offFg,
-      notInBattle: !inBattle,
-      inBattle: inBattle,
-      showLog: !!b,
-      roundLabel: b ? (b.over ? 'Battle log · newest first' : 'Round ' + b.round + ' · newest first') : '',
-      logLines: b ? b.log.slice(-6).reverse() : [],
-      hasResult: !!b && b.over,
-      resultTitle: resultTitle,
-      fighters: caught.slice().sort((p, q) => (me && q.seed === me.seed ? 1 : 0) - (me && p.seed === me.seed ? 1 : 0)).map((k) => ({
-        name: k.name,
-        pressed: me && k.seed === me.seed ? 'true' : 'false',
-        bg: me && k.seed === me.seed ? primaryBg : 'rgba(255,255,255,0.12)',
-        fg: me && k.seed === me.seed ? '#2A1B00' : '#FFFFFF',
-        pick: () => this.setState({ fighter: k.seed, battle: null })
-      })),
-      duel: duel,
-      matchupNote: matchupNote,
-      moveButtons: moveButtons,
-      showPreBattle: tab === 'battle' && st.caught.length > 0 && !inBattle,
-      showMoveBar: tab === 'battle' && inBattle,
-      cannotFight: noEnergy,
-      fightLabel: noEnergy ? 'Out of rolls today' : (b && b.over ? 'Fight again (1 roll)' : 'Fight (1 roll)'),
-      fightBg: noEnergy ? offBg : primaryBg,
-      fightFg: noEnergy ? offFg : '#2A1B00',
-      fightShadow: noEnergy ? 'none' : glowShadow,
-      cannotReroll: cannotReroll,
-      rerollLabel: b ? 'New foe' : 'New foe (1 essence)',
-      rerollBg: cannotReroll ? offBg : 'rgba(14,26,56,0.78)',
-      rerollFg: cannotReroll ? offFg : '#FFFFFF',
       badges: badges,
       badgeRows: badgeRows,
       bd: bd,
@@ -5991,22 +5864,6 @@ class Component extends Base {
           battle: b && b.s[0].k.seed === entry.seed ? null : b
         }, [{ t: 'evolve' }]);
       },
-      nextFoe: () => {
-        if (b) { if (b.over) this.setState({ foeSeed: 1 + Math.floor(Math.random() * 999998), battle: null }); return; }
-        if (st.essence < 1) return;
-        this.update({ foeSeed: 1 + Math.floor(Math.random() * 999998), essence: st.essence - 1 });
-      },
-      fight: () => {
-        const e2 = this.energy();
-        if (!me || e2.left === 0 || inBattle) return;
-        this.update({ battle: this.newBattle(me, foe, reward), day: e2.today, used: e2.used + 1 });
-      },
-      flee: () => {
-        if (!inBattle) return;
-        const nb = JSON.parse(JSON.stringify(b));
-        nb.over = true; nb.fled = true; nb.log.push({ text: 'You fled the battle.' });
-        this.setState({ battle: nb });
-      },
       addEssence: () => this.update({ essence: st.essence + 10 }),
       resetRolls: () => this.update({ day: en.today, used: 0 }),
       newQuests: () => { const q = this.questsFor(st); this.update({ quests: this.makeQuests(q.day, (q.salt || 0) + 1) }); },
@@ -6014,26 +5871,6 @@ class Component extends Base {
     };
   }
 
-  playRound(i) {
-    const b = this.state.battle;
-    if (!b || b.over) return;
-    const P = b.s[0], mv = P.k.kit[i];
-    if ((mv.kind === 'guard' && P.lastGuard) || (mv.kind === 'status' && P.uses === 0)) return;
-    const hp0 = [b.s[0].hp, b.s[1].hp];
-    const nb = this.resolve(JSON.parse(JSON.stringify(b)), i, Math.random);
-    nb.fx = { round: nb.round, hit: [nb.s[0].hp < hp0[0], nb.s[1].hp < hp0[1]] };
-    if (nb.fx.hit[0] || nb.fx.hit[1]) this.sfx('hit');
-    if (nb.over && nb.win) { setTimeout(() => this.sfx('win'), 250); this.buzz([40, 30, 40]); }
-    else if (nb.over && !nb.draw) setTimeout(() => this.sfx('lose'), 250);
-    const events = mv.kind === 'status' ? [{ t: 'special' }] : [];
-    const patch = { battle: nb };
-    if (nb.over && nb.win) {
-      patch.wins = this.state.wins + 1;
-      patch.essence = this.state.essence + nb.reward;
-      events.push({ t: 'win', type: P.k.element.name, adv: this.beats()[P.k.element.name].indexOf(nb.s[1].k.element.name) !== -1 });
-    } else if (nb.over && !nb.draw && !nb.fled) events.push({ t: 'loss' });
-    this.update(patch, events);
-  }
 }
 
 
@@ -6097,7 +5934,7 @@ const EVO_PLAN = [ // by body shape: arm length / width / tilt / height on the b
   { arm: 34, aw: 24, tilt: 50, at: 0.56, leg: 40 }, { arm: 46, aw: 22, tilt: 28, at: 0.46, leg: 32 }, { arm: 0, aw: 0, tilt: 0, at: 0.3, leg: 34, pads: true }
 ];
 // ---- the secret critters: hand-designed single-form species outside the 48 (#49, #50), reached only through reserved seeds ----
-const SECRET_SEED = 1000001, SECRET2_SEED = 1000002, SECRET3_SEED = 1000003;   // normal seeds stop at 999999 (rolls, wild encounters, typed seeds), so these can never come up by chance
+const SECRET_SEED = 1000001, SECRET2_SEED = 1000002, SECRET3_SEED = 1000003, SECRET4_SEED = 1000004;   // normal seeds stop at 999999 (rolls, wild encounters, typed seeds), so these can never come up by chance
 const SECRETS = {
   [SECRET_SEED]: { key: 'veilcrown', flag: 'secret', lv: 12, name: 'Veilcrown', speciesNo: 49, type: 'Dusk', kit3: 'Ninth Hex', height: '1.6 m', weight: '38.0 kg', nature: 'Solemn nature: balanced stats',
     ability: { name: 'Last Light', text: 'Once per battle, survives a knock-out with 1 HP, and its next hit lands 30% harder.' },
@@ -6113,7 +5950,12 @@ const SECRETS = {
     ability: { name: 'Slow Burn', text: 'Each of its hits has a 25% chance to burn the target for 3 turns.' },
     hint: 'A coal is said to wait in the cold forge.', flavor: 'A coal that never went out, grown into a creature of cooling stone. It was the forge\u2019s last apprentice, and it never left.',
     stats: [['HP', 130], ['ATK', 112], ['DEF', 120], ['SPD', 74]],
-    moves: [{ name: 'Magma Nudge', power: 66 }, { name: 'Caldera Slam', power: 96 }] }
+    moves: [{ name: 'Magma Nudge', power: 66 }, { name: 'Caldera Slam', power: 96 }] },
+  [SECRET4_SEED]: { key: 'kindlemane', flag: 'kindlemane', lv: 16, name: 'Kindlemane', speciesNo: 52, type: 'Ember', kit3: 'Roar of the Ring', height: '1.3 m', weight: '64 kg', nature: 'Proud nature: holds its ground',
+    ability: { name: 'Standfast', text: 'Below half HP it takes 20% less damage.' },
+    hint: 'The top of the ladder keeps something for whoever climbs it.', flavor: 'Raised on the sand of the Arena, it has heard every crowd there is. It does not run.',
+    stats: [['HP', 118], ['ATK', 116], ['DEF', 110], ['SPD', 96]],
+    moves: [{ name: 'Mane Flare', power: 68 }, { name: 'Standing Roar', power: 94 }] }
 };
 const SECRET = SECRETS[SECRET_SEED];
 // developer options (browser-only, never saved or synced): see the Developer tools panel in app.js
@@ -6153,6 +5995,8 @@ const TITLES = [
   { id: 'naturalist', name: 'Naturalist', desc: 'Discover 36 species', essence: 20, goal: 36, of: (s) => (s.seen || []).length },
   { id: 'master', name: 'Critter Master', desc: 'Discover all 48 species', essence: 40, goal: 48, of: (s) => (s.seen || []).length },
   { id: 'champion', name: 'Fire-keeper', desc: 'Earn all 4 Leader Seals', essence: 0, goal: 4, of: (s) => ((s.npc && s.npc.seals) || []).length },
+  { id: 'challenger', name: 'Challenger', desc: 'Climb the first step of the Arena ladder', essence: 0, goal: 1, of: (s) => (s.arena && s.arena.step) || 0 },
+  { id: 'ringchamp', name: 'Ring Champion', desc: 'Climb all five steps of the Arena ladder', essence: 0, goal: 5, of: (s) => (s.arena && s.arena.step) || 0 },
   { id: 'climber', name: 'Tower Climber', desc: 'Clear floor 10 of the Tower', essence: 0, goal: 10, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'summit', name: 'Watchkeeper', desc: 'Keep all 20 nights of the Long Watch', essence: 0, goal: 20, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'lamp', name: 'Lamplighter', desc: 'Relight the old beacon', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.lampLit ? 1 : 0) },
@@ -6407,6 +6251,10 @@ class Game extends Component {
     this.update({ tower: Object.assign({}, t, { day: today, runs: (t.day === today ? t.runs : 0) + 1, run: { floor: 1, party: party, hp: hp } }) });
   }
   endTowerRun() { this.update({ tower: Object.assign({}, this.towerState(), { run: null }) }); }
+  // the Arena ladder: five named rivals in a fixed order, one ladder fight a day (win or lose); a climbed rival can be fought again, once a day, like any trainer
+  ladderStep() { return (this.state.arena && this.state.arena.step) || 0; }
+  ladderFoughtToday() { return !!(this.state.arena && this.state.arena.day === new Date().toDateString()); }
+  ladderReady(n) { if (!n.ladder) return true; const step = this.ladderStep(); if (n.ladder <= step) return true; return n.ladder === step + 1 && !this.ladderFoughtToday(); }
   beatenToday(id) { const b = (this.state.npc && this.state.npc.beaten) || {}; return b[id] === new Date().toDateString(); }
   update(patch, events) {
     if (window.__saveFrozen) return;
@@ -6476,7 +6324,6 @@ class Game extends Component {
     if (lv1 > lv0) setTimeout(() => this.sfx('level'), 150);
     return { xp: xpGain, ess: ess, lv: lv1 > lv0 ? lv1 : 0, capped: a.n + 1 >= ACT_ESS_CAP };
   }
-  playRound(i) { this.battleAction({ move: i }); }
   awardXp(nb, won, patch) {
     const caught = (patch.caught || this.state.caught).map((e) => Object.assign({}, e));
     let grew = false;
@@ -6504,6 +6351,10 @@ class Game extends Component {
         if ((npc.cleared || []).indexOf(tr.id) === -1) npc.cleared = (npc.cleared || []).concat([tr.id]);
         if (tr.leader && (npc.seals || []).indexOf(tr.id) === -1) { npc.seals = (npc.seals || []).concat([tr.id]); patch.justSealed = tr.id; events.push({ t: 'leader' }); }
         patch.npc = npc;
+        if (tr.ladder) {   // the Arena ladder: the step climbed; the top step keeps Kindlemane for whoever climbs it
+          const ar = Object.assign({ step: 0, day: '' }, this.state.arena); ar.step = Math.max(ar.step, tr.ladder); patch.arena = ar;
+          if (tr.ladder >= 5 && !(patch.caught || this.state.caught).some((e) => e.seed === SECRET4_SEED)) { patch.caught = (patch.caught || this.state.caught).concat([{ seed: SECRET4_SEED, stage: 3, lv: SECRETS[SECRET4_SEED].lv }]); patch.kindled = true; }
+        }
         nb.log.push({ text: tr.name + ': "' + tr.winLine + '"' });
       }
       setTimeout(() => this.sfx('win'), 250); this.buzz([40, 30, 40]);
@@ -6526,69 +6377,6 @@ class Game extends Component {
     const t = this.towerState(); if (!t.run) return; const run = { floor: t.run.floor, party: t.run.party.slice(), hp: Object.assign({}, t.run.hp) };
     sides.forEach((sd) => { run.hp[sd.k.seed] = Math.max(0, Math.round(sd.hp)); }); this.update({ tower: Object.assign({}, t, { run: run }) });
   }
-  battleAction(act) {
-    const b = this.state.battle;
-    if (!b || b.over) return;
-    const nb = JSON.parse(JSON.stringify(b)); nb.bench = nb.bench || [];
-    const events = [], patch = { battle: nb, bmode: 'moves' };
-    let mi = -1, P = nb.s[0];
-    if (act.move !== undefined) {
-      const mv = P.k.kit[act.move];
-      if (!mv || (mv.kind === 'guard' && P.lastGuard) || (mv.kind === 'status' && P.uses === 0)) return;
-      mi = act.move; if (mv.kind === 'status') events.push({ t: 'special' });
-    } else if (act.switchTo !== undefined) {
-      const nxt = nb.bench[act.switchTo]; if (!nxt || nxt.hp <= 0) return;
-      nb.bench[act.switchTo] = P; nb.s[0] = nxt; nxt.guard = false; nxt.lastGuard = false;
-      nb.log.push({ text: P.label + ' comes back. ' + nxt.label + ' steps in!' }); P = nxt;
-    } else if (act.item) {
-      const bag = Object.assign({}, BAG0, this.state.bag);
-      const it = act.item, statused = P.burn > 0 || P.weak > 0 || P.daze > 0 || P.sap > 0;
-      if (!(bag[it] > 0) || !this.itemUsable(it, P)) return;
-      bag[it] -= 1; patch.bag = bag;
-      if (it === 'potion' || it === 'super') {
-        const amt = it === 'super' ? P.max - P.hp : Math.min(P.max - P.hp, Math.round(P.max * 0.4));
-        P.hp += amt; nb.log.push({ text: 'You used a ' + (it === 'super' ? 'Super Potion' : 'Potion') + '. ' + P.label + ' recovered ' + amt + ' HP.' });
-      } else if (it === 'herb') {
-        const amt = Math.min(P.max - P.hp, Math.round(P.max * ITEM_FX.herb.heal)); P.hp += amt; P.burn = 0; P.weak = 0; P.daze = 0; P.sap = 0;
-        nb.log.push({ text: 'You used a Mossleaf Remedy. ' + P.label + ' recovered ' + amt + ' HP' + (statused ? ' and shook off its status.' : '.') });
-      } else if (it === 'ward') { P.ward = ITEM_FX.ward.hits; nb.log.push({ text: 'You used a Frost Ward. ' + P.label + ' is shielded from the next ' + ITEM_FX.ward.hits + ' hits.' }); }
-      else if (it === 'whet') { P.boost = ITEM_FX.whet.mult; nb.log.push({ text: 'You used a Whetstone. ' + P.label + "'s attacks are sharper for the rest of the battle." }); }
-    } else return;
-    nb.part = nb.part || {}; nb.koXp = nb.koXp || {};
-    nb.part[nb.s[0].k.seed] = true;
-    const healed = act.item ? nb.s[0].hp - (b.s[0].k.seed === nb.s[0].k.seed ? b.s[0].hp : nb.s[0].hp) : 0;
-    const hp0 = [nb.s[0].hp - healed, nb.s[1].hp];
-    nb.s.forEach((sd) => { delete sd.fxHits; delete sd.fxSt; });
-    this._surge = nb.trainer && nb.trainer.tower && this.towerTwist().id === 'surge' ? this.towerTwist().type : null;
-    this.resolve(nb, mi, Math.random);
-    this._surge = null;
-    nb.fx = { round: nb.round, hit: [nb.s[0].hp < hp0[0], nb.s[1].hp < hp0[1]], side: this.fxSides(nb, hp0) };
-    if (nb.fx.hit[0] || nb.fx.hit[1]) this.sfx('hit');
-    const tr = nb.trainer;
-    let won = false, lost = false;
-    if (nb.s[1].hp <= 0) {
-      const foeK = nb.s[1].k, ko = 8 + 2 * (foeK.lv || 1) + 5 * (foeK.stage || 1);
-      nb.koXp[nb.s[0].k.seed] = (nb.koXp[nb.s[0].k.seed] || 0) + ko;
-      if (tr && tr.idx < tr.team.length - 1) {
-        tr.idx += 1;
-        const foe = this.make(tr.team[tr.idx], tr.stage, tr.lv || 1);
-        nb.s[1] = this.newBattle(nb.s[0].k, foe, nb.reward).s[1];
-        nb.s[1].label = tr.name + "'s " + foe.name;
-        nb.log.push({ text: tr.name + ' sent out ' + foe.name + '!' });
-        nb.over = false; nb.win = false; nb.draw = false;
-        this.sfx('claim');
-      } else won = true;
-    }
-    if (!won && nb.s[0].hp <= 0) {
-      const j = nb.bench.findIndex((s) => s.hp > 0);
-      if (j !== -1) {
-        const out = nb.s[0]; nb.s[0] = nb.bench[j]; nb.bench[j] = out;
-        nb.log.push({ text: nb.s[0].label + ' steps in!' });
-        nb.over = false; nb.win = false; nb.draw = false;
-      } else lost = true;
-    }
-    this.settleBattle(nb, tr, won, lost, patch, events);
-  }
   towerAfter(nb, won, lost, patch) {
     const t = this.towerState(); if (!t.run) return;
     const run = { floor: t.run.floor, party: t.run.party.slice(), hp: Object.assign({}, t.run.hp) };
@@ -6609,7 +6397,7 @@ class Game extends Component {
   renderVals() {
     const v = super.renderVals();
     const enc = this.state.encounter;
-    v.screenTitle = enc ? 'Wild critter' : ({ roll: 'Critter', dex: 'Critter Lab', battle: 'Arena', badges: 'Trainer' }[this.state.tab] || '');
+    v.screenTitle = enc ? 'Wild critter' : ({ roll: 'Critter', dex: 'Critter Lab', badges: 'Trainer' }[this.state.tab] || '');
     v.closeScreen = () => APP.close();
     v.backLabel = WORLD.map ? WORLD.map.name : 'Sproutvale';
     v.showRollTools = v.showRoll && !enc;
@@ -6646,111 +6434,6 @@ class Game extends Component {
     v.encKeepBg = v.kept ? 'rgba(40,110,60,0.85)' : (v.keepDisabled ? 'rgba(14,26,56,0.6)' : v.primaryBg);
     v.encKeepFg = v.kept ? '#FFFFFF' : (v.keepDisabled ? '#9FB0D0' : '#2A1B00');
     v.encKeepShadow = v.kept || v.keepDisabled ? 'none' : '0 4px 14px rgba(245,185,58,0.45)';
-    const tr = this.state.trainer, b = this.state.battle;
-    if (tr && this.state.tab === 'battle' && this.state.caught.length) {
-      const st = this.state, fe = st.caught.find((e) => e.seed === st.fighter) || st.caught[0];
-      const me = this.make(fe.seed, fe.stage), foe0 = this.make(tr.team[0], tr.stage, tr.lv || 1);
-      const beaten = this.beatenToday(tr.id), won = b && b.trainer && b.over && b.win;
-      if (!b) {
-        const side = (k, i, label) => { const max = Math.round(k.stats[0].value * 1.5 + 60); return { hitClass: '', fx: null, flashCls: '', side: label, sideColor: i ? '#FF8A7A' : '#A7F04A', k: k, hpMax: max, hpNow: max, hpPct: 100, hpColor: '#A7F04A', status: i ? tr.name + "'s critter 1 of " + tr.team.length : me.element.name + ' moves: ' + me.kit[3].name }; };
-        v.duel = [side(me, 0, 'YOU'), side(foe0, 1, tr.name.toUpperCase())];
-      }
-      v.matchupNote = tr.name + ' has ' + tr.team.length + ' critters. Your party can switch in when one faints. Win reward: +' + tr.reward + ' essence.';
-      v.rerollLabel = b && b.over ? 'Done' : 'Not now'; v.cannotReroll = false; v.rerollBg = 'rgba(14,26,56,0.78)'; v.rerollFg = '#FFFFFF';
-      v.nextFoe = () => APP.close();
-      const can = !beaten && !(b && !b.over);
-      v.cannotFight = !can;
-      v.fightLabel = beaten || won ? 'Trainer beaten' : (b && b.over ? 'Rematch ' + tr.name : 'Battle ' + tr.name);
-      v.fightBg = can ? v.primaryBg : 'rgba(14,26,56,0.6)'; v.fightFg = can ? '#2A1B00' : '#9FB0D0'; v.fightShadow = can ? '0 4px 14px rgba(245,185,58,0.45)' : 'none';
-      v.fight = () => {
-        if (!can) return;
-        const nb = this.newBattle(me, foe0, tr.reward);
-        nb.trainer = { id: tr.id, name: tr.name, team: tr.team.slice(), idx: 0, stage: tr.stage, lv: tr.lv || 1, winLine: tr.winLine, leader: !!tr.leader };
-        nb.s[1].label = tr.name + "'s " + foe0.name;
-        nb.log = [{ text: tr.name + ' sent out ' + foe0.name + '!' }];
-        nb.bench = this.benchFor(fe.seed, foe0);
-        this.setState({ battle: nb, bmode: 'moves' });
-      };
-      if (b && b.trainer) v.roundLabel = v.roundLabel.replace(' · newest first', '') + ' · ' + tr.name + "'s critter " + (b.trainer.idx + 1) + ' of ' + b.trainer.team.length;
-      if (b && b.trainer && v.duel[1]) v.duel[1].side = tr.name.toUpperCase();
-      v.screenTitle = 'vs ' + tr.name;
-      v.backLabel = 'Leave';
-      if (tr.tower) {
-        const party = this.towerParty(), alive = party.filter((x) => x.hp > 0);
-        const lead = alive.find((x) => x.seed === st.fighter) || alive[0];
-        const done = b && b.over;
-        v.screenTitle = 'The Long Watch · Night ' + tr.floor;
-        v.backLabel = done ? 'Leave' : 'Pause';
-        v.matchupNote = this.towerTwist().name + ': ' + this.towerTwist().text + ' Night ' + tr.floor + ' of ' + TOWER.floors + (tr.warden ? ', a long one' : '') + '. ' + tr.name + ' is at the door with ' + tr.team.length + ' critters. Your HP carries over between nights. ' + (tr.reward ? 'Kept for the first time: +' + tr.reward + ' essence.' : 'Essence only for nights past your longest watch.');
-        v.rerollLabel = done ? 'Continue' : 'Not now';
-        const runT = this.towerState().run, can = !!lead && !b && !!runT && runT.floor === tr.floor;
-        v.cannotFight = !can;
-        v.fighters = alive.map((x) => { const k = this.make(x.seed, (st.caught.find((e) => e.seed === x.seed) || {}).stage || 1), on = lead && x.seed === lead.seed;
-          return { name: k.name + ' ' + x.hp + '/' + x.max, pressed: on ? 'true' : 'false', bg: on ? v.primaryBg : 'rgba(255,255,255,0.12)', fg: on ? '#2A1B00' : '#FFFFFF', pick: () => { if (!b) this.setState({ fighter: x.seed }); } }; });
-        v.fightLabel = done ? (b.win ? 'Night kept' : 'The lamp went out') : (lead ? 'Answer the door' : 'No critter can fight');
-        v.fightBg = can ? v.primaryBg : 'rgba(14,26,56,0.6)'; v.fightFg = can ? '#2A1B00' : '#9FB0D0'; v.fightShadow = can ? '0 4px 14px rgba(245,185,58,0.45)' : 'none';
-        if (lead && !b) {
-          const le = st.caught.find((e) => e.seed === lead.seed), me2 = this.make(lead.seed, le.stage);
-          const pct = Math.round(lead.hp / lead.max * 100);
-          v.duel[0] = Object.assign({}, v.duel[0], { k: me2, hpMax: lead.max, hpNow: lead.hp, hpPct: pct, hpColor: pct > 50 ? '#A7F04A' : (pct > 20 ? '#FFD86B' : '#FF6B6B'), status: me2.element.name + ' moves: ' + me2.kit[3].name + ' · ' + (alive.length - 1) + ' on bench' });
-        }
-        v.fight = () => {
-          if (!can) return;
-          const le = st.caught.find((e) => e.seed === lead.seed), me2 = this.make(lead.seed, le.stage);
-          const nb = this.newBattle(me2, foe0, tr.reward); nb.s[0].hp = lead.hp;
-          nb.trainer = { id: tr.id, name: tr.name, team: tr.team.slice(), idx: 0, stage: tr.stage, lv: tr.lv || 1, winLine: tr.winLine, tower: true, floor: tr.floor, warden: tr.warden };
-          nb.s[1].label = tr.name + "'s " + foe0.name;
-          nb.log = [{ text: tr.name + ' sent out ' + foe0.name + '!' }];
-          nb.bench = party.filter((x) => x.seed !== lead.seed).map((x) => { const e = st.caught.find((c) => c.seed === x.seed), sd = this.newBattle(this.make(x.seed, e.stage), foe0, 0).s[0]; sd.hp = x.hp; return sd; });
-          this.setState({ battle: nb, bmode: 'moves' });
-        };
-      }
-    }
-    // ---- party + bag in battle ----
-    if (!tr && this.state.tab === 'battle' && this.state.caught.length && !(b && !b.over)) {
-      v.fight = () => {
-        const e2 = this.energy(), st = this.state;
-        if (e2.left === 0 || (st.battle && !st.battle.over)) return;
-        const fe = st.caught.find((e) => e.seed === st.fighter) || st.caught[0];
-        const me = this.make(fe.seed, fe.stage), foe = this.make(st.foeSeed, fe.stage, fe.lv || 1), bt = this.beats();
-        let reward = 1; if (foe.rarity === 'Rare') reward += 1; if (foe.rarity === 'Mythic') reward += 2; if (bt[foe.element.name].indexOf(me.element.name) !== -1) reward += 1;
-        const nb = this.newBattle(me, foe, reward); nb.bench = this.benchFor(fe.seed, foe);
-        this.update({ battle: nb, bmode: 'moves', day: e2.today, used: e2.used + 1 });
-      };
-    }
-    {
-      const st = this.state, bag = Object.assign({}, BAG0, st.bag);
-      const bm = st.bmode || 'moves', inB = !!(b && !b.over), bench = (b && b.bench) || [];
-      const alive = bench.filter((s) => s.hp > 0).length, P = b && b.s[0];
-      const glass = 'rgba(14,26,56,0.78)', off = 'rgba(14,26,56,0.6)';
-      v.showMoves = inB && bm === 'moves';
-      v.showSwitchList = inB && bm === 'switch'; v.showBagList = inB && bm === 'bag';
-      v.benchList = bench.map((s, j) => ({ name: s.k.name, sub: s.hp > 0 ? s.k.element.name + ' · HP ' + s.hp + '/' + s.max : 'Fainted', off: s.hp <= 0, bg: s.hp <= 0 ? off : glass, fg: s.hp <= 0 ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction({ switchTo: j }) }));
-      v.noBench = bench.length === 0;
-      v.switchLabel = bm === 'switch' ? 'Moves' : 'Switch (' + alive + ')';
-      v.cannotSwitch = bm !== 'switch' && alive === 0;
-      v.switchBg = v.cannotSwitch ? off : glass; v.switchFg = v.cannotSwitch ? '#9FB0D0' : '#FFFFFF';
-      v.toggleSwitch = () => this.setState({ bmode: bm === 'switch' ? 'moves' : 'switch' });
-      const pots = bag.potion + bag.super + bag.herb + bag.ward + bag.whet, full = P ? P.hp >= P.max : true;
-      const IL = [['potion', 'Potion', 'Heals 40% HP'], ['super', 'Super Potion', 'Heals to full'], ['herb', 'Mossleaf Remedy', 'Heals 40% + cures status'], ['ward', 'Frost Ward', '65% less damage, next 5 hits'], ['whet', 'Whetstone', '+70% damage this battle']];
-      v.itemList = IL.filter(([id]) => id === 'potion' || id === 'super' || bag[id] > 0).map(([id, name, sub]) => {
-        const can = this.itemUsable(id, P), o = !bag[id] || !can;
-        return { name: name + ' ×' + bag[id], sub: !bag[id] ? 'None left. Buy at Mira’s stall.' : (!can ? (id === 'ward' || id === 'whet' ? 'Already active' : (id === 'herb' ? 'Full HP, no status' : 'Already at full HP')) : sub + ' · uses your turn'), off: o, bg: o ? off : glass, fg: o ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction({ item: id }) };
-      });
-      v.bagLabel = bm === 'bag' ? 'Moves' : 'Bag (' + pots + ')';
-      v.toggleBag = () => this.setState({ bmode: bm === 'bag' ? 'moves' : 'bag' });
-      if (b && v.duel && v.duel[0] && bench.length) v.duel[0].status = v.duel[0].status + ' · ' + alive + ' on bench';
-      if (!b && !tr && v.duel && v.duel[1] && st.caught.length) {
-        const fe2 = st.caught.find((e) => e.seed === st.fighter) || st.caught[0];
-        const foeK = this.make(st.foeSeed, fe2.stage, fe2.lv || 1), max = Math.round(foeK.stats[0].value * 1.5 + 60);
-        v.duel[1] = Object.assign({}, v.duel[1], { k: foeK, hpMax: max, hpNow: max, hpPct: 100 });
-      }
-      if (!b && v.duel && v.duel[0] && !(tr && tr.tower)) {
-        const lead = (st.caught.find((e) => e.seed === st.fighter) || st.caught[0] || {}).seed;
-        const n = this.partySeeds().filter((s) => s !== lead).slice(0, 2).length;
-        v.duel[0].status = v.duel[0].status + (n ? ' · ' + n + ' on bench' : ' · no bench yet');
-      }
-    }
     const seals = (this.state.npc && this.state.npc.seals) || [];
     const lvNow = this.levelInfo(this.state.xp || 0).level;
     v.seals = LEADERS.map((L) => {
@@ -6963,7 +6646,7 @@ const APP = (() => {
     const seals = (st.npc && st.npc.seals) || [], seen = st.seen || [], known = knownMaps();
     const c = { id: id, name: '', lines: [], wx: weatherAt(id) ? weatherText(weatherAt(id)) : '', travel: false, status: '' };
     if (id === 'town') { c.name = 'Sproutvale'; c.lines = ['Home and the Lab']; c.travel = true; }
-    else if (id === 'arena') { c.name = 'The Arena'; c.lines = ['Wild battles, for a roll', 'Off the Ashwood Trail']; if (knownMaps().has('arena')) c.travel = true; else c.status = 'Reach it on foot'; }
+    else if (id === 'arena') { c.name = 'The Arena'; c.lines = ['Five rivals, one a day', 'Off the Ashwood Trail']; if (knownMaps().has('arena')) c.travel = true; else c.status = 'Reach it on foot'; }
     else if (ZONE_NAMES[id]) {
       const L = LEADERS.find((x) => x.zone === id), open = test || lv >= GATES[id];
       const found = ZONE_TYPES[id].reduce((n, t) => { const ti = ZTYPES.indexOf(t); return n + seen.filter((no) => Math.floor((no - 1) / 6) === ti).length; }, 0);
@@ -7321,6 +7004,12 @@ const APP = (() => {
     const bag = bagOf(); bag[id] += 1; game.update({ bag: bag, essence: ess - it.price }); game.sfx('tap'); renderShop();
   }
   // ---------- people ----------
+  // the Arena's rivals: the one whose step is next waits on the sand (facing the gate); the others sit by their tents in ladder order
+  const TENTS = [[5, 6], [8, 6], [5, 9], [8, 9], [5, 13]];
+  function placeRivals(list) {
+    const step = game ? game.ladderStep() : 0;
+    (list || []).forEach((n) => { if (!n.ladder) return; const i = n.ladder - 1; if (n.ladder === step + 1) { n.x = 20; n.y = 7; n.dir = 'down'; } else { n.x = TENTS[i][0]; n.y = TENTS[i][1]; n.dir = i % 2 ? 'left' : 'right'; } });
+  }
   function npcList() {
     const M = WORLD.MAPS, out = { town: [
       { id: 'fern', name: 'Professor Fern', x: 37, y: 11, kind: 'request', pal: { h: '#E8E8F0', y: '#F4F7FB', Y: '#C9D3E6', p: '#4A5878' },
@@ -7337,9 +7026,29 @@ const APP = (() => {
         types: ['Moss', 'Ember'], size: 2, stage: 1,
         intro: ['Hey, you look new around here!', 'Let me see what your critters can do.'], winLine: 'Wow, you are good! Here is your reward.', beatenLines: ['That was a great battle. Come back tomorrow for a rematch!'] }
     ], arena: [
-      { id: 'tam', name: 'Tam', x: 23, y: 9, dir: 'left', kind: 'talk', pal: { h: '#2B2235', y: '#F5C542', Y: '#C9962A' }, lines: ['I come every day. I have never once gone in.', 'From up here you can see every step they take.'] },
-      { id: 'odo', name: 'Odo', x: 16, y: 7, dir: 'left', kind: 'talk', pal: { h: '#8A5A34', y: '#D8574A', Y: '#A83A2E' }, lines: ['My brother fought in there once. He lost. He talks about it more than anything he ever won.'] }
+      // the ladder: five named rivals in a fixed order (ladder 1..5). The one whose turn it is waits on the sand; the others keep to their tents (placeRivals)
+      { lv: 8, id: 'juno', name: 'Juno', ladder: 1, kind: 'trainer', trainer: true, pal: { cap: true, c: '#F5C542', y: '#F5C542', Y: '#C9962A' }, types: ['Volt', 'Ember'], size: 3, stage: 2, pick: 0.5, reward: 14,
+        intro: ["Everyone's first fight is against me.", "I'm the only one who remembers them all."], winLine: 'There. Now I remember yours too.', beatenLines: ['Tomorrow. I have four more to watch today.'], afterLines: ['Back for the first step again? It is still mine to give.'],
+        notYet: ['Not you. Not yet.'], tomorrow: ['One a day. That is the rule of the sand.'] },
+      { lv: 10, id: 'bastian', name: 'Bastian', ladder: 2, kind: 'trainer', trainer: true, pal: { cap: false, c: '#8E98AD', y: '#8E98AD', Y: '#5A6478', h: '#2B2235' }, types: ['Stone', 'Moss'], size: 3, stage: 2, pick: 0.6, reward: 18,
+        intro: ['Nobody gets through me.', 'They go around, and I let them think it was their idea.'], winLine: 'Around, then. Fine.', beatenLines: ['Tomorrow. The wall does not move for anyone twice.'], afterLines: ['You already went around me once. Through, this time.'],
+        notYet: ['Juno first. That is the order.'], tomorrow: ['One a day. Come back with the sun.'] },
+      { lv: 12, id: 'sable', name: 'Sable', ladder: 3, kind: 'trainer', trainer: true, pal: { cap: false, c: '#8B6CF0', y: '#5B3FA8', Y: '#3A2A7A', h: '#1E1A2A' }, types: ['Dusk', 'Tide'], size: 4, stage: 2, pick: 0.6, reward: 22,
+        intro: ['You will not see me coming.', 'You will see where I was.'], winLine: 'You looked where I was going. Good.', beatenLines: ['Tomorrow. I am somewhere else today.'], afterLines: ['Again? Watch the sand, not me.'],
+        notYet: ['Two before me. Go and find them.'], tomorrow: ['Not today. The sand remembers one fight a day.'] },
+      { lv: 14, id: 'halvard', name: 'Halvard', ladder: 4, kind: 'trainer', trainer: true, pal: { cap: false, c: '#DCEFF8', y: '#B9CCE0', Y: '#8FB0C8', h: '#E8E8F0' }, types: ['Frost', 'Stone'], size: 4, stage: 3, pick: 0.65, reward: 26,
+        intro: ['I do not move much.', 'I have not needed to.'], winLine: 'I moved. Remember that.', beatenLines: ['Tomorrow. Standing still is also a day’s work.'], afterLines: ['You again. I will not move this time either.'],
+        notYet: ['Three stand before me. Stand before them first.'], tomorrow: ['One a day. I can wait. I am good at it.'] },
+      { lv: 16, id: 'ash', name: 'Ash', ladder: 5, kind: 'trainer', trainer: true, pal: { cap: true, c: '#FF7A45', y: '#D8574A', Y: '#A83A2E', h: '#2B2235' }, types: ['Ember', 'Bloom', 'Volt'], size: 5, stage: 3, pick: 0.7, reward: 30,
+        intro: ['Five of us, and you came for me. Good.', 'The others were practice. So was I.'], winLine: 'The rail has room for one more name.', beatenLines: ['Tomorrow. Even the top of the ladder sleeps.'], afterLines: ['The rail already has your name. Fight me for nothing, then?'],
+        notYet: ['Four names before mine. Climb.'], tomorrow: ['One a day. Tomorrow the sand is yours.'] },
+      { id: 'tam', name: 'Tam', x: 22, y: 16, dir: 'up', kind: 'talk', pal: { h: '#2B2235', y: '#F5C542', Y: '#C9962A' }, lines: ['I come every day. I have never once gone in.', 'From the gate you can see every step they take.'] },
+      { id: 'odo', name: 'Odo', x: 14, y: 17, dir: 'up', kind: 'talk', pal: { h: '#8A5A34', y: '#D8574A', Y: '#A83A2E' }, lines: ['My brother fought in there once. He lost.', 'He talks about it more than anything he ever won.'] },
+      { id: 'pell', name: 'Pell', x: 27, y: 17, dir: 'up', kind: 'shop', pal: { h: '#C0392B', y: '#4FB06D', Y: '#2E7D33' }, lines: ['Potions, charms, whetstones. The fighters buy before; the watchers buy after.'] },
+      { id: 'vesna', name: 'Vesna', x: 9, y: 21, dir: 'right', kind: 'talk', pal: { h: '#E8E8F0', y: '#8A4A2A', Y: '#5A2A10' }, lines: ['I held the top step for eleven years.', 'Now I hold the window. It is a better seat.'] },
+      { id: 'kit', name: 'Kit', x: 16, y: 17, dir: 'up', kind: 'talk', pal: { h: '#F5C542', y: '#3C6FE0', Y: '#28509E' }, lines: ['When I am big enough they will let me in.', 'I already know what I will say to Juno.'] }
     ] };
+    placeRivals(out.arena);
     const zone = (id, list) => {
       const m = M[id], cx = Math.floor(m.W / 2), cy = Math.floor(m.H / 2), sx = Math.floor(m.spawn[0]), sy = Math.floor(m.spawn[1]);
       const dx = Math.sign(cx - sx), dy = Math.sign(cy - sy);
@@ -7800,6 +7509,7 @@ const APP = (() => {
     if (o.kind === 'socket') { socketUse(o); return; }
     if (o.kind === 'furnace') { furnaceUse(); return; }
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
+    if (o.id === 'names' && game.ladderStep() >= 5) { toast(o.text + ' The newest is yours.'); return; }   // the rail, once you have climbed
     if (o.kind === 'chamberlamp') { toast(lampKept(o.id) ? 'The lamp burns steadily.' : o.text); return; }
     if (o.clue) { const c = ADV.CLUES.find((q) => q.id === o.clue); showDialog('You look closer', [o.text], null, () => { if (c) gainClue(c); }); return; }
     if (o.kind === 'windowlamp' && advOf().flags.lampLit && advOf().flags.homeLit !== new Date().toDateString()) { advSave((a) => { a.flags.homeLit = new Date().toDateString(); }); game.sfx('claim'); showDialog('The window', ['You light the lamp in the window. It faces the road.']); return; }   // Meaning: being the keeper is a small daily act
@@ -7900,6 +7610,7 @@ const APP = (() => {
       }
       showDialog(n.name, n.ask.concat([n.progress(g)])); return;
     }
+    if (n.kind === 'trainer' && n.ladder && !game.ladderReady(n)) { showDialog(n.name, game.ladderStep() + 1 < n.ladder ? n.notYet : n.tomorrow); n.declined = true; return; }   // the Arena ladder: in order, one a day
     if (n.kind === 'trainer') challenge(n);
     if (n.kind === 'leader') {
       const npcSt = g.state.npc || {}, cleared = npcSt.cleared || [];
@@ -7935,10 +7646,11 @@ const APP = (() => {
     const cleared = (game.state.npc && game.state.npc.cleared) || [];
     // trainers: full reward on the first win, half on daily rematches (keeps daily essence close to the pre-city economy)
     const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward + (n.bonus || 0) : Math.ceil(n.reward / 2));
-    const tr = { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss };
-    if (ACT.canDuel() && ACT.startDuel({ tr: tr, npc: n })) { n.declined = true; resumeWorld(); return; }   // action mode: fight it out on the map (the dialog that led here left the world paused)
-    game.setState({ trainer: tr, battle: null });
-    openScreen('battle');
+    const tr = { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss, ladder: n.ladder || 0 };
+    if (!ACT.canDuel()) { resumeWorld(); toast('Your lead critter is not ready to fight here.'); return; }
+    if (n.ladder && n.ladder === game.ladderStep() + 1) game.update({ arena: Object.assign({ step: 0 }, game.state.arena, { day: new Date().toDateString() }) });   // the ladder: one fight a day, win or lose
+    if (ACT.startDuel({ tr: tr, npc: n })) { n.declined = true; resumeWorld(); return; }   // every fight is a duel on the map (the dialog that led here left the world paused)
+    resumeWorld();
   }
   // ---------- The Long Watch ----------
   const KEEPER = 'Keeper of the Watch';
@@ -7954,8 +7666,7 @@ const APP = (() => {
       const tw = game.towerTwist();
       if (party.some((x) => x.hp > 0) && ACT.startDuel({ tr: trainer, party: party.map((x) => x.seed), hp: hp, surge: tw.id === 'surge' ? tw.type : null })) { resumeWorld(); return; }
     }
-    game.setState({ trainer: trainer, battle: null });
-    openScreen('battle');
+    resumeWorld(); toast('Your party is not ready for the night.');
   }
   function towerLobby() {
     const g = game, t = g.towerState(), seals = ((g.state.npc && g.state.npc.seals) || []).length;
@@ -8025,6 +7736,7 @@ const APP = (() => {
       setTimeout(() => showDialog(n.name, [tr.winLine].concat(ls)), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 4200); return;
     }
     if (won) { setTimeout(() => showDialog(tr.name, [tr.winLine, 'You earned ' + tr.reward + ' essence.'].filter((x) => x && !/^You earned 0 /.test(x))), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 3500); }
+    if (tr.ladder) { placeRivals(WORLD.allNpcs().arena); if (g.state.kindled) { g.setState({ kindled: false }); advSave((a) => { a.flags.kindlemane = true; }); setTimeout(() => toast(SECRETS[SECRET4_SEED].name + ' joined you!'), 3000); } }
     else toast('Your party was knocked out. ' + tr.name + ' wins this round. No penalty; you can try again.');
   }
   function close() {
@@ -8135,7 +7847,7 @@ const APP = (() => {
     const WILD_RULES = { 'route-mf-hollow': [['night', (t) => t !== 'night']], 'route-cm-crossing': [['dusk', (t) => t !== 'dusk']], 'route-fc-skerry': [['dawn', (t) => t !== 'dawn']], 'route-cc-drowned': [['night', (t) => t !== 'night']], 'route-fc': [['dawn', (t) => t !== 'dawn']] };
     let ruleState = {}; const applyRules = () => { if (!game || !WORLD.map) return; const id = WORLD.map.id, rules = WILD_RULES[id]; if (!rules) { ruleState = {}; return; } const t = timeOfDay(); rules.forEach((r) => { const gone = !!r[1](t); if (ruleState[id + r[0]] !== gone) { ruleState[id + r[0]] = gone; WORLD.setGate(id, r[0], gone); } }); };
     // people who keep hours: a `late` resident is away by day and home from dusk
-    const applyHours = () => { const all = WORLD.allNpcs(), t = timeOfDay(), home = t === 'dusk' || t === 'night'; Object.keys(all).forEach((k) => all[k].forEach((n) => { if (n.late) n.hidden = !home; })); };
+    const applyHours = () => { const all = WORLD.allNpcs(), t = timeOfDay(), home = t === 'dusk' || t === 'night'; Object.keys(all).forEach((k) => all[k].forEach((n) => { if (n.late) n.hidden = !home; })); if (!ACT.dueling()) placeRivals(all.arena); };   // the Arena's rivals keep their places by the ladder's step (not mid-duel)
     setInterval(() => { applyRules(); applyHours(); }, 500); applyHours();
     // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel
     {
@@ -8234,7 +7946,7 @@ const APP = (() => {
       follower: APP_FOLLOWER,
       onLocked: (e) => ROUTE_GATES[e.to] ? toast(mapName(e.to) + ' opens at trainer level ' + ROUTE_GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.') : e.to === 'peak' ? toast("The trail to Vigil Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.') : toast(ZONE_NAMES[e.to] + ' opens at trainer level ' + GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.'),
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
-      canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
+      canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1 && game.ladderReady(n),
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
       onMap: (m) => { trailDir = {}; tending = null; carry = false; burn = {}; coralReset(); iceCells = []; stillT = 0; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
@@ -8342,7 +8054,7 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { homeLitNow: homeLitNow, tending: () => tending, carry: () => carry, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { homeLitNow: homeLitNow, placeRivals: placeRivals, tending: () => tending, carry: () => carry, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
 

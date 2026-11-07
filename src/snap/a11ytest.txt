@@ -5,7 +5,7 @@ width 360: overflow normal=ok | larger text=ok
 width 390: overflow normal=ok | larger text=ok
 width 430: overflow normal=ok | larger text=ok
 Dex title size normal vs larger: 20px / zoom 1 | 20px / zoom 1.25
-normal       (violations, could-not-judge) per screen: {'menu': [0, 36], 'dex': [0, 25], 'roll': [0, 30], 'battle': [0, 19], 'map': [0, 3], 'shop': [0, 3], 'save': [0, 10]}
-high contrast (violations, could-not-judge) per screen: {'menu': [0, 1], 'dex': [0, 18], 'roll': [0, 2], 'battle': [0, 3], 'map': [0, 0], 'shop': [0, 0], 'save': [0, 2]}
+normal       (violations, could-not-judge) per screen: {'menu': [0, 36], 'dex': [0, 25], 'roll': [0, 30], 'map': [0, 3], 'shop': [0, 3], 'save': [0, 10]}
+high contrast (violations, could-not-judge) per screen: {'menu': [0, 1], 'dex': [0, 18], 'roll': [0, 2], 'map': [0, 0], 'shop': [0, 0], 'save': [0, 2]}
 turning off clears classes: ''
 errors: none

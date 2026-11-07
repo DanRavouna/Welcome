@@ -24,26 +24,15 @@ with sync_playwright() as p:
   pg.evaluate("(()=>{const p=WORLD.map.places.find(q=>q.id==='stair');WORLD.setPos((p.door[0]+0.9)*WORLD.TS,(p.door[1]+1.4)*WORLD.TS);WORLD.step(1/60)})()"); pg.wait_for_timeout(100)
   pg.click('#act'); pg.wait_for_timeout(50); print('lobby:', pg.evaluate("APP.dialog.lines.join(' / ')"))
   adv(pg); pg.click('#dlg-choices button >> nth=0'); pg.wait_for_timeout(200)
-  print('title:', pg.evaluate("APP.game.renderVals().screenTitle"), '| note:', pg.evaluate("APP.game.renderVals().matchupNote"))
+  print('no screen opens for the night (the Watch is fought on the map; without a follower the lobby says so):', pg.evaluate("document.getElementById('screen').hidden"), '|', pg.inner_text('#toast')[:50])
   print('runs left after start:', pg.evaluate("APP.game.towerRunsLeft()"))
-  pg.screenshot(path='/tmp/tw_battle.png')
-  # fight floor 1 with move 0 until over
-  pg.evaluate("Math.random=(()=>{let a=7;return()=>{a=(a*16807)%2147483647;return a/2147483647}})()")
-  pg.evaluate("APP.game.renderVals().fight()"); pg.wait_for_timeout(50)
-  r=pg.evaluate("()=>{const g=APP.game; for(let i=0;i<300&&g.state.battle&&!g.state.battle.over;i++) g.battleAction({move:0}); const b=g.state.battle; return {over:b.over,win:b.win,res:g.state.towerResult,tower:g.state.tower, ess:g.state.essence}}")
-  print('floor1 result:', r)
-  pg.evaluate("APP.close()"); pg.wait_for_timeout(120); print('after dialog:', pg.evaluate("APP.dialog && APP.dialog.lines.join(' / ')"))
-  # reload keeps run
+  # the floor through the settle path (the live night is nighttest and acttest5): the run advances, the HP carries
+  r=pg.evaluate("""()=>{const g=APP.game; const t=g.towerState(); if(!t.run) return 'no run'; const tr=g.towerFloor(t.run.floor), team=g.teamFor(tr); const me=g.state.caught[0];
+    const nb=g.newBattle(g.make(me.seed,me.stage,me.lv||1), g.make(team[0],tr.stage,tr.lv), 0); nb.s[1].hp=0;
+    g.actDuelEnd({id:tr.id,name:tr.name,team:team,stage:tr.stage,lv:tr.lv,reward:tr.reward,winLine:tr.winLine,tower:true,floor:tr.floor,warden:tr.warden}, true, {lead:nb.s[0],foe:nb.s[1],bench:[],part:{[me.seed]:true},koXp:{}});
+    return {res:g.state.towerResult, tower:g.state.tower, ess:g.state.essence};}""")
+  print('floor1 result (settle):', r)
   pg.reload(); pg.wait_for_timeout(1100)
   print('after reload run:', pg.evaluate("JSON.stringify(APP.game.state.tower)"))
-  # pause mid battle keeps HP, resets foes
-  pg.evaluate("WORLD.enter('in-tower'); const p=WORLD.map.places.find(q=>q.id==='stair'); WORLD.setPos((p.door[0]+0.9)*WORLD.TS,(p.door[1]+1.4)*WORLD.TS); WORLD.step(1/60)"); pg.wait_for_timeout(100)   # the lobby is a room now: the stair opens the keeper's dialog
-  print('dbg', pg.evaluate("JSON.stringify([WORLD.nearest()&&WORLD.nearest().kind, !!APP.dialog, document.getElementById('hud').hidden, document.getElementById('act').disabled, document.getElementById('act-label').textContent, document.getElementById('tip').hidden])")); pg.click('#act', timeout=3000); pg.wait_for_timeout(50)
-  print('resume lobby:', pg.evaluate("APP.dialog.lines.join(' / ')"))
-  adv(pg); pg.click('#dlg-choices button >> nth=0'); pg.wait_for_timeout(150)
-  pg.evaluate("APP.game.renderVals().fight()"); pg.evaluate("for(let i=0;i<3;i++) APP.game.battleAction({move:0})")
-  hp=pg.evaluate("JSON.stringify(APP.game.state.tower.run.hp)")
-  pg.evaluate("APP.close()"); pg.wait_for_timeout(50); print('pause toast:', pg.inner_text('#toast'))
-  print('hp saved mid-battle == run hp:', hp==pg.evaluate("JSON.stringify(APP.game.state.tower.run.hp)"), hp)
   print('errors:', errs or 'none')
   b.close()

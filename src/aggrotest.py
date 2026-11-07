@@ -21,8 +21,13 @@ with sync_playwright() as p:
   stand(pg); print('after leaving the battle, spotted again?', pg.evaluate("!!APP.dialog"))
   pg.evaluate("WORLD.enter('moss'); WORLD.enter('town')"); stand(pg); print('re-entered map -> spotted again (expected):', pg.evaluate("!!APP.dialog"))
   adv(pg); pg.click("#dlg-choices button:has-text('Battle!')"); pg.wait_for_timeout(200)
-  pg.evaluate("Math.random=(()=>{let a=9;return()=>{a=(a*16807)%2147483647;return a/2147483647}})(); APP.game.renderVals().fight(); for(let i=0;i<200&&!APP.game.state.battle.over;i++) APP.game.battleAction({move:0})")
-  print('won:', pg.evaluate("APP.game.state.battle.win")); pg.evaluate("APP.close()"); pg.wait_for_timeout(200)
+  # the fight itself is a duel on the map (acttest5 covers it); here the outcome goes through the same settle path a duel uses
+  def settle(nid, won=True):
+      return pg.evaluate("""([nid,won])=>{const g=APP.game; const n=Object.values(WORLD.allNpcs()).flat().find(x=>x.id===nid); const team=g.teamFor(n); const seals=(g.state.npc&&g.state.npc.seals)||[], cleared=(g.state.npc&&g.state.npc.cleared)||[];
+        const reward=n.leader?(seals.indexOf(n.id)===-1?n.firstReward:n.reward):(cleared.indexOf(n.id)===-1?n.reward+(n.bonus||0):Math.ceil(n.reward/2));
+        const me=g.state.caught[0]; const nb=g.newBattle(g.make(me.seed,me.stage,me.lv||1), g.make(team[0],n.stage,n.lv||1), 0); if(won) nb.s[1].hp=0; else nb.s[0].hp=0;
+        return g.actDuelEnd({id:n.id,name:n.name,team:team,stage:n.stage,lv:n.lv||1,reward:reward,winLine:n.winLine,leader:!!n.leader,boss:!!n.boss}, won, {lead:nb.s[0],foe:nb.s[1],bench:[],part:{[me.seed]:true},koXp:{}});}""", [nid, won])
+  settle('rowan'); print('won (settle):', pg.evaluate("((APP.game.state.npc||{}).cleared||[]).includes('rowan')")); pg.wait_for_timeout(200)
   for _ in range(6):
     if not pg.evaluate("!!APP.dialog"): break
     pg.evaluate("APP.advance()")

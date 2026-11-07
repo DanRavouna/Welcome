@@ -34,30 +34,22 @@ with sync_playwright() as p:
     pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{cleared:['ivy']})})")
     pg.evaluate("APP.talk(WORLD.npcs.find(n=>n.id==='wren'))")
     for _ in range(4): pg.evaluate("APP.advance()")
+    # the fight itself is a duel on the map (acttest5 covers it); here the outcome goes through the same settle path a duel uses
+    def settle(nid, won=True):
+        return pg.evaluate("""([nid,won])=>{const g=APP.game; const n=Object.values(WORLD.allNpcs()).flat().find(x=>x.id===nid); const team=g.teamFor(n); const seals=(g.state.npc&&g.state.npc.seals)||[], cleared=(g.state.npc&&g.state.npc.cleared)||[];
+          const reward=n.leader?(seals.indexOf(n.id)===-1?n.firstReward:n.reward):(cleared.indexOf(n.id)===-1?n.reward+(n.bonus||0):Math.ceil(n.reward/2));
+          const me=g.state.caught[0]; const nb=g.newBattle(g.make(me.seed,me.stage,me.lv||1), g.make(team[0],n.stage,n.lv||1), 0); if(won) nb.s[1].hp=0; else nb.s[0].hp=0;
+          return g.actDuelEnd({id:n.id,name:n.name,team:team,stage:n.stage,lv:n.lv||1,reward:reward,winLine:n.winLine,leader:!!n.leader,boss:!!n.boss}, won, {lead:nb.s[0],foe:nb.s[1],bench:[],part:{[me.seed]:true},koXp:{}});}""", [nid, won])
     pg.wait_for_timeout(100); pg.locator('#dlg-choices button', has_text='Battle!').click(); pg.wait_for_timeout(250)
     x0=pg.evaluate("APP.game.state.xp"); e0=pg.evaluate("APP.game.state.essence")
-    print('leader screen:', pg.locator('#screen nav span').inner_text(), '|', pg.locator('#screen p').first.inner_text()[:80])
-    pg.locator('#screen button', has_text='Battle Elder Wren').click(); pg.wait_for_timeout(100)
-    for i in range(120):
-        if pg.evaluate("APP.game.state.battle.over"): break
-        pg.locator('#screen button:has-text("PWR")').first.click(); pg.wait_for_timeout(20)
-    bt=pg.evaluate("(()=>{const b=APP.game.state.battle; return {win:b.win, idx:b.trainer.idx, breath:b.log.filter(l=>l.text.includes('catches its breath')).length, sent:b.log.filter(l=>l.text.includes('sent out')).length}})()")
-    print('wren battle:', bt, '| essence +', pg.evaluate("APP.game.state.essence")-e0, '| xp +', pg.evaluate("APP.game.state.xp")-x0, '| seals', pg.evaluate("APP.game.state.npc.seals"))
-    pg.screenshot(path='/tmp/p_lwin.png')
-    pg.click('#close-screen'); pg.wait_for_timeout(1500)
-    print('ceremony:', pg.evaluate("APP.dialog && APP.dialog.lines.join(' / ')"))
-    pg.screenshot(path='/tmp/p_ceremony.png')
-    for _ in range(4): pg.evaluate("APP.advance()")
+    lines=settle('wren')
+    print('wren win (settle):', '| essence +', pg.evaluate("APP.game.state.essence")-e0, '| xp +', pg.evaluate("APP.game.state.xp")-x0, '| seals', pg.evaluate("APP.game.state.npc.seals"), '| sealed flag:', pg.evaluate("APP.game.state.justSealed"))
+    pg.evaluate("APP.game.setState({justSealed:null})")
     pg.evaluate("APP.talk(WORLD.npcs.find(n=>n.id==='wren'))"); print('same day:', pg.evaluate("APP.dialog.lines[0]")); pg.evaluate("APP.advance(); APP.advance()")
-    # next-day rematch: 8 essence, no extra seal
+    # next-day rematch: half essence, no extra seal
     pg.evaluate("""() => { const npc=Object.assign({},APP.game.state.npc); npc.beaten=Object.assign({},npc.beaten,{wren:'Mon Jan 01 2001'}); APP.game.update({npc}); }""")
-    pg.evaluate("APP.startTrainer(WORLD.npcs.find(n=>n.id==='wren'))"); pg.wait_for_timeout(150); e1=pg.evaluate("APP.game.state.essence")
-    pg.locator('#screen button', has_text='Battle Elder Wren').click()
-    for i in range(120):
-        if pg.evaluate("APP.game.state.battle.over"): break
-        pg.locator('#screen button:has-text("PWR")').first.click(); pg.wait_for_timeout(15)
-    print('rematch win:', pg.evaluate("APP.game.state.battle.win"), '| essence +', pg.evaluate("APP.game.state.essence")-e1, '| seals', pg.evaluate("APP.game.state.npc.seals"))
-    pg.click('#close-screen'); pg.wait_for_timeout(300); print('no second ceremony:', pg.evaluate("APP.dialog === null"))
+    e1=pg.evaluate("APP.game.state.essence"); settle('wren')
+    print('rematch (settle): essence +', pg.evaluate("APP.game.state.essence")-e1, '| seals', pg.evaluate("APP.game.state.npc.seals"), '| no second seal flag:', pg.evaluate("APP.game.state.justSealed")==None)
     # champion
     pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{seals:['wren','glacia','blaze','coral']})})")
     pg.evaluate("APP.open('badges')"); pg.wait_for_timeout(300)

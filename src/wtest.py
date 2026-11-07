@@ -24,8 +24,7 @@ with sync_playwright() as p:
       for (const [tx,ty] of path) { for (let i=0;i<120;i++){ const p=W.pos(); const gx=(tx+0.5)*TS, gy=(ty+0.6)*TS; const dx=gx-p.x, dy=gy-p.y; if (Math.hypot(dx,dy)<3) break; const d=Math.hypot(dx,dy); W.input.jx=dx/d; W.input.jy=dy/d; W.step(1/60); } }
       W.input.jx=0; W.input.jy=0; W.step(1/60); const n=W.nearest(); return n ? (n.place? n.place.id : 'sign') : 'none'; }"""
     shots={}
-    for pid,tab in [('lab','dex'),('home','badges'),('board','badges'),('bell','battle')]:
-        if pid=='bell': pg.evaluate("WORLD.enter('arena')"); pg.wait_for_timeout(100)   # the Arena is its own zone; the bell stands on its sand
+    for pid,tab in [('lab','dex'),('home','badges'),('board','badges')]:
         door=pg.evaluate(f"(()=>{{const p=WORLD.PLACES.find(x=>x.id==='{pid}'); return [p.door[0], p.door[1]+1];}})()")
         near=pg.evaluate(walk_js, door)
         pg.wait_for_timeout(100)

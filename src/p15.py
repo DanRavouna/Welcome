@@ -25,45 +25,8 @@ with sync_playwright() as p:
     for it in ['potion','potion','super','charm','ticket']: pg.click(f'[data-buy="{it}"]'); pg.wait_for_timeout(40)
     print('bag:', pg.evaluate("APP.game.state.bag"), '| essence left:', pg.evaluate("APP.game.state.essence"), '| charm button disabled (not enough):', pg.locator('[data-buy="charm"]').is_disabled())
     pg.screenshot(path='/tmp/s_shop.png'); pg.click('#shop-close')
-    # wild battle with party
-    pg.evaluate("APP.open('battle')"); pg.wait_for_timeout(200)
-    print('pre-battle YOU status:', pg.evaluate("APP.game.renderVals().duel[0].status"))
-    pg.locator('#screen button', has_text='Fight (1 roll)').click(); pg.wait_for_timeout(150)
-    bench=pg.evaluate("APP.game.state.battle.bench.map(s=>s.k.name)"); print('bench in battle:', bench, '| lead:', pg.evaluate("APP.game.state.battle.s[0].k.name"))
-    # manual switch uses turn
-    r0=pg.evaluate("APP.game.state.battle.round"); pg.locator('#screen button', has_text='Switch (2)').click(); pg.wait_for_timeout(80)
-    pg.screenshot(path='/tmp/s_switch.png')
-    pg.locator('#screen button').filter(has_text='HP ').first.click(); pg.wait_for_timeout(120)
-    print('switch: round', r0, '->', pg.evaluate("APP.game.state.battle.round"), '| new lead:', pg.evaluate("APP.game.state.battle.s[0].k.name"), '| log:', pg.evaluate("APP.game.state.battle.log.slice(-3).map(l=>l.text).join(' / ')")[:140])
-    # potion: damage our lead first
-    pg.evaluate("(()=>{const b=JSON.parse(JSON.stringify(APP.game.state.battle)); b.s[0].hp=Math.round(b.s[0].max*0.3); APP.game.setState({battle:b});})()")
-    hp=pg.evaluate("APP.game.state.battle.s[0].hp"); pg.locator('#screen button', has_text='Bag (').click(); pg.wait_for_timeout(80)
-    pg.screenshot(path='/tmp/s_bag.png')
-    pg.locator('#screen button', has_text='Potion ×2').click(); pg.wait_for_timeout(120)
-    print('potion: hp', hp, '->', pg.evaluate("APP.game.state.battle.s[0].hp"), '(minus any foe hit) | potions left', pg.evaluate("APP.game.state.bag.potion"), '| log has potion:', pg.evaluate("APP.game.state.battle.log.some(l=>l.text.includes('used a Potion'))"))
-    # auto-switch on faint: set lead hp 1 and keep attacking
-    pg.evaluate("(()=>{const b=JSON.parse(JSON.stringify(APP.game.state.battle)); b.s[0].hp=1; b.s[1].hp=b.s[1].max; APP.game.setState({battle:b});})()")
-    lead=pg.evaluate("APP.game.state.battle.s[0].k.name")
-    for i in range(3):
-        if pg.evaluate("APP.game.state.battle.s[0].k.name")!=lead or pg.evaluate("APP.game.state.battle.over"): break
-        pg.locator('#screen button:has-text("PWR")').first.click(); pg.wait_for_timeout(60)
-    print('auto-switch: lead', lead, '->', pg.evaluate("APP.game.state.battle.s[0].k.name"), '| over:', pg.evaluate("APP.game.state.battle.over"), '| steps-in logged:', pg.evaluate("APP.game.state.battle.log.some(l=>l.text.includes('steps in'))"))
-    # all faint -> loss
-    pg.evaluate("(()=>{const b=JSON.parse(JSON.stringify(APP.game.state.battle)); b.s[0].hp=1; b.bench.forEach(s=>s.hp=0); b.s[1].hp=b.s[1].max; APP.game.setState({battle:b});})()")
-    for i in range(4):
-        if pg.evaluate("APP.game.state.battle.over"): break
-        pg.locator('#screen button:has-text("PWR")').first.click(); pg.wait_for_timeout(60)
-    print('all fainted -> over:', pg.evaluate("APP.game.state.battle.over"), 'win:', pg.evaluate("APP.game.state.battle.win"), '| result:', pg.evaluate("APP.game.renderVals().resultTitle"))
-    pg.click('#close-screen')
-    # trainer with party
-    pg.evaluate("APP.startTrainer(WORLD.npcs.find(n=>n.id==='rowan'))"); pg.wait_for_timeout(150)
-    pg.locator('#screen button', has_text='Battle Rowan').click(); pg.wait_for_timeout(100)
-    print('trainer bench:', pg.evaluate("APP.game.state.battle.bench.length"))
-    for i in range(150):
-        if pg.evaluate("APP.game.state.battle.over"): break
-        pg.locator('#screen button:has-text("PWR")').first.click(); pg.wait_for_timeout(15)
-    print('rowan result:', pg.evaluate("(()=>{const b=APP.game.state.battle; return {win:b.win, sent:b.log.filter(l=>l.text.includes('sent out')).length, stepsIn:b.log.filter(l=>l.text.includes('steps in')).length}})()"))
-    pg.click('#close-screen'); pg.wait_for_timeout(200)
+    # (the turn-based battle screen with its switch and bag buttons is gone, Nov 2026: the party fights live on the map; acttest and acttest5 cover it)
+    print('battle screen gone:', pg.evaluate("typeof APP.game.renderVals().fight")=='undefined')
     # bag: charm + ticket
     pg.click('#b-menu'); pg.click('[data-tile="bag"]'); pg.wait_for_timeout(150)
     pg.click('[data-use="charm"]'); pg.wait_for_timeout(80); print('charm active:', pg.evaluate("APP.game.state.charm"), '|', pg.inner_text('#bg-note'))

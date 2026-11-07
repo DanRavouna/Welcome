@@ -53,30 +53,21 @@ with sync_playwright() as p:
     pg.wait_for_timeout(900); print('spotted -> alert:', alert, '| dialog:', pg.evaluate("APP.dialog && APP.dialog.name"))
     for _ in range(4): pg.evaluate("APP.advance()"); pg.wait_for_timeout(20)
     pg.wait_for_timeout(100); print('choices:', pg.locator('#dlg-choices button').all_inner_texts())
+    # the fight itself is a duel on the map (acttest5 covers it); here the outcome goes through the same settle path a duel uses
+    def settle(nid, won=True):
+        return pg.evaluate("""([nid,won])=>{const g=APP.game; const n=Object.values(WORLD.allNpcs()).flat().find(x=>x.id===nid); const team=g.teamFor(n); const seals=(g.state.npc&&g.state.npc.seals)||[], cleared=(g.state.npc&&g.state.npc.cleared)||[];
+          const reward=n.leader?(seals.indexOf(n.id)===-1?n.firstReward:n.reward):(cleared.indexOf(n.id)===-1?n.reward+(n.bonus||0):Math.ceil(n.reward/2));
+          const me=g.state.caught[0]; const nb=g.newBattle(g.make(me.seed,me.stage,me.lv||1), g.make(team[0],n.stage,n.lv||1), 0); if(won) nb.s[1].hp=0; else nb.s[0].hp=0;
+          return g.actDuelEnd({id:n.id,name:n.name,team:team,stage:n.stage,lv:n.lv||1,reward:reward,winLine:n.winLine,leader:!!n.leader,boss:!!n.boss}, won, {lead:nb.s[0],foe:nb.s[1],bench:[],part:{[me.seed]:true},koXp:{}});}""", [nid, won])
     pg.locator('#dlg-choices button', has_text='Battle!').click(); pg.wait_for_timeout(300)
-    print('screen title:', pg.locator('#screen nav span').inner_text(), '| fight button:', pg.locator('#screen button', has_text='Battle Rowan').count())
-    pg.screenshot(path='/tmp/n_pre.png')
-    rolls_before=pg.evaluate("APP.game.state.used")
-    pg.locator('#screen button', has_text='Battle Rowan').click(); pg.wait_for_timeout(150)
-    sent=0
-    for i in range(60):
-        st=pg.evaluate("(()=>{const b=APP.game.state.battle; return b? {over:b.over, win:b.win, idx:b.trainer.idx}:null})()")
-        if st['over']: break
-        pg.locator('#screen button:has-text("PWR")').first.click(); pg.wait_for_timeout(30)
-        if i==3: pg.screenshot(path='/tmp/n_mid.png')
-    b2=pg.evaluate("(()=>{const b=APP.game.state.battle; return {over:b.over, win:b.win, idx:b.trainer.idx, sent:b.log.filter(l=>l.text.includes('sent out')).length, last:b.log[b.log.length-1].text}})()")
-    print('battle:', b2, '| rolls used:', pg.evaluate("APP.game.state.used")-rolls_before)
-    st=pg.evaluate("({ess:APP.game.state.essence, wins:APP.game.state.wins, beaten:APP.game.beatenToday('rowan')})"); print('after:', st)
-    pg.screenshot(path='/tmp/n_end.png')
-    if b2['win']:
-        print('fight button now:', pg.locator('#screen button', has_text='Trainer beaten').count(), 'disabled:', pg.locator('#screen button', has_text='Trainer beaten').is_disabled())
-    pg.click('#close-screen'); pg.wait_for_timeout(150)
-    print('trainer cleared:', pg.evaluate("APP.game.state.trainer"), pg.evaluate("APP.game.state.battle"))
+    print('no battle screen opens (every fight is a duel on the map; without a follower the trainer says so):', pg.evaluate("document.getElementById('screen').hidden"), '|', pg.inner_text('#toast')[:60])
+    rolls_before=pg.evaluate("APP.game.state.used"); e0=pg.evaluate("APP.game.state.essence")
+    settle('rowan')
+    st=pg.evaluate("({ess:APP.game.state.essence, wins:APP.game.state.wins, beaten:APP.game.beatenToday('rowan')})"); print('after (settle):', st, '| rolls used:', pg.evaluate("APP.game.state.used")-rolls_before, '| essence +', st['ess']-e0)
+    print('trainer cleared:', pg.evaluate("((APP.game.state.npc||{}).cleared||[]).includes('rowan')"))
     # re-enter sight: beaten -> no challenge
     pg.evaluate("""() => { const n=WORLD.npcs.find(n=>n.id==='rowan'); WORLD.setPos((n.x+3.5)*WORLD.TS,(n.y-2+0.6)*WORLD.TS); WORLD.step(1/60); WORLD.setPos((n.x+0.5)*WORLD.TS,(n.y-2+0.6)*WORLD.TS); WORLD.step(1/60);}""")
     pg.wait_for_timeout(900); print('beaten trainer re-challenges:', pg.evaluate("!!APP.dialog"))
-    # normal arena unaffected
-    pg.evaluate("APP.open('battle')"); pg.wait_for_timeout(150); print('normal arena title:', pg.locator('#screen nav span').inner_text(), '| reroll label:', pg.locator('#screen button', has_text='New foe').count()); pg.click('#close-screen')
     # Not now -> declined until map re-entered (Bram)
     pg.evaluate("WORLD.enter('frost')"); pg.wait_for_timeout(200)
     pg.evaluate("""() => { const n=WORLD.npcs.find(n=>n.id==='bram'); WORLD.setPos((n.x-2+0.5)*WORLD.TS,(n.y+0.6)*WORLD.TS); WORLD.step(1/60); }"""); pg.wait_for_timeout(1000)

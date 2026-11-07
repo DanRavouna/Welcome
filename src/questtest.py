@@ -13,7 +13,8 @@ with sync_playwright() as p:
   pg.evaluate("APP.game.update({settings:Object.assign({},APP.game.state.settings,{follow:false})})")   # these suites test the turn-based battle screen, which is what the game uses when Critter follows you is off
   pg.evaluate("APP.game.update({caught:[5000,5001,5002].map(s=>({seed:s,stage:3,lv:15})), party:[5000,5001,5002], fighter:5000, essence:100, npc:{done:['fern'],beaten:{},cleared:[],seals:[]}})")
   # rematch halving: first win full, rematch half
-  r=pg.evaluate("""(()=>{const g=APP.game; const n=WORLD.allNpcs().mossbrook.find(x=>x.id==='sorrel'); APP.startTrainer(n); const r1=g.state.trainer.reward; APP.close(); g.update({npc:Object.assign({},g.state.npc,{cleared:['sorrel']})}); APP.startTrainer(n); const r2=g.state.trainer.reward; APP.close(); return [n.reward,r1,r2];})()""")
+  r=pg.evaluate("""(()=>{const g=APP.game; const n=WORLD.allNpcs().mossbrook.find(x=>x.id==='sorrel'); const rw=()=>{const cleared=(g.state.npc&&g.state.npc.cleared)||[]; return cleared.indexOf(n.id)===-1?n.reward+(n.bonus||0):Math.ceil(n.reward/2);};   // the reward rule startTrainer applies
+    const r1=rw(); g.update({npc:Object.assign({},g.state.npc,{cleared:['sorrel']})}); const r2=rw(); g.update({npc:Object.assign({},g.state.npc,{cleared:[]})}); return [n.reward,r1,r2];})()""")
   print('sorrel reward / first / rematch:', r)
   # daily essence ceilings (all trainers + leader rematches + quests)
   print('daily max essence: old world', pg.evaluate("(()=>{const all=WORLD.allNpcs(); const T=[]; for(const k in all) all[k].forEach(n=>{ if(n.trainer&&!n.leader) T.push(n); }); const old=['rowan','ivy','bram','kiki','marlo']; const o=T.filter(n=>old.includes(n.id)).reduce((a,n)=>a+n.reward,0)+40; const nw=T.reduce((a,n)=>a+Math.ceil(n.reward/2),0)+40+4*CQ_REWARD; const nwFull=T.reduce((a,n)=>a+n.reward,0)+40; return [o, nwFull, nw];})()"), '(old / new without halving / new with halving + quests)')

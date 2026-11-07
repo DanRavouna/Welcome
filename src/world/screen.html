@@ -257,81 +257,6 @@
         </sc-if>
       </sc-if>
 
-      <sc-if value="{{showBattle}}" hint-placeholder-val="{{ false }}">
-        <sc-if value="{{noCaught}}" hint-placeholder-val="{{ false }}">
-          <div style="border-radius: 20px; padding: 26px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; background: rgba(14,26,56,0.78); border: 1.5px dashed rgba(255,255,255,0.5); backdrop-filter: blur(12px)">
-            <p style="margin: 0; font-size: 17px; font-weight: 900">You need a fighter</p>
-            <p style="margin: 0; font-size: 15px; font-weight: 600; line-height: 1.45; color: #C9D6F2">Keep a critter from the tall grass, then come back to battle wild ones.</p>
-            <button onClick="{{close}}" style="height: 48px; padding: 0 22px; border: 1.5px solid rgba(255,255,255,0.7); border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #2A1B00; background: {{primaryBg}}; box-shadow: 0 4px 14px rgba(245,185,58,0.45)">Back outside</button>
-          </div>
-        </sc-if>
-
-        <sc-if value="{{hasCaught}}" hint-placeholder-val="{{ true }}">
-          <sc-if value="{{notInBattle}}" hint-placeholder-val="{{ true }}">
-            <div style="border-radius: 20px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: rgba(14,26,56,0.78); border: 1.5px solid rgba(255,255,255,0.35); backdrop-filter: blur(12px)">
-              <span style="font-size: 13px; font-weight: 900; color: #FFD86B">Your fighter</span>
-              <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px">
-                <sc-for list="{{fighters}}" as="f" hint-placeholder-count="3">
-                  <button onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="flex-shrink: 0; height: 44px; padding: 0 16px; border: 1.5px solid rgba(255,255,255,0.45); border-radius: 999px; font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer; background: {{f.bg}}; color: {{f.fg}}">{{f.name}}</button>
-                </sc-for>
-              </div>
-            </div>
-          </sc-if>
-
-          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
-            <sc-for list="{{duel}}" as="d" hint-placeholder-count="2">
-              <div class="{{d.hitClass}}" style="border-radius: 18px; padding: 8px; display: flex; flex-direction: column; gap: 5px; background: rgba(14,26,56,0.78); border: 1.5px solid rgba(255,255,255,0.35); backdrop-filter: blur(12px)">
-                <span style="font-size: 11px; font-weight: 900; letter-spacing: 0.04em; color: {{d.sideColor}}">{{d.side}}</span>
-                <div style="position: relative; width: 100%; height: 106px; border-radius: 12px; overflow: hidden; background: radial-gradient(64% 16% at 50% 90%, #3F9A33 0 92%, rgba(0,0,0,0) 93%), linear-gradient(180deg, #4F8FE0 0 22%, #6CA6EA 22% 40%, #8CC3F2 40% 58%, #B8DCF8 58% 72%, #74C25C 72% 74%, #63B852 74% 100%)">
-                  <div class="{{d.flashCls}}" style="position: absolute; left: 50%; top: 2px; width: 240px; height: 210px; transform: translateX(-50%) scale(0.48); transform-origin: top center">
-                    <img src="{{d.k.sprite}}" alt="{{d.k.alt}}" width="240" height="210" style="display: block; width: 240px; height: 210px; image-rendering: pixelated">
-                  </div>
-                  <sc-if value="{{d.fx}}" hint-placeholder-val="{{ false }}">
-                    <div aria-hidden="true" class="{{d.fx.layer}}" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none">
-                      <sc-if value="{{d.fx.burst}}" hint-placeholder-val="{{ false }}">
-                        <div class="{{d.fx.burstCls}}" style="--c: {{d.fx.color}}"><i style="--a: 0deg"></i><i style="--a: 45deg"></i><i style="--a: 90deg"></i><i style="--a: 135deg"></i><i style="--a: 180deg"></i><i style="--a: 225deg"></i><i style="--a: 270deg"></i><i style="--a: 315deg"></i></div>
-                      </sc-if>
-                      <sc-if value="{{d.fx.ring}}" hint-placeholder-val="{{ false }}">
-                        <div class="fx-ring" style="--c: {{d.fx.ringColor}}"></div>
-                      </sc-if>
-                      <span class="{{d.fx.numCls}}" style="color: {{d.fx.numColor}}">{{d.fx.num}}</span>
-                      <span class="{{d.fx.labelCls}}" style="color: {{d.fx.labelColor}}">{{d.fx.label}}</span>
-                    </div>
-                  </sc-if>
-                </div>
-                <span style="font-size: 16px; font-weight: 900; color: #FFD86B">{{d.k.name}}</span>
-                <span style="font-size: 12px; font-weight: 700; color: #C9D6F2">{{d.k.element.name}} · St.{{d.k.stage}} · Lv {{d.k.lv}} · {{d.k.ability.name}}</span>
-                <div style="display: flex; flex-direction: column; gap: 3px">
-                  <span style="font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums">HP {{d.hpNow}}/{{d.hpMax}}</span>
-                  <div style="height: 10px; border-radius: 999px; background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.35); overflow: hidden">
-                    <div style="height: 100%; width: {{d.hpPct}}%; border-radius: 999px; background: {{d.hpColor}}; box-shadow: 0 0 8px {{d.hpColor}}; transition: width 300ms ease"></div>
-                  </div>
-                </div>
-                <span style="font-size: 12px; font-weight: 700; line-height: 1.3; color: #C9D6F2; min-height: 32px">{{d.status}}</span>
-              </div>
-            </sc-for>
-          </div>
-
-          <sc-if value="{{notInBattle}}" hint-placeholder-val="{{ true }}">
-            <p style="margin: 0; padding: 10px 14px; border-radius: 16px; background: rgba(14,26,56,0.78); border: 1.5px solid rgba(255,255,255,0.35); font-size: 14px; font-weight: 700; line-height: 1.4; color: #E6ECF7">{{matchupNote}}</p>
-          </sc-if>
-
-          <sc-if value="{{hasResult}}" hint-placeholder-val="{{ false }}">
-            <p style="margin: 0; padding: 10px 14px; border-radius: 16px; background: rgba(14,26,56,0.85); border: 1.5px solid #FFD86B; font-size: 18px; font-weight: 900; color: #FFD86B">{{resultTitle}}</p>
-          </sc-if>
-
-          <sc-if value="{{showLog}}" hint-placeholder-val="{{ false }}">
-            <div aria-live="polite" style="border-radius: 18px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; background: rgba(14,26,56,0.78); border: 1.5px solid rgba(255,255,255,0.35); backdrop-filter: blur(12px)">
-              <span style="font-size: 13px; font-weight: 900; color: #FFD86B">{{roundLabel}}</span>
-              <ul style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; line-height: 1.35; color: #E6ECF7">
-                <sc-for list="{{logLines}}" as="line" hint-placeholder-count="3">
-                  <li>{{line.text}}</li>
-                </sc-for>
-              </ul>
-            </div>
-          </sc-if>
-        </sc-if>
-      </sc-if>
 
       <sc-if value="{{showBadges}}" hint-placeholder-val="{{ false }}">
         <div style="border-radius: 16px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: linear-gradient(90deg, #4B4FE0 0%, #3C8DF2 100%); box-shadow: 0 6px 16px rgba(40,70,180,0.3)">
@@ -532,47 +457,6 @@
       </div>
     </sc-if>
 
-    <sc-if value="{{showPreBattle}}" hint-placeholder-val="{{ false }}">
-      <div style="display: flex; gap: 10px">
-        <button onClick="{{nextFoe}}" disabled="{{cannotReroll}}" style="flex: 1.25; height: 56px; white-space: nowrap; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 999px; font-family: inherit; font-size: 14px; font-weight: 900; cursor: pointer; color: {{rerollFg}}; background: {{rerollBg}}; backdrop-filter: blur(10px)">{{rerollLabel}}</button>
-        <button onClick="{{fight}}" disabled="{{cannotFight}}" style="flex: 1; height: 56px; white-space: nowrap; border: 1.5px solid rgba(255,255,255,0.7); border-radius: 999px; font-family: inherit; font-size: 16px; font-weight: 900; cursor: pointer; color: {{fightFg}}; background: {{fightBg}}; box-shadow: {{fightShadow}}">{{fightLabel}}</button>
-      </div>
-    </sc-if>
 
-    <sc-if value="{{showMoveBar}}" hint-placeholder-val="{{ false }}">
-      <div style="display: flex; flex-direction: column; gap: 8px">
-        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
-          <sc-if value="{{showMoves}}" hint-placeholder-val="{{ true }}">
-          <sc-for list="{{moveButtons}}" as="mv" hint-placeholder-count="4">
-            <button onClick="{{mv.use}}" disabled="{{mv.off}}" style="min-height: 58px; padding: 6px 14px; border: 1.5px solid {{mv.border}}; border-radius: 18px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left; font-family: inherit; cursor: pointer; color: {{mv.fg}}; background: {{mv.bg}}; backdrop-filter: blur(10px)">
-              <span style="font-size: 14px; font-weight: 900">{{mv.name}}</span>
-              <span style="font-size: 12px; font-weight: 700; line-height: 1.25; color: {{mv.subFg}}">{{mv.sub}}</span>
-            </button>
-          </sc-for>
-          </sc-if>
-          <sc-if value="{{showSwitchList}}" hint-placeholder-val="{{ false }}">
-            <sc-for list="{{benchList}}" as="bn" hint-placeholder-count="2">
-              <button onClick="{{bn.use}}" disabled="{{bn.off}}" style="min-height: 58px; padding: 6px 14px; border-radius: 18px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left; font-family: inherit; cursor: pointer; backdrop-filter: blur(10px); border: 1.5px solid rgba(255,255,255,0.5); color: {{bn.fg}}; background: {{bn.bg}}">
-                <span style="font-size: 14px; font-weight: 900">{{bn.name}}</span>
-                <span style="font-size: 12px; font-weight: 700; line-height: 1.25; color: #C9D6F2">{{bn.sub}}</span>
-              </button>
-            </sc-for>
-          </sc-if>
-          <sc-if value="{{showBagList}}" hint-placeholder-val="{{ false }}">
-            <sc-for list="{{itemList}}" as="it" hint-placeholder-count="2">
-              <button onClick="{{it.use}}" disabled="{{it.off}}" style="min-height: 58px; padding: 6px 14px; border-radius: 18px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left; font-family: inherit; cursor: pointer; backdrop-filter: blur(10px); border: 1.5px solid #8FE3A2; color: {{it.fg}}; background: {{it.bg}}">
-                <span style="font-size: 14px; font-weight: 900">{{it.name}}</span>
-                <span style="font-size: 12px; font-weight: 700; line-height: 1.25; color: #C9D6F2">{{it.sub}}</span>
-              </button>
-            </sc-for>
-          </sc-if>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
-          <button onClick="{{toggleSwitch}}" disabled="{{cannotSwitch}}" style="height: 44px; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 900; cursor: pointer; color: {{switchFg}}; background: {{switchBg}}; backdrop-filter: blur(10px)">{{switchLabel}}</button>
-          <button onClick="{{toggleBag}}" style="height: 44px; border: 1.5px solid #8FE3A2; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 900; cursor: pointer; color: #FFFFFF; background: rgba(14,26,56,0.78); backdrop-filter: blur(10px)">{{bagLabel}}</button>
-          <button onClick="{{flee}}" style="height: 44px; border: 1.5px solid #FF8A7A; border-radius: 999px; background: rgba(14,26,56,0.72); font-family: inherit; font-size: 13px; font-weight: 900; color: #FF8A7A; cursor: pointer; backdrop-filter: blur(10px)">Flee</button>
-        </div>
-      </div>
-    </sc-if>
   </div>
 </div>

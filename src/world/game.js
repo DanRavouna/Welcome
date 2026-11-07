@@ -208,6 +208,10 @@ class Game extends Component {
     this.update({ tower: Object.assign({}, t, { day: today, runs: (t.day === today ? t.runs : 0) + 1, run: { floor: 1, party: party, hp: hp } }) });
   }
   endTowerRun() { this.update({ tower: Object.assign({}, this.towerState(), { run: null }) }); }
+  // the Arena ladder: five named rivals in a fixed order, one ladder fight a day (win or lose); a climbed rival can be fought again, once a day, like any trainer
+  ladderStep() { return (this.state.arena && this.state.arena.step) || 0; }
+  ladderFoughtToday() { return !!(this.state.arena && this.state.arena.day === new Date().toDateString()); }
+  ladderReady(n) { if (!n.ladder) return true; const step = this.ladderStep(); if (n.ladder <= step) return true; return n.ladder === step + 1 && !this.ladderFoughtToday(); }
   beatenToday(id) { const b = (this.state.npc && this.state.npc.beaten) || {}; return b[id] === new Date().toDateString(); }
   update(patch, events) {
     if (window.__saveFrozen) return;
@@ -277,7 +281,6 @@ class Game extends Component {
     if (lv1 > lv0) setTimeout(() => this.sfx('level'), 150);
     return { xp: xpGain, ess: ess, lv: lv1 > lv0 ? lv1 : 0, capped: a.n + 1 >= ACT_ESS_CAP };
   }
-  playRound(i) { this.battleAction({ move: i }); }
   awardXp(nb, won, patch) {
     const caught = (patch.caught || this.state.caught).map((e) => Object.assign({}, e));
     let grew = false;
@@ -305,6 +308,10 @@ class Game extends Component {
         if ((npc.cleared || []).indexOf(tr.id) === -1) npc.cleared = (npc.cleared || []).concat([tr.id]);
         if (tr.leader && (npc.seals || []).indexOf(tr.id) === -1) { npc.seals = (npc.seals || []).concat([tr.id]); patch.justSealed = tr.id; events.push({ t: 'leader' }); }
         patch.npc = npc;
+        if (tr.ladder) {   // the Arena ladder: the step climbed; the top step keeps Kindlemane for whoever climbs it
+          const ar = Object.assign({ step: 0, day: '' }, this.state.arena); ar.step = Math.max(ar.step, tr.ladder); patch.arena = ar;
+          if (tr.ladder >= 5 && !(patch.caught || this.state.caught).some((e) => e.seed === SECRET4_SEED)) { patch.caught = (patch.caught || this.state.caught).concat([{ seed: SECRET4_SEED, stage: 3, lv: SECRETS[SECRET4_SEED].lv }]); patch.kindled = true; }
+        }
         nb.log.push({ text: tr.name + ': "' + tr.winLine + '"' });
       }
       setTimeout(() => this.sfx('win'), 250); this.buzz([40, 30, 40]);
@@ -327,69 +334,6 @@ class Game extends Component {
     const t = this.towerState(); if (!t.run) return; const run = { floor: t.run.floor, party: t.run.party.slice(), hp: Object.assign({}, t.run.hp) };
     sides.forEach((sd) => { run.hp[sd.k.seed] = Math.max(0, Math.round(sd.hp)); }); this.update({ tower: Object.assign({}, t, { run: run }) });
   }
-  battleAction(act) {
-    const b = this.state.battle;
-    if (!b || b.over) return;
-    const nb = JSON.parse(JSON.stringify(b)); nb.bench = nb.bench || [];
-    const events = [], patch = { battle: nb, bmode: 'moves' };
-    let mi = -1, P = nb.s[0];
-    if (act.move !== undefined) {
-      const mv = P.k.kit[act.move];
-      if (!mv || (mv.kind === 'guard' && P.lastGuard) || (mv.kind === 'status' && P.uses === 0)) return;
-      mi = act.move; if (mv.kind === 'status') events.push({ t: 'special' });
-    } else if (act.switchTo !== undefined) {
-      const nxt = nb.bench[act.switchTo]; if (!nxt || nxt.hp <= 0) return;
-      nb.bench[act.switchTo] = P; nb.s[0] = nxt; nxt.guard = false; nxt.lastGuard = false;
-      nb.log.push({ text: P.label + ' comes back. ' + nxt.label + ' steps in!' }); P = nxt;
-    } else if (act.item) {
-      const bag = Object.assign({}, BAG0, this.state.bag);
-      const it = act.item, statused = P.burn > 0 || P.weak > 0 || P.daze > 0 || P.sap > 0;
-      if (!(bag[it] > 0) || !this.itemUsable(it, P)) return;
-      bag[it] -= 1; patch.bag = bag;
-      if (it === 'potion' || it === 'super') {
-        const amt = it === 'super' ? P.max - P.hp : Math.min(P.max - P.hp, Math.round(P.max * 0.4));
-        P.hp += amt; nb.log.push({ text: 'You used a ' + (it === 'super' ? 'Super Potion' : 'Potion') + '. ' + P.label + ' recovered ' + amt + ' HP.' });
-      } else if (it === 'herb') {
-        const amt = Math.min(P.max - P.hp, Math.round(P.max * ITEM_FX.herb.heal)); P.hp += amt; P.burn = 0; P.weak = 0; P.daze = 0; P.sap = 0;
-        nb.log.push({ text: 'You used a Mossleaf Remedy. ' + P.label + ' recovered ' + amt + ' HP' + (statused ? ' and shook off its status.' : '.') });
-      } else if (it === 'ward') { P.ward = ITEM_FX.ward.hits; nb.log.push({ text: 'You used a Frost Ward. ' + P.label + ' is shielded from the next ' + ITEM_FX.ward.hits + ' hits.' }); }
-      else if (it === 'whet') { P.boost = ITEM_FX.whet.mult; nb.log.push({ text: 'You used a Whetstone. ' + P.label + "'s attacks are sharper for the rest of the battle." }); }
-    } else return;
-    nb.part = nb.part || {}; nb.koXp = nb.koXp || {};
-    nb.part[nb.s[0].k.seed] = true;
-    const healed = act.item ? nb.s[0].hp - (b.s[0].k.seed === nb.s[0].k.seed ? b.s[0].hp : nb.s[0].hp) : 0;
-    const hp0 = [nb.s[0].hp - healed, nb.s[1].hp];
-    nb.s.forEach((sd) => { delete sd.fxHits; delete sd.fxSt; });
-    this._surge = nb.trainer && nb.trainer.tower && this.towerTwist().id === 'surge' ? this.towerTwist().type : null;
-    this.resolve(nb, mi, Math.random);
-    this._surge = null;
-    nb.fx = { round: nb.round, hit: [nb.s[0].hp < hp0[0], nb.s[1].hp < hp0[1]], side: this.fxSides(nb, hp0) };
-    if (nb.fx.hit[0] || nb.fx.hit[1]) this.sfx('hit');
-    const tr = nb.trainer;
-    let won = false, lost = false;
-    if (nb.s[1].hp <= 0) {
-      const foeK = nb.s[1].k, ko = 8 + 2 * (foeK.lv || 1) + 5 * (foeK.stage || 1);
-      nb.koXp[nb.s[0].k.seed] = (nb.koXp[nb.s[0].k.seed] || 0) + ko;
-      if (tr && tr.idx < tr.team.length - 1) {
-        tr.idx += 1;
-        const foe = this.make(tr.team[tr.idx], tr.stage, tr.lv || 1);
-        nb.s[1] = this.newBattle(nb.s[0].k, foe, nb.reward).s[1];
-        nb.s[1].label = tr.name + "'s " + foe.name;
-        nb.log.push({ text: tr.name + ' sent out ' + foe.name + '!' });
-        nb.over = false; nb.win = false; nb.draw = false;
-        this.sfx('claim');
-      } else won = true;
-    }
-    if (!won && nb.s[0].hp <= 0) {
-      const j = nb.bench.findIndex((s) => s.hp > 0);
-      if (j !== -1) {
-        const out = nb.s[0]; nb.s[0] = nb.bench[j]; nb.bench[j] = out;
-        nb.log.push({ text: nb.s[0].label + ' steps in!' });
-        nb.over = false; nb.win = false; nb.draw = false;
-      } else lost = true;
-    }
-    this.settleBattle(nb, tr, won, lost, patch, events);
-  }
   towerAfter(nb, won, lost, patch) {
     const t = this.towerState(); if (!t.run) return;
     const run = { floor: t.run.floor, party: t.run.party.slice(), hp: Object.assign({}, t.run.hp) };
@@ -410,7 +354,7 @@ class Game extends Component {
   renderVals() {
     const v = super.renderVals();
     const enc = this.state.encounter;
-    v.screenTitle = enc ? 'Wild critter' : ({ roll: 'Critter', dex: 'Critter Lab', battle: 'Arena', badges: 'Trainer' }[this.state.tab] || '');
+    v.screenTitle = enc ? 'Wild critter' : ({ roll: 'Critter', dex: 'Critter Lab', badges: 'Trainer' }[this.state.tab] || '');
     v.closeScreen = () => APP.close();
     v.backLabel = WORLD.map ? WORLD.map.name : 'Sproutvale';
     v.showRollTools = v.showRoll && !enc;
@@ -447,111 +391,6 @@ class Game extends Component {
     v.encKeepBg = v.kept ? 'rgba(40,110,60,0.85)' : (v.keepDisabled ? 'rgba(14,26,56,0.6)' : v.primaryBg);
     v.encKeepFg = v.kept ? '#FFFFFF' : (v.keepDisabled ? '#9FB0D0' : '#2A1B00');
     v.encKeepShadow = v.kept || v.keepDisabled ? 'none' : '0 4px 14px rgba(245,185,58,0.45)';
-    const tr = this.state.trainer, b = this.state.battle;
-    if (tr && this.state.tab === 'battle' && this.state.caught.length) {
-      const st = this.state, fe = st.caught.find((e) => e.seed === st.fighter) || st.caught[0];
-      const me = this.make(fe.seed, fe.stage), foe0 = this.make(tr.team[0], tr.stage, tr.lv || 1);
-      const beaten = this.beatenToday(tr.id), won = b && b.trainer && b.over && b.win;
-      if (!b) {
-        const side = (k, i, label) => { const max = Math.round(k.stats[0].value * 1.5 + 60); return { hitClass: '', fx: null, flashCls: '', side: label, sideColor: i ? '#FF8A7A' : '#A7F04A', k: k, hpMax: max, hpNow: max, hpPct: 100, hpColor: '#A7F04A', status: i ? tr.name + "'s critter 1 of " + tr.team.length : me.element.name + ' moves: ' + me.kit[3].name }; };
-        v.duel = [side(me, 0, 'YOU'), side(foe0, 1, tr.name.toUpperCase())];
-      }
-      v.matchupNote = tr.name + ' has ' + tr.team.length + ' critters. Your party can switch in when one faints. Win reward: +' + tr.reward + ' essence.';
-      v.rerollLabel = b && b.over ? 'Done' : 'Not now'; v.cannotReroll = false; v.rerollBg = 'rgba(14,26,56,0.78)'; v.rerollFg = '#FFFFFF';
-      v.nextFoe = () => APP.close();
-      const can = !beaten && !(b && !b.over);
-      v.cannotFight = !can;
-      v.fightLabel = beaten || won ? 'Trainer beaten' : (b && b.over ? 'Rematch ' + tr.name : 'Battle ' + tr.name);
-      v.fightBg = can ? v.primaryBg : 'rgba(14,26,56,0.6)'; v.fightFg = can ? '#2A1B00' : '#9FB0D0'; v.fightShadow = can ? '0 4px 14px rgba(245,185,58,0.45)' : 'none';
-      v.fight = () => {
-        if (!can) return;
-        const nb = this.newBattle(me, foe0, tr.reward);
-        nb.trainer = { id: tr.id, name: tr.name, team: tr.team.slice(), idx: 0, stage: tr.stage, lv: tr.lv || 1, winLine: tr.winLine, leader: !!tr.leader };
-        nb.s[1].label = tr.name + "'s " + foe0.name;
-        nb.log = [{ text: tr.name + ' sent out ' + foe0.name + '!' }];
-        nb.bench = this.benchFor(fe.seed, foe0);
-        this.setState({ battle: nb, bmode: 'moves' });
-      };
-      if (b && b.trainer) v.roundLabel = v.roundLabel.replace(' · newest first', '') + ' · ' + tr.name + "'s critter " + (b.trainer.idx + 1) + ' of ' + b.trainer.team.length;
-      if (b && b.trainer && v.duel[1]) v.duel[1].side = tr.name.toUpperCase();
-      v.screenTitle = 'vs ' + tr.name;
-      v.backLabel = 'Leave';
-      if (tr.tower) {
-        const party = this.towerParty(), alive = party.filter((x) => x.hp > 0);
-        const lead = alive.find((x) => x.seed === st.fighter) || alive[0];
-        const done = b && b.over;
-        v.screenTitle = 'The Long Watch · Night ' + tr.floor;
-        v.backLabel = done ? 'Leave' : 'Pause';
-        v.matchupNote = this.towerTwist().name + ': ' + this.towerTwist().text + ' Night ' + tr.floor + ' of ' + TOWER.floors + (tr.warden ? ', a long one' : '') + '. ' + tr.name + ' is at the door with ' + tr.team.length + ' critters. Your HP carries over between nights. ' + (tr.reward ? 'Kept for the first time: +' + tr.reward + ' essence.' : 'Essence only for nights past your longest watch.');
-        v.rerollLabel = done ? 'Continue' : 'Not now';
-        const runT = this.towerState().run, can = !!lead && !b && !!runT && runT.floor === tr.floor;
-        v.cannotFight = !can;
-        v.fighters = alive.map((x) => { const k = this.make(x.seed, (st.caught.find((e) => e.seed === x.seed) || {}).stage || 1), on = lead && x.seed === lead.seed;
-          return { name: k.name + ' ' + x.hp + '/' + x.max, pressed: on ? 'true' : 'false', bg: on ? v.primaryBg : 'rgba(255,255,255,0.12)', fg: on ? '#2A1B00' : '#FFFFFF', pick: () => { if (!b) this.setState({ fighter: x.seed }); } }; });
-        v.fightLabel = done ? (b.win ? 'Night kept' : 'The lamp went out') : (lead ? 'Answer the door' : 'No critter can fight');
-        v.fightBg = can ? v.primaryBg : 'rgba(14,26,56,0.6)'; v.fightFg = can ? '#2A1B00' : '#9FB0D0'; v.fightShadow = can ? '0 4px 14px rgba(245,185,58,0.45)' : 'none';
-        if (lead && !b) {
-          const le = st.caught.find((e) => e.seed === lead.seed), me2 = this.make(lead.seed, le.stage);
-          const pct = Math.round(lead.hp / lead.max * 100);
-          v.duel[0] = Object.assign({}, v.duel[0], { k: me2, hpMax: lead.max, hpNow: lead.hp, hpPct: pct, hpColor: pct > 50 ? '#A7F04A' : (pct > 20 ? '#FFD86B' : '#FF6B6B'), status: me2.element.name + ' moves: ' + me2.kit[3].name + ' · ' + (alive.length - 1) + ' on bench' });
-        }
-        v.fight = () => {
-          if (!can) return;
-          const le = st.caught.find((e) => e.seed === lead.seed), me2 = this.make(lead.seed, le.stage);
-          const nb = this.newBattle(me2, foe0, tr.reward); nb.s[0].hp = lead.hp;
-          nb.trainer = { id: tr.id, name: tr.name, team: tr.team.slice(), idx: 0, stage: tr.stage, lv: tr.lv || 1, winLine: tr.winLine, tower: true, floor: tr.floor, warden: tr.warden };
-          nb.s[1].label = tr.name + "'s " + foe0.name;
-          nb.log = [{ text: tr.name + ' sent out ' + foe0.name + '!' }];
-          nb.bench = party.filter((x) => x.seed !== lead.seed).map((x) => { const e = st.caught.find((c) => c.seed === x.seed), sd = this.newBattle(this.make(x.seed, e.stage), foe0, 0).s[0]; sd.hp = x.hp; return sd; });
-          this.setState({ battle: nb, bmode: 'moves' });
-        };
-      }
-    }
-    // ---- party + bag in battle ----
-    if (!tr && this.state.tab === 'battle' && this.state.caught.length && !(b && !b.over)) {
-      v.fight = () => {
-        const e2 = this.energy(), st = this.state;
-        if (e2.left === 0 || (st.battle && !st.battle.over)) return;
-        const fe = st.caught.find((e) => e.seed === st.fighter) || st.caught[0];
-        const me = this.make(fe.seed, fe.stage), foe = this.make(st.foeSeed, fe.stage, fe.lv || 1), bt = this.beats();
-        let reward = 1; if (foe.rarity === 'Rare') reward += 1; if (foe.rarity === 'Mythic') reward += 2; if (bt[foe.element.name].indexOf(me.element.name) !== -1) reward += 1;
-        const nb = this.newBattle(me, foe, reward); nb.bench = this.benchFor(fe.seed, foe);
-        this.update({ battle: nb, bmode: 'moves', day: e2.today, used: e2.used + 1 });
-      };
-    }
-    {
-      const st = this.state, bag = Object.assign({}, BAG0, st.bag);
-      const bm = st.bmode || 'moves', inB = !!(b && !b.over), bench = (b && b.bench) || [];
-      const alive = bench.filter((s) => s.hp > 0).length, P = b && b.s[0];
-      const glass = 'rgba(14,26,56,0.78)', off = 'rgba(14,26,56,0.6)';
-      v.showMoves = inB && bm === 'moves';
-      v.showSwitchList = inB && bm === 'switch'; v.showBagList = inB && bm === 'bag';
-      v.benchList = bench.map((s, j) => ({ name: s.k.name, sub: s.hp > 0 ? s.k.element.name + ' · HP ' + s.hp + '/' + s.max : 'Fainted', off: s.hp <= 0, bg: s.hp <= 0 ? off : glass, fg: s.hp <= 0 ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction({ switchTo: j }) }));
-      v.noBench = bench.length === 0;
-      v.switchLabel = bm === 'switch' ? 'Moves' : 'Switch (' + alive + ')';
-      v.cannotSwitch = bm !== 'switch' && alive === 0;
-      v.switchBg = v.cannotSwitch ? off : glass; v.switchFg = v.cannotSwitch ? '#9FB0D0' : '#FFFFFF';
-      v.toggleSwitch = () => this.setState({ bmode: bm === 'switch' ? 'moves' : 'switch' });
-      const pots = bag.potion + bag.super + bag.herb + bag.ward + bag.whet, full = P ? P.hp >= P.max : true;
-      const IL = [['potion', 'Potion', 'Heals 40% HP'], ['super', 'Super Potion', 'Heals to full'], ['herb', 'Mossleaf Remedy', 'Heals 40% + cures status'], ['ward', 'Frost Ward', '65% less damage, next 5 hits'], ['whet', 'Whetstone', '+70% damage this battle']];
-      v.itemList = IL.filter(([id]) => id === 'potion' || id === 'super' || bag[id] > 0).map(([id, name, sub]) => {
-        const can = this.itemUsable(id, P), o = !bag[id] || !can;
-        return { name: name + ' ×' + bag[id], sub: !bag[id] ? 'None left. Buy at Mira’s stall.' : (!can ? (id === 'ward' || id === 'whet' ? 'Already active' : (id === 'herb' ? 'Full HP, no status' : 'Already at full HP')) : sub + ' · uses your turn'), off: o, bg: o ? off : glass, fg: o ? '#9FB0D0' : '#FFFFFF', use: () => this.battleAction({ item: id }) };
-      });
-      v.bagLabel = bm === 'bag' ? 'Moves' : 'Bag (' + pots + ')';
-      v.toggleBag = () => this.setState({ bmode: bm === 'bag' ? 'moves' : 'bag' });
-      if (b && v.duel && v.duel[0] && bench.length) v.duel[0].status = v.duel[0].status + ' · ' + alive + ' on bench';
-      if (!b && !tr && v.duel && v.duel[1] && st.caught.length) {
-        const fe2 = st.caught.find((e) => e.seed === st.fighter) || st.caught[0];
-        const foeK = this.make(st.foeSeed, fe2.stage, fe2.lv || 1), max = Math.round(foeK.stats[0].value * 1.5 + 60);
-        v.duel[1] = Object.assign({}, v.duel[1], { k: foeK, hpMax: max, hpNow: max, hpPct: 100 });
-      }
-      if (!b && v.duel && v.duel[0] && !(tr && tr.tower)) {
-        const lead = (st.caught.find((e) => e.seed === st.fighter) || st.caught[0] || {}).seed;
-        const n = this.partySeeds().filter((s) => s !== lead).slice(0, 2).length;
-        v.duel[0].status = v.duel[0].status + (n ? ' · ' + n + ' on bench' : ' · no bench yet');
-      }
-    }
     const seals = (this.state.npc && this.state.npc.seals) || [];
     const lvNow = this.levelInfo(this.state.xp || 0).level;
     v.seals = LEADERS.map((L) => {

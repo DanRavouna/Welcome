@@ -1,17 +1,12 @@
-party after adding 4: [30, 12, 45] | count text: 3/3 in party | 4th disabled: True
-after make-lead 45: [45, 30, 12] fighter 45
-remove+re-add 12: [45, 30, 12]
-shop open after Mira: True | 40 essence
-bag: {'potion': 2, 'super': 1, 'charm': 1, 'ticket': 1, 'herb': 0, 'ward': 0, 'whet': 0, 'lure': 0} | essence left: 12 | charm button disabled (not enough): False
-pre-battle YOU status: Ember moves: Scorch · 2 on bench
-bench in battle: ['Loxcrest', 'Yargrim'] | lead: Pimnub
-auto-switch: lead Loxcrest -> Pimnub | over: False | steps-in logged: True
-all fainted -> over: True win: False | result: You lost. Try another fighter or tactic.
-trainer bench: 2
-rowan result: {'win': True, 'sent': 2, 'stepsIn': 1}
-charm active: 3 | Rare Charm active: 3 encounters left.
+party after adding #: [#...] | count text: #/# in party | #th disabled: True
+after make-lead #: [#...] fighter #
+remove+re-add #: [#...]
+shop open after Mira: True | # essence
+bag: {'potion': #, 'super': #, 'charm': #, 'ticket': #, 'herb': #, 'ward': #, 'whet': #, 'lure': #} | essence left: # | charm button disabled (not enough): False
+battle screen gone: True
+charm active: # | Rare Charm active: # encounters left.
 ticket in test mode -> Test mode already gives unlimited rolls. Keep the ticket for later.
-ticket real mode: used 20 -> 19 | tickets {'day': 'Thu Nov 05 2026', 'count': 1}
-charm on 4 encounters (rare odds?): [True, True, True, False] | charm left: 0
-after reload: party [45, 30, 12] | bag {'potion': 1, 'super': 1, 'charm': 0, 'ticket': 0, 'herb': 0, 'ward': 0, 'whet': 0, 'lure': 0}
+ticket real mode: used # -> # | tickets {'day': '<date>', 'count': #}
+charm on # encounters (rare odds?): [True, True, True, False] | charm left: #
+after reload: party [#...] | bag {'potion': #, 'super': #, 'charm': #, 'ticket': #, 'herb': #, 'ward': #, 'whet': #, 'lure': #}
 errors: none

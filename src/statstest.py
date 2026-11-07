@@ -14,7 +14,7 @@ with sync_playwright() as p:
   e0=pg.evaluate("APP.game.state.essence")
   pg.evaluate("(()=>{const g=APP.game; const c=g.state.caught[0]; g.update({caught:[Object.assign({},c,{stage:2})].concat(g.state.caught.slice(1)), essence:g.state.essence-15},[{t:'evolve'}]);})()")
   # win a wild battle
-  pg.evaluate("Math.random=(()=>{let a=5;return()=>{a=(a*16807)%2147483647;return a/2147483647}})(); (()=>{const g=APP.game; const k=g.state.caught[0]; const nb=g.newBattle(g.make(k.seed,2,15), g.make(77,1,1), 4); g.setState({battle:nb,trainer:null}); for(let i=0;i<60&&!g.state.battle.over;i++) g.battleAction({move:0});})()")
+  pg.evaluate("(()=>{const g=APP.game; const k=g.state.caught[0]; const nb=g.newBattle(g.make(k.seed,2,15), g.make(77,1,1), 4); nb.s[1].hp=0; g.actDuelEnd({id:'wild',name:'Wild',reward:4,winLine:''}, true, {lead:nb.s[0],foe:nb.s[1],bench:[],part:{[k.seed]:true},koXp:{}});})()")   # a win through the duel's settle path
   pg.evaluate("APP.game.addPlayTime(2.5); APP.game.update({})")
   day=pg.evaluate("APP.game.statDay()"); r=pg.evaluate(f"JSON.stringify(APP.game.state.stats.days['{day}'])")
   print('today row:', r)

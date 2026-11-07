@@ -12,12 +12,11 @@ with sync_playwright() as p:
     r=pg.evaluate(f"""(()=>{{const g=APP.game; const T=TWISTS.find(t=>t.id==='{tw}'); window.__twist=Object.assign({{}},T,{{week:5,type:'Ember',text:T.about('Ember')}}); g._teams={{}};
       const f5=g.towerFloor(5); const seeds=[5000,5001,5002]; g.update({{caught:seeds.map(s=>({{seed:s,stage:3,lv:20}})), party:seeds, fighter:5000, tower:{{best:0,day:'',runs:0,clears:0,run:null}}}});
       g.startTowerRun(); const t=g.towerState(); seeds.forEach(s=>t.run.hp[s]=1); g.update({{tower:t}});
-      const tr=g.towerFloor(1); g.setState({{trainer:{{id:tr.id,name:tr.name,team:g.teamFor(tr),stage:tr.stage,lv:tr.lv,reward:tr.reward,winLine:tr.winLine,tower:true,floor:1,warden:false}},battle:null}});
-      const nb=g.newBattle(g.make(5000,3,20), g.make(g.teamFor(tr)[0],tr.stage,tr.lv), tr.reward); nb.trainer={{id:tr.id,name:tr.name,team:[g.teamFor(tr)[0]],idx:0,stage:tr.stage,lv:tr.lv,winLine:tr.winLine,tower:true,floor:1}}; nb.s[1].hp=1; nb.bench=[]; g.setState({{battle:nb}});
-      Math.random=(()=>{{let a=4;return()=>{{a=(a*16807)%2147483647;return a/2147483647}}}})(); for(let i=0;i<30&&!g.state.battle.over;i++) g.battleAction({{move:0}});
+      const tr=g.towerFloor(1); const nb=g.newBattle(g.make(5000,3,20), g.make(g.teamFor(tr)[0],tr.stage,tr.lv), tr.reward); nb.s[1].hp=0;
+      g.actDuelEnd({{id:tr.id,name:tr.name,team:[g.teamFor(tr)[0]],stage:tr.stage,lv:tr.lv,reward:tr.reward,winLine:tr.winLine,tower:true,floor:1,warden:false}}, true, {{lead:nb.s[0],foe:nb.s[1],bench:[],part:{{5000:true}},koXp:{{}}}});
       const hp=g.towerState().run? g.towerState().run.hp[5001]:null, max=g.maxHp(5001);
       const monoTypes=[...new Set(g.teamFor(g.towerFloor(3)).map(sd=>g.make(sd,1).element.name))];
-      return {{f5reward:f5.reward, healedTo:hp, expectHeal:1+Math.round(max*T.heal), floor3types:monoTypes.join('/'), note:g.renderVals().matchupNote.slice(0,60)}};}})()""")
+      return {{f5reward:f5.reward, healedTo:hp, expectHeal:1+Math.round(max*T.heal), floor3types:monoTypes.join('/')}};}})()""")
     print(tw, r)
   # surge damage check: same hit with/without surge
   print('surge dmg x1.3:', pg.evaluate("""(()=>{const g=APP.game; let e=0; for(let s=1;;s++){ if(g.make(s,2).element.name==='Ember'){e=s;break;} } const mk=()=>{const b=g.newBattle(g.make(e,2,10), g.make(777,2,10),0); return b;};

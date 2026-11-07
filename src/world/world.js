@@ -190,29 +190,47 @@ const WORLD = (() => {
       arrive: { s: [12.9, H - 1.4] }, spawn: [12.9, H - 1.4]
     };
   }
-  // ---------- The Arena: a zone that is the ring itself, off the Ashwood Trail (no wild critters). Meaning: where you stand with your critter in front of others; the road from the trail leads straight through the gate, and someone is always watching. ----------
+  // ---------- The Arena: a place of its own off the Ashwood Trail, mid game (no wild critters). Meaning: a road of its own; five rivals climbed one a day, in front of others.
+  // The ring fills the north; the rivals' camp (tents, a fire) is west of it; the town (three cottages, a market) south; the road comes in from the trail, east. ----------
   function buildArena() {
-    const W = 26, H = 20, m = [];
-    for (let y = 0; y < H; y++) m.push(new Array(W).fill('X'));
+    const W = 36, H = 28, r = rng(4242), m = [];
+    for (let y = 0; y < H; y++) m.push(new Array(W).fill('.'));
     const set = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < H) m[y][x] = c; };
-    const ring = { id: 'ring', name: 'The Arena', x: 0, y: 0, w: W, h: H, kind: 'arena', gate: 'e', inert: true, door: [W - 2, 9] };
-    const cx = W * 8, cy = H * 8 + 2, rx = W * 8 - 1, ry = H * 8 - 3;   // the same ellipse the painter draws (16 px tiles); the ring fills the map, the corners are its apron
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const dx = (x + 0.5) * 16 - cx, dy = (y + 0.5) * 16 - cy, rr = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)), gate = dx > rx * 0.45 && Math.abs(dy) <= 16;
-      set(x, y, gate ? '=' : rr < 0.5 ? '.' : 'X');   // the stands, the wall and the apron are solid; the floor is sand and the gate a road from the east edge
+    const path = (x0, y0, x1, y1) => { for (let y = Math.min(y0, y1); y <= Math.max(y0, y1); y++) for (let x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) set(x, y, '='); };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const e = Math.min(x, y, W - 1 - x, H - 1 - y); if (e < 2 || (e < 3 && r() < 0.6)) set(x, y, 'T'); }
+    path(3, 15, 33, 16);                 // the plaza road, below the ring, from the camp to the town's east end
+    path(30, 13, W - 1, 14);             // the road in from the trail (the east edge; linkEdge opens the border)
+    path(17, 17, 18, 23);                // down into the town
+    const ring = { id: 'ring', name: 'The Arena', x: 11, y: 1, w: 19, h: 14, kind: 'arena', gate: 's', inert: true, door: [19, 14] };
+    const cx = (ring.x + ring.w / 2) * 16, cy = (ring.y + ring.h / 2) * 16 + 2, rx = ring.w * 8 - 1, ry = ring.h * 8 - 3;   // the same ellipse the painter draws (16 px tiles)
+    for (let y = ring.y - 1; y <= ring.y + ring.h; y++) for (let x = ring.x - 1; x <= ring.x + ring.w; x++) {
+      const dx = (x + 0.5) * 16 - cx, dy = (y + 0.5) * 16 - cy, rr = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)), gate = Math.abs(dx) <= 16 && dy > ry * 0.45;
+      if (rr > 1.04) { if (m[y][x] === 'T' || m[y][x] === 'R') set(x, y, '.'); continue; }
+      set(x, y, gate || rr < 0.5 ? '.' : 'X');   // the stands and the wall are solid; the floor and the gate are walked
     }
-    const bell = { id: 'bell', name: 'Arena bell', x: 13, y: 9, w: 1, h: 1, kind: 'device', door: [12, 9], open: 'battle' };
-    set(13, 9, 'O');
+    const houses = [
+      { id: 'ar-a', name: "Vesna's House", x: 3, y: 19, w: 5, h: 4, kind: 'house', door: [5, 22], open: 'house', roof: '#8A4A2A', wall: '#E8D7B0' },
+      { id: 'ar-b', name: 'The Chalk House', x: 21, y: 19, w: 5, h: 4, kind: 'house', door: [23, 22], open: 'house', roof: '#4A6A9A', wall: '#E8D7B0' },
+      { id: 'ar-c', name: "Kit's House", x: 29, y: 19, w: 5, h: 4, kind: 'house', door: [31, 22], open: 'house', roof: '#D9A03A', wall: '#E8D7B0' }
+    ];
+    houses.forEach((p) => { for (let y = p.y; y < p.y + p.h; y++) for (let x = p.x; x < p.x + p.w; x++) set(x, y, 'X'); });
+    path(5, 23, 33, 24);                 // the town's own street, every door opens on it
+    for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) {
+      if (m[y][x] !== '.') continue;
+      if (x >= ring.x - 1 && x <= ring.x + ring.w && y >= ring.y - 1 && y <= ring.y + ring.h) continue;
+      const camp = x < 11 && y < 15; let near = false;
+      for (let yy = y - 1; yy <= y + 1; yy++) for (let xx = x - 1; xx <= x + 1; xx++) if (['=', 'X', 'O'].indexOf(m[yy][xx]) !== -1) near = true;
+      const v = r(); if (!camp && !near && v < 0.05) set(x, y, 'T'); else if (!camp && !near && v < 0.065) set(x, y, 'R'); else if (v < 0.2) set(x, y, ',');
+    }
     const objects = [
-      { id: 'names', kind: 'namewall', x: 8, y: 6, reach: 1.7, text: 'Names scratched into the rail in every kind of hand. None is crossed out.' },
-      { id: 'bench', kind: 'bench', x: 8, y: 13, reach: 1.7, text: 'A bench at the edge of the sand, worn in two places side by side.' },
-      { id: 'pail', kind: 'bucket', x: 18, y: 13, reach: 1.7, text: 'A bucket of water and a cloth, for after.' }
+      { id: 'names', kind: 'namewall', x: 17, y: 6, reach: 1.7, text: 'Names scratched into the rail in every kind of hand. None is crossed out.' },
+      { id: 'bench', kind: 'bench', x: 17, y: 10, reach: 1.7, text: 'A bench at the edge of the sand, worn in two places side by side.' },
+      { id: 'pail', kind: 'bucket', x: 23, y: 10, reach: 1.7, text: 'A bucket of water and a cloth, for after.' }
     ];
     objects.forEach((o) => set(o.x, o.y, 'O'));
     return {
-      id: 'arena', name: 'The Arena', theme: THEMES['route-cm'], grid: m, W, H, places: [ring, bell], objects: objects, signs: [],
-      types: [], rate: 0,
-      exits: [], arriveFrom: {}, arrive: {}, spawn: [W - 1.4, 10.2]
+      id: 'arena', name: 'The Arena', theme: THEMES['route-cm'], grid: m, W, H, places: [ring].concat(houses), objects: objects, signs: [],
+      types: [], rate: 0, exits: [], arriveFrom: {}, arrive: {}, spawn: [W - 1.4, 14.2]
     };
   }
   // ---------- cities ----------
@@ -545,8 +563,9 @@ const WORLD = (() => {
     posts: [['coralbay', 's', 28, 'South: the Reef Causeway (Tide and Ember critters), the road to Cinderport.'], ['cinderport', 'e', 13, 'East: the Reef Causeway (Tide and Ember critters), the road to Coralbay.']] });
   NETS.forEach(buildNet);
   addProp(MAPS.town, 'well', [33, 25], 'A well. The bucket is up, and full. Someone drew it before you came.');
-  connect(MAPS['route-cm'], 'w', 20, MAPS.arena, 'e', 9);   // the Arena: a clearing west of the Ashwood Trail (mid game: the trail opens at level 6)
+  connect(MAPS['route-cm'], 'w', 20, MAPS.arena, 'e', 13);   // the Arena: a clearing west of the Ashwood Trail (mid game: the trail opens at level 6)
   if (PXW.PAL['route-cm']) PXW.PAL.arena = PXW.PAL['route-cm'];
+  [[4, 3], [7, 3], [4, 7], [7, 7], [4, 11]].forEach((h) => addProp(MAPS.arena, 'tent', h)); addProp(MAPS.arena, 'campfire', [7, 12]);   // the rivals' camp: five tents and one fire
   addTrail(MAPS.ascent, 's', [14, 10], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
   addTrail(MAPS.descent, 'n', [14, 62], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
   addSpot(MAPS.mossbrook, { id: 'c-growth', kind: 'growthpost', text: 'Notches, each a little higher than the last.' }, 19, 10, false);
@@ -676,6 +695,14 @@ const WORLD = (() => {
   // Clover's house (Fennel is out): someone who keeps the kettle on for a person who is not back yet. Mosscap Cottage: what the forest gives to someone who goes back every day (Wil is home only after dusk, like the note on the door says).
   // Bryn's house: being believed in while you are still looking (every drawing is a shiny critter; the jar is for when, not if).
   const CITY_ROOMS = {
+    // The Arena (a road of its own). Vesna's house: the old champion, who keeps the ring in sight (a chair at the window facing the ring, a belt on the wall, a list of names that ends in hers).
+    // The Chalk House: the ladder kept by someone who never fights (a slate of five names with marks beside them, a kettle, a stool by the door). Kit's house: a child who wants in (a wooden sword, a drawing of the ring, a small bed).
+    'ar-a': { layout: { b: [[9, 2], [10, 2]], t: [[5, 5], [6, 5]], p: [[1, 7]], r: [4, 4, 7, 6] },
+      objects: [{ id: 'chair', kind: 'armchair', x: 2, y: 2, text: 'A chair under the window. It faces the ring, not the room.' }, { id: 'belt', kind: 'tally', x: 6, y: 2, text: 'A belt on the wall, the buckle worn smooth. Nothing is written under it.' }, { id: 'list', kind: 'ledger', x: 10, y: 6, text: 'A list of names, one a year. The last one is hers.' }] },
+    'ar-b': { layout: { k: [[1, 2], [2, 2], [3, 2]], t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] },
+      objects: [{ id: 'slate', kind: 'wallmap', x: 6, y: 2, text: 'A slate with five names in a column. Chalk marks beside each, the newest still dusty.' }, { id: 'kettle', kind: 'kettle', x: 10, y: 2, text: 'The kettle is on. Three cups, all used.' }, { id: 'stool', kind: 'stool', x: 10, y: 7, text: 'A stool by the door, turned to the ring.' }] },
+    'ar-c': { layout: { b: [[1, 2], [2, 2]], t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] },
+      objects: [{ id: 'sword', kind: 'toolwall', x: 6, y: 2, text: 'A wooden sword on two nails. The edge is notched.' }, { id: 'drawing', kind: 'drawings', x: 9, y: 2, text: 'A drawing of the ring from the stands. One small figure is on the sand, alone.' }, { id: 'bed', kind: 'smallbed', x: 1, y: 7, text: 'A small bed. The pillow is on the floor.' }] },
     // Sproutvale (where you are kept). Pip's house: what a child brings home is kept (a bed made, finds on the sill with their dates, a bowl that is not the same size as the others).
     // Mira's house: the shelf is kept full for whoever comes (every potion labelled in one hand, a ledger where giving runs longer than selling, a second cup).
     'house-pip': { layout: { b: [[1, 2], [2, 2]], t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] },
@@ -705,7 +732,7 @@ const WORLD = (() => {
     'cb-b': { layout: { b: [[9, 2], [10, 2]], r: [3, 4, 6, 6] }, objects: [{ id: 'nets', kind: 'nets', x: 3, y: 2, text: 'Nets hung to dry. The mended places are a different colour.' }, { id: 'work', kind: 'network', x: 1, y: 6, text: 'A net spread on the floor, half mended, the needle still in it.' }, { id: 'stool', kind: 'stool', x: 6, y: 5, text: 'A low stool. The legs are wrapped in net cord where they split.' }] },
     'cb-c': { layout: { t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] }, objects: [{ id: 'shells', kind: 'shellrows', x: 3, y: 2, text: 'Shells on a shelf in rows, each on its own square of cloth. One square is empty.' }, { id: 'bed', kind: 'smallbed', x: 9, y: 2, text: 'A small bed. Sand in the blanket.' }, { id: 'bucket', kind: 'bucket', x: 10, y: 7, text: 'A bucket by the door, still wet.' }] }
   };
-  ['town', 'mossbrook', 'frosthold', 'cinderport', 'coralbay'].forEach((cid) => MAPS[cid].places.filter((p) => p.open === 'house').forEach((p, i) => {
+  ['town', 'arena', 'mossbrook', 'frosthold', 'cinderport', 'coralbay'].forEach((cid) => MAPS[cid].places.filter((p) => p.open === 'house').forEach((p, i) => {
     const id = 'in-' + p.id; MAPS[id] = buildInterior(id, p, cid, i, CITY_ROOMS[p.id] || {}); p.enter = id;
     MAPS[cid].arriveFrom = Object.assign({}, MAPS[cid].arriveFrom, { [id]: [p.door[0] + 0.9, p.door[1] + 1.5] });
   }));

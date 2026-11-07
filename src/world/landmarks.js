@@ -32,6 +32,22 @@ const LAND = (() => {
         R(g, X + 2 + 16, Y + 4 + 6 * 3, 8, 12, '#2A1B14'); R(g, X + 2 + 18, Y + 4 + 6 * 3 + 2, 4, 10, '#0E0A10'); // door
         R(g, X + 34, Y + 22, 12, 4, OL); R(g, X + 35, Y + 23, 10, 2, '#7A4A2A'); R(g, X + 36, Y + 14, 8, 9, OL); R(g, X + 37, Y + 16, 6, 6, '#FF9A3A'); R(g, X + 38, Y + 18, 4, 4, '#FFD86B'); R(g, X + 39, Y + 12, 2, 4, '#FF9A3A'); // fire
       } },
+    // a tent on its own (the Arena's camp): the camp's tent, its cloth picked by where it stands
+    tent: { w: 2, h: 2,
+      draw(g, X, Y, P, k) {
+        shadow(g, X, Y, 32, 32);
+        const cloths = [['#D8574A', '#5A2420'], ['#3C6FE0', '#1E3A7A'], ['#F5C542', '#8A6510'], ['#4FB06D', '#1E5A30'], ['#8B6CF0', '#3A2A7A']], cl = cloths[Math.floor(k * 10) % cloths.length];
+        const tent = ['.......oo.......', '......occo......', '.....occcco.....', '....occcccco....', '...occcccdcco...', '..occcccddcco...', '.occcccdddccco..', 'occccccdddcccco.', 'oooooooodddooooo'], col = { o: OL, c: cl[0], d: cl[1] };
+        tent.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const c = col[row[x]]; if (c) R(g, X + x * 2, Y + 2 + y * 3, 2, 3, c); } });
+        R(g, X + 14, Y + 20, 6, 10, '#2A1B14'); R(g, X + 16, Y + 22, 2, 8, '#0E0A10');   // the door flap
+      } },
+    // a fire on its own, ringed with stones (the Arena's camp)
+    campfire: { w: 1, h: 1,
+      draw(g, X, Y) {
+        shadow(g, X, Y, 16, 16);
+        [[1, 11], [11, 11], [0, 6], [12, 6], [4, 13], [8, 13]].forEach(([ox, oy]) => { R(g, X + ox, Y + oy, 4, 3, OL); R(g, X + ox + 1, Y + oy, 2, 2, '#8E98AD'); });
+        R(g, X + 3, Y + 9, 10, 3, OL); R(g, X + 4, Y + 10, 8, 1, '#7A4A2A'); R(g, X + 5, Y + 3, 6, 7, OL); R(g, X + 6, Y + 4, 4, 5, '#FF9A3A'); R(g, X + 7, Y + 6, 2, 2, '#FFD86B'); R(g, X + 7, Y + 1, 2, 3, '#FF9A3A');
+      } },
     // a lighthouse on a rocky foot (coasts, harbors)
     lighthouse: { w: 2, h: 4, text: 'The lamp still turns every night. Ships once steered by it between the northern fort and the harbor.',
       draw(g, X, Y, P) {

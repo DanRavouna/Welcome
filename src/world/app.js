@@ -172,7 +172,7 @@ const APP = (() => {
     const seals = (st.npc && st.npc.seals) || [], seen = st.seen || [], known = knownMaps();
     const c = { id: id, name: '', lines: [], wx: weatherAt(id) ? weatherText(weatherAt(id)) : '', travel: false, status: '' };
     if (id === 'town') { c.name = 'Sproutvale'; c.lines = ['Home and the Lab']; c.travel = true; }
-    else if (id === 'arena') { c.name = 'The Arena'; c.lines = ['Wild battles, for a roll', 'Off the Ashwood Trail']; if (knownMaps().has('arena')) c.travel = true; else c.status = 'Reach it on foot'; }
+    else if (id === 'arena') { c.name = 'The Arena'; c.lines = ['Five rivals, one a day', 'Off the Ashwood Trail']; if (knownMaps().has('arena')) c.travel = true; else c.status = 'Reach it on foot'; }
     else if (ZONE_NAMES[id]) {
       const L = LEADERS.find((x) => x.zone === id), open = test || lv >= GATES[id];
       const found = ZONE_TYPES[id].reduce((n, t) => { const ti = ZTYPES.indexOf(t); return n + seen.filter((no) => Math.floor((no - 1) / 6) === ti).length; }, 0);
@@ -530,6 +530,12 @@ const APP = (() => {
     const bag = bagOf(); bag[id] += 1; game.update({ bag: bag, essence: ess - it.price }); game.sfx('tap'); renderShop();
   }
   // ---------- people ----------
+  // the Arena's rivals: the one whose step is next waits on the sand (facing the gate); the others sit by their tents in ladder order
+  const TENTS = [[5, 6], [8, 6], [5, 9], [8, 9], [5, 13]];
+  function placeRivals(list) {
+    const step = game ? game.ladderStep() : 0;
+    (list || []).forEach((n) => { if (!n.ladder) return; const i = n.ladder - 1; if (n.ladder === step + 1) { n.x = 20; n.y = 7; n.dir = 'down'; } else { n.x = TENTS[i][0]; n.y = TENTS[i][1]; n.dir = i % 2 ? 'left' : 'right'; } });
+  }
   function npcList() {
     const M = WORLD.MAPS, out = { town: [
       { id: 'fern', name: 'Professor Fern', x: 37, y: 11, kind: 'request', pal: { h: '#E8E8F0', y: '#F4F7FB', Y: '#C9D3E6', p: '#4A5878' },
@@ -546,9 +552,29 @@ const APP = (() => {
         types: ['Moss', 'Ember'], size: 2, stage: 1,
         intro: ['Hey, you look new around here!', 'Let me see what your critters can do.'], winLine: 'Wow, you are good! Here is your reward.', beatenLines: ['That was a great battle. Come back tomorrow for a rematch!'] }
     ], arena: [
-      { id: 'tam', name: 'Tam', x: 23, y: 9, dir: 'left', kind: 'talk', pal: { h: '#2B2235', y: '#F5C542', Y: '#C9962A' }, lines: ['I come every day. I have never once gone in.', 'From up here you can see every step they take.'] },
-      { id: 'odo', name: 'Odo', x: 16, y: 7, dir: 'left', kind: 'talk', pal: { h: '#8A5A34', y: '#D8574A', Y: '#A83A2E' }, lines: ['My brother fought in there once. He lost. He talks about it more than anything he ever won.'] }
+      // the ladder: five named rivals in a fixed order (ladder 1..5). The one whose turn it is waits on the sand; the others keep to their tents (placeRivals)
+      { lv: 8, id: 'juno', name: 'Juno', ladder: 1, kind: 'trainer', trainer: true, pal: { cap: true, c: '#F5C542', y: '#F5C542', Y: '#C9962A' }, types: ['Volt', 'Ember'], size: 3, stage: 2, pick: 0.5, reward: 14,
+        intro: ["Everyone's first fight is against me.", "I'm the only one who remembers them all."], winLine: 'There. Now I remember yours too.', beatenLines: ['Tomorrow. I have four more to watch today.'], afterLines: ['Back for the first step again? It is still mine to give.'],
+        notYet: ['Not you. Not yet.'], tomorrow: ['One a day. That is the rule of the sand.'] },
+      { lv: 10, id: 'bastian', name: 'Bastian', ladder: 2, kind: 'trainer', trainer: true, pal: { cap: false, c: '#8E98AD', y: '#8E98AD', Y: '#5A6478', h: '#2B2235' }, types: ['Stone', 'Moss'], size: 3, stage: 2, pick: 0.6, reward: 18,
+        intro: ['Nobody gets through me.', 'They go around, and I let them think it was their idea.'], winLine: 'Around, then. Fine.', beatenLines: ['Tomorrow. The wall does not move for anyone twice.'], afterLines: ['You already went around me once. Through, this time.'],
+        notYet: ['Juno first. That is the order.'], tomorrow: ['One a day. Come back with the sun.'] },
+      { lv: 12, id: 'sable', name: 'Sable', ladder: 3, kind: 'trainer', trainer: true, pal: { cap: false, c: '#8B6CF0', y: '#5B3FA8', Y: '#3A2A7A', h: '#1E1A2A' }, types: ['Dusk', 'Tide'], size: 4, stage: 2, pick: 0.6, reward: 22,
+        intro: ['You will not see me coming.', 'You will see where I was.'], winLine: 'You looked where I was going. Good.', beatenLines: ['Tomorrow. I am somewhere else today.'], afterLines: ['Again? Watch the sand, not me.'],
+        notYet: ['Two before me. Go and find them.'], tomorrow: ['Not today. The sand remembers one fight a day.'] },
+      { lv: 14, id: 'halvard', name: 'Halvard', ladder: 4, kind: 'trainer', trainer: true, pal: { cap: false, c: '#DCEFF8', y: '#B9CCE0', Y: '#8FB0C8', h: '#E8E8F0' }, types: ['Frost', 'Stone'], size: 4, stage: 3, pick: 0.65, reward: 26,
+        intro: ['I do not move much.', 'I have not needed to.'], winLine: 'I moved. Remember that.', beatenLines: ['Tomorrow. Standing still is also a day’s work.'], afterLines: ['You again. I will not move this time either.'],
+        notYet: ['Three stand before me. Stand before them first.'], tomorrow: ['One a day. I can wait. I am good at it.'] },
+      { lv: 16, id: 'ash', name: 'Ash', ladder: 5, kind: 'trainer', trainer: true, pal: { cap: true, c: '#FF7A45', y: '#D8574A', Y: '#A83A2E', h: '#2B2235' }, types: ['Ember', 'Bloom', 'Volt'], size: 5, stage: 3, pick: 0.7, reward: 30,
+        intro: ['Five of us, and you came for me. Good.', 'The others were practice. So was I.'], winLine: 'The rail has room for one more name.', beatenLines: ['Tomorrow. Even the top of the ladder sleeps.'], afterLines: ['The rail already has your name. Fight me for nothing, then?'],
+        notYet: ['Four names before mine. Climb.'], tomorrow: ['One a day. Tomorrow the sand is yours.'] },
+      { id: 'tam', name: 'Tam', x: 22, y: 16, dir: 'up', kind: 'talk', pal: { h: '#2B2235', y: '#F5C542', Y: '#C9962A' }, lines: ['I come every day. I have never once gone in.', 'From the gate you can see every step they take.'] },
+      { id: 'odo', name: 'Odo', x: 14, y: 17, dir: 'up', kind: 'talk', pal: { h: '#8A5A34', y: '#D8574A', Y: '#A83A2E' }, lines: ['My brother fought in there once. He lost.', 'He talks about it more than anything he ever won.'] },
+      { id: 'pell', name: 'Pell', x: 27, y: 17, dir: 'up', kind: 'shop', pal: { h: '#C0392B', y: '#4FB06D', Y: '#2E7D33' }, lines: ['Potions, charms, whetstones. The fighters buy before; the watchers buy after.'] },
+      { id: 'vesna', name: 'Vesna', x: 9, y: 21, dir: 'right', kind: 'talk', pal: { h: '#E8E8F0', y: '#8A4A2A', Y: '#5A2A10' }, lines: ['I held the top step for eleven years.', 'Now I hold the window. It is a better seat.'] },
+      { id: 'kit', name: 'Kit', x: 16, y: 17, dir: 'up', kind: 'talk', pal: { h: '#F5C542', y: '#3C6FE0', Y: '#28509E' }, lines: ['When I am big enough they will let me in.', 'I already know what I will say to Juno.'] }
     ] };
+    placeRivals(out.arena);
     const zone = (id, list) => {
       const m = M[id], cx = Math.floor(m.W / 2), cy = Math.floor(m.H / 2), sx = Math.floor(m.spawn[0]), sy = Math.floor(m.spawn[1]);
       const dx = Math.sign(cx - sx), dy = Math.sign(cy - sy);
@@ -1009,6 +1035,7 @@ const APP = (() => {
     if (o.kind === 'socket') { socketUse(o); return; }
     if (o.kind === 'furnace') { furnaceUse(); return; }
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
+    if (o.id === 'names' && game.ladderStep() >= 5) { toast(o.text + ' The newest is yours.'); return; }   // the rail, once you have climbed
     if (o.kind === 'chamberlamp') { toast(lampKept(o.id) ? 'The lamp burns steadily.' : o.text); return; }
     if (o.clue) { const c = ADV.CLUES.find((q) => q.id === o.clue); showDialog('You look closer', [o.text], null, () => { if (c) gainClue(c); }); return; }
     if (o.kind === 'windowlamp' && advOf().flags.lampLit && advOf().flags.homeLit !== new Date().toDateString()) { advSave((a) => { a.flags.homeLit = new Date().toDateString(); }); game.sfx('claim'); showDialog('The window', ['You light the lamp in the window. It faces the road.']); return; }   // Meaning: being the keeper is a small daily act
@@ -1109,6 +1136,7 @@ const APP = (() => {
       }
       showDialog(n.name, n.ask.concat([n.progress(g)])); return;
     }
+    if (n.kind === 'trainer' && n.ladder && !game.ladderReady(n)) { showDialog(n.name, game.ladderStep() + 1 < n.ladder ? n.notYet : n.tomorrow); n.declined = true; return; }   // the Arena ladder: in order, one a day
     if (n.kind === 'trainer') challenge(n);
     if (n.kind === 'leader') {
       const npcSt = g.state.npc || {}, cleared = npcSt.cleared || [];
@@ -1144,10 +1172,11 @@ const APP = (() => {
     const cleared = (game.state.npc && game.state.npc.cleared) || [];
     // trainers: full reward on the first win, half on daily rematches (keeps daily essence close to the pre-city economy)
     const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward + (n.bonus || 0) : Math.ceil(n.reward / 2));
-    const tr = { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss };
-    if (ACT.canDuel() && ACT.startDuel({ tr: tr, npc: n })) { n.declined = true; resumeWorld(); return; }   // action mode: fight it out on the map (the dialog that led here left the world paused)
-    game.setState({ trainer: tr, battle: null });
-    openScreen('battle');
+    const tr = { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss, ladder: n.ladder || 0 };
+    if (!ACT.canDuel()) { resumeWorld(); toast('Your lead critter is not ready to fight here.'); return; }
+    if (n.ladder && n.ladder === game.ladderStep() + 1) game.update({ arena: Object.assign({ step: 0 }, game.state.arena, { day: new Date().toDateString() }) });   // the ladder: one fight a day, win or lose
+    if (ACT.startDuel({ tr: tr, npc: n })) { n.declined = true; resumeWorld(); return; }   // every fight is a duel on the map (the dialog that led here left the world paused)
+    resumeWorld();
   }
   // ---------- The Long Watch ----------
   const KEEPER = 'Keeper of the Watch';
@@ -1163,8 +1192,7 @@ const APP = (() => {
       const tw = game.towerTwist();
       if (party.some((x) => x.hp > 0) && ACT.startDuel({ tr: trainer, party: party.map((x) => x.seed), hp: hp, surge: tw.id === 'surge' ? tw.type : null })) { resumeWorld(); return; }
     }
-    game.setState({ trainer: trainer, battle: null });
-    openScreen('battle');
+    resumeWorld(); toast('Your party is not ready for the night.');
   }
   function towerLobby() {
     const g = game, t = g.towerState(), seals = ((g.state.npc && g.state.npc.seals) || []).length;
@@ -1234,6 +1262,7 @@ const APP = (() => {
       setTimeout(() => showDialog(n.name, [tr.winLine].concat(ls)), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 4200); return;
     }
     if (won) { setTimeout(() => showDialog(tr.name, [tr.winLine, 'You earned ' + tr.reward + ' essence.'].filter((x) => x && !/^You earned 0 /.test(x))), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 3500); }
+    if (tr.ladder) { placeRivals(WORLD.allNpcs().arena); if (g.state.kindled) { g.setState({ kindled: false }); advSave((a) => { a.flags.kindlemane = true; }); setTimeout(() => toast(SECRETS[SECRET4_SEED].name + ' joined you!'), 3000); } }
     else toast('Your party was knocked out. ' + tr.name + ' wins this round. No penalty; you can try again.');
   }
   function close() {
@@ -1344,7 +1373,7 @@ const APP = (() => {
     const WILD_RULES = { 'route-mf-hollow': [['night', (t) => t !== 'night']], 'route-cm-crossing': [['dusk', (t) => t !== 'dusk']], 'route-fc-skerry': [['dawn', (t) => t !== 'dawn']], 'route-cc-drowned': [['night', (t) => t !== 'night']], 'route-fc': [['dawn', (t) => t !== 'dawn']] };
     let ruleState = {}; const applyRules = () => { if (!game || !WORLD.map) return; const id = WORLD.map.id, rules = WILD_RULES[id]; if (!rules) { ruleState = {}; return; } const t = timeOfDay(); rules.forEach((r) => { const gone = !!r[1](t); if (ruleState[id + r[0]] !== gone) { ruleState[id + r[0]] = gone; WORLD.setGate(id, r[0], gone); } }); };
     // people who keep hours: a `late` resident is away by day and home from dusk
-    const applyHours = () => { const all = WORLD.allNpcs(), t = timeOfDay(), home = t === 'dusk' || t === 'night'; Object.keys(all).forEach((k) => all[k].forEach((n) => { if (n.late) n.hidden = !home; })); };
+    const applyHours = () => { const all = WORLD.allNpcs(), t = timeOfDay(), home = t === 'dusk' || t === 'night'; Object.keys(all).forEach((k) => all[k].forEach((n) => { if (n.late) n.hidden = !home; })); if (!ACT.dueling()) placeRivals(all.arena); };   // the Arena's rivals keep their places by the ladder's step (not mid-duel)
     setInterval(() => { applyRules(); applyHours(); }, 500); applyHours();
     // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel
     {
@@ -1443,7 +1472,7 @@ const APP = (() => {
       follower: APP_FOLLOWER,
       onLocked: (e) => ROUTE_GATES[e.to] ? toast(mapName(e.to) + ' opens at trainer level ' + ROUTE_GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.') : e.to === 'peak' ? toast("The trail to Vigil Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.') : toast(ZONE_NAMES[e.to] + ' opens at trainer level ' + GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.'),
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
-      canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1,
+      canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1 && game.ladderReady(n),
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
       onMap: (m) => { trailDir = {}; tending = null; carry = false; burn = {}; coralReset(); iceCells = []; stillT = 0; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
       onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
@@ -1551,6 +1580,6 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { homeLitNow: homeLitNow, tending: () => tending, carry: () => carry, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { homeLitNow: homeLitNow, placeRivals: placeRivals, tending: () => tending, carry: () => carry, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);

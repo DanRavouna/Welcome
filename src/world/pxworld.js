@@ -203,10 +203,10 @@ const PXW = (() => {
     const X = p.x * L, Y = p.y * L, Wd = p.w * L, Hd = p.h * L;
     const ol = '#2B2235';
     if (p.kind === 'arena') {   // Meaning: where you stand with your critter in front of others. A ring of stone with stands that face inward, the gate left open: anyone may step in, and someone is always watching.
-      const R = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); }, cx = X + Wd / 2, cy = Y + Hd / 2 + 2, rx = Wd / 2 - 1, ry = Hd / 2 - 3, east = p.gate === 'e', cloth = ['#D8574A', '#3C6FE0', '#F5C542', '#F5A3D0', '#FFFFFF', '#4FB06D'];
+      const R = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); }, cx = X + Wd / 2, cy = Y + Hd / 2 + 2, rx = Wd / 2 - 1, ry = Hd / 2 - 3, east = p.gate === 'e', south = p.gate === 's', cloth = ['#D8574A', '#3C6FE0', '#F5C542', '#F5A3D0', '#FFFFFF', '#4FB06D'];
       if (!east) R(X + 4, Y + Hd - 2, Wd - 8, 4, 'rgba(0,0,0,0.22)');
       for (let y = 0; y < Hd + (east ? 0 : 4); y++) for (let x = 0; x < Wd; x++) {
-        const dx = X + x - cx, dy = Y + y - cy, r = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)), gate = east ? (dx > rx * 0.45 && Math.abs(dy) < 20) : (Math.abs(dx) < 24 && dy < -ry * 0.45);
+        const dx = X + x - cx, dy = Y + y - cy, r = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)), gate = east ? (dx > rx * 0.45 && Math.abs(dy) < 20) : south ? (Math.abs(dx) < 24 && dy > ry * 0.45) : (Math.abs(dx) < 24 && dy < -ry * 0.45);
         let c = null;
         if (r > 1) { if (!east) continue; c = ((x >> 3) + (y >> 3)) % 2 ? '#5A6478' : '#626C82'; if ((x % 8 === 0) || (y % 8 === 0)) c = '#4A5468'; }   // the apron outside the wall, flagged (only when the ring is the whole map)
         else if (gate) c = r > 0.97 ? null : '#E8D3A2';
@@ -223,6 +223,9 @@ const PXW = (() => {
       if (east) {   // the gate in the east wall: two posts and both leaves swung open, against the apron
         const gx = X + Wd - 22; R(gx, cy - 23, 22, 3, ol); R(gx, cy + 20, 22, 3, ol); R(gx + 1, cy - 22, 20, 1, '#B7BFCF'); R(gx + 1, cy + 21, 20, 1, '#B7BFCF');
         R(gx + 10, cy - 28, 14, 5, ol); R(gx + 11, cy - 27, 12, 3, '#6B4626'); R(gx + 10, cy + 23, 14, 5, ol); R(gx + 11, cy + 24, 12, 3, '#6B4626');
+      } else if (south) {   // the gate in the south wall, toward the plaza: posts and both leaves swung open
+        R(cx - 27, Y + Hd - 20, 3, 22, ol); R(cx + 24, Y + Hd - 20, 3, 22, ol); R(cx - 26, Y + Hd - 19, 1, 20, '#B7BFCF'); R(cx + 25, Y + Hd - 19, 1, 20, '#B7BFCF');
+        R(cx - 32, Y + Hd - 10, 5, 14, ol); R(cx - 31, Y + Hd - 9, 3, 12, '#6B4626'); R(cx + 27, Y + Hd - 10, 5, 14, ol); R(cx + 28, Y + Hd - 9, 3, 12, '#6B4626');
       } else {
         R(cx - 27, Y - 2, 3, 22, ol); R(cx + 24, Y - 2, 3, 22, ol); R(cx - 26, Y - 1, 1, 20, '#B7BFCF'); R(cx + 25, Y - 1, 1, 20, '#B7BFCF');   // the gate posts
         R(cx - 32, Y - 2, 5, 14, ol); R(cx - 31, Y - 1, 3, 12, '#6B4626'); R(cx + 27, Y - 2, 5, 14, ol); R(cx + 28, Y - 1, 3, 12, '#6B4626');   // both leaves swung open

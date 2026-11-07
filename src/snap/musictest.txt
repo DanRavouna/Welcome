@@ -2,10 +2,9 @@ bar lengths ok: True
 before tap: {'cur': None, 'want': 'town', 'enabled': True, 'unlocked': False, 'hidden': False, 'running': False}
 after tap: {'cur': 'town', 'want': 'town', 'enabled': True, 'unlocked': True, 'hidden': False, 'running': True}
 ember: ember
-arena: battle
-leader: boss
-back: ember
-ember at night: ember@night
+leader (a duel on the map): [True, 'boss']
+back: town
+ember at night: town
 the Watch's lobby: watch
 hidden: False
 visible again: True
@@ -27,14 +26,14 @@ dg-forge {'peak': 0.057, 'rms': 0.0091, 'secs': 25.1}
 spotted {'peak': 0.058, 'rms': 0.012, 'secs': 12.5}
 battle  {'peak': 0.057, 'rms': 0.012, 'secs': 13.3}
 boss    {'peak': 0.063, 'rms': 0.0153, 'secs': 14.6}
-town@night {'peak': 0.027, 'rms': 0.0083, 'secs': 24.2}
-moss@night {'peak': 0.027, 'rms': 0.0083, 'secs': 27.2}
-frost@night {'peak': 0.027, 'rms': 0.0077, 'secs': 31.5}
-ember@night {'peak': 0.027, 'rms': 0.0083, 'secs': 20.1}
-tide@night {'peak': 0.027, 'rms': 0.0083, 'secs': 22.8}
-peak@night {'peak': 0.027, 'rms': 0.0083, 'secs': 26.1}
-mossbrook@night {'peak': 0.027, 'rms': 0.0083, 'secs': 28.3}
-frosthold@night {'peak': 0.027, 'rms': 0.0084, 'secs': 29.6}
-cinderport@night {'peak': 0.027, 'rms': 0.0083, 'secs': 21.8}
-coralbay@night {'peak': 0.027, 'rms': 0.0083, 'secs': 25.1}
+town {'peak': 0.027, 'rms': 0.0083, 'secs': 24.2}
+moss {'peak': 0.027, 'rms': 0.0083, 'secs': 27.2}
+frost {'peak': 0.027, 'rms': 0.0077, 'secs': 31.5}
+ember {'peak': 0.027, 'rms': 0.0083, 'secs': 20.1}
+tide {'peak': 0.027, 'rms': 0.0083, 'secs': 22.8}
+peak {'peak': 0.027, 'rms': 0.0083, 'secs': 26.1}
+mossbrook {'peak': 0.027, 'rms': 0.0083, 'secs': 28.3}
+frosthold {'peak': 0.027, 'rms': 0.0084, 'secs': 29.6}
+cinderport {'peak': 0.027, 'rms': 0.0083, 'secs': 21.8}
+coralbay {'peak': 0.027, 'rms': 0.0083, 'secs': 25.1}
 errors: none

@@ -58,7 +58,7 @@ const EVO_PLAN = [ // by body shape: arm length / width / tilt / height on the b
   { arm: 34, aw: 24, tilt: 50, at: 0.56, leg: 40 }, { arm: 46, aw: 22, tilt: 28, at: 0.46, leg: 32 }, { arm: 0, aw: 0, tilt: 0, at: 0.3, leg: 34, pads: true }
 ];
 // ---- the secret critters: hand-designed single-form species outside the 48 (#49, #50), reached only through reserved seeds ----
-const SECRET_SEED = 1000001, SECRET2_SEED = 1000002, SECRET3_SEED = 1000003;   // normal seeds stop at 999999 (rolls, wild encounters, typed seeds), so these can never come up by chance
+const SECRET_SEED = 1000001, SECRET2_SEED = 1000002, SECRET3_SEED = 1000003, SECRET4_SEED = 1000004;   // normal seeds stop at 999999 (rolls, wild encounters, typed seeds), so these can never come up by chance
 const SECRETS = {
   [SECRET_SEED]: { key: 'veilcrown', flag: 'secret', lv: 12, name: 'Veilcrown', speciesNo: 49, type: 'Dusk', kit3: 'Ninth Hex', height: '1.6 m', weight: '38.0 kg', nature: 'Solemn nature: balanced stats',
     ability: { name: 'Last Light', text: 'Once per battle, survives a knock-out with 1 HP, and its next hit lands 30% harder.' },
@@ -74,7 +74,12 @@ const SECRETS = {
     ability: { name: 'Slow Burn', text: 'Each of its hits has a 25% chance to burn the target for 3 turns.' },
     hint: 'A coal is said to wait in the cold forge.', flavor: 'A coal that never went out, grown into a creature of cooling stone. It was the forge\u2019s last apprentice, and it never left.',
     stats: [['HP', 130], ['ATK', 112], ['DEF', 120], ['SPD', 74]],
-    moves: [{ name: 'Magma Nudge', power: 66 }, { name: 'Caldera Slam', power: 96 }] }
+    moves: [{ name: 'Magma Nudge', power: 66 }, { name: 'Caldera Slam', power: 96 }] },
+  [SECRET4_SEED]: { key: 'kindlemane', flag: 'kindlemane', lv: 16, name: 'Kindlemane', speciesNo: 52, type: 'Ember', kit3: 'Roar of the Ring', height: '1.3 m', weight: '64 kg', nature: 'Proud nature: holds its ground',
+    ability: { name: 'Standfast', text: 'Below half HP it takes 20% less damage.' },
+    hint: 'The top of the ladder keeps something for whoever climbs it.', flavor: 'Raised on the sand of the Arena, it has heard every crowd there is. It does not run.',
+    stats: [['HP', 118], ['ATK', 116], ['DEF', 110], ['SPD', 96]],
+    moves: [{ name: 'Mane Flare', power: 68 }, { name: 'Standing Roar', power: 94 }] }
 };
 const SECRET = SECRETS[SECRET_SEED];
 // developer options (browser-only, never saved or synced): see the Developer tools panel in app.js
@@ -114,6 +119,8 @@ const TITLES = [
   { id: 'naturalist', name: 'Naturalist', desc: 'Discover 36 species', essence: 20, goal: 36, of: (s) => (s.seen || []).length },
   { id: 'master', name: 'Critter Master', desc: 'Discover all 48 species', essence: 40, goal: 48, of: (s) => (s.seen || []).length },
   { id: 'champion', name: 'Fire-keeper', desc: 'Earn all 4 Leader Seals', essence: 0, goal: 4, of: (s) => ((s.npc && s.npc.seals) || []).length },
+  { id: 'challenger', name: 'Challenger', desc: 'Climb the first step of the Arena ladder', essence: 0, goal: 1, of: (s) => (s.arena && s.arena.step) || 0 },
+  { id: 'ringchamp', name: 'Ring Champion', desc: 'Climb all five steps of the Arena ladder', essence: 0, goal: 5, of: (s) => (s.arena && s.arena.step) || 0 },
   { id: 'climber', name: 'Tower Climber', desc: 'Clear floor 10 of the Tower', essence: 0, goal: 10, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'summit', name: 'Watchkeeper', desc: 'Keep all 20 nights of the Long Watch', essence: 0, goal: 20, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'lamp', name: 'Lamplighter', desc: 'Relight the old beacon', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.lampLit ? 1 : 0) },
