@@ -157,3 +157,19 @@ These are the places where the record does not settle what the process should be
 6. **What a revision costs.** The Arena took four tries from one-line briefs; the wind six from phone observations. Is "one question at a time before building" the default, or only after a miss?
 7. **What is a dead end worth.** Several things were built correctly and thrown away for carrying nothing. Is building-to-find-out part of the method, or a failure of the method?
 8. **The shelf.** It is the showing. What does a cartridge need to carry (a record, a year, a sentence?) for the showing to be honest about what each game was?
+
+---
+
+## 11. Dan's answers (Nov 7, evening, one question at a time)
+
+Recorded as given. They are inputs to the process conversation, not the process.
+
+1. **Who writes the meaning and the ending:** Dan writes the first version; I read it back in my words and propose sharpenings; Dan decides.
+2. **What "the ending first" contains:** the last act only, what the player does at the end. The opening is worked out afterwards as the road is built backwards.
+3. **The unit of design:** the station (meaning, hint, the act the player performs). Dan fills it, and will ask me questions as he goes.
+4. **Generation:** I generate placeholders; Dan replaces them with his assets.
+5. **Feel:** Dan plays in batches; corrections come back together.
+6. **How a revision starts:** I ask questions until I can say back what he wants; no rebuild before he confirms.
+7. **Building to find out:** part of the method for placeholders only; nothing finished is built before its station is filled.
+8. **The engine branch from this morning:** dropped. Its plan and format v1 are kept under `docs/engine-branch-notes/`; the branch tip is kept as the tag `archive/engine-cut-nov7`. The engine starts fresh later, after the process is defined.
+9. **The shelf:** a cartridge carries number, name, year and record, as now. The game speaks for itself once opened.
