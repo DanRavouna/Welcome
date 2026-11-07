@@ -1,0 +1,25 @@
+ok no page errors on load | []
+ok data round-trips as JSON with no code
+ok check() reports only the tiles that have no art | []
+ok starts on the field at the spawn | {'x': #, 'y': #, 'facing': 'down', 'map': 'field'}
+ok scale fits about eleven tiles across the short side | #
+ok water is solid, grass is not
+ok the walk cycle advances over real time (about # frames a second) | changes=# over # ms
+ok walking east moved the player about four tiles a second | {'x': #, 'y': #, 'facing': 'right', 'map': 'field'}
+ok the once trigger speaks as the feet enter its cell | {'who': '', 'text': 'Water, this way.', 'options': None}
+ok the trigger set its flag | {'_t:field:#': True, 'met': True}
+ok a person with a condition appears once it holds | [{'id': 'keeper', 'name': 'Someone', 'x': #, 'y': #, 'facing': 'left', 'on': True}, {'id': 'other', 'name': 'Another', 'x': #, 'y': #, 'facing': 'down', 'on': True}]
+ok the once trigger does not fire again | ({'x': #, 'y': #, 'facing': 'up', 'map': 'field'}, [{'id': 'keeper', 'name': 'Someone', 'x': #, 'y': #, 'facing': 'left', 'on': True}, {'id': 'other', 'name': 'Another', 'x': #, 'y': #, 'facing': 'down', 'on': True}])
+ok the person below is the nearest in the facing direction | {'id': 'other', 'name': 'Another', 'x': #, 'y': #}
+ok the choice card shows two options | {'who': 'Another', 'text': 'Stay a while?', 'options': ['Yes', 'No'], 'to': [#...]}
+ok Yes jumps to the say step | {'who': 'Another', 'text': 'Then stay.', 'options': None}
+ok move walks the person to the tile over real time, then face turns them | ({'id': 'other', 'name': 'Another', 'x': #, 'y': #, 'facing': 'up', 'on': True}, #)
+ok staying counts over real time (four counts in about # to # s) | #
+ok the tile step changed a tile and remembered it
+ok the hide step hid the post, which is no longer solid
+ok the exit leads into the house at its arrival tile | {'x': #, 'y': #, 'facing': 'right', 'map': 'house'}
+ok talking inside shows the line | {'who': 'Inside', 'text': 'It is quiet in here.', 'options': None}
+ok the way back lands on the field by the door
+ok the save holds map, flags, tiles and hidden | ['v', 'game', 'map', 'x', 'y', 'facing', 'flags', 'tiles', 'hidden', 'stations', 'played', 't']
+ok a reload restores the flags and the hidden post
+ok no page errors through the run | []

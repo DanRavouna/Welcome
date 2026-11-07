@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Play</title>
+<meta name="theme-color" content="#0b0b10">
+<style>
+html,body{margin:0;height:100%;background:#0b0b10;color:#fff;font-family:system-ui,sans-serif;overscroll-behavior:none}
+#stage{position:fixed;inset:0}
+#top{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:13px;opacity:.85;pointer-events:none}
+#top a,#top button{pointer-events:auto;color:#fff;background:rgba(0,0,0,.5);border:1px solid #555;border-radius:4px;padding:4px 8px;text-decoration:none;font:inherit}
+#msg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;background:#0b0b10}
+#hint{position:fixed;left:12px;bottom:12px;font-size:12px;opacity:.55;pointer-events:none}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="top"><a href="../">◀ Shelf</a><span id="name"></span><button id="mute" type="button" aria-pressed="false">Sound</button></div>
+<div id="hint">Drag left to walk · tap right to act</div>
+<div id="msg">Loading…</div>
+<script src="../engine/engine.js"></script>
+<script>
+(async () => {
+  const q = new URLSearchParams(location.search), id = (q.get('g') || 'demo').replace(/[^\w-]/g, '');
+  const msg = document.getElementById('msg');
+  let game = null;
+  try {
+    if (window.__game) game = window.__game;               // a draft handed over by the studio (same page, no fetch)
+    else if (q.get('draft')) { try { game = JSON.parse(localStorage.getItem('studio:draft:' + id) || 'null'); } catch (e) {} }
+    if (!game) { const r = await fetch('../games/' + id + '/game.json', { cache: 'no-store' }); if (!r.ok) throw new Error('no game ' + id); game = await r.json(); }
+  } catch (e) { msg.textContent = 'This cartridge is empty. ' + (e.message || ''); return; }
+  document.getElementById('name').textContent = game.name || id; document.title = game.name || 'Play';
+  const KEY = 'shelf:' + id + ':save';
+  const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }, set(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} if (window.SHELFCLOUD) window.SHELFCLOUD.push(id, s); } };
+  msg.hidden = true;
+  ENGINE.load(game, { container: document.getElementById('stage'), save: store });
+  ENGINE.start();
+  const mute = document.getElementById('mute'); let m = false;
+  mute.onclick = () => { m = !m; ENGINE.audio.unlock(); ENGINE.audio.mute(m); mute.setAttribute('aria-pressed', String(m)); mute.textContent = m ? 'Muted' : 'Sound'; };
+  document.addEventListener('visibilitychange', () => { if (document.hidden) ENGINE.flushSave(); });
+  setTimeout(() => { document.getElementById('hint').style.display = 'none'; }, 6000);
+})();
+</script>
+</body>
+</html>

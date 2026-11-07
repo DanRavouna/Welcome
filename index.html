@@ -43,30 +43,43 @@ font-size:clamp(10px,2.1vw,22px);line-height:1;text-transform:uppercase;letter-s
 </head>
 <body>
 <main>
-<ul class="shelf" id="shelf" aria-label="Games">
-<li><a class="cart" id="g1" href="games/critter-roll/index.html" data-n="1" data-name="Critter Roll" data-year="2026" data-save="critter-roll:v2"><span class="win"><canvas id="art1" width="16" height="16" role="img" aria-label="A cottage at night with one lit window"></canvas></span><span class="slot"></span><span class="name">Critter Roll</span></a></li>
-</ul>
+<ul class="shelf" id="shelf" aria-label="Games"></ul>
 </main>
 <div class="bar" id="bar" aria-live="polite"><div class="t" id="bar-t">01 Critter Roll</div><div class="y" id="bar-y">2026</div><div class="r" id="bar-r">-No record-</div></div>
+<script src="games/index.js"></script>
 <script>
 (() => {
   // Pixel art for each cartridge window, drawn from a character map (one char = one pixel) so a label can be edited by hand.
   const ART = {
-    1: { pal: { s: '#141A33', '*': '#8C96C8', r: '#4A2F3A', h: '#5A4A66', y: '#7A6230', w: '#FFD86B', W: '#FFF4C2', d: '#2A2133', g: '#243625', G: '#2E4A2E' }, rows: [
+    'critter-roll': { pal: { s: '#141A33', '*': '#8C96C8', r: '#4A2F3A', h: '#5A4A66', y: '#7A6230', w: '#FFD86B', W: '#FFF4C2', d: '#2A2133', g: '#243625', G: '#2E4A2E' }, rows: [
       'ssssssssssssssss', 'ss*ssssssssss*ss', 'sssssssss*ssssss', 'sssssssrrsssssss', 'ssssssrrrrssssss', 'sssssrrrrrrsssss', 'ssssrrrrrrrrssss', 'sssrrrrrrrrrrsss',
       'ssshhhhhhhhhhsss', 'ssshhywwyhhdhsss', 'ssshhyWWyhhdhsss', 'ssshhywwyhhdhsss', 'ssshhhhhhhhdhsss', 'ssshhhhhhhhhhsss', 'gggggggggggggggg', 'GgGGgGGGgGGgGGGg'] } };
-  function paint(id, art) {
-    const c = document.getElementById('art' + id); if (!c) return; const g = c.getContext('2d');
-    art.rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { g.fillStyle = art.pal[row[x]] || '#000'; g.fillRect(x, y, 1, 1); } });
+  function paint(c, art, letter) {
+    const g = c.getContext('2d');
+    if (art) art.rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { g.fillStyle = art.pal[row[x]] || '#000'; g.fillRect(x, y, 1, 1); } });
+    else { g.fillStyle = '#1a1c2c'; g.fillRect(0, 0, 16, 16); g.fillStyle = '#9fe3dc'; g.font = '10px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(letter, 8, 9); }
   }
-  Object.keys(ART).forEach((k) => paint(k, ART[k]));
-  // Empty cartridges fill the shelf up to a round number, so the shelf reads as a collection with room in it.
-  const SLOTS = 20, shelf = document.getElementById('shelf'), games = Array.from(shelf.querySelectorAll('a.cart'));
+  // The cartridges come from games/index.js (the studio's publish rewrites it); the shelf is filled with empty ones to a round number.
+  const LIST = Array.isArray(window.SHELF_GAMES) ? window.SHELF_GAMES : [];
+  const SLOTS = 20, shelf = document.getElementById('shelf');
+  LIST.forEach((g, i) => {
+    const li = document.createElement('li'), a = document.createElement('a'); a.className = 'cart'; a.id = 'g' + (i + 1);
+    a.href = g.kind === 'engine' ? 'play/?g=' + encodeURIComponent(g.id) : g.href; a.dataset.n = i + 1; a.dataset.name = g.name; a.dataset.year = g.year; a.dataset.save = g.save || ('shelf:' + g.id + ':save'); a.dataset.kind = g.kind || 'engine';
+    const c = document.createElement('canvas'); c.width = 16; c.height = 16; c.setAttribute('role', 'img'); c.setAttribute('aria-label', g.label || g.name); paint(c, ART[g.id], (g.name || '?')[0]);
+    const win = document.createElement('span'); win.className = 'win'; win.appendChild(c); a.appendChild(win);
+    const slot = document.createElement('span'); slot.className = 'slot'; a.appendChild(slot);
+    const nm = document.createElement('span'); nm.className = 'name'; nm.textContent = g.name; a.appendChild(nm);
+    li.appendChild(a); shelf.appendChild(li);
+  });
+  const games = Array.from(shelf.querySelectorAll('a.cart'));
   for (let i = games.length; i < SLOTS; i++) { const li = document.createElement('li'); li.innerHTML = '<span class="cart empty" aria-hidden="true"><span class="win"></span><span class="slot"></span></span>'; shelf.appendChild(li); }
+  // The last slot is the studio's door: five taps open it (it asks for the owner's sign-in).
+  const last = shelf.lastElementChild && shelf.lastElementChild.querySelector('.cart.empty'); let taps = 0, tapT = 0;
+  if (last) last.addEventListener('click', () => { const now = Date.now(); taps = now - tapT < 1500 ? taps + 1 : 1; tapT = now; if (taps >= 5) { taps = 0; location.href = 'studio/'; } });
   // The bar names the cartridge under the hand: its number, its name, its year and the record this device holds for it.
   const pad = (n) => (n < 10 ? '0' : '') + n;
   function record(g) {
-    try { const s = JSON.parse(localStorage.getItem(g.dataset.save) || 'null'); const k = s && Array.isArray(s.caught) ? s.caught.length : 0; return k ? k + ' kept' : null; } catch (e) { return null; }
+    try { const s = JSON.parse(localStorage.getItem(g.dataset.save) || 'null'); if (!s) return null; if (Array.isArray(s.caught)) return s.caught.length ? s.caught.length + ' kept' : null; const n = Array.isArray(s.stations) ? s.stations.length : 0; return n ? n + (n === 1 ? ' station' : ' stations') : (s.map ? 'Played' : null); } catch (e) { return null; }
   }
   function show(g) {
     document.getElementById('bar-t').textContent = pad(+g.dataset.n) + ' ' + g.dataset.name;
@@ -86,7 +99,7 @@ font-size:clamp(10px,2.1vw,22px);line-height:1;text-transform:uppercase;letter-s
     else if (e.key === 'Enter' && document.activeElement !== sel) { sel.click(); return; } else return;
     j = Math.min(games.length - 1, Math.max(0, j)); e.preventDefault(); games[j].focus();
   });
-  window.__shelf = { games: games.length, slots: SLOTS, record: () => document.getElementById('bar-r').textContent };
+  window.__shelf = { games: games.length, slots: SLOTS, record: () => document.getElementById('bar-r').textContent, tapDoor: () => { for (let i = 0; i < 5; i++) last.click(); } };
 })();
 </script>
 <noscript><p style="text-align:center;padding:16px"><a href="games/critter-roll/index.html" style="color:#fff">Play Critter Roll</a></p></noscript>
