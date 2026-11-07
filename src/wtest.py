@@ -24,7 +24,8 @@ with sync_playwright() as p:
       for (const [tx,ty] of path) { for (let i=0;i<120;i++){ const p=W.pos(); const gx=(tx+0.5)*TS, gy=(ty+0.6)*TS; const dx=gx-p.x, dy=gy-p.y; if (Math.hypot(dx,dy)<3) break; const d=Math.hypot(dx,dy); W.input.jx=dx/d; W.input.jy=dy/d; W.step(1/60); } }
       W.input.jx=0; W.input.jy=0; W.step(1/60); const n=W.nearest(); return n ? (n.place? n.place.id : 'sign') : 'none'; }"""
     shots={}
-    for pid,tab in [('shrine','roll'),('arena','battle'),('lab','dex'),('home','badges'),('board','badges')]:
+    for pid,tab in [('lab','dex'),('home','badges'),('board','badges'),('bell','battle')]:
+        if pid=='bell': pg.evaluate("WORLD.enter('arena')"); pg.wait_for_timeout(100)   # the Arena is its own zone; the bell stands on its sand
         door=pg.evaluate(f"(()=>{{const p=WORLD.PLACES.find(x=>x.id==='{pid}'); return [p.door[0], p.door[1]+1];}})()")
         near=pg.evaluate(walk_js, door)
         pg.wait_for_timeout(100)
@@ -33,9 +34,11 @@ with sync_playwright() as p:
         visible=pg.is_visible('#screen'); title=pg.evaluate("APP.game.state.tab")
         print(f'{pid}: walked -> near={near}, button="{label}" enabled={enabled}, screen open={visible}, tab={title}')
         pg.screenshot(path=f'/tmp/w_{pid}.png'); shots[pid]=1
-        pg.click('#close-screen'); pg.wait_for_timeout(200)
+        if visible: pg.click('#close-screen'); pg.wait_for_timeout(200)
+        elif pg.evaluate("!!WORLD.map.interior"): pg.evaluate("WORLD.enter(WORLD.map.parent)"); pg.wait_for_timeout(150)   # Home, the Lab and the Arena are rooms: step back out
         assert not pg.is_visible('#screen')
-    # sign
+    # sign (back in town: the Arena has none)
+    pg.evaluate("WORLD.enter('town')"); pg.wait_for_timeout(150)
     s=pg.evaluate("(()=>{const s=WORLD.SIGNS[0]; return [s.x, s.y+1];})()")
     print('sign walk:', pg.evaluate(walk_js, s)); pg.click('#act'); pg.wait_for_timeout(200); print('toast:', pg.inner_text('#toast'))
     pg.screenshot(path='/tmp/w_sign.png')

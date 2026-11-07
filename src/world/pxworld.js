@@ -71,7 +71,6 @@ const PXW = (() => {
       if (rug(x, y)) { R(X, Y, L, L, S.rug); R(X, Y + 2, L, 1, shade(S.rug, 0.25)); R(X, Y + 13, L, 1, shade(S.rug, 0.25)); if (!rug(x - 1, y)) R(X, Y, 2, L, shade(S.rug, -0.3)); if (!rug(x + 1, y)) R(X + 14, Y, 2, L, shade(S.rug, -0.3)); if (!rug(x, y - 1)) R(X, Y, L, 2, shade(S.rug, -0.3)); if (!rug(x, y + 1)) R(X, Y + 14, L, 2, shade(S.rug, -0.3)); }
       if (t === 'd') { R(X + 1, Y + 4, 14, 10, '#8A5A34'); R(X + 2, Y + 5, 12, 8, '#B07A46'); }
       const ol = '#2A1E14';
-      if (t === 'a') { R(X, Y - 2, L, 17, ol); R(X + 1, Y - 1, 14, 15, '#8E98AD'); R(X + 1, Y - 1, 14, 2, '#C9D3E6'); R(X + 4, Y + 4, 8, 5, ol); R(X + 5, Y + 5, 6, 3, '#FFD86B'); R(X + 6, Y + 5, 4, 1, '#FFF4C7'); [3, 11].forEach((cx) => { R(X + cx, Y - 5, 2, 5, '#F4EAD6'); R(X + cx, Y - 7, 2, 2, '#FFB03A'); }); }   // the roll altar
       if (t === 'x') { R(X, Y - 6, L, 21, ol); R(X + 1, Y - 5, 14, 19, '#3E3A5A'); for (let i = 0; i < 4; i++) { R(X + 2, Y + 10 - i * 4, 12 - i * 2, 3, '#8F8BB4'); R(X + 2, Y + 10 - i * 4, 12 - i * 2, 1, '#B9B5D8'); } R(X + 6, Y - 4, 4, 5, '#1E1A2A'); }   // the stair up
       if (t === 'n') { R(X + 6, Y - 4, 4, 18, ol); R(X + 7, Y - 3, 2, 16, '#5E3C22'); R(X + 3, Y - 6, 10, 3, ol); R(X + 4, Y - 5, 8, 1, '#8A5A34'); R(X + 5, Y - 2, 6, 7, ol); R(X + 6, Y - 1, 4, 5, '#D9A03A'); R(X + 7, Y + 4, 2, 2, '#8A6A2A'); }   // the arena bell on its post
       if (t === 'b') { R(X, Y - 2, L, 17, ol); R(X + 1, Y - 1, 14, 15, '#E8E8F0'); R(X + 1, Y + 5, 14, 9, S.bed); R(X + 1, Y + 5, 14, 1, shade(S.bed, 0.3)); R(X + 3, Y + 1, 10, 3, '#FFFFFF'); }
@@ -203,18 +202,33 @@ const PXW = (() => {
   function place(g, p, P) {
     const X = p.x * L, Y = p.y * L, Wd = p.w * L, Hd = p.h * L;
     const ol = '#2B2235';
-    if (p.kind === 'shrine') {
-      g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(X + 4, Y + Hd - 4, Wd - 8, 4);
-      g.fillStyle = '#4A5878'; g.fillRect(X + 6, Y + 26, Wd - 12, Hd - 30); g.fillStyle = '#C9D3E6'; g.fillRect(X + 7, Y + 27, Wd - 14, Hd - 33); g.fillStyle = '#A8B4CC'; for (let i = 0; i < 6; i++) g.fillRect(X + 10 + i * 13, Y + 40 + (i % 2) * 8, 8, 1);
-      [[12, 8], [Wd - 20, 8], [24, 2], [Wd - 32, 2]].forEach(([ox, oy]) => { g.fillStyle = ol; g.fillRect(X + ox - 1, Y + oy - 1, 10, 30); g.fillStyle = '#9AA6BF'; g.fillRect(X + ox, Y + oy, 8, 28); g.fillStyle = '#DCE2EE'; g.fillRect(X + ox, Y + oy, 8, 3); g.fillRect(X + ox, Y + oy, 2, 28); });
-      return;
-    }
-    if (p.kind === 'arena') {
-      g.fillStyle = ol; g.fillRect(X + 2, Y + 2, Wd - 4, Hd - 4);
-      g.fillStyle = '#C2A06A'; g.fillRect(X + 3, Y + 3, Wd - 6, Hd - 6);
-      g.fillStyle = '#E8D3A2'; g.fillRect(X + 9, Y + 9, Wd - 18, Hd - 18);
-      g.fillStyle = '#FFFFFF'; g.fillRect(X + Wd / 2, Y + 12, 1, Hd - 24); for (let a = 0; a < 40; a++) { const ang = a / 40 * 6.283; g.fillRect(Math.round(X + Wd / 2 + Math.cos(ang) * 12), Math.round(Y + Hd / 2 + Math.sin(ang) * 12), 1, 1); }
-      for (let i = 0; i < Wd - 8; i += 8) { g.fillStyle = (i / 8) % 2 ? '#D8574A' : '#3C6FE0'; g.fillRect(X + 4 + i, Y + 4, 4, 4); g.fillRect(X + 4 + i, Y + Hd - 8, 4, 4); }
+    if (p.kind === 'arena') {   // Meaning: where you stand with your critter in front of others. A ring of stone with stands that face inward, the gate left open: anyone may step in, and someone is always watching.
+      const R = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); }, cx = X + Wd / 2, cy = Y + Hd / 2 + 2, rx = Wd / 2 - 1, ry = Hd / 2 - 3, east = p.gate === 'e', cloth = ['#D8574A', '#3C6FE0', '#F5C542', '#F5A3D0', '#FFFFFF', '#4FB06D'];
+      if (!east) R(X + 4, Y + Hd - 2, Wd - 8, 4, 'rgba(0,0,0,0.22)');
+      for (let y = 0; y < Hd + (east ? 0 : 4); y++) for (let x = 0; x < Wd; x++) {
+        const dx = X + x - cx, dy = Y + y - cy, r = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)), gate = east ? (dx > rx * 0.45 && Math.abs(dy) < 20) : (Math.abs(dx) < 24 && dy < -ry * 0.45);
+        let c = null;
+        if (r > 1) { if (!east) continue; c = ((x >> 3) + (y >> 3)) % 2 ? '#5A6478' : '#626C82'; if ((x % 8 === 0) || (y % 8 === 0)) c = '#4A5468'; }   // the apron outside the wall, flagged (only when the ring is the whole map)
+        else if (gate) c = r > 0.97 ? null : '#E8D3A2';
+        else if (r > 0.95) c = ol;
+        else if (r > 0.86) c = (y % 4 < 2) ? '#8E98AD' : '#B7BFCF';   // the outer wall, coursed stone
+        else if (r > 0.80) c = '#5A6478';   // the top of the wall, in shadow
+        else if (r > 0.68) c = ((Math.floor(r * 50)) % 2) ? '#C9A26A' : '#A8864E';   // the upper tier
+        else if (r > 0.56) c = ((Math.floor(r * 50)) % 2) ? '#D8B57A' : '#B8955A';   // the lower tier
+        else if (r > 0.53) c = ol;   // the rail round the floor
+        else c = Math.abs(r - 0.26) < 0.025 ? '#FFFFFF' : '#E8D3A2';   // the sand, and the ring drawn in it
+        if (c) R(X + x, Y + y, 1, 1, c);
+        if (!gate && r > 0.56 && r < 0.80 && hsh(X + x, Y + y) < 0.045) { R(X + x, Y + y - 1, 2, 2, cloth[Math.floor(hsh(y, x) * cloth.length)]); R(X + x, Y + y - 2, 2, 1, '#F2C9A0'); }   // the others, in the stands
+      }
+      if (east) {   // the gate in the east wall: two posts and both leaves swung open, against the apron
+        const gx = X + Wd - 22; R(gx, cy - 23, 22, 3, ol); R(gx, cy + 20, 22, 3, ol); R(gx + 1, cy - 22, 20, 1, '#B7BFCF'); R(gx + 1, cy + 21, 20, 1, '#B7BFCF');
+        R(gx + 10, cy - 28, 14, 5, ol); R(gx + 11, cy - 27, 12, 3, '#6B4626'); R(gx + 10, cy + 23, 14, 5, ol); R(gx + 11, cy + 24, 12, 3, '#6B4626');
+      } else {
+        R(cx - 27, Y - 2, 3, 22, ol); R(cx + 24, Y - 2, 3, 22, ol); R(cx - 26, Y - 1, 1, 20, '#B7BFCF'); R(cx + 25, Y - 1, 1, 20, '#B7BFCF');   // the gate posts
+        R(cx - 32, Y - 2, 5, 14, ol); R(cx - 31, Y - 1, 3, 12, '#6B4626'); R(cx + 27, Y - 2, 5, 14, ol); R(cx + 28, Y - 1, 3, 12, '#6B4626');   // both leaves swung open
+      }
+      M_BELL(R, cx, cy - 8, ol);   // the bell post in the middle of the sand (the Arena's bell device sits on the centre tile)
+      [[X + 14, Y + 30, '#D8574A'], [X + Wd - 18, Y + 30, '#3C6FE0']].forEach(([bx, by, c]) => { R(bx, by - 6, 1, 30, ol); R(bx + 1, by - 5, 7, 14, ol); R(bx + 2, by - 4, 5, 12, c); R(bx + 2, by + 8, 2, 2, c); R(bx + 5, by + 8, 2, 2, c); R(bx + 3, by - 1, 2, 2, '#FFFFFF'); });   // two banners, on the apron
       return;
     }
     if (p.kind === 'device') return; // drawn by the interior tile itself
@@ -257,22 +271,43 @@ const PXW = (() => {
       return;
     }
     // house: one architecture per region (P.arch), each a statement of the region's meaning. The footprint (p.x, p.y, p.w, p.h) and the door never move; only the drawing differs.
+    if (p.id === 'lab') { drawLab(g, p, X, Y, Wd, Hd, ol); return; }
     drawHouse(g, p, P, X, Y, Wd, Hd, ol);
     mark(g, p, P, X, Y, Wd, Hd, ol);
   }
+  // Meaning: being studied, and believed in. The Lab is glass to see in and out of, with a dish turned to the sky: it watches and listens for what is out there, you included.
+  function drawLab(g, p, X, Y, Wd, Hd, ol) {
+    const R = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); }, doorX = p.door[0] * L + L - 6, top = Y + 22, glass = '#9CD3F5', glassL = '#D6F0FF', frame = '#3C6FE0';
+    R(X + 2, Y + Hd, Wd - 4, 2, 'rgba(0,0,0,0.2)');
+    R(X + 2, top, Wd - 4, Hd - (top - Y) + 1, ol); R(X + 3, top + 1, Wd - 6, Hd - (top - Y) - 1, '#E8EEF8');   // the body, pale
+    R(X + 3, top + 1, Wd - 6, 1, '#FFFFFF'); R(X + 3, Y + Hd - 6, Wd - 6, 5, '#C9CFDA');   // a light top edge, a plinth
+    R(X - 2, top - 7, Wd + 4, 8, ol); R(X - 1, top - 6, Wd + 2, 6, '#B7BFCF'); R(X - 1, top - 6, Wd + 2, 2, '#DCE2EE'); R(X - 1, top - 1, Wd + 2, 1, '#8E98AD');   // the flat roof slab, overhanging
+    for (let wx = X + 8; wx + 20 <= X + Wd - 34; wx += 24) { R(wx - 1, top + 9, 22, 16, frame); R(wx, top + 10, 20, 14, glass); R(wx + 1, top + 11, 6, 3, glassL); R(wx + 9, top + 10, 2, 14, frame); }   // a band of wide windows
+    R(doorX - 3, Y + Hd - 19, 18, 19, frame); R(doorX - 2, Y + Hd - 18, 16, 18, glass); R(doorX + 5, Y + Hd - 18, 2, 18, frame); R(doorX - 1, Y + Hd - 17, 4, 3, glassL); R(doorX + 10, Y + Hd - 10, 2, 3, '#1E2A4A');   // a glass door
+    const ax = X + Wd - 32, aw = 29, ay = top + 14;   // the glass annex: a greenhouse wing, plants inside
+    R(ax - 1, ay, aw + 2, Hd - (ay - Y) + 1, ol); R(ax, ay + 1, aw, Hd - (ay - Y) - 1, glass);
+    for (let i = 0; i < 10; i++) { const w = Math.round(aw * i / 10 / 2) * 2; R(ax + aw / 2 - w / 2 - 1, ay - 10 + i, w + 2, 1, ol); R(ax + aw / 2 - w / 2, ay - 10 + i, w, 1, i % 3 ? glass : glassL); }   // its sloped glass roof
+    for (let x = ax + 7; x < ax + aw - 2; x += 7) R(x, ay + 1, 1, Hd - (ay - Y) - 1, frame); R(ax, ay + Math.round((Hd - (ay - Y)) / 2), aw, 1, frame);
+    [[ax + 3, Y + Hd - 9], [ax + 11, Y + Hd - 12], [ax + 19, Y + Hd - 8], [ax + 24, Y + Hd - 11]].forEach(([px0, py0], i) => { R(px0, py0, 4, 6, '#4FB06D'); R(px0 + 1, py0 - 3, 2, 3, '#4FB06D'); if (i % 2) R(px0 + 1, py0 - 4, 2, 2, '#F5A3D0'); R(px0 - 1, py0 + 6, 6, 3, '#A87A48'); });
+    const dx0 = X + 16, dy0 = top - 8;   // the dish on the roof, turned up and east
+    R(dx0 + 5, dy0 - 10, 2, 12, ol); R(dx0 + 5, dy0 - 9, 1, 10, '#8E98AD');
+    for (let i = 0; i < 12; i++) { const w = Math.round(Math.sqrt(Math.max(0, 1 - ((i - 6) * (i - 6)) / 36)) * 7); R(dx0 + 6 - w + i / 2, dy0 - 22 + i, w + 3, 1, i === 0 || i === 11 ? ol : (i < 4 ? '#FFFFFF' : '#DCE2EE')); }
+    R(dx0 + 9, dy0 - 18, 3, 1, ol); R(dx0 + 12, dy0 - 19, 2, 2, '#D8574A');   // the feed, a red light at its tip
+  }
   // Meaning: a place says what it is by how it is built, not by a word over it; the two places whose use a wall cannot show hang a symbol by the door, the way a real shop does.
-  // Shops: a hung board with a potion. The Lab: a hung board with a paw print. Everything else (home, houses, shrine, arena, gyms, board, tower) already reads from its own shape.
+  // Shops: a hung board with a potion. Everything else (home, the Lab, houses, arena, gyms, board, tower) reads from its own shape (a board on the Lab read as a face, Dan).
   const MARK = {
-    shop: ['............', '.ffffffffff.', '.ffffnnffff.', '.ffffnnffff.', '.fffrrrrfff.', '.ffrrwrrrff.', '.ffrrrrrrff.', '.fffrrrrfff.', '.ffffffffff.', '............'],
-    dex: ['............', '.ffffffffff.', '.fffkffkfff.', '.fkkffffkkf.', '.fkkffffkkf.', '.ffffkkffff.', '.fffkkkkfff.', '.fffkkkkfff.', '.ffffffffff.', '............']
+    shop: ['............', '.ffffffffff.', '.ffffnnffff.', '.ffffnnffff.', '.fffrrrrfff.', '.ffrrwrrrff.', '.ffrrrrrrff.', '.fffrrrrfff.', '.ffffffffff.', '............']
   };
   function mark(g, p, P, X, Y, Wd, Hd, ol) {
-    const rows = p.open === 'shop' ? MARK.shop : p.open === 'dex' ? MARK.dex : null; if (!rows) return;
+    const rows = p.open === 'shop' ? MARK.shop : null; if (!rows) return;
     const roofH = Math.round(Hd * 0.5), doorX = p.door[0] * L + L - 6, arch = P.arch || 'cottage';
     const sx = arch === 'shell' ? X + 21 : doorX - 1, sy = Y + roofH + (arch === 'shell' ? 5 : 4);   // over the door; Coralbay's porthole sits there, so left of it
     g.fillStyle = ol; g.fillRect(sx - 1, sy - 3, 14, 13); g.fillStyle = '#8A5A34'; g.fillRect(sx + 2, sy - 3, 8, 2); g.fillStyle = ol; g.fillRect(sx + 5, sy - 2, 2, 1);   // the bracket it hangs from
     stamp(g, sx, sy, rows, { f: '#F4EAD6', n: '#8A5A34', r: '#E05A7A', w: '#FFFFFF', k: '#2B4A8E' });
   }
+  // the Arena's bell: a post with a crossbar and a brass bell hanging from it (the same bell as the old arena room's)
+  function M_BELL(R, bx, by, ol) { R(bx - 2, by - 20, 4, 22, ol); R(bx - 1, by - 19, 2, 20, '#5E3C22'); R(bx - 7, by - 22, 14, 3, ol); R(bx - 6, by - 21, 12, 1, '#8A5A34'); R(bx - 4, by - 18, 8, 8, ol); R(bx - 3, by - 17, 6, 6, '#F5C542'); R(bx - 3, by - 17, 6, 1, '#FFF1BF'); R(bx - 1, by - 11, 2, 2, '#C9962A'); R(bx - 6, by + 1, 12, 2, 'rgba(0,0,0,0.22)'); }
   // the gym hall's roof follows its region (same painters as the houses), its colour stays the leader's
   function gymRoof(R, P, p, X, Y, Wd, roofH, ol) {
     const arch = P.arch || 'cottage', roof = p.roof || '#4E8A3A';

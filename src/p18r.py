@@ -31,11 +31,7 @@ with sync_playwright() as p:
     pg.evaluate("APP.close()")
     pg.evaluate("APP.game.update({used:20})"); pg.wait_for_timeout(5000); enc()
     print('no sightings + no rolls -> screen opened:', not pg.evaluate("document.getElementById('screen').hidden"), '| toast:', pg.inner_text('#toast')[:70])
-    # shrine: roll 1, keep by rarity
-    pg.evaluate("APP.game.update({used:0, sight:{day:'x', n:0}})"); pg.evaluate("APP.open('roll')"); pg.wait_for_timeout(200)
-    u0=pg.evaluate("APP.game.state.used"); pg.evaluate("APP.game.renderVals().rollAgain()"); pg.wait_for_timeout(100)
-    print('shrine roll cost:', pg.evaluate("APP.game.state.used")-u0, '| keep button:', pg.evaluate("APP.game.renderVals().keepLabel"))
-    pg.evaluate("APP.close()")
+    # (the Roll Shrine is gone: critters come from the grass only)
     # new day resets sightings, persistence
     pg.evaluate("APP.game.update({sight:{day:new Date().toDateString(), n:17}})"); pg.wait_for_timeout(1200); pg.reload(); pg.wait_for_timeout(1300)
     print('after reload sightings left:', pg.evaluate("APP.game.sightingsLeft()"), '| count from a past day resets:', pg.evaluate("APP.game.update({sight:{day:'Mon Jan 01 2001', n:40}}), APP.game.sightingsLeft()"))

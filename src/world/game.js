@@ -410,7 +410,7 @@ class Game extends Component {
   renderVals() {
     const v = super.renderVals();
     const enc = this.state.encounter;
-    v.screenTitle = enc ? 'Wild critter' : ({ roll: 'Roll Shrine', dex: 'Critter Lab', battle: 'Arena', badges: 'Trainer' }[this.state.tab] || '');
+    v.screenTitle = enc ? 'Wild critter' : ({ roll: 'Critter', dex: 'Critter Lab', battle: 'Arena', badges: 'Trainer' }[this.state.tab] || '');
     v.closeScreen = () => APP.close();
     v.backLabel = WORLD.map ? WORLD.map.name : 'Sproutvale';
     v.showRollTools = v.showRoll && !enc;

@@ -1,5 +1,5 @@
 map cards:
-Sproutvale | Home, Lab, Shrine, Arena | <weather> | You are here
+Sproutvale | Home and the Lab | <weather> | You are here
 Moss Forest | Moss and Bloom critters | #/# species found | Elder Wren: not yet beaten | <weather> | Travel here
 Frost Peaks | Frost and Stone critters | #/# species found | Glacia: not yet beaten | <weather> | Travel here
 Ember Fields | Ember and Volt critters | #/# species found | Blaze: not yet beaten | <weather> | Opens at level #

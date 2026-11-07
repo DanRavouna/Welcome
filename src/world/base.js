@@ -1083,6 +1083,7 @@ class Component extends Base {
       toRoll: () => this.setState({ tab: 'roll', selected: null, armed: false }),
       closeDetail: () => this.setState({ selected: null, armed: false }),
       backToRoll: () => this.setState({ previewSeed: null, reveal: 0 }),
+      close: () => APP.close(),   // the Dex and the Arena, with nothing kept yet: back outside, to the grass
       onSeedInput: (e) => this.setState({ seedInput: e.target.value, loadError: false }),
       loadSeed: () => {
         const n = Number(String(st.seedInput).trim());

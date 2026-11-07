@@ -229,8 +229,8 @@
         <sc-if value="{{noCaught}}" hint-placeholder-val="{{ true }}">
           <div style="border-radius: 20px; padding: 26px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; background: rgba(255,255,255,0.7); border: 1.5px dashed #6A7CA8">
             <p style="margin: 0; font-size: 17px; font-weight: 900; color: #1E2A4A">Nothing kept yet</p>
-            <p style="margin: 0; font-size: 15px; font-weight: 600; line-height: 1.45; color: #3A4868">Roll critters and tap Keep on the ones you like. They'll line up here.</p>
-            <button onClick="{{toRoll}}" style="height: 48px; padding: 0 22px; border: 1.5px solid rgba(255,255,255,0.9); border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #2A1B00; background: {{primaryBg}}; box-shadow: 0 4px 14px rgba(245,185,58,0.45)">Start rolling</button>
+            <p style="margin: 0; font-size: 15px; font-weight: 600; line-height: 1.45; color: #3A4868">Critters live in the tall grass. Keep the ones you like and they'll line up here.</p>
+            <button onClick="{{close}}" style="height: 48px; padding: 0 22px; border: 1.5px solid rgba(255,255,255,0.9); border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #2A1B00; background: {{primaryBg}}; box-shadow: 0 4px 14px rgba(245,185,58,0.45)">Back outside</button>
           </div>
         </sc-if>
 
@@ -261,8 +261,8 @@
         <sc-if value="{{noCaught}}" hint-placeholder-val="{{ false }}">
           <div style="border-radius: 20px; padding: 26px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; background: rgba(14,26,56,0.78); border: 1.5px dashed rgba(255,255,255,0.5); backdrop-filter: blur(12px)">
             <p style="margin: 0; font-size: 17px; font-weight: 900">You need a fighter</p>
-            <p style="margin: 0; font-size: 15px; font-weight: 600; line-height: 1.45; color: #C9D6F2">Keep at least one critter, then come back to battle wild ones.</p>
-            <button onClick="{{toRoll}}" style="height: 48px; padding: 0 22px; border: 1.5px solid rgba(255,255,255,0.7); border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #2A1B00; background: {{primaryBg}}; box-shadow: 0 4px 14px rgba(245,185,58,0.45)">Go roll</button>
+            <p style="margin: 0; font-size: 15px; font-weight: 600; line-height: 1.45; color: #C9D6F2">Keep a critter from the tall grass, then come back to battle wild ones.</p>
+            <button onClick="{{close}}" style="height: 48px; padding: 0 22px; border: 1.5px solid rgba(255,255,255,0.7); border-radius: 999px; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #2A1B00; background: {{primaryBg}}; box-shadow: 0 4px 14px rgba(245,185,58,0.45)">Back outside</button>
           </div>
         </sc-if>
 

@@ -1,5 +1,6 @@
 map town {'grass': '57/57', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map peak {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map arena {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map ascent {'grass': '58/58', 'rare': '9/9', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map descent {'grass': '58/58', 'rare': '9/9', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map mossbrook {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
@@ -38,6 +39,8 @@ map gym-wren {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, '
 map gym-glacia {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map gym-blaze {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map gym-coral {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-house-pip {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
+map in-house-mira {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map in-house-fennel {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map in-house-moss {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map in-house-bryn {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
@@ -52,8 +55,6 @@ map in-cb-b {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'p
 map in-cb-c {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map in-home {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map in-lab {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
-map in-shrine {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
-map in-arena {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 map in-tower {'grass': '0/0', 'rare': '0/0', 'exitsOk': True, 'signsOk': True, 'placesOk': True}
 trips: [['town->frost path', 'none'], ['now in', 'frost'], ['frost->town path', 'none'], ['back in', 'town'], ['town->ember path', 'none'], ['now in', 'ember'], ['ember->town path', 'none'], ['back in', 'town'], ['town->moss path', 'none'], ['now in', 'moss'], ['moss->town path', 'none'], ['back in', 'town'], ['town->tide path', 'none'], ['now in', 'tide'], ['tide->town path', 'none'], ['back in', 'town']]
 grass encounter: {'open': True, 'enc': 'Frost Peaks', 'type': 'Volt'}

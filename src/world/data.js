@@ -150,7 +150,7 @@ const DUEL_TUNE = { maren: { hp: 1.15 }, keeper: { hp: 1.25 }, coral: { hp: 1.35
 const MAP_LAYOUT = {
   town: [5.5, 6.5, 0.9], moss: [3.5, 6.5, 0.85], frost: [5.5, 4.5, 0.85], ember: [5.5, 8.5, 0.85], tide: [7.5, 6.5, 0.85],
   mossbrook: [1.5, 6.5, 0.85], frosthold: [5.5, 2.5, 0.85], cinderport: [5.5, 10.5, 0.85], coralbay: [9.5, 6.5, 0.85],
-  peak: [7.4, 5.0, 0.8], ascent: [5.5, 0.5, 0.8], descent: [5.5, 12.5, 0.8],
+  peak: [7.4, 5.0, 0.8], arena: [0.6, 9.3, 0.75], ascent: [5.5, 0.5, 0.8], descent: [5.5, 12.5, 0.8],
   'dg-arch': [2.3, 2.7, 0.55, 1], 'dg-lamp': [7.0, 0.5, 0.55, 1], 'dg-forge': [7.0, 12.5, 0.55, 1],
   'route-mf-gate': [1.4, 5.4, 0.75], 'route-mf': [1.5, 3.9, 0.75], 'route-mf-hollow': [2.7, 4.9, 0.7], 'route-mf-lookout': [3.7, 3.9, 0.7], 'route-mf-fork': [3.5, 2.5, 0.75], 'route-mf-cliff': [0.5, 2.7, 0.6, 1],
   'route-fc-shelf': [7.0, 2.4, 0.75], 'route-fc': [8.7, 2.9, 0.75], 'route-fc-strand': [7.6, 3.7, 0.7], 'route-fc-landing': [9.5, 4.7, 0.75], 'route-fc-skerry': [10.7, 2.5, 0.6, 1],

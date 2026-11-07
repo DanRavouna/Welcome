@@ -2,31 +2,21 @@
 from playwright.sync_api import sync_playwright
 errors=[]
 def go(pg, pid):
-    if pg.evaluate("!!WORLD.map.interior"): pg.evaluate("WORLD.enter(WORLD.map.parent)"); pg.wait_for_timeout(100)   # step back outside first (the shrine and the arena are rooms now)
+    if pg.evaluate("!!WORLD.map.interior"): pg.evaluate("WORLD.enter(WORLD.map.parent)"); pg.wait_for_timeout(100)   # step back outside first (Home and the Lab are rooms)
+    if pid=='bell' and pg.evaluate("WORLD.map.id")!='arena': pg.evaluate("WORLD.enter('arena')"); pg.wait_for_timeout(100)   # the Arena is its own zone; the bell stands on its sand
     door=pg.evaluate(f"(()=>{{const p=WORLD.PLACES.find(x=>x.id==='{pid}'); return [p.door[0], p.door[1]+1];}})()")
     pg.evaluate('window.__r=Math.random; Math.random=()=>0.999'); pg.evaluate(open('/tmp/walk.js').read(), door); pg.evaluate('Math.random=window.__r'); pg.wait_for_timeout(80); pg.click('#act'); pg.wait_for_timeout(300)
-    # the shrine and the arena have rooms now: go in, walk up to the altar / the bell and use it
-    if pg.evaluate("WORLD.map.interior && !!WORLD.map.places.find(q=>q.kind==='device')"):
-        pg.evaluate("(()=>{const p=WORLD.map.places.find(q=>q.kind==='device');WORLD.setPos((p.door[0]+0.9)*WORLD.TS,(p.door[1]+1.4)*WORLD.TS);WORLD.step(1/60)})()"); pg.wait_for_timeout(100); pg.click('#act'); pg.wait_for_timeout(300)
 with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(viewport={'width':390,'height':844}, device_scale_factor=2, has_touch=True)
     pg=ctx.new_page(); pg.on('pageerror', lambda e: errors.append(str(e)))
     pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
     pg.evaluate('0')
-    go(pg,'shrine')
-    pg.get_by_role('button', name='Roll a critter').click(); pg.wait_for_timeout(200)
-    rev1=pg.evaluate("(()=>{const el=document.querySelector('#screen .reveal-a, #screen .reveal-b'); window._rev=el; return el? el.className : 'none';})()")
-    pg.fill('#seedField','12'); pg.wait_for_timeout(150)
-    same=pg.evaluate("document.querySelector('#screen .reveal-a, #screen .reveal-b')===window._rev")
-    focus=pg.evaluate("document.activeElement && document.activeElement.id")
-    pg.type('#seedField','3'); val=pg.input_value('#seedField'); focus2=pg.evaluate("document.activeElement && document.activeElement.id")
-    print('reveal class:', rev1, '| same element after typing (no restart):', same, '| focus kept:', focus, focus2, '| value:', val)
-    pg.fill('#seedField','')
+    # a kept critter comes from the grass now (the shrine is gone): keep one through an encounter
+    pg.evaluate("APP.encounter({types:['Moss','Bloom'], zone:'Moss Forest', rare:false})"); pg.wait_for_timeout(400)
     pg.get_by_role('button', name='Keep').first.click(); pg.wait_for_timeout(200)
     kept=pg.evaluate("APP.game.state.caught.length"); print('kept after Keep:', kept)
-    pg.screenshot(path='/tmp/p_roll.png')
     pg.click('#close-screen'); pg.wait_for_timeout(200)
-    go(pg,'arena')
+    go(pg,'bell')
     pg.get_by_role('button', name='Fight (1 roll)').click(); pg.wait_for_timeout(200)
     rounds=0
     while pg.evaluate("!!(APP.game.state.battle && !APP.game.state.battle.over)") and rounds<40:

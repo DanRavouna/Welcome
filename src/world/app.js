@@ -171,7 +171,8 @@ const APP = (() => {
     const st = game.state, lv = game.levelInfo(st.xp || 0).level, here = WORLD.map && WORLD.map.id, test = game.props.noGates, vis = st.visited || [];
     const seals = (st.npc && st.npc.seals) || [], seen = st.seen || [], known = knownMaps();
     const c = { id: id, name: '', lines: [], wx: weatherAt(id) ? weatherText(weatherAt(id)) : '', travel: false, status: '' };
-    if (id === 'town') { c.name = 'Sproutvale'; c.lines = ['Home, Lab, Shrine, Arena']; c.travel = true; }
+    if (id === 'town') { c.name = 'Sproutvale'; c.lines = ['Home and the Lab']; c.travel = true; }
+    else if (id === 'arena') { c.name = 'The Arena'; c.lines = ['Wild battles, for a roll', 'Off the Ashwood Trail']; if (knownMaps().has('arena')) c.travel = true; else c.status = 'Reach it on foot'; }
     else if (ZONE_NAMES[id]) {
       const L = LEADERS.find((x) => x.zone === id), open = test || lv >= GATES[id];
       const found = ZONE_TYPES[id].reduce((n, t) => { const ti = ZTYPES.indexOf(t); return n + seen.filter((no) => Math.floor((no - 1) / 6) === ti).length; }, 0);
@@ -215,9 +216,9 @@ const APP = (() => {
     return { nodes: nodes, links: links };
   }
   // the painted overview: sea, land, orange routes, coloured places. Visited = colour, not yet = grey, secrets = not drawn.
-  const LAND = { town: '#92CF68', moss: '#6DB551', frost: '#D6EAF5', ember: '#DE9A62', tide: '#EBDB9F', route: '#9CD170', mossbrook: '#80C45E', frosthold: '#D6EAF5', cinderport: '#DE9A62', coralbay: '#EBDB9F', peak: '#B9B0C8', ascent: '#D6EAF5', descent: '#DE9A62', dg: '#A99C86' };
-  const ICOL = { town: '#E0524A', moss: '#2F8A3C', frost: '#7DB8E0', ember: '#E0652A', tide: '#2D7FD0', mossbrook: '#3E8E3E', frosthold: '#5AA7D6', cinderport: '#C8502A', coralbay: '#1E9AA8', peak: '#7A6F96', ascent: '#5AA7D6', descent: '#C8502A' };
-  const kindOf = (id) => id === 'town' ? 'town' : ZONE_NAMES[id] ? 'zone' : id === 'peak' ? 'peak' : id === 'ascent' || id === 'descent' ? 'mark' : CITY[id] ? 'city' : id.indexOf('dg-') === 0 ? 'dg' : 'route';
+  const LAND = { town: '#92CF68', moss: '#6DB551', frost: '#D6EAF5', ember: '#DE9A62', tide: '#EBDB9F', route: '#9CD170', mossbrook: '#80C45E', frosthold: '#D6EAF5', cinderport: '#DE9A62', coralbay: '#EBDB9F', peak: '#B9B0C8', arena: '#9CD170', ascent: '#D6EAF5', descent: '#DE9A62', dg: '#A99C86' };
+  const ICOL = { town: '#E0524A', moss: '#2F8A3C', frost: '#7DB8E0', ember: '#E0652A', tide: '#2D7FD0', mossbrook: '#3E8E3E', frosthold: '#5AA7D6', cinderport: '#C8502A', coralbay: '#1E9AA8', peak: '#7A6F96', arena: '#C2A06A', ascent: '#5AA7D6', descent: '#C8502A' };
+  const kindOf = (id) => id === 'town' ? 'town' : ZONE_NAMES[id] ? 'zone' : id === 'peak' ? 'peak' : id === 'ascent' || id === 'descent' || id === 'arena' ? 'mark' : CITY[id] ? 'city' : id.indexOf('dg-') === 0 ? 'dg' : 'route';
   const landOf = (id) => LAND[id] || (id.indexOf('dg-') === 0 ? LAND.dg : LAND.route);
   function renderLayout() {
     const cv = $('wm-canvas'), info = layoutInfo(), U = 40, CW = 12 * U, CH = 13 * U, dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -247,6 +248,7 @@ const APP = (() => {
       else if (id === 'ember') { c.beginPath(); c.moveTo(x, y - 9); c.quadraticCurveTo(x + 9, y + 1, x + 4, y + 7); c.lineTo(x - 4, y + 7); c.quadraticCurveTo(x - 9, y + 1, x, y - 9); c.fill(); }
       else if (id === 'tide') { c.beginPath(); c.moveTo(x - 8, y - 2); c.quadraticCurveTo(x - 4, y - 7, x, y - 2); c.quadraticCurveTo(x + 4, y + 3, x + 8, y - 2); c.stroke(); c.beginPath(); c.moveTo(x - 8, y + 4); c.quadraticCurveTo(x - 4, y - 1, x, y + 4); c.quadraticCurveTo(x + 4, y + 9, x + 8, y + 4); c.stroke(); }
       else if (k === 'peak') { c.beginPath(); c.moveTo(x - 11, y + 8); c.lineTo(x - 2, y - 8); c.lineTo(x + 4, y + 2); c.lineTo(x + 8, y - 4); c.lineTo(x + 13, y + 8); c.closePath(); c.fill(); }
+      else if (id === 'arena') { c.beginPath(); c.arc(x, y, 6, 0, 7); c.stroke(); c.beginPath(); c.arc(x, y, 2, 0, 7); c.fill(); }
       else if (k === 'mark') { c.beginPath(); const d = id === 'ascent' ? -1 : 1; c.moveTo(x, y + d * 6); c.lineTo(x - 6, y - d * 5); c.lineTo(x + 6, y - d * 5); c.closePath(); c.fill(); } };
     vis.forEach((n) => {
       const k = kindOf(n.id), lit = n.state === 'lit', x = n.x * U, y = n.y * U, sel = n.id === mapSel;
@@ -543,6 +545,9 @@ const APP = (() => {
       { lv: 1, id: 'rowan', name: 'Rowan', x: 13, y: 20, dir: 'up', kind: 'trainer', trainer: true, pal: { cap: true, c: '#3C6FE0', y: '#3C6FE0', Y: '#28509E' },
         types: ['Moss', 'Ember'], size: 2, stage: 1,
         intro: ['Hey, you look new around here!', 'Let me see what your critters can do.'], winLine: 'Wow, you are good! Here is your reward.', beatenLines: ['That was a great battle. Come back tomorrow for a rematch!'] }
+    ], arena: [
+      { id: 'tam', name: 'Tam', x: 23, y: 9, dir: 'left', kind: 'talk', pal: { h: '#2B2235', y: '#F5C542', Y: '#C9962A' }, lines: ['I come every day. I have never once gone in.', 'From up here you can see every step they take.'] },
+      { id: 'odo', name: 'Odo', x: 16, y: 7, dir: 'left', kind: 'talk', pal: { h: '#8A5A34', y: '#D8574A', Y: '#A83A2E' }, lines: ['My brother fought in there once. He lost. He talks about it more than anything he ever won.'] }
     ] };
     const zone = (id, list) => {
       const m = M[id], cx = Math.floor(m.W / 2), cy = Math.floor(m.H / 2), sx = Math.floor(m.spawn[0]), sy = Math.floor(m.spawn[1]);
@@ -1282,7 +1287,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', shrine: 'Enter the shrine', arena: 'Enter the arena', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex', altar: 'Roll a critter', bell: 'Ring the bell', stair: 'Climb the stair' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', arena: 'Enter the arena', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex', bell: 'Ring the bell', stair: 'Climb the stair' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -1329,7 +1334,7 @@ const APP = (() => {
     { const di = ACT.duelInfo(); if (di && !open) return di.boss ? 'boss' : 'battle'; }   // the Watch: only the long nights (5, 10, 15, 20) carry the heavy track; the others are nights, not bosses
     if (open && st.tab === 'battle') return st.trainer && (st.trainer.warden || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
     if (WORLD.map && WORLD.map.id === 'in-tower') return 'watch';   // the lobby: a lamp that does not go out
-    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : (WORLD.map.base || WORLD.map.id)), alias = { descent: 'ember', ascent: 'frost', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; const base = alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
+    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : (WORLD.map.base || WORLD.map.id)), alias = { descent: 'ember', ascent: 'frost', arena: 'moss', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; const base = alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
     return !WORLD.map.interior && !WORLD.map.cave && timeOfDay() === 'night' && T_HAS(base + '@night') ? base + '@night' : base;   // at night the same tune, quieter
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
@@ -1517,7 +1522,7 @@ const APP = (() => {
     });
     $('m-close').addEventListener('click', () => closeMenu());
     $('dev-close').addEventListener('click', closeDev); $('dev-body').addEventListener('click', (e) => { const t = e.target.closest('[data-dev]'); if (t) devAction(t.dataset.dev); });
-    $('m-help').addEventListener('click', () => { closeMenu(); toast('Walk with the joystick. Tall grass hides wild critters, sparkling grass hides rarer ones. The shrine rolls any type, the Arena is for battles.'); });
+    $('m-help').addEventListener('click', () => { closeMenu(); toast('Walk with the joystick. Tall grass hides wild critters, sparkling grass hides rarer ones. The Arena is for battles.'); });
     $('m-sound').addEventListener('click', () => { const s = Object.assign({}, game.state.settings); s.sound = !s.sound; game.update({ settings: s }); if (s.sound) game.sfx('tap'); renderMenu(); });
     $('m-grid').addEventListener('click', (e) => { const g = e.target.closest('[data-group]'); if (g) { toggleMenuGroup(g.dataset.group); return; } const t = e.target.closest('[data-tile]'); if (t) tile(t.dataset.tile); });
     $('menu').addEventListener('click', (e) => { if (e.target.id === 'menu') closeMenu(); });

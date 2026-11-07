@@ -53,19 +53,27 @@ const WORLD = (() => {
     const places = [
       { id: 'home', name: 'Your home', x: 5, y: 4, w: 7, h: 5, roof: '#D8574A', door: [8, 8], open: 'badges' },
       { id: 'lab', name: 'Critter Lab', x: 31, y: 4, w: 8, h: 6, roof: '#3C6FE0', door: [34, 9], open: 'dex' },
-      { id: 'shrine', name: 'Roll Shrine', x: 31, y: 23, w: 6, h: 5, kind: 'shrine', door: [33, 27], open: 'roll' },
-      { id: 'arena', name: 'Arena', x: 5, y: 23, w: 9, h: 6, kind: 'arena', door: [9, 28], open: 'battle' },
-      { id: 'board', name: 'Quest board', x: 19, y: 12, w: 4, h: 1, kind: 'board', door: [20, 12], open: 'badges' }
+      { id: 'board', name: 'Quest board', x: 19, y: 12, w: 4, h: 1, kind: 'board', door: [20, 12], open: 'badges' },
+      // Meaning (Sproutvale: where you are kept): Pip's house keeps what a child brings home; Mira's keeps the shelf full for whoever comes.
+      { id: 'house-pip', name: "Pip's House", x: 11, y: 22, w: 5, h: 4, kind: 'house', door: [13, 25], open: 'house', roof: '#4FB06D', wall: '#F4EAD6' },
+      { id: 'house-mira', name: "Mira's House", x: 27, y: 22, w: 5, h: 4, kind: 'house', door: [29, 25], open: 'house', roof: '#D9A03A', wall: '#F4EAD6' }
     ];
     places.forEach((p) => {
       for (let y = p.y; y < p.y + p.h; y++) for (let x = p.x; x < p.x + p.w; x++) set(x, y, 'X');
-      const [dx, dy] = p.door, fy = dy + 1, target = fy <= 16 ? 16 : 17, step = target > fy ? 1 : -1;
+      const [dx, dy] = p.door, fy = dy + 1;
+      if (p.y > 17) { for (let x = Math.min(dx, 21); x <= Math.max(dx + 1, 22); x++) { set(x, fy, '='); set(x, fy + 1, '='); } return; }   // south of the plaza: a lane from the door to the main road
+      const target = fy <= 16 ? 16 : 17, step = target > fy ? 1 : -1;
       for (let y = fy; y !== target + step; y += step) { set(dx, y, '='); set(dx + 1, y, '='); }
     });
     for (let x = 4; x <= 12; x++) if (m[3][x] !== 'T') set(x, 3, 'F');
     [[17, 3, 4, 3], [26, 28, 5, 3], [3, 19, 3, 4], [37, 12, 4, 3]].forEach(([x0, y0, w, h]) => { for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) if (m[y][x] === '.') set(x, y, 'W'); });
+    // the scatter below draws one random number per open tile; the lots that changed in Nov 2026 (the ring and the shrine out, two cottages and their lanes in) are
+    // mapped to the old open tiles so the rest of the village keeps the trees and rocks it always had
+    const oldOnly = (x, y) => (x >= 5 && x <= 13 && y >= 23 && y <= 28) || (x >= 31 && x <= 36 && y >= 23 && y <= 27) || ((x === 9 || x === 10) && y >= 17 && y <= 29) || ((x === 33 || x === 34) && y >= 17 && y <= 28);
+    const newOnly = (x, y) => (x >= 11 && x <= 15 && y >= 22 && y <= 25) || (x >= 27 && x <= 31 && y >= 22 && y <= 25) || (y >= 26 && y <= 27 && x >= 13 && x <= 30);
     for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) {
-      if (m[y][x] !== '.') continue;
+      const wasOpen = oldOnly(x, y) ? false : (m[y][x] === '.' || newOnly(x, y)); if (!wasOpen) continue;
+      if (m[y][x] !== '.') { r(); continue; }
       let near = false; for (let yy = y - 1; yy <= y + 1; yy++) for (let xx = x - 1; xx <= x + 1; xx++) if (['=', 'X', 'O', 'F'].includes(m[yy][xx])) near = true;
       const v = r(); if (!near && v < 0.06) set(x, y, 'T'); else if (!near && v < 0.075) set(x, y, 'R'); else if (v < 0.2) set(x, y, ',');
     }
@@ -81,6 +89,7 @@ const WORLD = (() => {
   m[15][3] = 'O'; const openingObjects = [{ id: 'gate-lamp', kind: 'postlamp', day: true, x: 3, y: 15, reach: 1.7, text: 'A lamp on a post by the gate. Lit, in daylight. Someone keeps it that way.' }];
   // trail north to Vigil Peak: stamped after the decor pass so the seeded scatter (and every other tile) is unchanged
     for (let y = 0; y <= 11; y++) { set(26, y, '='); set(27, y, '='); }
+    signs.forEach((s) => [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([a, c]) => { if (m[s.y + c] && (m[s.y + c][s.x + a] === 'T' || m[s.y + c][s.x + a] === 'R')) set(s.x + a, s.y + c, '.'); }));   // every sign can be read: no tree or rock on its four sides
     set(28, 10, 'G'); signs.push({ x: 28, y: 10, to: 'peak', text: "North: Vigil Peak. The trail opens to trainers holding all 4 Leader Seals." });
     places.forEach((p) => { const [dx, dy] = p.door; [[dx, dy + 1], [dx + 1, dy + 1]].forEach(([x, y]) => set(x, y, '=')); });
     return {
@@ -179,6 +188,31 @@ const WORLD = (() => {
       types: [], rate: 0,
       exits: [{ edge: 's', a: 12, b: 13, to: 'town' }],
       arrive: { s: [12.9, H - 1.4] }, spawn: [12.9, H - 1.4]
+    };
+  }
+  // ---------- The Arena: a zone that is the ring itself, off the Ashwood Trail (no wild critters). Meaning: where you stand with your critter in front of others; the road from the trail leads straight through the gate, and someone is always watching. ----------
+  function buildArena() {
+    const W = 26, H = 20, m = [];
+    for (let y = 0; y < H; y++) m.push(new Array(W).fill('X'));
+    const set = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < H) m[y][x] = c; };
+    const ring = { id: 'ring', name: 'The Arena', x: 0, y: 0, w: W, h: H, kind: 'arena', gate: 'e', inert: true, door: [W - 2, 9] };
+    const cx = W * 8, cy = H * 8 + 2, rx = W * 8 - 1, ry = H * 8 - 3;   // the same ellipse the painter draws (16 px tiles); the ring fills the map, the corners are its apron
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const dx = (x + 0.5) * 16 - cx, dy = (y + 0.5) * 16 - cy, rr = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)), gate = dx > rx * 0.45 && Math.abs(dy) <= 16;
+      set(x, y, gate ? '=' : rr < 0.5 ? '.' : 'X');   // the stands, the wall and the apron are solid; the floor is sand and the gate a road from the east edge
+    }
+    const bell = { id: 'bell', name: 'Arena bell', x: 13, y: 9, w: 1, h: 1, kind: 'device', door: [12, 9], open: 'battle' };
+    set(13, 9, 'O');
+    const objects = [
+      { id: 'names', kind: 'namewall', x: 8, y: 6, reach: 1.7, text: 'Names scratched into the rail in every kind of hand. None is crossed out.' },
+      { id: 'bench', kind: 'bench', x: 8, y: 13, reach: 1.7, text: 'A bench at the edge of the sand, worn in two places side by side.' },
+      { id: 'pail', kind: 'bucket', x: 18, y: 13, reach: 1.7, text: 'A bucket of water and a cloth, for after.' }
+    ];
+    objects.forEach((o) => set(o.x, o.y, 'O'));
+    return {
+      id: 'arena', name: 'The Arena', theme: THEMES['route-cm'], grid: m, W, H, places: [ring, bell], objects: objects, signs: [],
+      types: [], rate: 0,
+      exits: [], arriveFrom: {}, arrive: {}, spawn: [W - 1.4, 10.2]
     };
   }
   // ---------- cities ----------
@@ -294,7 +328,7 @@ const WORLD = (() => {
     M.exits.push({ edge: edge, a: a, b: a + 1, to: to });
     M.arriveFrom = Object.assign({}, M.arriveFrom, { [to]: arrive });
   }
-  const MAPS = { town: buildTown(), peak: buildPeak(), ascent: buildAscent(), descent: buildDescent(), mossbrook: buildMossbrook(), frosthold: buildCity(CITY_CFG.frosthold), cinderport: buildCity(CITY_CFG.cinderport), coralbay: buildCity(CITY_CFG.coralbay), frost: buildZone('frost'), ember: buildZone('ember'), moss: buildZone('moss'), tide: buildZone('tide'),
+  const MAPS = { town: buildTown(), peak: buildPeak(), arena: buildArena(), ascent: buildAscent(), descent: buildDescent(), mossbrook: buildMossbrook(), frosthold: buildCity(CITY_CFG.frosthold), cinderport: buildCity(CITY_CFG.cinderport), coralbay: buildCity(CITY_CFG.coralbay), frost: buildZone('frost'), ember: buildZone('ember'), moss: buildZone('moss'), tide: buildZone('tide'),
     'route-mf': buildZone('route-mf'), 'route-cm': buildZone('route-cm'), 'route-fc': buildZone('route-fc'), 'route-cc': buildZone('route-cc') };
   linkEdge(MAPS.moss, 'w', 14, 'mossbrook', [1.2, 15.2]);
   MAPS.moss.grid[12][3] = 'G'; MAPS.moss.signs.push({ x: 3, y: 12, to: 'mossbrook', text: 'West: Mossbrook village, home of Elder Wren.' });
@@ -510,6 +544,9 @@ const WORLD = (() => {
     props: [['route-cc-pier', 'cairn', [24, 9], 'Shells in a spiral. Someone counted.'], ['route-cc-shoals', 'cairn', [10, 9], 'The tide line is higher on this side than it should be.'], ['route-cc-steam', 'cairn', [10, 20], 'Warm to the touch, in the middle of a cold hour.'], ['route-cc-drowned', 'cairn', [22, 9], 'Fruit trees, standing in the water. They are in blossom.']],
     posts: [['coralbay', 's', 28, 'South: the Reef Causeway (Tide and Ember critters), the road to Cinderport.'], ['cinderport', 'e', 13, 'East: the Reef Causeway (Tide and Ember critters), the road to Coralbay.']] });
   NETS.forEach(buildNet);
+  addProp(MAPS.town, 'well', [33, 25], 'A well. The bucket is up, and full. Someone drew it before you came.');
+  connect(MAPS['route-cm'], 'w', 20, MAPS.arena, 'e', 9);   // the Arena: a clearing west of the Ashwood Trail (mid game: the trail opens at level 6)
+  if (PXW.PAL['route-cm']) PXW.PAL.arena = PXW.PAL['route-cm'];
   addTrail(MAPS.ascent, 's', [14, 10], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
   addTrail(MAPS.descent, 'n', [14, 62], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
   addSpot(MAPS.mossbrook, { id: 'c-growth', kind: 'growthpost', text: 'Notches, each a little higher than the last.' }, 19, 10, false);
@@ -619,7 +656,7 @@ const WORLD = (() => {
     Rm.arriveFrom = Object.assign({}, Rm.arriveFrom, { 'dg-arch': [sx + 0.5, sy + 1.6] });
   })();
   // ---------- house interiors: every city house gets a room (door on the outside, exit through the bottom) ----------
-  const ROOM_STYLE = { town: { floor: '#B07A46', wall: '#F4EAD6', rug: '#D8574A', bed: '#D8574A', mat: 'timber' }, lab: { floor: '#C9CFDA', wall: '#E8EEF8', rug: '#3C6FE0', bed: '#3C6FE0', mat: 'timber' }, mossbrook: { floor: '#B07A46', wall: '#D9B98A', rug: '#4E8A3A', bed: '#4FB06D', mat: 'log' }, frosthold: { floor: '#9AA3B5', wall: '#C9D3E6', rug: '#3C6FE0', bed: '#8FD8EA', mat: 'stone' }, cinderport: { floor: '#4A3A38', wall: '#8A4A3A', rug: '#FF7A45', bed: '#C0503A', mat: 'brick' }, coralbay: { floor: '#D9C29A', wall: '#F4F0E6', rug: '#3C95DC', bed: '#3C95DC', mat: 'shell' }, shrine: { floor: '#9AA3B5', wall: '#C9D3E6', rug: '#FFD86B', bed: '#FFD86B', mat: 'stone' }, arena: { floor: '#E8D3A2', wall: '#C2A06A', rug: '#D8574A', bed: '#D8574A', mat: 'timber' }, watch: { floor: '#6E6A94', wall: '#8F8BB4', rug: '#F5C542', bed: '#F5C542', mat: 'stone' } };
+  const ROOM_STYLE = { town: { floor: '#B07A46', wall: '#F4EAD6', rug: '#D8574A', bed: '#D8574A', mat: 'timber' }, lab: { floor: '#C9CFDA', wall: '#E8EEF8', rug: '#3C6FE0', bed: '#3C6FE0', mat: 'timber' }, mossbrook: { floor: '#B07A46', wall: '#D9B98A', rug: '#4E8A3A', bed: '#4FB06D', mat: 'log' }, frosthold: { floor: '#9AA3B5', wall: '#C9D3E6', rug: '#3C6FE0', bed: '#8FD8EA', mat: 'stone' }, cinderport: { floor: '#4A3A38', wall: '#8A4A3A', rug: '#FF7A45', bed: '#C0503A', mat: 'brick' }, coralbay: { floor: '#D9C29A', wall: '#F4F0E6', rug: '#3C95DC', bed: '#3C95DC', mat: 'shell' }, arena: { floor: '#E8D3A2', wall: '#C2A06A', rug: '#D8574A', bed: '#D8574A', mat: 'timber' }, watch: { floor: '#6E6A94', wall: '#8F8BB4', rug: '#F5C542', bed: '#F5C542', mat: 'stone' } };
   const ROOM_LAYOUTS = [
     { b: [[1, 2], [2, 2]], s: [[8, 2], [9, 2], [10, 2]], t: [[5, 4], [6, 4]], p: [[1, 7], [10, 7]], r: [4, 5, 7, 6] },
     { k: [[1, 2], [2, 2], [3, 2]], t: [[8, 5], [9, 5]], b: [[9, 2], [10, 2]], p: [[1, 7]], h: [[10, 7]], r: [3, 4, 6, 6] },
@@ -639,6 +676,12 @@ const WORLD = (() => {
   // Clover's house (Fennel is out): someone who keeps the kettle on for a person who is not back yet. Mosscap Cottage: what the forest gives to someone who goes back every day (Wil is home only after dusk, like the note on the door says).
   // Bryn's house: being believed in while you are still looking (every drawing is a shiny critter; the jar is for when, not if).
   const CITY_ROOMS = {
+    // Sproutvale (where you are kept). Pip's house: what a child brings home is kept (a bed made, finds on the sill with their dates, a bowl that is not the same size as the others).
+    // Mira's house: the shelf is kept full for whoever comes (every potion labelled in one hand, a ledger where giving runs longer than selling, a second cup).
+    'house-pip': { layout: { b: [[1, 2], [2, 2]], t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] },
+      objects: [{ id: 'bed', kind: 'smallbed', x: 1, y: 7, text: 'A small bed, made. On the pillow: a stone and a feather, brought in from outside.' }, { id: 'finds', kind: 'jars', x: 6, y: 2, text: 'Jars on the sill: a beetle, a seed, a blue stone. Each one has a date.' }, { id: 'bowls', kind: 'bowls', x: 10, y: 2, text: 'Three bowls on the table. Two are the same size.' }] },
+    'house-mira': { layout: { k: [[1, 2], [2, 2], [3, 2]], t: [[5, 4], [6, 4]], p: [[10, 7]], r: [4, 5, 7, 6] },
+      objects: [{ id: 'shelf', kind: 'jars', x: 6, y: 2, text: 'Potions on the shelf, every label in the same careful hand. The shelf is full.' }, { id: 'ledger', kind: 'ledger', x: 9, y: 2, text: 'A ledger, open. The column for what was given away runs longer than the one for what was sold.' }, { id: 'kettle', kind: 'kettle', x: 1, y: 6, text: 'The kettle is on. Two cups; one has no ring in it.' }] },
     'house-fennel': { layout: { b: [[9, 2], [10, 2]], t: [[5, 4], [6, 4]], p: [[1, 7]], r: [4, 4, 7, 6] },
       objects: [{ id: 'kettle', kind: 'kettle', x: 2, y: 2, text: 'The kettle is on. The cups are out, both of them.' }, { id: 'chair', kind: 'armchair', x: 10, y: 6, text: 'The cushion is worn in the shape of someone else.' }, { id: 'jars', kind: 'jars', x: 5, y: 2, text: 'Jars with dates on the lids. The newest says this week.' }] },
     'house-moss': { layout: { b: [[1, 2], [2, 2]], t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] },
@@ -662,7 +705,7 @@ const WORLD = (() => {
     'cb-b': { layout: { b: [[9, 2], [10, 2]], r: [3, 4, 6, 6] }, objects: [{ id: 'nets', kind: 'nets', x: 3, y: 2, text: 'Nets hung to dry. The mended places are a different colour.' }, { id: 'work', kind: 'network', x: 1, y: 6, text: 'A net spread on the floor, half mended, the needle still in it.' }, { id: 'stool', kind: 'stool', x: 6, y: 5, text: 'A low stool. The legs are wrapped in net cord where they split.' }] },
     'cb-c': { layout: { t: [[8, 5], [9, 5]], r: [3, 4, 6, 6] }, objects: [{ id: 'shells', kind: 'shellrows', x: 3, y: 2, text: 'Shells on a shelf in rows, each on its own square of cloth. One square is empty.' }, { id: 'bed', kind: 'smallbed', x: 9, y: 2, text: 'A small bed. Sand in the blanket.' }, { id: 'bucket', kind: 'bucket', x: 10, y: 7, text: 'A bucket by the door, still wet.' }] }
   };
-  ['mossbrook', 'frosthold', 'cinderport', 'coralbay'].forEach((cid) => MAPS[cid].places.filter((p) => p.open === 'house').forEach((p, i) => {
+  ['town', 'mossbrook', 'frosthold', 'cinderport', 'coralbay'].forEach((cid) => MAPS[cid].places.filter((p) => p.open === 'house').forEach((p, i) => {
     const id = 'in-' + p.id; MAPS[id] = buildInterior(id, p, cid, i, CITY_ROOMS[p.id] || {}); p.enter = id;
     MAPS[cid].arriveFrom = Object.assign({}, MAPS[cid].arriveFrom, { [id]: [p.door[0] + 0.9, p.door[1] + 1.5] });
   }));
@@ -678,15 +721,11 @@ const WORLD = (() => {
     MAPS[id] = buildInterior(id, P0, 'town', i, opt); P0.enter = id;
     MAPS.town.arriveFrom = Object.assign({}, MAPS.town.arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + 1.5] });
   });
-  // the Roll Shrine, the Arena and the Long Watch have rooms too (Meaning, Sproutvale: where you are kept. The shrine gives without being asked, and others were here before you; the arena is where you stand with your critter in front of others; the Watch's lobby is the watch itself: a bench, a blanket, lamps that stay lit, the stair)
-  [['town', 'shrine', 'in-shrine', { W: 12, H: 9, style: 'shrine', layout: { a: [[5, 2], [6, 2]], p: [[1, 2], [10, 2]], r: [4, 3, 7, 6] }, places: [{ id: 'altar', name: 'Roll altar', x: 5, y: 2, w: 2, h: 1, kind: 'device', door: [5, 2], open: 'roll' }],
-      objects: [{ id: 'offer', kind: 'offerings', x: 2, y: 5, text: 'A bowl by the altar: petals, a button, a blue stone, a bottle cap. Left by people who were here before you.' }, { id: 'cand', kind: 'candles', x: 9, y: 5, text: 'Candles in a row. None has burned to the end. Somebody replaces them.' }] }],
-   ['town', 'arena', 'in-arena', { W: 14, H: 10, style: 'arena', layout: { n: [[6, 2]], r: [3, 3, 10, 7] }, places: [{ id: 'bell', name: 'Arena bell', x: 6, y: 2, w: 1, h: 1, kind: 'device', door: [6, 2], open: 'battle' }],
-      objects: [{ id: 'names', kind: 'namewall', x: 2, y: 2, text: 'Names scratched into the wall in every kind of hand. None is crossed out.' }, { id: 'bench', kind: 'bench', x: 11, y: 2, text: 'A bench facing the ring, worn in two places side by side.' }, { id: 'pail', kind: 'bucket', x: 12, y: 8, text: 'A bucket of water and a cloth, for after.' }] }],
-   ['peak', 'tower', 'in-tower', { W: 12, H: 9, style: 'watch', duelHall: true, layout: { x: [[5, 2], [6, 2]], r: [4, 4, 7, 6] }, places: [{ id: 'stair', name: 'The stair', x: 5, y: 2, w: 2, h: 1, kind: 'device', door: [5, 2], open: 'tower' }],
+  // the Long Watch has a room too (Meaning: the Watch's lobby is the watch itself: a bench, a blanket, lamps that stay lit, the stair)
+  [['peak', 'tower', 'in-tower', { W: 12, H: 9, style: 'watch', duelHall: true, layout: { x: [[5, 2], [6, 2]], r: [4, 4, 7, 6] }, places: [{ id: 'stair', name: 'The stair', x: 5, y: 2, w: 2, h: 1, kind: 'device', door: [5, 2], open: 'tower' }],
       objects: [{ id: 'wl1', kind: 'walllamp', x: 2, y: 2, text: 'A lamp on the wall. It does not go out.' }, { id: 'wl2', kind: 'walllamp', x: 9, y: 2, text: 'A lamp on the wall. It does not go out.' }, { id: 'bb', kind: 'blanketbench', x: 1, y: 6, text: 'A bench with a folded blanket. Somebody sleeps here between watches.' }, { id: 'wlog', kind: 'logbook', x: 10, y: 6, text: 'A book of names and floors, one line a night. The last line is from last night.' }] }]].forEach(([pm, pid, id, opt], i) => {
     const P0 = MAPS[pm].places.find((p) => p.id === pid); MAPS[id] = buildInterior(id, P0, pm, i, opt); P0.enter = id;
-    MAPS[pm].arriveFrom = Object.assign({}, MAPS[pm].arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + 1.5] });
+    MAPS[pm].arriveFrom = Object.assign({}, MAPS[pm].arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + (P0.door[1] === P0.y ? -0.5 : 1.5)] });   // out of a north-facing door you stand above it
   });
   [['moss', ' Mossbrook lies past the far side.'], ['frost', ' The road continues north to Frosthold.'], ['ember', ' The road continues south to Cinderport.'], ['tide', ' A boardwalk leads east to Coralbay.']].forEach(([z, t]) => { MAPS[z].signs[0].text += t; });
   let M = MAPS.town;
@@ -727,12 +766,6 @@ const WORLD = (() => {
   function drawPlace(g, p) {
     const px = p.x * TS, py = p.y * TS, pw = p.w * TS, ph = p.h * TS;
     g.fillStyle = 'rgba(20,50,20,0.25)'; g.beginPath(); g.ellipse(px + pw / 2, py + ph + 2, pw / 2 + 4, 8, 0, 0, 6.3); g.fill();
-    if (p.kind === 'shrine') {
-      g.fillStyle = '#B9C3D6'; g.beginPath(); g.ellipse(px + pw / 2, py + ph / 2 + 18, pw / 2, ph / 2 - 6, 0, 0, 6.3); g.fill();
-      g.fillStyle = '#D7DEEA'; g.beginPath(); g.ellipse(px + pw / 2, py + ph / 2 + 12, pw / 2 - 10, ph / 2 - 14, 0, 0, 6.3); g.fill();
-      [[-60, 0], [60, 0], [-34, -24], [34, -24]].forEach(([ox, oy]) => { g.fillStyle = '#9AA6BF'; g.fillRect(px + pw / 2 + ox - 6, py + ph / 2 + oy - 20, 12, 34); g.fillStyle = '#C9D3E6'; g.fillRect(px + pw / 2 + ox - 6, py + ph / 2 + oy - 20, 12, 5); });
-      return;
-    }
     if (p.kind === 'arena') {
       g.fillStyle = '#C2A06A'; g.beginPath(); g.ellipse(px + pw / 2, py + ph / 2, pw / 2, ph / 2, 0, 0, 6.3); g.fill();
       g.fillStyle = '#E8D3A2'; g.beginPath(); g.ellipse(px + pw / 2, py + ph / 2, pw / 2 - 14, ph / 2 - 14, 0, 0, 6.3); g.fill();
@@ -863,7 +896,7 @@ const WORLD = (() => {
     const tx = P.x / TS, ty = P.y / TS; let best = null, bd = 1.7;
     (NPCS[M.id] || []).forEach((n) => { if (n.hidden) return; const d = Math.hypot(tx - (n.x + 0.5), ty - (n.y + 0.9)); if (d < 1.45 && d < bd + 0.3) { bd = Math.min(bd, d); best = { kind: 'npc', npc: n }; } });
     if (best) return best;
-    M.places.forEach((p) => { const [dx, dy] = p.door; const d = Math.hypot(tx - (dx + 1), ty - (dy + 1.1)); if (d < bd) { bd = d; best = { kind: 'place', place: p }; } });
+    M.places.forEach((p) => { if (p.inert) return; const [dx, dy] = p.door; const d = Math.hypot(tx - (dx + 1), ty - (dy + (dy === p.y && p.h > 1 ? -0.1 : 1.1))); if (d < bd) { bd = d; best = { kind: 'place', place: p }; } });   // a door on the top row of a building is stood at from above (the Arena's gate)
     M.signs.forEach((s) => { const d = Math.hypot(tx - (s.x + 0.5), ty - (s.y + 0.5)); if (d < Math.min(bd, 1.6)) { bd = d; best = { kind: 'sign', sign: s }; } });
     (M.objects || []).forEach((o) => { if (o.hidden) return; const d = Math.hypot(tx - (o.x + 0.5), ty - (o.y + 0.5)); if (d < Math.min(bd, o.reach || 1.7)) { bd = d; best = { kind: 'object', obj: o }; } });
     if (!best && !(M.theme && M.theme.lava) && !M.interior) { // fishing: water next to you
@@ -1016,7 +1049,7 @@ const WORLD = (() => {
   // snow settles on the roofs of ordinary buildings
   function snowCaps(cx, cy) {
     M.places.forEach((p) => {
-      if (p.w < 3 || ['board', 'device', 'shrine'].indexOf(p.kind) !== -1) return;
+      if (p.w < 3 || ['board', 'device', 'arena'].indexOf(p.kind) !== -1) return;
       const x = Math.round(p.x * TS - cx), y = Math.round(p.y * TS - cy), w = p.w * TS; if (x > vw + 40 || x + w < -40 || y > vh + 40 || y + p.h * TS < -40) return;
       const roofH = Math.round(p.h * TS * 0.5), capH = Math.max(12, Math.round(roofH * 0.36) & ~1);
       ctx.fillStyle = 'rgba(255,255,255,0.96)'; ctx.fillRect(x + 6, y + 2, w - 12, 4); ctx.fillRect(x + 2, y + 6, w - 4, capH - 4);

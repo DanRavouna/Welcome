@@ -1,15 +1,13 @@
-ok shrine door: Enter the shrine | Enter the shrine
-ok it leads into the shrine room
-ok shrine: the offerings and the candles are there
-ok by the altar: Roll a critter | Roll a critter
-ok the altar opens the Roll screen | roll
-ok shrine: no line is a tip
-ok walking out of the shrine returns to Sproutvale
-ok arena door: Enter the arena
-ok it leads into the arena
-ok arena: names on the wall, a bench, a bucket
-ok by the bell: Ring the bell | Ring the bell
+ok by the Arena bell: Ring the bell | Ring the bell
 ok the bell opens the battle screen | battle
+ok arena: names on the rail, a bench, a bucket, out on the sand
+ok the zone is the ring: the road from the east edge runs through the gate onto the sand, the stands and the corners are solid | ['XXXXXXX............XXXXXXX', 'XXXXXXX......O.....=======', 'XXXXXXX............=======', 'XXXXXXX............XXXXXXX']
+ok the Arena hangs off the Ashwood Trail, nowhere else
+ok Pip's door: Go inside | Go inside
+ok it leads into Pip's house
+ok Pip's room: a small bed, finds in jars, bowls
+ok Mira's room: the shelf, the ledger, the kettle
+ok town rooms: no line is a tip
 ok tower door: Enter the Tower
 ok without four seals the door refuses and you stay outside | The Long Watch is for those who hold all # Leader Seals. You hold #.
 ok with four seals it leads into the lobby of the Watch

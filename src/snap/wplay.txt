@@ -1,4 +1,4 @@
-reveal class: reveal-a | same element after typing (no restart): True | focus kept: seedField seedField | value: 123
 kept after Keep: 1
 dex shows kept critter: 1
+after reload: {'kept': 1, 'wins': 0, 'pos': {'x': 401, 'y': 339}, 'tip': True} | position before: {'x': 401.49912874289726, 'y': 339.2}
 page errors: none
