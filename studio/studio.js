@@ -97,7 +97,7 @@
     return sh;
   }
   function closeSheet() { $('sheet').hidden = true; $('sheet').innerHTML = ''; }
-  window.STUDIO.closeSheet = closeSheet;
+  window.STUDIO.closeSheet = closeSheet; window.STUDIO.sheet = sheet; window.STUDIO.markDirty = markDirty;
 
   // ---------- road ----------
   function viewRoad() {
