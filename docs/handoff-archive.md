@@ -451,3 +451,22 @@ Humans read in metaphor. The game is the greater meaning; the quest is inside it
 Endgame phase is complete (Tower, shinies, milestones/titles all live).
 Cities + route loop are live. Dan declined dailies and the rival for now. Next ideas: real-phone playtest + stats (the cities already have distinct layouts; only the four routes share the zone builder's structure). Waiting on Dan's phone playtest + stats. Candidate features: weekly Tower twist, daily challenge battle, Tower leaderboard (only if friends play). Housekeeping: split the test run, split app.js, and keep balance checks per change. Real-phone check of Tower, shiny sparkle/vibration and titles still pending.
 
+
+
+## To-do notes of Nov 5 2026 (kept from branch claude/tender-darwin-wisgq9 before it was deleted; most items were built later, see the core handoff)
+
+### The notes
+- [ ] "Should be online eventually" (Dan, 2026-11-05). Wording is vague: not yet confirmed whether it means online play/multiplayer, more online features beyond cloud saves, or something else. Ask Dan before building. Cloud saves already exist (see "GitHub Pages + online saves").
+- [ ] Update the visuals of the houses (Dan, 2026-11-05). Per CLAUDE.md, write the one-sentence "Meaning" for the houses before changing them, and refine it with Dan. Details (which houses, what style) not given yet.
+- [ ] Attacks unlock with evolution (Dan, 2026-11-05): base form starts with 1 attack, next evolution 2, next 3, and the final (ultimate) form has all 4. Open: how this maps onto critters with fewer than 3 evolution stages, and what happens to existing saves whose critters already know more moves (must keep loading, no progress dropped). This changes balance, so run the balance sims after.
+- [ ] Set up events with a storyline (Dan, 2026-11-05). Details not given yet (what kind of events, how they tie into the quest). Per CLAUDE.md, each event needs its one-sentence "Meaning" inside the quest before it is built, and it should hint rather than tell.
+- [ ] Update the general visuals of the world (Dan, 2026-11-05): many places look bare ("lines"), missing rocks and small formations to make them feel lively. Needs a pass over the places to find the empty ones. Per CLAUDE.md, props must serve each place's meaning, not just fill space. Related to the houses visuals item above.
+
+### Answers from Dan (2026-11-05), to the notes above
+- Online = multiplayer. Cloud saves already exist; multiplayer is a separate, later feature.
+- Attacks: spread across evolution stages so short lines still reach 4 attacks at the final form. Not answered: what happens to existing saves whose critters already know more moves (they must keep loading with no progress dropped).
+- Events: all three kinds (story moments, timed/seasonal, boss/battle events), tied to the storyline.
+- Visuals (houses and world): do ONE place first; once its quality is right, apply that level to all places. Which place goes first is not chosen yet.
+- Follow-up answers (Dan, 2026-11-05): first place for the visuals pass is Mossbrook. Attacks: existing saves stay as they are for now (critters keep the moves they know); this is a later task anyway.
+- [ ] Vary the attacks (Dan, 2026-11-05): currently all attacks do the same thing at different intensities. They need to differ in kind, not just strength. Ties in with the evolution-unlocked attacks item (each unlocked attack should feel different). Balance impact: run the balance sims after.
+- [ ] More work on the attack VFX (Dan, 2026-11-05). Builds on the earlier attack visual effects work (see "Attack visual effects" in this file). Should follow the attack variety so each attack kind gets its own look.
