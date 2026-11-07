@@ -22,11 +22,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble the site (the shelf page, the built games and the vendored library only)
+      - name: Assemble the site (the shelf, the engine, the player, the studio, the games and the vendored library)
         run: |
           mkdir -p site
-          cp index.html site/
-          cp -r games site/
+          cp index.html shelf.js site/
+          cp -r games engine play studio vendor site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#E8641E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap">
+<script src="vendor/supabase-2.118.0.js" async onerror="window.__supaFailed=true"></script>
 <style>
 :root{--bg:#E8641E;--stripe:#CC4D0F;--cart:#5BB8B2;--cart-dk:#2F7F7C;--cart-lt:#A8E6DF;--win:#0E0E16;--shadow:#6A2406;
 --bar:#0F0D12;--bar-edge:#F04AD8;--bar-edge-dk:#8F1F82;--ink:#FFFFFF;--empty:#8F8D93;--empty-dk:#55535B;--empty-lt:#C4C2C8;--empty-win:#2A2830}
@@ -39,14 +40,22 @@ font-size:clamp(10px,2.1vw,22px);line-height:1;text-transform:uppercase;letter-s
 .bar .t{flex:3;min-width:0}.bar .y{flex:1;text-align:center;min-width:5ch}.bar .r{flex:2;text-align:center;min-width:0}
 @media(max-width:640px){.bar>div{padding:14px 8px 12px}.bar .y{display:none}}
 @media(prefers-reduced-motion:reduce){.cart{transition:none}}
+#acct-btn{position:fixed;top:10px;right:10px;background:var(--bar);color:#fff;border:3px solid var(--bar-edge);padding:8px 10px;font:inherit;font-size:10px;text-transform:uppercase;cursor:pointer}
+#acct-box{position:fixed;top:48px;right:10px;width:min(92vw,340px);background:var(--bar);border:3px solid var(--bar-edge);padding:12px;font:13px/1.4 system-ui,sans-serif;z-index:2}
+.acct input{width:100%;margin:4px 0;padding:8px;font:inherit;background:#1a1820;color:#fff;border:1px solid #555;border-radius:4px}
+.acct button{font:inherit;padding:6px 10px;margin:4px 4px 0 0;background:#2a2735;color:#fff;border:1px solid #666;border-radius:4px}
+.acct-note{display:block;margin-top:6px;opacity:.8}
 </style>
 </head>
 <body>
 <main>
 <ul class="shelf" id="shelf" aria-label="Games"></ul>
 </main>
+<button id="acct-btn" type="button" aria-expanded="false" aria-controls="acct-box">Account</button>
+<div id="acct-box" hidden></div>
 <div class="bar" id="bar" aria-live="polite"><div class="t" id="bar-t">01 Critter Roll</div><div class="y" id="bar-y">2026</div><div class="r" id="bar-r">-No record-</div></div>
 <script src="games/index.js"></script>
+<script src="shelf.js"></script>
 <script>
 (() => {
   // Pixel art for each cartridge window, drawn from a character map (one char = one pixel) so a label can be edited by hand.
@@ -99,6 +108,10 @@ font-size:clamp(10px,2.1vw,22px);line-height:1;text-transform:uppercase;letter-s
     else if (e.key === 'Enter' && document.activeElement !== sel) { sel.click(); return; } else return;
     j = Math.min(games.length - 1, Math.max(0, j)); e.preventDefault(); games[j].focus();
   });
+  // one account for the shelf: the panel opens from the corner; saves of engine games follow the player
+  const ab = document.getElementById('acct-btn'), abox = document.getElementById('acct-box');
+  ab.onclick = () => { const open = abox.hidden; abox.hidden = !open; ab.setAttribute('aria-expanded', String(open)); };
+  if (window.SHELFCLOUD) { SHELFCLOUD.panel(abox); SHELFCLOUD.onChange((st) => { ab.textContent = st.email ? 'Account ✓' : 'Account'; }); SHELFCLOUD.init(); }
   window.__shelf = { games: games.length, slots: SLOTS, record: () => document.getElementById('bar-r').textContent, tapDoor: () => { for (let i = 0; i < 5; i++) last.click(); } };
 })();
 </script>

@@ -20,6 +20,8 @@ html,body{margin:0;height:100%;background:#0b0b10;color:#fff;font-family:system-
 <div id="top"><a href="../">◀ Shelf</a><span id="name"></span><button id="mute" type="button" aria-pressed="false">Sound</button></div>
 <div id="hint">Drag left to walk · tap right to act</div>
 <div id="msg">Loading…</div>
+<script src="../vendor/supabase-2.118.0.js" onerror="window.__supaFailed=true"></script>
+<script src="../shelf.js"></script>
 <script src="../engine/engine.js"></script>
 <script>
 (async () => {
@@ -33,13 +35,16 @@ html,body{margin:0;height:100%;background:#0b0b10;color:#fff;font-family:system-
   } catch (e) { msg.textContent = 'This cartridge is empty. ' + (e.message || ''); return; }
   document.getElementById('name').textContent = game.name || id; document.title = game.name || 'Play';
   const KEY = 'shelf:' + id + ':save';
-  const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }, set(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} if (window.SHELFCLOUD) window.SHELFCLOUD.push(id, s); } };
+  const local = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
+  // local first; when signed in, the cloud copy is pulled and the newer one wins
+  if (window.SHELFCLOUD) { await SHELFCLOUD.init(); const c = await SHELFCLOUD.pull(id); const l = local(); if (c && (!l || (c.t || 0) > (l.t || 0))) { try { localStorage.setItem(KEY, JSON.stringify(c)); } catch (e) {} } }
+  const store = { get: local, set(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} if (window.SHELFCLOUD) SHELFCLOUD.push(id, s); } };
   msg.hidden = true;
   ENGINE.load(game, { container: document.getElementById('stage'), save: store });
   ENGINE.start();
   const mute = document.getElementById('mute'); let m = false;
   mute.onclick = () => { m = !m; ENGINE.audio.unlock(); ENGINE.audio.mute(m); mute.setAttribute('aria-pressed', String(m)); mute.textContent = m ? 'Muted' : 'Sound'; };
-  document.addEventListener('visibilitychange', () => { if (document.hidden) ENGINE.flushSave(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { ENGINE.flushSave(); if (window.SHELFCLOUD) SHELFCLOUD.flush(id, ENGINE.save()); } });
   setTimeout(() => { document.getElementById('hint').style.display = 'none'; }, 6000);
 })();
 </script>
