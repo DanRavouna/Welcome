@@ -171,5 +171,5 @@ Recorded as given. They are inputs to the process conversation, not the process.
 5. **Feel:** Dan plays in batches; corrections come back together.
 6. **How a revision starts:** I ask questions until I can say back what he wants; no rebuild before he confirms.
 7. **Building to find out:** part of the method for placeholders only; nothing finished is built before its station is filled.
-8. **The engine branch from this morning:** dropped. Its plan and format v1 are kept under `docs/engine-branch-notes/`; the branch tip is kept as the tag `archive/engine-cut-nov7`. The engine starts fresh later, after the process is defined.
+8. **The engine branch from this morning:** dropped. Its plan and format v1 are kept under `docs/engine-branch-notes/`; this session's GitHub access cannot delete branches or push tags (the server refuses both), so the branch itself stays on GitHub untouched as its own archive; Dan can delete it there if he wants it gone. The engine starts fresh later, after the process is defined.
 9. **The shelf:** a cartridge carries number, name, year and record, as now. The game speaks for itself once opened.
