@@ -1,0 +1,45 @@
+# When mapedits.json changes on main (the map editor's Submit button pushes it), rebuild index.html, run the smoke tests,
+# commit the build and deploy. The standing rule "index.html is built and committed, never edited by hand" is kept: this is the
+# same python3 src/build2.py, run here because the editor page has no shell. If the tests fail nothing is committed and GitHub emails the owner.
+name: Build from map edits
+on:
+  push:
+    branches: [main]
+    paths: [src/world/mapedits.json]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: mapedits
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install the test browser
+        run: |
+          pip install playwright==1.63.0
+          python -m playwright install --with-deps chromium
+      - name: Build
+        run: python3 src/build2.py
+      - name: Smoke tests
+        run: |
+          sudo mkdir -p /mnt/user-data/outputs && sudo chown -R "$USER" /mnt/user-data
+          bash src/test-setup.sh
+          bash src/run-tests.sh @smoke
+      - name: Commit the build
+        run: |
+          git config user.name "map editor"
+          git config user.email "noreply@github.com"
+          git add index.html
+          git diff --cached --quiet && echo "index.html unchanged" || git commit -m "Build index.html from map edits"
+          git push
+      - name: Deploy (a push made by a workflow does not start the Pages workflow by itself)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run pages.yml --ref main
