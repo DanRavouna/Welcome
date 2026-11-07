@@ -1248,8 +1248,24 @@ const WORLD = (() => {
     if (opts.onMap) opts.onMap(M);
     requestAnimationFrame(frame);
   }
+  // ---- Map edits: tiles changed by hand in editor.html (Dan, Nov 2026), applied on top of the generated maps ----
+  // MAPEDITS (built from mapedits.json) holds { mapId: { cells: [[x, y, 'T'], ...] } }. Only plain terrain tiles are touched: signs, objects and building footprints (G, O, X) and interiors never change.
+  // With ?mapedits=local the draft saved by the editor in this browser is applied as well (to playtest before committing).
+  const EDIT_TILES = '.,=WZ~TRFC';
+  function applyMapEdits(src) {
+    Object.keys(src || {}).forEach((id) => {
+      const m = MAPS[id]; if (!m || m.interior) return;
+      ((src[id] || {}).cells || []).forEach((c) => { const row = m.grid[c[1]]; if (!row || c[0] < 0 || c[0] >= m.W) return; if (EDIT_TILES.indexOf(row[c[0]]) === -1 || EDIT_TILES.indexOf(c[2]) === -1) return; row[c[0]] = c[2]; });
+    });
+  }
+  if (!window.__EDITOR) {
+    applyMapEdits(typeof MAPEDITS !== 'undefined' ? MAPEDITS : {});
+    try { if (/[?&]mapedits=local/.test(location.search)) applyMapEdits(JSON.parse(localStorage.getItem('critter-roll:mapedits-draft') || '{}')); } catch (e) { /* no draft */ }
+    // #mapedits=<base64 json>: the draft carried in the URL by an editor hosted elsewhere (for example a private claude.ai page); the edits are applied for this visit only, nothing is stored.
+    try { const h = /[#&]mapedits=([^&]+)/.exec(location.hash); if (h) applyMapEdits(JSON.parse(decodeURIComponent(escape(atob(h[1].replace(/-/g, '+').replace(/_/g, '/')))))); } catch (e) { /* bad draft in the URL */ }
+  }
   return {
-    init, input, nearest, MAPS, ZONES, TS, collides, enter, go, nextHop, NETS: NET_META, get objects() { return M.objects || []; },
+    init, input, nearest, MAPS, ZONES, TS, SOLID, EDIT_TILES, applyMapEdits, collides, enter, go, nextHop, NETS: NET_META, get objects() { return M.objects || []; },
     // clear tiles (and the objects standing on them) of a map, e.g. rubble after the rite; redraws the ground if it is the current map
     // open or close a gate (all objects with `gate: id`): hidden + walkable when open, solid when closed
     setGate: (mapId, gateId, open) => { const m = MAPS[mapId]; if (!m) return; (m.objects || []).forEach((o) => { if (o.gate !== gateId) return; o.hidden = !!open; m.grid[o.y][o.x] = open ? '.' : 'O'; }); },
