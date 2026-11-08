@@ -901,10 +901,10 @@ class Component extends Base {
       return { name: tn, color: TCOL[tn], count: cells.filter((x) => x.found).length + '/6', cells: dexMissing ? cells.filter((x) => !x.found) : cells };
     }).filter((r) => r.cells.length > 0);
     const speciesChips = [chip('All species', !dexMissing, () => this.setState({ dexMissing: false })), chip('Not yet found', dexMissing, () => this.setState({ dexMissing: true }))];
-    // the bonus species (#49, #50): each shows as ??? once its door has been opened and for good once found; never part of the 48
+    // the bonus species (#49 to #52): each shows only once found (no ??? row announces a secret); never part of the 48
     const bonusDefs = [[SECRET_SEED, !!(st.adv && st.adv.open && st.adv.open.arch)], [SECRET2_SEED, !!(st.adv && st.adv.open && st.adv.open.lamp)], [SECRET3_SEED, !!(st.adv && st.adv.open && st.adv.open.forge)], [SECRET4_SEED, !!(st.arena && st.arena.step >= 5)]];
     const bonusFound = (sd) => st.caught.some((e) => e.seed === sd);
-    const bonusList = bonusDefs.map(([sd, opened]) => { const f = bonusFound(sd), S = SECRETS[sd]; return { show: (f || opened) && (!dexMissing || !f), icon: '', name: f ? S.name : '???', sub: f ? '#0' + S.speciesNo + ' · ' + S.type + ' · ' + S.ability.name : S.hint, sd: sd, f: f }; }).filter((x) => x.show);
+    const bonusList = bonusDefs.map(([sd, opened]) => { const f = bonusFound(sd), S = SECRETS[sd]; return { show: f && !dexMissing, icon: '', name: f ? S.name : '???', sub: f ? '#0' + S.speciesNo + ' · ' + S.type + ' · ' + S.ability.name : S.hint, sd: sd, f: f }; }).filter((x) => x.show);
     if (st.dexView === 'species') bonusList.forEach((x) => { x.icon = PIX.sprite(this.make(x.sd, 3, SECRETS[x.sd].lv), x.f ? 'icon' : 'silhouette'); });
     const spTi = Math.floor((spSel - 1) / 6), spSi = (spSel - 1) % 6, spFound = seen.indexOf(spSel) !== -1;
     const spd = {

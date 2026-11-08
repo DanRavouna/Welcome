@@ -10,7 +10,7 @@ const ADV = (() => {
   // The Sealed Arch: four clues, one from each person beside a route landmark
   const CLUES = [   // lines = what the person says (always; they only point at what is in front of them); obj = the thing you look at, which is what teaches you; note = what the Journal remembers
     { id: 'ruin', npc: 'edda', where: 'Highland Pass', lines: ['The carvings on the arch. I come up here to draw them.', 'Look at the seats. I count them every time, and every time I get the same number.'], note: 'The arch: eight critters around one fire, and a ninth seat carved empty.' },
-    { id: 'camp', npc: 'dell', where: 'Ashwood Trail', lines: ['My camp. The hearthstone was here long before the camp was.', 'There is writing on it. My granddad used to sing it, badly.'], obj: { kind: 'rhymestone', text: 'Scratched into the hearthstone, old and shallow: "Fire for the first, lamp for the second, hull for the third, and the empty seat will answer."' }, note: 'The hearthstone at Dell\u2019s camp: "Fire for the first, lamp for the second, hull for the third, and the empty seat will answer."' },
+    { id: 'camp', npc: 'dell', where: 'Ashwood Trail', lines: ['My camp. The hearthstone was here long before the camp was.', 'There is writing on it. My granddad used to sing it, badly.'], obj: { kind: 'rhymestone', text: 'Scratched into the hearthstone, old and shallow: three worn marks in a row. A flame, a lamp, a hull.' }, note: 'The hearthstone at Dell\u2019s camp: three worn marks in a row. A flame, a lamp, a hull.' },   // the rhyme as marks, not words (the order is the road's own order; the marks are DAN's art)
     { id: 'lighthouse', npc: 'joss', where: 'Glacier Coast', lines: ['There is a brass plate at the foot of the tower. Older than the lamp.'], obj: { kind: 'bearing', text: 'A brass plate set in the step, an arrow worn by many boots. It does not point to the sea. It points inland, at the pass.' }, note: 'The plate at the lighthouse: the lamp\u2019s arrow points inland, at the arch in the pass, not at the sea.' },
     { id: 'wreck', npc: 'neri', where: 'Reef Causeway', lines: ['Half the wreck is under the sand. The carved stone is the half I dug out.', 'I keep it by the hull. The sea can have it back when it asks.'], obj: { kind: 'wreckstone', text: 'A carved stone, salt-white: eight critters at a fire, a ninth seat, and a crown with the dust still on it.' }, note: 'The stone from the wreck: the same eight critters at a fire, a ninth seat and a dusty crown.' }
   ];
@@ -44,7 +44,7 @@ const ADV = (() => {
     objects.push({ id: 'chest1', kind: 'chest', x: 5, y: 51, reward: { potion: 2, essence: 5 }, text: 'A dusty chest.' });
     [[10, 54], [16, 54], [5, 22], [20, 22], [5, 9], [20, 9], [7, 1], [18, 1]].forEach(([x, y], i) => objects.push({ id: 'br' + (i + 1), kind: 'brazier', x: x, y: y, text: 'A brazier. Somebody keeps it lit.' }));
     objects.push({ id: 'rb1', kind: 'rubble', x: 12, y: 41, rubble: true, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' }, { id: 'rb2', kind: 'rubble', x: 13, y: 41, rubble: true, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' });
-    objects.push({ id: 'chest2', kind: 'chest', x: 17, y: 2, reward: { charm: 1, essence: 12 }, text: 'The Keeper’s chest.' }, { id: 'crown', kind: 'crown', x: 13, y: 1, text: 'A small gold crown.' });
+    objects.push({ id: 'chest2', kind: 'chest', x: 17, y: 2, reward: { charm: 1, essence: 12 }, text: 'The Keeper’s chest.' }, { id: 'crown', kind: 'crown', x: 13, y: 1, text: 'A small gold crown. Nobody has moved it.' });   // the crown is not taken: the act is sitting in the ninth seat (app.js seatState)
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
     // (the Keeper stands 3 tiles from the crown, so touching the crown from below never picks him)
     return { name: 'The Sealed Arch', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [12.9, H - 1.4], exit: { edge: 's', a: 12, b: 13 }, dark: { r: 3.4 }, types: ['Dusk', 'Stone'], rate: 0.12,
@@ -137,17 +137,16 @@ const ADV = (() => {
     rect(10, 34, 11, 36); rect(10, 22, 11, 24); rect(10, 10, 11, 12);                                         // corridors between them, each shut by a gate
     rect(10, 48, 11, 53, '='); [[37, 47], [25, 33], [13, 21], [1, 9]].forEach(([a, c]) => rect(10, a, 11, c, '='));   // a flagstone way up the middle of each chamber
     [[6, 40], [15, 40], [6, 44], [15, 44], [6, 28], [15, 28], [6, 16], [15, 19], [6, 4], [15, 6]].forEach(([x, y]) => set(x, y, 'C'));   // pillars
-    // gates: two tiles across each corridor; `levers` lists the levers that flip it
-    const gate = (id, y, levers) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, levers: levers, x: 10, y: y, reach: 1.9, text: 'An iron gate. Somewhere a lever works it.' }, { id: id + 'b', kind: 'gate', gate: id, levers: levers, x: 11, y: y, reach: 1.9, text: 'An iron gate. Somewhere a lever works it.' }); };
+    // gates: two tiles across each corridor; `levers` lists the lamps that open it (the gate is the dark: "Cold." until the chamber's lamp is kept, "Warm." after, see objectUse)
+    const gate = (id, y, levers) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, levers: levers, x: 10, y: y, reach: 1.9, text: 'An iron gate. Cold.' }, { id: id + 'b', kind: 'gate', gate: id, levers: levers, x: 11, y: y, reach: 1.9, text: 'An iron gate. Cold.' }); };
     gate('g1', 35, ['L1']); gate('g2', 23, ['L2']); gate('g3', 11, ['L3']);
     objects.push({ id: 'L1', kind: 'chamberlamp', x: 16, y: 44, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' }, { id: 'L2', kind: 'chamberlamp', x: 5, y: 30, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' }, { id: 'L3', kind: 'chamberlamp', x: 16, y: 18, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' });
-    objects.push({ id: 'tab1', kind: 'plaque', x: 6, y: 47, label: 'Read the tablet', text: 'Carved in the stone: "The way up is lit by the one who climbs it."' });
     objects.push({ id: 'chest1', kind: 'chest', x: 16, y: 27, reward: { super: 2, essence: 6 }, text: 'A frosty chest.' }, { id: 'chest2', kind: 'chest', x: 16, y: 3, reward: { charm: 1, essence: 12 }, text: 'The Warden’s chest.' });
     [[5, 38], [16, 38]].forEach(([x, y], i) => objects.push({ id: 'tr' + i, kind: 'brazier', x: x, y: y, text: 'A torch by the door. Someone lit it for whoever comes.' }));   // only the entrance is lit for you; the rest you light
-    objects.push({ id: 'greatlamp', kind: 'greatlamp', x: 10, y: 2, text: 'The great lamp.' });
+    objects.push({ id: 'GL', kind: 'chamberlamp', cl: 6, x: 10, y: 2, reach: 1.9, text: 'The great lamp. The glass is cold.' });   // the last act: a chamber lamp with the longest stay of the game (cl: 6 s, package M owns the number), lit only from the three below. ART: package W may draw GL as the great glass (ART.greatlamp is the old drawing)
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
     return { name: 'The Lamp Tower', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'ascent' },
-      gates: { g1: ['L1'], g2: ['L2'], g3: ['L3'] }, dark: { r: 2.8 }, spots: { guard1: [10, 29], guard2: [10, 16], warden: [10, 5] } };
+      gates: { g1: ['L1'], g2: ['L2'], g3: ['L3'] }, dark: { r: 2.8 }, spots: { guard1: [10, 29], guard2: [10, 16], warden: [8, 9] } };   // the Warden sits beside the stair into the top chamber, off the flagstone way: never between you and the lamp
   }
   // ---- the Forge Below: a hub with two side halls. Each hall holds a guard and a glowing core; carry both back to the hub sockets and the north gate opens onto the Forgemaster.
   // Non-linear (either hall first). Gates here follow RULES (all listed flags set), not lever parity. ----
@@ -164,7 +163,7 @@ const ADV = (() => {
     [[4, 22], [4, 27], [25, 27], [25, 31], [10, 10], [19, 10]].forEach(([x, y]) => set(x, y, 'C'));              // pillars
     objects.push({ id: 'coreA', kind: 'core', core: 'A', gate: 'coreA', x: 3, y: 20, text: 'A core of living flame.' }, { id: 'coreB', kind: 'core', core: 'B', gate: 'coreB', x: 26, y: 31, text: 'A core of cooled stone, still humming.' });
     objects.push({ id: 'sockA', kind: 'socket', core: 'A', x: 12, y: 22, text: 'A socket for the core of flame.' }, { id: 'sockB', kind: 'socket', core: 'B', x: 17, y: 22, text: 'A socket for the core of stone.' });
-    const gate = (id, y) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, x: 14, y: y, reach: 1.9, text: 'A slab of black iron seals the way north. Two sockets in the hub must wake first.' }, { id: id + 'b', kind: 'gate', gate: id, x: 15, y: y, reach: 1.9, text: 'A slab of black iron seals the way north. Two sockets in the hub must wake first.' }); };
+    const gate = (id, y) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, x: 14, y: y, reach: 1.9, text: 'A slab of black iron.' }, { id: id + 'b', kind: 'gate', gate: id, x: 15, y: y, reach: 1.9, text: 'A slab of black iron.' }); };
     gate('gb', 15);
     objects.push({ id: 'chest1', kind: 'chest', x: 3, y: 31, reward: { super: 2, essence: 6 }, text: 'A scorched chest.' }, { id: 'chest2', kind: 'chest', x: 21, y: 3, reward: { charm: 1, essence: 12 }, text: 'The Forgemaster’s chest.' });
     [[10, 22], [19, 22], [10, 30], [19, 30], [8, 3], [21, 12], [6, 21], [23, 21]].forEach(([x, y], i) => objects.push({ id: 'fr' + i, kind: 'brazier', x: x, y: y, text: 'A brazier of hot coals.' }));
@@ -574,6 +573,6 @@ const ADV = (() => {
       for (let i = 0; i < 4; i++) { const on = i < n; g.save(); g.globalAlpha = on ? (st.open ? 1 : 0.6 + 0.4 * k) : 1; R(g, x + 12, y + 11 + i * 4, 8, 2, on ? '#FFD86B' : '#4A4860'); g.restore(); }
     }
   };
-  const LIGHT = { chamberlamp: (o, st) => (st && st.lit > 0.02 ? 1.4 + 2.8 * st.lit : 0.5), gbrazier: (o, st) => (st && st.burn > 0 ? 1.6 + 2.4 * st.burn : 0.6), callamp: (o, st) => (st && st.lit > 0.02 ? 1.2 + 2.6 * st.lit : 0.5), furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
+  const LIGHT = { chamberlamp: (o, st) => (st && st.lit > 0.02 ? 1.4 + 2.8 * st.lit : 0.5), gbrazier: (o, st) => (st && st.burn > 0 ? 1.6 + 2.4 * st.burn : 0.6), callamp: (o, st) => (st && st.lit > 0.02 ? 1.2 + 2.6 * st.lit : 0.5), furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: (o, st) => (st && st.cold ? 0.8 : 2.4), seat: () => 1.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
   return { CLUES, DUNGEONS, ART, LIGHT, TCOL, TYPES };
 })();
