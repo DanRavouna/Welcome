@@ -701,11 +701,11 @@ const WORLD = (() => {
   (() => {
     const F = MAPS.frosthold, A = MAPS.ascent;
     for (let y = 0; y <= 11; y++) { F.grid[y][31] = '='; F.grid[y][32] = '='; }
-    F.grid[4][30] = 'G'; F.signs.push({ x: 30, y: 4, to: 'ascent', text: 'North: the Cold Ascent. A trail climbs the peaks to an old beacon (Frost and Stone critters). Climbers should be at least level 11.' });
+    F.grid[4][30] = 'G'; F.signs.push({ x: 30, y: 4, to: 'ascent', text: 'North: the Cold Ascent. A trail climbs into the peaks (Frost and Stone critters). Climbers should be at least level 11.' });   // the place is named, not the lamp (the level sentence: packages W and M)
     F.exits.push({ edge: 'n', a: 31, b: 32, to: 'ascent' }); F.arriveFrom = Object.assign({}, F.arriveFrom, { ascent: [31.9, 1.4] });
     A.arriveFrom = { frosthold: A.spawn, 'dg-lamp': [14.5, 14.7] };
     A.objects[0].beam = { x: 14.5, y: 8.75 };   // the beacon's lantern: a light shaft rises from it once the lamp is relit
-    A.grid[60][12] = 'G'; A.signs.push({ x: 12, y: 60, text: 'The Cold Ascent. Five ledges up to the old beacon. Wild Frost and Stone critters hide in the snow tufts. Turn back if the weather turns.' });
+    A.grid[60][12] = 'G'; A.signs.push({ x: 12, y: 60, text: 'The Cold Ascent. Five ledges up into the peaks. Wild Frost and Stone critters hide in the snow tufts. Turn back if the weather turns.' });
     A.grid[16][3] = 'C';
   })();
   // The Sealed Arch's door: the ruin's signpost tile becomes the "arch" object (a rune stone). With four clues the app opens it (see archUse in app.js).
@@ -810,8 +810,9 @@ const WORLD = (() => {
     MAPS.town.arriveFrom = Object.assign({}, MAPS.town.arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + 1.5] });
   });
   // the Long Watch has a room too (Meaning: the Watch's lobby is the watch itself: a bench, a blanket, lamps that stay lit, the stair)
-  [['peak', 'tower', 'in-tower', { W: 12, H: 9, style: 'watch', duelHall: true, layout: { x: [[5, 2], [6, 2]], r: [4, 4, 7, 6] }, places: [{ id: 'stair', name: 'The stair', x: 5, y: 2, w: 2, h: 1, kind: 'device', door: [5, 2], open: 'tower' }],
-      objects: [{ id: 'wl1', kind: 'walllamp', x: 2, y: 2, text: 'A lamp on the wall. It does not go out.' }, { id: 'wl2', kind: 'walllamp', x: 9, y: 2, text: 'A lamp on the wall. It does not go out.' }, { id: 'bb', kind: 'blanketbench', x: 1, y: 6, text: 'A bench with a folded blanket. Somebody sleeps here between watches.' }, { id: 'wlog', kind: 'logbook', x: 10, y: 6, text: 'A book of names and floors, one line a night. The last line is from last night.' }] }]].forEach(([pm, pid, id, opt], i) => {
+  // the lobby is long (16x11): the door south, the stair at the far north end, the two lamps on the long walls, so each visitor crosses the whole room to you (03-F19)
+  [['peak', 'tower', 'in-tower', { W: 16, H: 11, style: 'watch', duelHall: true, layout: { x: [[7, 2], [8, 2]], r: [5, 4, 10, 8] }, places: [{ id: 'stair', name: 'The stair', x: 7, y: 2, w: 2, h: 1, kind: 'device', door: [7, 2], open: 'tower' }],
+      objects: [{ id: 'wl1', kind: 'walllamp', x: 1, y: 5, text: 'A lamp on the wall. Somebody trims it.' }, { id: 'wl2', kind: 'walllamp', x: 14, y: 5, text: 'A lamp on the wall. Somebody trims it.' }, { id: 'bb', kind: 'blanketbench', x: 1, y: 8, text: 'A bench with a folded blanket. Somebody sleeps here between watches.' }, { id: 'wlog', kind: 'logbook', x: 14, y: 8, text: 'A book of names and floors, one line a night. The last line is from last night.' }] }]].forEach(([pm, pid, id, opt], i) => {
     const P0 = MAPS[pm].places.find((p) => p.id === pid); MAPS[id] = buildInterior(id, P0, pm, i, opt); P0.enter = id;
     MAPS[pm].arriveFrom = Object.assign({}, MAPS[pm].arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + (P0.door[1] === P0.y ? -0.5 : 1.5)] });   // out of a north-facing door you stand above it
   });

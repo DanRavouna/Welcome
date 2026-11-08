@@ -128,7 +128,7 @@ const TITLES = [
   { id: 'ringchamp', name: 'Ring Champion', desc: 'Climb all five steps of the Arena ladder', essence: 0, goal: 5, of: (s) => (s.arena && s.arena.step) || 0 },
   { id: 'climber', name: 'Tower Climber', desc: 'Clear floor 10 of the Tower', essence: 0, goal: 10, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'summit', name: 'Watchkeeper', desc: 'Keep all 20 nights of the Long Watch', essence: 0, goal: 20, of: (s) => (s.tower && s.tower.best) || 0 },
-  { id: 'lamp', name: 'Lamplighter', desc: 'Relight the old beacon', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.lampLit ? 1 : 0) },
+  { id: 'lamp', name: 'Lamplighter', desc: 'The lamp was lit', essence: 0, goal: 1, hidden: true, of: (s) => { const f = (s.adv && s.adv.flags) || {}; return f.lampLit && f.litOn !== new Date().toDateString() ? 1 : 0; } },   // hidden until earned; earned the morning after (litOn); nothing is paid for it (essence 0: package M owns the numbers)
   { id: 'forge', name: 'Forge Keeper', desc: 'Relight the buried forge', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.forgeLit ? 1 : 0) },
   { id: 'secret', name: 'The Ninth Seat', desc: 'Uncover a secret', essence: 20, goal: 1, of: (s) => ((s.caught || []).some((e) => e.seed === SECRET_SEED) ? 1 : 0) },
   { id: 'shiny', name: 'Shiny Hunter', desc: 'Keep 3 shiny critters', essence: 0, goal: 3, of: (s) => (s.shinies || []).length }

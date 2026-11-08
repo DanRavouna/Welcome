@@ -138,7 +138,7 @@ const ACT = (() => {
   }
   let stir = 0, stirSpent = false, stirTick = 0;   // rare grass: stand in a sparkling patch and something stirs; it comes out once per visit
   function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; stir = 0; stirSpent = false; st.atk = null; st.cd = 0; st.vcd = 0; verb = null; st.veil = 0; walls = []; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7);
-    if (wildOk(e) && e.M.id === 'town' && H.game().state.caught.length <= 1) spawnOne(e, 0, null, false, [6, 10]); }   // a new game: one wild critter waits in the grass by your door (Meaning: the first thing kept is at home)
+    if (wildOk(e) && e.M.id === 'town' && (H.game().state.caught.length <= 1 || (H.doorCritter && H.doorCritter()))) spawnOne(e, 0, null, false, [6, 10]); }   // a new game, or a day you lit the window: one wild critter waits in the grass by your door (Meaning: the first thing kept is at home; what comes to the one who keeps)
   const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }

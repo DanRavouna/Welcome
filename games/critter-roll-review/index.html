@@ -60,7 +60,7 @@ button:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
 @keyframes tglow{0%,100%{opacity:0.22}50%{opacity:0.42}}
 .title-btn{position:absolute;left:62px;top:calc(18vh + 86px);width:52px;height:52px;border:0;background:transparent;border-radius:50%;cursor:pointer}
 .title-btn:focus-visible{outline:2px solid #FFE08A;outline-offset:4px}
-.title-name{margin:18px 0 4px;font-size:22px;font-weight:900;color:#E8E8F0;letter-spacing:0.02em}.title-cap{margin:0;font-size:13px;color:#8A93B0}
+.title-name{margin:18px 0 4px;font-size:22px;font-weight:900;color:#E8E8F0;letter-spacing:0.02em}.title-cap{margin:0;font-size:13px;color:#8A93B0;animation:tcap 5.6s ease forwards}@keyframes tcap{0%,88%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion: reduce){.title-glow{animation:none;opacity:0.36}}
 </style>
 
@@ -109,9 +109,6 @@ body{font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highli
 #wheel .dim{position:absolute;inset:0;background:rgba(10,14,30,.35)}
 #act-label{padding:3px 10px;border-radius:999px;background:var(--glass);color:#fff;font-size:12px;font-weight:800;white-space:nowrap}
 #toast{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(170px + env(safe-area-inset-bottom,0px));max-width:min(340px,86vw);padding:12px 16px;border-radius:18px;background:var(--glass);border:1.5px solid var(--glass-line);color:#fff;font-size:15px;font-weight:700;line-height:1.4;text-align:center}
-#tip{position:absolute;left:12px;right:88px;top:calc(60px + env(safe-area-inset-top,0px));max-width:300px;padding:12px 14px;border-radius:18px;background:var(--glass);border:1.5px solid var(--glass-line);color:#fff;font-size:14px;font-weight:700;line-height:1.4}
-#tip p{margin:0 0 8px}
-#tip button{height:40px;padding:0 16px;border:0;border-radius:999px;background:#FFD86B;color:#2A1B00;font:inherit;font-weight:900;cursor:pointer}
 #screen{position:fixed;inset:0;z-index:5}
 .plank{position:relative;padding:5px 16px 6px;background:#C8955A;border:3px solid #4A2A14;box-shadow:inset 0 3px 0 #E4B57E,inset 0 -3px 0 #A06E3C,0 4px 0 rgba(0,0,0,.25);color:#3A2414;image-rendering:pixelated}
 .plank b{font-family:'Pixelify Sans','Trebuchet MS',monospace;font-weight:700;font-size:19px;letter-spacing:.02em}
@@ -215,7 +212,7 @@ html.hc .prof{background:#12204A!important;backdrop-filter:none!important}
 html.hc .mgroup{background:#08122A!important}html.hc .mht span{color:#FFFFFF!important}
 html.hc button,html.hc .chip{outline-color:#FFFFFF}
 html.hc :focus-visible{outline:3px solid #FFD86B!important;outline-offset:2px}
-#screen[hidden],#atk[hidden],#wheel[hidden],#pouch[hidden],#duel[hidden],#toast[hidden],#tip[hidden],#hud[hidden],.dot[hidden]{display:none}
+#screen[hidden],#atk[hidden],#wheel[hidden],#pouch[hidden],#duel[hidden],#toast[hidden],#hud[hidden],.dot[hidden]{display:none}
 button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offset:2px}
 </style>
 </head>
@@ -236,7 +233,6 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
       </div>
     </div>
     </div>
-    <div id="tip" role="note"><p>Walk with the joystick. Wild critters hide in tall grass, and the trails out of town lead to new zones.</p><button id="tip-close">Got it</button></div>
     <div id="stick" aria-hidden="true"><div id="knob"></div></div>
     <button id="act" disabled><span class="ring"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg></span><span id="act-label">Walk up to a place</span></button>
     <button id="atk" hidden aria-label="Attack. Hold to choose a move"><span class="ring"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20L18 6M14 4h6v6M7 17l-3 3"></path></svg></span><span id="atk-label">Slash</span></button>
@@ -266,7 +262,7 @@ button:focus-visible,#stick:focus-visible{outline:3px solid #FFD86B;outline-offs
   <div id="starter" role="dialog" aria-modal="true" aria-labelledby="st-title" hidden class="ovl">
     <div class="wm-panel">
       <div class="wm-head"><h2 id="st-title">Choose your partner</h2></div>
-      <p class="bk-p">Ember beats Moss, Moss beats Tide, and Tide beats Ember. There is no wrong choice; you will find many more.</p>
+      <p class="bk-p">There is no wrong choice. You will find many more.</p>
       <div id="st-list" class="slist"></div>
     </div>
   </div>
@@ -1218,7 +1214,7 @@ const ADV = (() => {
   // The Sealed Arch: four clues, one from each person beside a route landmark
   const CLUES = [   // lines = what the person says (always; they only point at what is in front of them); obj = the thing you look at, which is what teaches you; note = what the Journal remembers
     { id: 'ruin', npc: 'edda', where: 'Highland Pass', lines: ['The carvings on the arch. I come up here to draw them.', 'Look at the seats. I count them every time, and every time I get the same number.'], note: 'The arch: eight critters around one fire, and a ninth seat carved empty.' },
-    { id: 'camp', npc: 'dell', where: 'Ashwood Trail', lines: ['My camp. The hearthstone was here long before the camp was.', 'There is writing on it. My granddad used to sing it, badly.'], obj: { kind: 'rhymestone', text: 'Scratched into the hearthstone, old and shallow: "Fire for the first, lamp for the second, hull for the third, and the empty seat will answer."' }, note: 'The hearthstone at Dell\u2019s camp: "Fire for the first, lamp for the second, hull for the third, and the empty seat will answer."' },
+    { id: 'camp', npc: 'dell', where: 'Ashwood Trail', lines: ['My camp. The hearthstone was here long before the camp was.', 'There is writing on it. My granddad used to sing it, badly.'], obj: { kind: 'rhymestone', text: 'Scratched into the hearthstone, old and shallow: three worn marks in a row. A flame, a lamp, a hull.' }, note: 'The hearthstone at Dell\u2019s camp: three worn marks in a row. A flame, a lamp, a hull.' },   // the rhyme as marks, not words (the order is the road's own order; the marks are DAN's art)
     { id: 'lighthouse', npc: 'joss', where: 'Glacier Coast', lines: ['There is a brass plate at the foot of the tower. Older than the lamp.'], obj: { kind: 'bearing', text: 'A brass plate set in the step, an arrow worn by many boots. It does not point to the sea. It points inland, at the pass.' }, note: 'The plate at the lighthouse: the lamp\u2019s arrow points inland, at the arch in the pass, not at the sea.' },
     { id: 'wreck', npc: 'neri', where: 'Reef Causeway', lines: ['Half the wreck is under the sand. The carved stone is the half I dug out.', 'I keep it by the hull. The sea can have it back when it asks.'], obj: { kind: 'wreckstone', text: 'A carved stone, salt-white: eight critters at a fire, a ninth seat, and a crown with the dust still on it.' }, note: 'The stone from the wreck: the same eight critters at a fire, a ninth seat and a dusty crown.' }
   ];
@@ -1252,7 +1248,7 @@ const ADV = (() => {
     objects.push({ id: 'chest1', kind: 'chest', x: 5, y: 51, reward: { potion: 2, essence: 5 }, text: 'A dusty chest.' });
     [[10, 54], [16, 54], [5, 22], [20, 22], [5, 9], [20, 9], [7, 1], [18, 1]].forEach(([x, y], i) => objects.push({ id: 'br' + (i + 1), kind: 'brazier', x: x, y: y, text: 'A brazier. Somebody keeps it lit.' }));
     objects.push({ id: 'rb1', kind: 'rubble', x: 12, y: 41, rubble: true, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' }, { id: 'rb2', kind: 'rubble', x: 13, y: 41, rubble: true, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' });
-    objects.push({ id: 'chest2', kind: 'chest', x: 17, y: 2, reward: { charm: 1, essence: 12 }, text: 'The Keeper’s chest.' }, { id: 'crown', kind: 'crown', x: 13, y: 1, text: 'A small gold crown.' });
+    objects.push({ id: 'chest2', kind: 'chest', x: 17, y: 2, reward: { charm: 1, essence: 12 }, text: 'The Keeper’s chest.' }, { id: 'crown', kind: 'crown', x: 13, y: 1, text: 'A small gold crown. Nobody has moved it.' });   // the crown is not taken: the act is sitting in the ninth seat (app.js seatState)
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
     // (the Keeper stands 3 tiles from the crown, so touching the crown from below never picks him)
     return { name: 'The Sealed Arch', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [12.9, H - 1.4], exit: { edge: 's', a: 12, b: 13 }, dark: { r: 3.4 }, types: ['Dusk', 'Stone'], rate: 0.12,
@@ -1345,17 +1341,16 @@ const ADV = (() => {
     rect(10, 34, 11, 36); rect(10, 22, 11, 24); rect(10, 10, 11, 12);                                         // corridors between them, each shut by a gate
     rect(10, 48, 11, 53, '='); [[37, 47], [25, 33], [13, 21], [1, 9]].forEach(([a, c]) => rect(10, a, 11, c, '='));   // a flagstone way up the middle of each chamber
     [[6, 40], [15, 40], [6, 44], [15, 44], [6, 28], [15, 28], [6, 16], [15, 19], [6, 4], [15, 6]].forEach(([x, y]) => set(x, y, 'C'));   // pillars
-    // gates: two tiles across each corridor; `levers` lists the levers that flip it
-    const gate = (id, y, levers) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, levers: levers, x: 10, y: y, reach: 1.9, text: 'An iron gate. Somewhere a lever works it.' }, { id: id + 'b', kind: 'gate', gate: id, levers: levers, x: 11, y: y, reach: 1.9, text: 'An iron gate. Somewhere a lever works it.' }); };
+    // gates: two tiles across each corridor; `levers` lists the lamps that open it (the gate is the dark: "Cold." until the chamber's lamp is kept, "Warm." after, see objectUse)
+    const gate = (id, y, levers) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, levers: levers, x: 10, y: y, reach: 1.9, text: 'An iron gate. Cold.' }, { id: id + 'b', kind: 'gate', gate: id, levers: levers, x: 11, y: y, reach: 1.9, text: 'An iron gate. Cold.' }); };
     gate('g1', 35, ['L1']); gate('g2', 23, ['L2']); gate('g3', 11, ['L3']);
     objects.push({ id: 'L1', kind: 'chamberlamp', x: 16, y: 44, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' }, { id: 'L2', kind: 'chamberlamp', x: 5, y: 30, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' }, { id: 'L3', kind: 'chamberlamp', x: 16, y: 18, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' });
-    objects.push({ id: 'tab1', kind: 'plaque', x: 6, y: 47, label: 'Read the tablet', text: 'Carved in the stone: "The way up is lit by the one who climbs it."' });
     objects.push({ id: 'chest1', kind: 'chest', x: 16, y: 27, reward: { super: 2, essence: 6 }, text: 'A frosty chest.' }, { id: 'chest2', kind: 'chest', x: 16, y: 3, reward: { charm: 1, essence: 12 }, text: 'The Warden’s chest.' });
     [[5, 46], [16, 46]].forEach(([x, y], i) => objects.push({ id: 'tr' + i, kind: 'brazier', x: x, y: y, text: 'A torch by the door. Someone lit it for whoever comes.' }));   // only the entrance is lit for you; the rest you light (by the door at the bottom of the first chamber, review 03-F17)
-    objects.push({ id: 'greatlamp', kind: 'greatlamp', x: 10, y: 2, text: 'The great lamp.' });
+    objects.push({ id: 'GL', kind: 'chamberlamp', cl: 6, x: 10, y: 2, reach: 1.9, text: 'The great lamp. The glass is cold.' });   // the last act: a chamber lamp with the longest stay of the game (cl: 6 s, package M owns the number), lit only from the three below. ART: package W may draw GL as the great glass (ART.greatlamp is the old drawing)
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
     return { name: 'The Lamp Tower', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'ascent' },
-      gates: { g1: ['L1'], g2: ['L2'], g3: ['L3'] }, dark: { r: 2.8 }, spots: { guard1: [10, 29], guard2: [10, 16], warden: [10, 5] } };
+      gates: { g1: ['L1'], g2: ['L2'], g3: ['L3'] }, dark: { r: 2.8 }, spots: { guard1: [10, 29], guard2: [10, 16], warden: [8, 9] } };   // the Warden sits beside the stair into the top chamber, off the flagstone way: never between you and the lamp
   }
   // ---- the Forge Below: a hub with two side halls. Each hall holds a guard and a glowing core; carry both back to the hub sockets and the north gate opens onto the Forgemaster.
   // Non-linear (either hall first). Gates here follow RULES (all listed flags set), not lever parity. ----
@@ -1372,7 +1367,7 @@ const ADV = (() => {
     [[4, 22], [4, 27], [25, 27], [25, 31], [10, 10], [19, 10]].forEach(([x, y]) => set(x, y, 'C'));              // pillars
     objects.push({ id: 'coreA', kind: 'core', core: 'A', gate: 'coreA', x: 3, y: 20, text: 'A core of living flame.' }, { id: 'coreB', kind: 'core', core: 'B', gate: 'coreB', x: 26, y: 31, text: 'A core of cooled stone, still humming.' });
     objects.push({ id: 'sockA', kind: 'socket', core: 'A', x: 12, y: 22, text: 'A socket for the core of flame.' }, { id: 'sockB', kind: 'socket', core: 'B', x: 17, y: 22, text: 'A socket for the core of stone.' });
-    const gate = (id, y) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, x: 14, y: y, reach: 1.9, text: 'A slab of black iron seals the way north. Two sockets in the hub must wake first.' }, { id: id + 'b', kind: 'gate', gate: id, x: 15, y: y, reach: 1.9, text: 'A slab of black iron seals the way north. Two sockets in the hub must wake first.' }); };
+    const gate = (id, y) => { objects.push({ id: id + 'a', kind: 'gate', gate: id, x: 14, y: y, reach: 1.9, text: 'A slab of black iron.' }, { id: id + 'b', kind: 'gate', gate: id, x: 15, y: y, reach: 1.9, text: 'A slab of black iron.' }); };
     gate('gb', 15);
     objects.push({ id: 'chest1', kind: 'chest', x: 3, y: 31, reward: { super: 2, essence: 6 }, text: 'A scorched chest.' }, { id: 'chest2', kind: 'chest', x: 21, y: 3, reward: { charm: 1, essence: 12 }, text: 'The Forgemaster’s chest.' });
     [[10, 22], [19, 22], [10, 30], [19, 30], [8, 3], [21, 12], [6, 21], [23, 21]].forEach(([x, y], i) => objects.push({ id: 'fr' + i, kind: 'brazier', x: x, y: y, text: 'A brazier of hot coals.' }));
@@ -1796,7 +1791,7 @@ const ADV = (() => {
     harborlamp(g, x, y, st) { if (st.lit) halo(g, x + 16, y + 11, 26, '255,214,120', 0.6); },
     tidelight(g, x, y, st, t, o) { const f = 0.5 + 0.5 * Math.sin(t * 2 + o.x); halo(g, x + 16, y + 21, 22, '160,240,255', 0.55 + 0.2 * f); }
   };
-  const LIGHT = { chamberlamp: (o, st) => (st && st.lit > 0.02 ? 1.4 + 2.8 * st.lit : 0.5), gbrazier: (o, st) => (st && st.burn > 0 ? 1.6 + 2.4 * st.burn : 0.6), callamp: (o, st) => (st && st.lit > 0.02 ? 1.2 + 2.6 * st.lit : 0.5), furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
+  const LIGHT = { chamberlamp: (o, st) => (st && st.lit > 0.02 ? 1.4 + 2.8 * st.lit : 0.5), gbrazier: (o, st) => (st && st.burn > 0 ? 1.6 + 2.4 * st.burn : 0.6), callamp: (o, st) => (st && st.lit > 0.02 ? 1.2 + 2.6 * st.lit : 0.5), furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: (o, st) => (st && st.cold ? 0.8 : 2.4), seat: () => 1.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
   return { CLUES, DUNGEONS, ART, GLOW, LIGHT, TCOL, TYPES };
 })();
 
@@ -3166,11 +3161,11 @@ const WORLD = (() => {
   (() => {
     const F = MAPS.frosthold, A = MAPS.ascent;
     for (let y = 0; y <= 11; y++) { F.grid[y][31] = '='; F.grid[y][32] = '='; }
-    F.grid[4][30] = 'G'; F.signs.push({ x: 30, y: 4, to: 'ascent', text: 'North: the Cold Ascent. A trail climbs the peaks to an old beacon (Frost and Stone critters). Climbers should be at least level 11.' });
+    F.grid[4][30] = 'G'; F.signs.push({ x: 30, y: 4, to: 'ascent', text: 'North: the Cold Ascent. A trail climbs into the peaks (Frost and Stone critters). Climbers should be at least level 11.' });   // the place is named, not the lamp (the level sentence: packages W and M)
     F.exits.push({ edge: 'n', a: 31, b: 32, to: 'ascent' }); F.arriveFrom = Object.assign({}, F.arriveFrom, { ascent: [31.9, 1.4] });
     A.arriveFrom = { frosthold: A.spawn, 'dg-lamp': [14.5, 14.7] };
     A.objects[0].beam = { x: 14.5, y: 8.75 };   // the beacon's lantern: a light shaft rises from it once the lamp is relit
-    A.grid[60][12] = 'G'; A.signs.push({ x: 12, y: 60, text: 'The Cold Ascent. Five ledges up to the old beacon. Wild Frost and Stone critters hide in the snow tufts. Turn back if the weather turns.' });
+    A.grid[60][12] = 'G'; A.signs.push({ x: 12, y: 60, text: 'The Cold Ascent. Five ledges up into the peaks. Wild Frost and Stone critters hide in the snow tufts. Turn back if the weather turns.' });
     A.grid[16][3] = 'C';
   })();
   // The Sealed Arch's door: the ruin's signpost tile becomes the "arch" object (a rune stone). With four clues the app opens it (see archUse in app.js).
@@ -3275,8 +3270,9 @@ const WORLD = (() => {
     MAPS.town.arriveFrom = Object.assign({}, MAPS.town.arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + 1.5] });
   });
   // the Long Watch has a room too (Meaning: the Watch's lobby is the watch itself: a bench, a blanket, lamps that stay lit, the stair)
-  [['peak', 'tower', 'in-tower', { W: 12, H: 9, style: 'watch', duelHall: true, layout: { x: [[5, 2], [6, 2]], r: [4, 4, 7, 6] }, places: [{ id: 'stair', name: 'The stair', x: 5, y: 2, w: 2, h: 1, kind: 'device', door: [5, 2], open: 'tower' }],
-      objects: [{ id: 'wl1', kind: 'walllamp', x: 2, y: 2, text: 'A lamp on the wall. It does not go out.' }, { id: 'wl2', kind: 'walllamp', x: 9, y: 2, text: 'A lamp on the wall. It does not go out.' }, { id: 'bb', kind: 'blanketbench', x: 1, y: 6, text: 'A bench with a folded blanket. Somebody sleeps here between watches.' }, { id: 'wlog', kind: 'logbook', x: 10, y: 6, text: 'A book of names and floors, one line a night. The last line is from last night.' }] }]].forEach(([pm, pid, id, opt], i) => {
+  // the lobby is long (16x11): the door south, the stair at the far north end, the two lamps on the long walls, so each visitor crosses the whole room to you (03-F19)
+  [['peak', 'tower', 'in-tower', { W: 16, H: 11, style: 'watch', duelHall: true, layout: { x: [[7, 2], [8, 2]], r: [5, 4, 10, 8] }, places: [{ id: 'stair', name: 'The stair', x: 7, y: 2, w: 2, h: 1, kind: 'device', door: [7, 2], open: 'tower' }],
+      objects: [{ id: 'wl1', kind: 'walllamp', x: 1, y: 5, text: 'A lamp on the wall. Somebody trims it.' }, { id: 'wl2', kind: 'walllamp', x: 14, y: 5, text: 'A lamp on the wall. Somebody trims it.' }, { id: 'bb', kind: 'blanketbench', x: 1, y: 8, text: 'A bench with a folded blanket. Somebody sleeps here between watches.' }, { id: 'wlog', kind: 'logbook', x: 14, y: 8, text: 'A book of names and floors, one line a night. The last line is from last night.' }] }]].forEach(([pm, pid, id, opt], i) => {
     const P0 = MAPS[pm].places.find((p) => p.id === pid); MAPS[id] = buildInterior(id, P0, pm, i, opt); P0.enter = id;
     MAPS[pm].arriveFrom = Object.assign({}, MAPS[pm].arriveFrom, { [id]: [P0.door[0] + 0.9, P0.door[1] + (P0.door[1] === P0.y ? -0.5 : 1.5)] });   // out of a north-facing door you stand above it
   });
@@ -4121,7 +4117,7 @@ const ACT = (() => {
   }
   let stir = 0, stirSpent = false, stirTick = 0;   // rare grass: stand in a sparkling patch and something stirs; it comes out once per visit
   function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; stir = 0; stirSpent = false; st.atk = null; st.cd = 0; st.vcd = 0; verb = null; st.veil = 0; walls = []; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7);
-    if (wildOk(e) && e.M.id === 'town' && H.game().state.caught.length <= 1) spawnOne(e, 0, null, false, [6, 10]); }   // a new game: one wild critter waits in the grass by your door (Meaning: the first thing kept is at home)
+    if (wildOk(e) && e.M.id === 'town' && (H.game().state.caught.length <= 1 || (H.doorCritter && H.doorCritter()))) spawnOne(e, 0, null, false, [6, 10]); }   // a new game, or a day you lit the window: one wild critter waits in the grass by your door (Meaning: the first thing kept is at home; what comes to the one who keeps)
   const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
   const num = (x, y, text, col) => FX.push({ k: 'num', x: x, y: y, text: text, col: col, t: 0 });
   function heroPos() { const f = lastEnv.FOL; return { x: f.x + (f.ox || 0), y: f.y + (f.oy || 0) }; }
@@ -5887,10 +5883,10 @@ class Component extends Base {
       return { name: tn, color: TCOL[tn], count: cells.filter((x) => x.found).length + '/6', cells: dexMissing ? cells.filter((x) => !x.found) : cells };
     }).filter((r) => r.cells.length > 0);
     const speciesChips = [chip('All species', !dexMissing, () => this.setState({ dexMissing: false })), chip('Not yet found', dexMissing, () => this.setState({ dexMissing: true }))];
-    // the bonus species (#49, #50): each shows as ??? once its door has been opened and for good once found; never part of the 48
+    // the bonus species (#49 to #52): each shows only once found (no ??? row announces a secret); never part of the 48
     const bonusDefs = [[SECRET_SEED, !!(st.adv && st.adv.open && st.adv.open.arch)], [SECRET2_SEED, !!(st.adv && st.adv.open && st.adv.open.lamp)], [SECRET3_SEED, !!(st.adv && st.adv.open && st.adv.open.forge)], [SECRET4_SEED, !!(st.arena && st.arena.step >= 5)]];
     const bonusFound = (sd) => st.caught.some((e) => e.seed === sd);
-    const bonusList = bonusDefs.map(([sd, opened]) => { const f = bonusFound(sd), S = SECRETS[sd]; return { show: (f || opened) && (!dexMissing || !f), icon: '', name: f ? S.name : '???', sub: f ? '#0' + S.speciesNo + ' · ' + S.type + ' · ' + S.ability.name : S.hint, sd: sd, f: f }; }).filter((x) => x.show);
+    const bonusList = bonusDefs.map(([sd, opened]) => { const f = bonusFound(sd), S = SECRETS[sd]; return { show: f && !dexMissing, icon: '', name: f ? S.name : '???', sub: f ? '#0' + S.speciesNo + ' · ' + S.type + ' · ' + S.ability.name : S.hint, sd: sd, f: f }; }).filter((x) => x.show);
     if (st.dexView === 'species') bonusList.forEach((x) => { x.icon = PIX.sprite(this.make(x.sd, 3, SECRETS[x.sd].lv), x.f ? 'icon' : 'silhouette'); });
     const spTi = Math.floor((spSel - 1) / 6), spSi = (spSel - 1) % 6, spFound = seen.indexOf(spSel) !== -1;
     const spd = {
@@ -6201,7 +6197,7 @@ const TITLES = [
   { id: 'ringchamp', name: 'Ring Champion', desc: 'Climb all five steps of the Arena ladder', essence: 0, goal: 5, of: (s) => (s.arena && s.arena.step) || 0 },
   { id: 'climber', name: 'Tower Climber', desc: 'Clear floor 10 of the Tower', essence: 0, goal: 10, of: (s) => (s.tower && s.tower.best) || 0 },
   { id: 'summit', name: 'Watchkeeper', desc: 'Keep all 20 nights of the Long Watch', essence: 0, goal: 20, of: (s) => (s.tower && s.tower.best) || 0 },
-  { id: 'lamp', name: 'Lamplighter', desc: 'Relight the old beacon', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.lampLit ? 1 : 0) },
+  { id: 'lamp', name: 'Lamplighter', desc: 'The lamp was lit', essence: 0, goal: 1, hidden: true, of: (s) => { const f = (s.adv && s.adv.flags) || {}; return f.lampLit && f.litOn !== new Date().toDateString() ? 1 : 0; } },   // hidden until earned; earned the morning after (litOn); nothing is paid for it (essence 0: package M owns the numbers)
   { id: 'forge', name: 'Forge Keeper', desc: 'Relight the buried forge', essence: 20, goal: 1, of: (s) => (s.adv && s.adv.flags && s.adv.flags.forgeLit ? 1 : 0) },
   { id: 'secret', name: 'The Ninth Seat', desc: 'Uncover a secret', essence: 20, goal: 1, of: (s) => ((s.caught || []).some((e) => e.seed === SECRET_SEED) ? 1 : 0) },
   { id: 'shiny', name: 'Shiny Hunter', desc: 'Keep 3 shiny critters', essence: 0, goal: 3, of: (s) => (s.shinies || []).length }
@@ -6569,7 +6565,7 @@ class Game extends Component {
         const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, this.state.npc);
         npc.beaten = Object.assign({}, npc.beaten, { [tr.id]: new Date().toDateString() });
         if ((npc.cleared || []).indexOf(tr.id) === -1) npc.cleared = (npc.cleared || []).concat([tr.id]);
-        if (tr.leader && (npc.seals || []).indexOf(tr.id) === -1) { npc.seals = (npc.seals || []).concat([tr.id]); patch.justSealed = tr.id; events.push({ t: 'leader' }); }
+        // a leader's seal is granted when the trial is kept (app.js gymDone), never here: the duel is for XP
         patch.npc = npc;
         if (tr.ladder) {   // the Arena ladder: the step climbed; the top step keeps Kindlemane for whoever climbs it
           const ar = Object.assign({ step: 0, day: '' }, this.state.arena); if (tr.ladder === ar.step + 1) ar.day = new Date().toDateString(); ar.step = Math.max(ar.step, tr.ladder); patch.arena = ar;   // the day is stamped on a WON ladder fight (a lost one can be tried again today)
@@ -6666,7 +6662,7 @@ class Game extends Component {
       const st = this.state, have = st.titles || [];
       v.titleName = this.titleName();
       v.titleCount = have.length;
-      v.titleList = TITLES.map((t) => { const got = have.indexOf(t.id) !== -1, on = got && st.title === t.id, n = Math.min(t.goal, t.of(st));
+      v.titleList = TITLES.filter((t) => !t.hidden || have.indexOf(t.id) !== -1).map((t) => { const got = have.indexOf(t.id) !== -1, on = got && st.title === t.id, n = Math.min(t.goal, t.of(st));   // a hidden title (the lamp's) exists only once earned
         return { name: t.name, sub: got ? (on ? 'Wearing now · tap to remove' : 'Earned · tap to wear') : t.desc + ' (' + n + '/' + t.goal + ')' + (t.essence ? ' · +' + t.essence + ' essence' : ''),
           bg: on ? 'linear-gradient(180deg, #FFE69A, #F5B93A)' : (got ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.45)'), fg: got ? '#1E2A4A' : '#5A6890', pressed: on ? 'true' : 'false', disabled: !got,
           pick: () => { if (got) this.update({ title: on ? '' : t.id }); } }; });
@@ -6734,10 +6730,9 @@ const APP = (() => {
     if (night && !Number.isInteger(info.seed) && Math.random() < 0.25 && info.types.indexOf('Dusk') === -1) info = Object.assign({}, info, { types: ['Dusk'] });
     else info = WEATHER.tilt(info, weatherAt(WORLD.map.id)); // weather: 20% chance of its type when the area lacks it
     setTimeout(() => {
-      if (game.encounter(info)) { game.questTick('see', WORLD.map.id); showScreen(); setTimeout(() => hint('keep', 'Seeing critters is free (' + FREE_SIGHTINGS + ' per day). Keeping one costs rolls: 1 for Common, 2 Uncommon, 4 Rare, 8 Mythic.'), 1300); } else WORLD.setPaused(false); }, calm ? 0 : 280);
+      if (game.encounter(info)) { game.questTick('see', WORLD.map.id); showScreen(); } else WORLD.setPaused(false); }, calm ? 0 : 280);
   }
   function openScreen(tab) {
-    if (tab === 'battle') setTimeout(() => hint('battle', 'Pick a move each turn. Special moves are limited, Guard blocks the next hit, and Switch or Bag use your turn.'), 400);
     lastOpener = document.activeElement;
     game.setState({ tab: tab, selected: null, armed: false, reveal: 0, encounter: null });
     open = true; $('screen').hidden = false; $('hud').hidden = true; WORLD.setPaused(true);
@@ -6849,13 +6844,13 @@ const APP = (() => {
     $('plank').classList.toggle('hasWx', !!show);
     if (show) { el.setAttribute('role', 'img'); el.setAttribute('aria-label', 'Weather: ' + WEATHER.KINDS[k].label); el.title = weatherText(k); }
     else { el.removeAttribute('role'); el.removeAttribute('aria-label'); el.removeAttribute('title'); }
-    if (show && game.state.intro && game.state.caught.length) setTimeout(() => hint('weather', WEATHER.KINDS[k].label + ' in ' + mapName(id) + ': ' + WEATHER.KINDS[k].note + ' more often. Weather changes every 6 hours, and the Map shows each area\u2019s sky.'), 1600);
+    // the weather is read from the Map (Menu > Map), never announced
   }
   // ---------- world map: one painted overview, with fast travel built in (tap a place, then Travel) ----------
   let mapOpen = false, mapSel = null;
   const ZTYPES = ['Ember', 'Tide', 'Moss', 'Volt', 'Frost', 'Dusk', 'Stone', 'Bloom'];
   const ZONE_TYPES = { frost: ['Frost', 'Stone'], ember: ['Ember', 'Volt'], moss: ['Moss', 'Bloom'], tide: ['Tide', 'Dusk'] };
-  const CITY = { mossbrook: ['Mossbrook', 'past Moss Forest, to the west', 'Elder Wren’s gym'], frosthold: ['Frosthold', 'past Frost Peaks, to the north', 'Glacia’s gym'], cinderport: ['Cinderport', 'past Ember Fields, to the south', 'Blaze’s gym'], coralbay: ['Coralbay', 'past Tide Shore, to the east', 'Admiral Coral’s gym'], peak: ["Vigil Peak", 'up the trail north of the plaza', 'The Tower'], ascent: ['The Cold Ascent', 'through the north gate of Frosthold', 'A climb to an old beacon'], descent: ['The Cinder Descent', 'through the south gate of Cinderport', 'A descent to a buried forge'] };
+  const CITY = { mossbrook: ['Mossbrook', 'past Moss Forest, to the west', 'Elder Wren’s gym'], frosthold: ['Frosthold', 'past Frost Peaks, to the north', 'Glacia’s gym'], cinderport: ['Cinderport', 'past Ember Fields, to the south', 'Blaze’s gym'], coralbay: ['Coralbay', 'past Tide Shore, to the east', 'Admiral Coral’s gym'], peak: ["Vigil Peak", 'up the trail north of the plaza', 'The Tower'], ascent: ['The Cold Ascent', 'through the north gate of Frosthold', 'A climb into the peaks'], descent: ['The Cinder Descent', 'through the south gate of Cinderport', 'A descent to a buried forge'] };
   // what the card under the map says about a place, and whether you can fast travel there
   function placeCard(id) {
     const st = game.state, lv = game.levelInfo(st.xp || 0).level, here = WORLD.map && WORLD.map.id, test = game.props.noGates, vis = st.visited || [];
@@ -7086,14 +7081,16 @@ const APP = (() => {
   };
   // the keepers rest once you have carried the light yourself (Meaning: they held it for you until you could). Lines only; [condition, lines].
   const LETGO = {
-    maren: [() => advOf().flags.lampLit, ['The glass has not been warm in my lifetime.', 'I used to stand here all night. I think I will sit down.']],
+    maren: [() => advOf().flags.lampLit, ['It is warm up here now.', 'I used to stand here all night. I think I will sit down.']],
     hale: [() => advOf().flags.forgeLit, ['It is warm in here. I had forgotten.', 'I will not need to watch it.']],
     keeper: [() => advOf().flags.secret, ['The seat is empty again, and it is not sad.', 'I held it so long. It is lighter than I expected.']],
-    joss: [() => advOf().flags.lampLit, ['I did not light it tonight. It lit.', 'I think I am out of work. I do not mind.']],
+    joss: [() => advOf().flags.lampLit, ['I still trim the lamp every dusk. Nobody told me to stop.', 'I saw yours from here last night. I trimmed mine anyway.']],   // the land is not kept more after the lamp: Joss keeps his own
     brandt: [() => advOf().flags.lampLit, ['One cup tonight.']],
     mom: [() => advOf().flags.lampLit, ['There was a light across the ceiling last night. It went the whole way over the roof.', 'I did not worry. Is that not odd?', 'The window was dark when I came down. I left it.']]
   };
   const letGoLines = (n) => { const r = LETGO[n.id]; return r && r[0]() ? r[1] : null; };
+  // the keeper who visibly stops is Mom: once, in the night of darkness (four fires kept, the lamp not yet lit)
+  const darkLines = (n) => (n.id === 'mom' && keptDark() && !advOf().flags.momDark ? ['I did not light it tonight.'] : null);
   const scaffoldLines = (n) => { const rows = SCAFFOLD[n.id]; if (!rows) return null; const c = sealCount(); let out = null; rows.forEach((r) => { if (c >= r[0]) out = r[1]; }); return out; };
   function hint(id, text) {
     if (sealCount() >= 1 && id !== 'online') return;   // with a seal in hand the tips go quiet
@@ -7110,17 +7107,15 @@ const APP = (() => {
   function checkHints() {
     const st = game.state;
     if (!st.intro) return;
-    if (st.caught.length >= 2) hint('party', 'You have more than one critter now. Put them in your party (Menu, then Party) so they can step in during battles.');
     if ((st.essence || 0) >= 3 && st.caught.length) hint('shop', 'Mira near your home sells potions and charms for essence.');
     const ac = CLOUD.account;
     if (ac.mode === 'supa' && ac.available && !ac.email && st.caught.length >= 3) hint('online', 'Tip: sign in (Menu, then Save) so your progress is saved online and follows you to other devices.');
-    if ((st.essence || 0) >= 15 && st.caught.length) hint('evolve', 'You have enough essence to evolve a critter. Open it in the Dex.');
   }
   async function intro() {
     if (game.state.intro || game.state.caught.length) return;
     await Promise.race([CLOUD.ready, new Promise((r) => setTimeout(r, 12000))]);
     if (game.state.intro || game.state.caught.length) return;
-    showTitle(() => showDialog('Professor Fern', ['Welcome to Sproutvale. I am Professor Fern.', 'Every trainer starts with a partner. Here are three.'], null, openStarter));
+    showTitle(() => showDialog('Professor Fern', ['Someone has the lamp on the west gate lit already. They do, most mornings.'], null, openStarter));
   }
   // the title screen (Meaning: the introduction to everything: one lit window in the dark, kept before you did anything; the game begins when you touch that light)
   function showTitle(then) {
@@ -7131,10 +7126,10 @@ const APP = (() => {
       setTimeout(() => { $('title').hidden = true; $('title').classList.remove('out'); then(); }, window.__noTransition ? 0 : 650); };
   }
   function openStarter() {
-    const seeds = game.starters(), power = (k) => k.stats.reduce((x, q) => x + q.value, 0);
+    const seeds = game.starters();
     $('st-list').innerHTML = seeds.map((s) => {
       const k = game.make(s, 1);
-      return '<div class="scard"><img src="' + PIX.sprite(k, 'big') + '" alt="" width="120" height="105"><b>' + esc(k.name) + '</b><span>' + k.element.name + ' type · ' + k.natureText.split(':')[0] + '</span><span>Strong vs ' + k.strongVs.replace(' + ', ' and ').toLowerCase() + '</span><span>Power ' + power(k) + '</span><button class="bk-btn gold" data-start="' + s + '">Choose ' + esc(k.name) + '</button></div>';
+      return '<div class="scard"><img src="' + PIX.sprite(k, 'big') + '" alt="" width="120" height="105"><b>' + esc(k.name) + '</b><button class="bk-btn gold" data-start="' + s + '">Choose ' + esc(k.name) + '</button></div>';   // name and picture only: a partner is not a purchase
     }).join('');
     $('starter').hidden = false; $('hud').hidden = true; WORLD.setPaused(true);
     const f = $('st-list').querySelector('button'); if (f) f.focus();
@@ -7144,8 +7139,11 @@ const APP = (() => {
     game.update({ caught: [{ seed: s, stage: 1 }], party: [s], fighter: s, intro: true, seen: [k.speciesNo] }, [{ t: 'keep' }, { t: 'species' }]);
     game.sfx('claim');
     $('starter').hidden = true;
-    showDialog('Professor Fern', ['A good choice. ' + k.name + ' will walk with you.', 'The gate with the lamp on it. Most people start in the tall grass past it, and there is some by your door. Talk to people on the way; they know more than the signs do.'], null);
+    fernHome();
+    showDialog('Professor Fern', ['Go on, then.'], null);
   }
+  // Fern stands beside Home's path for the first minute (while !intro) and goes back to the Lab door once you have a partner
+  function fernHome() { const f = (WORLD.allNpcs().town || []).find((n) => n.id === 'fern'); if (f) { f.x = 37; f.y = 11; f.dir = 'down'; } }
   // ---------- party, bag, shop ----------
   const ITEMS = {
     potion: { name: 'Potion', price: 3, desc: 'Heals 40% HP in battle. Uses your turn.' },
@@ -7231,17 +7229,17 @@ const APP = (() => {
   // the Arena's rivals: the one whose step is next waits on the sand (facing the gate); the others sit by their tents in ladder order
   const TENTS = [[5, 6], [8, 6], [5, 9], [8, 9], [5, 13]];
   function placeRivals(list) {
-    const step = game ? game.ladderStep() : 0;
-    (list || []).forEach((n) => { if (!n.ladder) return; const i = n.ladder - 1; if (n.ladder === step + 1) { n.x = 20; n.y = 7; n.dir = 'down'; } else { n.x = TENTS[i][0]; n.y = TENTS[i][1]; n.dir = i % 2 ? 'left' : 'right'; } });
+    const step = game ? game.ladderStep() : 0, fought = game ? game.ladderFoughtToday() : false;
+    (list || []).forEach((n) => { if (!n.ladder) return; const i = n.ladder - 1; if (n.ladder === step + 1) { if (fought) { n.x = 9; n.y = 13; n.dir = 'left'; } else { n.x = 20; n.y = 7; n.dir = 'down'; } } else { n.x = TENTS[i][0]; n.y = TENTS[i][1]; n.dir = i % 2 ? 'left' : 'right'; } });   // once the day's fight is done the next rival sits by the camp fire (the gesture is the rule)
   }
   function npcList() {
     const M = WORLD.MAPS, out = { town: [
-      { id: 'fern', name: 'Professor Fern', x: 37, y: 11, kind: 'request', pal: { h: '#E8E8F0', y: '#F4F7FB', Y: '#C9D3E6', p: '#4A5878' },
+      Object.assign({ id: 'fern', name: 'Professor Fern', x: 37, y: 11, kind: 'request', pal: { h: '#E8E8F0', y: '#F4F7FB', Y: '#C9D3E6', p: '#4A5878' } }, game && game.state && !game.state.intro ? { x: 7, y: 13, dir: 'up' } : {}, {
         need: 'species5', reward: 10,
         ask: ['Ah, a new trainer! I am Professor Fern. I study critters here at the Lab.', 'Could you help my research? Discover 5 different species and come back. I will make it worth your while.'],
         progress: (g) => 'You have found ' + (g.state.seen || []).length + ' of 5 species so far. The tall grass outside town is a good start.',
         thanks: ['Five species already? Wonderful work!', 'Here are 10 essence for your trouble.'],
-        after: ['Keep exploring. The Species page in your Dex shows where each type lives.'] },
+        after: ['Keep exploring. The Species page in your Dex shows where each type lives.'] }),
       { id: 'pip', name: 'Pip', x: 25, y: 14, kind: 'talk', pal: { h: '#8A5A34', y: '#7CD957', Y: '#4FA83A' },
         lines: ['Did you know? Sparkling grass hides rarer critters.', 'Trainers stand still and watch. If they see you, get ready to battle!'] },
       { id: 'mira', name: 'Mira', x: 6, y: 15, kind: 'shop', pal: { h: '#C0392B', y: '#F59ACB', Y: '#D86BA6' },
@@ -7289,7 +7287,7 @@ const APP = (() => {
       });
     };
     zone('frost', [
-      { lv: 5, id: 'glacia', name: 'Glacia', at: 'leader', kind: 'leader', leader: true, pal: { h: '#DCEBFF', y: '#8FD8EA', Y: '#5E97AE', p: '#2E4A66' }, types: ['Frost', 'Stone'], size: 4, stage: 2, pick: 0.75, firstReward: 25, needs: 'bram',
+      { lv: 5, id: 'glacia', name: 'Glacia', at: 'leader', kind: 'leader', leader: true, pal: { h: '#DCEBFF', y: '#8FD8EA', Y: '#5E97AE', p: '#2E4A66' }, types: ['Frost', 'Stone'], size: 4, stage: 2, pick: 0.75, firstReward: 25,
         intro: ['I am Glacia, leader of Frost Peaks.', 'My critters were born in the snow. They do not melt easily.'], winLine: 'The cold keeps what it is given. Take the Frost Seal. It will keep.', sealLine: 'The Frost Seal is quiet. Quiet fires last longest. Ember Fields awaits at level 6.', beatenLines: ['Rest by the fire, trainer. We can battle again tomorrow.'] },
       { lv: 9, id: 'bram', name: 'Hiker Bram', at: 'trainer', kind: 'trainer', trainer: true, pal: { cap: true, c: '#C0392B', y: '#8A5A34', Y: '#6B4626' }, types: ['Frost', 'Stone'], size: 4, stage: 2, pick: 0.5,
         intro: ['These peaks make critters tough.', 'Think yours can handle the cold?'], winLine: 'You climbed right over me! Well earned.', beatenLines: ['My critters need a rest. Tomorrow, then!'] },
@@ -7298,7 +7296,7 @@ const APP = (() => {
         progress: () => 'Still no Stone critter? They live in the tall grass here in Frost Peaks.', thanks: ['A Stone critter! It is even rockier than I imagined.', 'Take these 6 essence, as thanks.'], after: ['I will treasure that picture.'] }
     ]);
     zone('ember', [
-      { lv: 11, id: 'blaze', name: 'Blaze', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#1E1A2A', y: '#FF7A45', Y: '#C2410C' }, types: ['Ember', 'Volt'], size: 4, stage: 3, pick: 0.55, firstReward: 30, needs: 'kiki',
+      { lv: 11, id: 'blaze', name: 'Blaze', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#1E1A2A', y: '#FF7A45', Y: '#C2410C' }, types: ['Ember', 'Volt'], size: 4, stage: 3, pick: 0.55, firstReward: 30,
         intro: ['So you made it to the heart of Ember Fields.', 'I am Blaze. My team burns at full power. Ready?'], winLine: 'You did not put it out. You fed it. Take the Ember Seal.', sealLine: 'This one wants feeding every day. Tide Shore opens at level 9.', beatenLines: ['My flames need to rekindle. Come back tomorrow!'] },
       { lv: 10, id: 'kiki', name: 'Kiki', at: 'trainer', kind: 'trainer', trainer: true, pal: { h: '#F28C28', y: '#D8574A', Y: '#A8382E' }, types: ['Ember', 'Volt'], size: 3, stage: 2, pick: 0.55,
         intro: ['It is hot out here, and so are my critters!', 'Ready to feel the heat?'], winLine: 'Okay, okay, you win. That was electric!', beatenLines: ['My team is still cooling down. Come back tomorrow!'] },
@@ -7307,15 +7305,15 @@ const APP = (() => {
         progress: () => 'Evolve a critter in the Dex, then come back. Release extra critters to earn essence.', thanks: ['Whoa, look at the size of it!', 'Here, 8 essence. Thanks for showing me.'], after: ['One day I will evolve mine too.'] }
     ]);
     zone('moss', [
-      { lv: 6, id: 'wren', name: 'Elder Wren', at: 'leader', kind: 'leader', leader: true, pal: { h: '#E8E8F0', y: '#4E6B19', Y: '#2E4210', p: '#4A3424' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.6, firstReward: 20, needs: 'ivy',
-        intro: ['Welcome, young trainer. I am Elder Wren, leader of Moss Forest.', 'Show me that you and your critters grow together.'], winLine: 'It grows because someone stays beside it. Stay a while. The Moss Seal.', sealLine: 'The first fire is the easiest to keep. Frost Peaks opens at level 3.', beatenLines: ['The forest needs rest. Visit me again tomorrow.'] },
+      { lv: 6, id: 'wren', name: 'Elder Wren', at: 'leader', kind: 'leader', leader: true, pal: { h: '#E8E8F0', y: '#4E6B19', Y: '#2E4210', p: '#4A3424' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.6, firstReward: 20,   // lv 6: package M owns the number (first guess, 11 §1 CD-5)
+        intro: ['Welcome, young trainer. I am Elder Wren, leader of Moss Forest.', 'Show me that you and your critters grow together.'], winLine: 'Four in bloom. I did not see you hurry.', sealLine: 'The first fire is the easiest to keep. Frost Peaks opens at level 3.', beatenLines: ['The forest needs rest. Visit me again tomorrow.'] },
       { lv: 4, id: 'ivy', name: 'Ivy', at: 'trainer', kind: 'trainer', trainer: true, pal: { h: '#2E7D32', y: '#F5A3D0', Y: '#D86BA6' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.3,
         intro: ['Shh, the forest is listening.', 'Let us give it a battle worth hearing.'], winLine: 'Beautifully done. The forest approves.', beatenLines: ['Let the forest rest today. Tomorrow we can battle again.'] },
       { id: 'oak', name: 'Old Oak', at: 'talk', kind: 'talk', pal: { h: '#BDBDBD', y: '#6B8E23', Y: '#4E6B19' },
         lines: ['Every critter has a nature. Brave ones hit harder but bruise easier.', 'Pick the nature that fits how you like to battle.'] }
     ]);
     zone('tide', [
-      { lv: 12, id: 'coral', name: 'Admiral Coral', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#F8F8F8', y: '#1E2A4A', Y: '#0E1A38', p: '#1E2A4A' }, types: ['Tide', 'Dusk'], size: 5, stage: 3, pick: 0.75, firstReward: 35, needs: 'marlo',
+      { lv: 12, id: 'coral', name: 'Admiral Coral', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#F8F8F8', y: '#1E2A4A', Y: '#0E1A38', p: '#1E2A4A' }, types: ['Tide', 'Dusk'], size: 5, stage: 3, pick: 0.75, firstReward: 35,
         intro: ['Admiral Coral, leader of Tide Shore. Five critters, every one a veteran of the storm.', 'Win, and you will have tended every fire in the land.'], winLine: 'The sea gives back what it is given. The Tide Seal is yours.', sealLine: 'Four fires. Someone left a light on for you. Perhaps they still do. The trail north of Sproutvale is open.', beatenLines: ['My fleet is in the harbor. Challenge me again tomorrow.'] },
       { lv: 19, id: 'marlo', name: 'Captain Marlo', at: 'trainer', kind: 'trainer', trainer: true, pal: { cap: true, c: '#1E2A4A', y: '#FFFFFF', Y: '#C9D3E6' }, types: ['Tide', 'Dusk'], size: 4, stage: 3, pick: 0.4,
         intro: ['Ahoy! Four critters, one captain.', 'Can your crew weather all of them?'], winLine: 'You sailed through my whole crew! A fine captain you would make.', beatenLines: ['My crew is resting below deck. Tomorrow, sailor!'] },
@@ -7397,14 +7395,14 @@ const APP = (() => {
     out['dg-forge'] = [
       rt('dross', 'Smith Dross', fsp.guard1[0], fsp.guard1[1], 'right', ['Stone', 'Ember'], 5, 3, 16, 0.5, ['The west hall belongs to the forge, and so does the core on that pedestal.', 'Win it from me, if you can.'], 'Take the core. The forge chose you before I did.', { h: '#3A2A1A', y: '#8A8498', Y: '#5A566A' }),
       rt('ingot', 'Smith Ingot', fsp.guard2[0], fsp.guard2[1], 'left', ['Ember', 'Volt'], 5, 3, 16, 0.5, ['East hall. One core, one smith, one battle.', 'The hammer is warmed up!'], 'A fine strike. The core is yours.', { h: '#C0392B', y: '#F5C518', Y: '#C99A00' }),
-      Object.assign(rt('hale', 'Forgemaster Hale', fsp.hale[0], fsp.hale[1], 'down', ['Ember', 'Stone'], 5, 3, 18, 0.6, ['Two cores woke the hub. Not many climb down this far.', 'The furnace has been cold since my master laid down his hammer. I keep it cold until someone shows me they can keep it lit.', 'Show me.'], 'The fire knows you. Go and wake it.', { h: '#E8E8F0', y: '#FF8A3D', Y: '#C0503A' }), { boss: true, bonus: 10, afterLines: ['The furnace is yours to wake. Open its door.'] })
+      Object.assign(rt('hale', 'Forgemaster Hale', fsp.hale[0], fsp.hale[1], 'down', ['Ember', 'Stone'], 5, 3, 18, 0.6, ['Two cores. I heard them go in.', 'My master left the hammer where it is. I never moved it.'], 'Both sockets are warm. I had not noticed.', { h: '#E8E8F0', y: '#FF8A3D', Y: '#C0503A' }), { boss: true, bonus: 10, afterLines: ['The hammer is where it was.'] })
     ];
     // the Lamp Tower's guards and the Warden (boss)
     const lsp = M['dg-lamp'].spots;
     out['dg-lamp'] = [
-      rt('bex', 'Lampkeeper Bex', lsp.guard1[0], lsp.guard1[1], 'down', ['Volt', 'Stone'], 5, 3, 20, 0.5, ['Another climber! The second chamber has a keeper, and it is me.', 'Mind the gates. They have a mind of their own.'], 'Light on your feet and on your critters. Go on.', { h: '#2A1A10', y: '#F5C518', Y: '#C99A00' }),
-      rt('odo', 'Lampkeeper Odo', lsp.guard2[0], lsp.guard2[1], 'down', ['Frost', 'Tide'], 5, 3, 20, 0.5, ['Cold up here, is it not? I keep the third chamber warm with battles.', 'Ready?'], 'Well fought. The Warden is waiting above.', { h: '#E8E8F0', y: '#3E8EF7', Y: '#2A5A9A' }),
-      Object.assign(rt('maren', 'Warden Maren', lsp.warden[0], lsp.warden[1], 'down', ['Volt', 'Frost'], 5, 3, 18, 0.5, ['You climbed the whole way. Not many do.', 'The great lamp has been dark since before my grandmother. I keep it, and I keep it dark until someone proves they can carry its light.', 'Show me.'], 'The light knows you. Go and wake it.', { h: '#C9A8FF', y: '#FFF3B0', Y: '#E0C060' }), { boss: true, bonus: 10, afterLines: ['The lamp is yours to wake. Touch the glass.'] })
+      rt('bex', 'Lampkeeper Bex', lsp.guard1[0], lsp.guard1[1], 'down', ['Volt', 'Stone'], 5, 3, 20, 0.5, ['Another climber. The lamp in here went out before I was born.', 'The second chamber has a keeper, and it is me.'], 'Light on your feet and on your critters. Go on.', { h: '#2A1A10', y: '#F5C518', Y: '#C99A00' }),
+      rt('odo', 'Lampkeeper Odo', lsp.guard2[0], lsp.guard2[1], 'down', ['Frost', 'Tide'], 5, 3, 20, 0.5, ['Cold up here, is it not? I keep the third chamber warm with battles.', 'Ready?'], 'Well fought. It is colder above.', { h: '#E8E8F0', y: '#3E8EF7', Y: '#2A5A9A' }),
+      Object.assign(rt('maren', 'Warden Maren', lsp.warden[0], lsp.warden[1], 'down', ['Volt', 'Frost'], 5, 3, 18, 0.5, ['You climbed the whole way.', 'I used to stand here all night.'], 'I think I will sit down.', { h: '#C9A8FF', y: '#FFF3B0', Y: '#E0C060' }), { boss: true, bonus: 10, afterLines: ['I am still here. I find I like sitting.'] })   // she sits beside the stair (spots.warden), facing the wall: she never stands between you and the lamp
     ];
     // the Cinder Descent (the Ascent turned upside down): a cook at the camp, an old smelter by the lava bridge, and three trainers (now facing up toward the trail)
     out.descent = [
@@ -7419,8 +7417,8 @@ const APP = (() => {
     out.ascent = [
       rt('reka', 'Climber Reka', 14, 42, 'down', ['Frost', 'Stone'], 3, 3, 18, 0.5, ['The second ledge is mine. Everybody crosses it, and everybody battles me.', 'Rope up, trainer!'], 'Good footing. Go on up.', { h: '#C0503A', y: '#5E97AE', Y: '#3E6E8E' }),
       rt('joran', 'Skier Joran', 17, 26, 'down', ['Frost', 'Dusk'], 4, 3, 18, 0.5, ['I came down this slope in nine seconds once. Think you can climb it in ten minutes?', 'Show me what you have!'], 'You climb as well as you battle.', { h: '#2A1A10', y: '#E8E8F0', Y: '#9AA3B5' }),
-      rt('dag', 'Ice Climber Dag', 18, 18, 'down', ['Stone', 'Volt'], 5, 3, 18, 0.5, ['The summit is right above us. Nobody passes the last ledge without a battle.', 'My critters have been waiting in the cold all day.'], 'Fine, fine. The beacon is yours to look at.', { h: '#8A5A34', y: '#4A4A7A', Y: '#2E2E58' }),
-      { id: 'ansel', name: 'Guide Ansel', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#BDBDBD', y: '#D8574A', Y: '#8A3A28' }, lines: ['Welcome to base camp! Five ledges lead up to the old beacon, and the trail zig-zags so the wind cannot find you.', 'The climbers sit where they can see the trail. The snow moves when nobody is walking on it. Near the top, it sparkles.'] },
+      rt('dag', 'Ice Climber Dag', 18, 18, 'down', ['Stone', 'Volt'], 5, 3, 18, 0.5, ['The summit is right above us. Nobody passes the last ledge without a battle.', 'My critters have been waiting in the cold all day.'], 'Fine, fine. The summit is right there.', { h: '#8A5A34', y: '#4A4A7A', Y: '#2E2E58' }),
+      { id: 'ansel', name: 'Guide Ansel', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#BDBDBD', y: '#D8574A', Y: '#8A3A28' }, lines: ['Welcome to base camp! Five ledges lead up to the summit, and the trail zig-zags so the wind cannot find you.', 'The climbers sit where they can see the trail. The snow moves when nobody is walking on it. Near the top, it sparkles.'] },
       { id: 'marta', name: 'Old Marta', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#E8E8F0', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The glacier river does not freeze, whatever the climbers say. The log bridge is older than my grandmother.', 'They say the beacon above once lit every road in the land. Four fires and one lamp, and the whole country knew where home was.'] }
     ];
     out.ascent[3].x = near('ascent', 'camp', 4, 1)[0]; out.ascent[3].y = near('ascent', 'camp', 4, 1)[1]; const ms = spot('ascent', 11, 38); out.ascent[4].x = ms[0]; out.ascent[4].y = ms[1];
@@ -7506,12 +7504,12 @@ const APP = (() => {
     const M = WORLD.map, tr = M && M.trail, now = performance.now(); if (now - lampStamp > 5) { lampDt = Math.min(0.1, (now - lampStamp) / 1000); lampStamp = now; } const dt = lampDt; let want = 0;
     const tod = timeOfDay(), dark = tod === 'night' || tod === 'dusk';
     const mine = o.own || (!o.wave && !o.always && !!advOf().flags.lampLit);   // after the beacon no lamp lights itself ahead of you: a post lights when you pass it and stays lit (the roads are kept by you now)
-    if (o.day) want = 1;   // lit by day as well: the road someone keeps for you
+    if (o.day) want = o.id === 'gate-lamp' ? gateLampWant() : 1;   // lit by day as well: the road someone keeps for you (the gate lamp goes out in the night of darkness, and after the lamp burns only on a day you lit the window)
     else if (o.always) want = dark ? 1 : 0;
     else if (mine) {
       const f = advOf().flags, key = 'own:' + o.id;
       if (!f[key] && tr) { const P = WORLD.pos(), px = P.x / 32, py = P.y / 32; let pi = 0, bd = 1e9; tr.cells.forEach((c, i) => { const d = (c[0] - px) * (c[0] - px) + (c[1] - py) * (c[1] - py); if (d < bd) { bd = d; pi = i; } }); if (bd < 36 && pi >= o.trail) { advSave((a) => { a.flags[key] = true; }); game.sfx('post'); } }   // your keeping heard once per post
-      want = advOf().flags[key] ? 1 : 0;
+      want = advOf().flags[key] && (!advOf().flags.lampLit || homeLitNow()) ? 1 : 0;   // after the lamp, the posts you keep burn only on a day the window is lit (the Ascent's own posts still light as you pass before it)
     }
     else if (o.wave) want = (Math.floor(now / 1100) % (o.wave.n + 3) === o.wave.i || Math.floor(now / 1100) % (o.wave.n + 3) === o.wave.i + 1) ? (dark ? 1 : 0.5) : 0;   // the wave runs by day too, at half (review 11 item 11: the road is kept whatever hour you play)
     else if (tr) {
@@ -7529,9 +7527,26 @@ const APP = (() => {
       if (!folCache || folCache.key !== key) { const k = game.make(sd, e ? e.stage : 1), img = new Image(); img.src = PIX.sprite(k, 'icon'); const per = { down: img }; folCache = { key: key, img: img, shiny: !!k.shiny, imgFor: (d) => { if (!per[d]) { const im = new Image(); im.src = PIX.sprite(k, 'icon', d); per[d] = im; } return per[d].complete && per[d].naturalWidth ? per[d] : img; } }; }   // one image per facing, made the first time that facing is needed
       return folCache;
   }
-  // the window at Home: kept lit for you at the very start and once you tend three fires; after the beacon, lit only by you, each day
-  function homeLitNow() { const f = advOf().flags; return f.lampLit ? f.homeLit === new Date().toDateString() : (sealCount() >= 3 || game.state.caught.length <= 1); }
-  function objState(o) { const a = advOf(); if (o.id === 'names') return { n: game.ladderStep() }; /* the rail: one mark per step climbed */ if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'chamberlamp') return chamberlampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'windowlamp') { const t = timeOfDay(); return { lit: homeLitNow() || (!a.flags.lampLit && (t === 'night' || t === 'dusk')) }; } /* the same lamp seen from both sides (review 05-F2): kept for you until the great lamp, then lit only by you, each day */ if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'critterbasket') { const fl = APP_FOLLOWER(); return { img: fl ? fl.img : null }; } if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  // the window at Home: kept lit for you at the very start and once you tend three fires; dark from the fourth fire until the lamp (the night of darkness); after the lamp, lit only by you, each day
+  const today = () => new Date().toDateString();
+  const keptDark = () => sealCount() >= 4 && !advOf().flags.lampLit;   // Meaning: the one time help leaves and it hurts, placed where it sends you up (the Ascent is the one road that opens)
+  function homeLitNow() { const f = advOf().flags; return f.lampLit ? f.homeLit === today() : (!keptDark() && (sealCount() >= 3 || game.state.caught.length <= 1)); }
+  // the gate lamp by day: kept for you until the night of darkness; after the lamp it burns only on a day you lit the window
+  const gateLampWant = () => (advOf().flags.lampLit ? (homeLitNow() ? 1 : 0) : (keptDark() ? 0 : 1));
+  // the window as the daily act (Meaning: what you keep is kept only while you keep it): after the lamp the sill lamp takes while you stay beside it (the chamber rule, no button, no dialog); lit, it is the land's answer for the day
+  let wlK = 0, wlStamp = 0;
+  const hasWick = () => game.state.caught.some((e) => e.seed === SECRET2_SEED);
+  function windowlampState(o) {
+    const f = advOf().flags, t = timeOfDay();
+    if (!f.lampLit) return { lit: homeLitNow() || (!keptDark() && (t === 'night' || t === 'dusk')) ? 1 : 0 };   // before the lamp: kept for you (never during the night of darkness)
+    if (f.homeLit === today()) return { lit: 1, wick: !hasWick() };   // wick: Wickling asleep on the sill the first morning the window is lit (package W draws it; touching it is the hand-over)
+    const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - wlStamp) / 1000)); wlStamp = now;
+    const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)), near = d <= CL_REACH && !WORLD.moving();
+    wlK = near ? Math.min(1, wlK + dt / CL_S) : Math.max(0, wlK - dt * 0.8);
+    if (wlK >= 1) { wlK = 0; advSave((a) => { a.flags.homeLit = today(); }); game.sfx('light'); musicLoop(); }   // `light` and the lead returning to `town` belong to package S
+    return { lit: 0, k: wlK };   // k 0..1: the glow forming (package W may draw it)
+  }
+  function objState(o) { const a = advOf(); if (o.id === 'names') return { n: game.ladderStep() }; /* the rail: one mark per step climbed */ if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'chamberlamp') return chamberlampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'windowlamp') return windowlampState(o); if (o.kind === 'seat') return seatState(o); if (o.kind === 'statue') return { lit: ADV.TYPES.indexOf(o.type) < seatLit }; /* the statues' braziers come up one by one while someone sits in the ninth seat (package W draws it) */ if (o.kind === 'brazier' && o.id.length === 3 && o.id.indexOf('fr') === 0 && o.id < 'fr6') return { cold: !a.flags.forgeLit }; /* the Forge's braziers fr0..fr5 are cold until the furnace is lit; the two by the door stay lit (package W draws the coals) */ if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'critterbasket') { const fl = APP_FOLLOWER(); return { img: fl ? fl.img : null }; } if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? a.clues.length : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -7542,14 +7557,14 @@ const APP = (() => {
     ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Something on ' + c.where + ' you have not looked at closely.'));
     if (advOf().open.arch) { const f = advOf().flags; lines.push('The Sealed Arch: ' + (f.rubble ? 'the way north is clear.' : 'rubble blocks the way north. The empty seat, a fire bowl, a lamp and a hull lantern must mean something.') + (((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 ? ' You have beaten the Keeper.' : '') + (advOf().flags.secret ? ' The ninth seat has answered.' : '')); }
     if (advOf().open.forge) { const f = advOf().flags; lines.push('The Forge Below: ' + (f.forgeLit ? 'the great furnace is lit.' : 'the north gate opens when both hub sockets hold a core (' + ((f['sock:A'] ? 1 : 0) + (f['sock:B'] ? 1 : 0)) + '/2). One core lies in each side hall.')); } else if ((game.state.visited || []).indexOf('descent') !== -1) lines.push('The Cinder Descent leads down to a buried forge.');
-    if (advOf().open.lamp) lines.push('The Lamp Tower: ' + (advOf().flags.lampLit ? 'the great lamp is lit, and its beam crosses the land.' : ['L1', 'L2', 'L3'].filter(lampKept).length + ' of the three lamps below the great lamp burn.')); else if ((game.state.visited || []).indexOf('ascent') !== -1) lines.push('The Cold Ascent leads to an old beacon tower at the top of the peaks.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
+    if (advOf().open.lamp) lines.push('The Lamp Tower: ' + (advOf().flags.lampLit ? 'the great lamp is lit.' : 'dark chambers, a lamp on a stand in each.')); else if ((game.state.visited || []).indexOf('ascent') !== -1) lines.push('The Cold Ascent climbs north from Frosthold.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
     showDialog('Journal', lines);
   }
   function archUse() {
     const a = advOf();
     if (a.open.arch) { game.sfx('tap'); WORLD.go('dg-arch'); return; }
     if (a.clues.length < ADV.CLUES.length) { const ruin = ADV.CLUES.find((c) => c.id === 'ruin'); showDialog('The old arch', ['Eight critters sit around one fire. A ninth seat is carved empty.', 'The stone stays cold.'], null, () => gainClue(ruin)); return; }   // looking at the carvings is the first clue
-    showDialog('The old arch', ['Fire for the first. Lamp for the second. Hull for the third.', 'The carved flame between the pillars begins to glow...', 'A passage opens in the old arch.'], null, () => { advSave((x) => { x.open.arch = true; }); game.sfx('claim'); setTimeout(() => { game.sfx('claim'); WORLD.go('dg-arch'); }, 200); });
+    showDialog('The old arch', ['The carved flame between the pillars begins to glow...', 'A passage opens in the old arch.'], null, () => { advSave((x) => { x.open.arch = true; }); game.sfx('claim'); setTimeout(() => { game.sfx('claim'); WORLD.go('dg-arch'); }, 200); });
   }
   function chestUse(o) {
     const key = 'chest:' + o.id; if (advOf().flags[key]) { toast('The chest is empty.'); return; }
@@ -7569,40 +7584,63 @@ const APP = (() => {
       else toast(seq.length === 1 ? 'The fire bowl catches. One light burns.' : 'The lamp wakes. Two lights burn.');
     } else {
       advSave((x) => { x.flags.rite = []; }); game.sfx('douse');
-      toast(a.clues.indexOf('camp') !== -1 ? 'The lights gutter out. The camp rhyme: fire first, then lamp, then hull.' : 'The lights gutter out. Maybe the order matters.');
+      toast('The lights gutter out.');   // the order is the road's own order (fire, lamp, hull); a player who walked it knows
     }
   }
   // clear the rubble once the rite is done (also on load)
   function applyDungeon() { const m = WORLD.MAPS['dg-arch']; if (!m || !advOf().flags.rubble) return; const rb = (m.objects || []).filter((x) => x.rubble); if (rb.length) WORLD.openTiles('dg-arch', m.rubble, rb.map((x) => x.id)); }
-  // the ninth seat answers: Veilcrown joins you (level 12, one form); the Dex opens on it
+  // the ninth seat (Meaning: the one left out is counted by someone sitting there): once the Keeper has let you pass, sit in the seat and STAY (the chamber rule, CL_S);
+  // the statues' braziers come up one by one as you stay (seatLit 0..8), the crown is not taken, and Veilcrown joins you as before
+  let seatK = 0, seatLit = 0, seatStamp = 0;
+  function seatState(o) {
+    const a = advOf(), got = game.state.caught.some((e) => e.seed === SECRET_SEED) || a.flags.secret;
+    if (got) { seatLit = 8; return { k: 1, lit: 8, done: true }; }
+    const beaten = ((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1;   // the Keeper stays the guard before the fire
+    const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - seatStamp) / 1000)); seatStamp = now;
+    const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)), near = beaten && d <= CL_REACH && !WORLD.moving();
+    seatK = near ? Math.min(1, seatK + dt / CL_S) : Math.max(0, seatK - dt * 0.8); seatLit = Math.floor(seatK * 8);
+    if (seatK >= 1) { seatK = 0; showDialog('The ninth seat', ['Something that has been kept here a very long time opens its eyes.', 'It looks at the empty seat, and then it chooses you instead.'], null, () => grantSecret(SECRET_SEED)); }
+    return { k: seatK, lit: seatLit, done: false };
+  }
+  // a secret critter joins you (level by SECRETS); quiet = nothing said or played (Slagback stays, unannounced; the dev tools)
   function grantSecret(seed, quiet) {
     seed = seed || SECRET_SEED; const S = SECRETS[seed];
     if (!S || game.state.caught.some((e) => e.seed === seed)) return;
     advSave((a) => { a.flags[S.flag] = true; });
     game.update({ caught: game.state.caught.concat([{ seed: seed, stage: 3, lv: S.lv }]) });
-    toast(S.name + ' joined you!');
     if (quiet) return;
+    toast(S.name + ' joined you!');
     game.sfx('mythic'); game.buzz([30, 40, 30, 40, 30, 40, 160]);
     setTimeout(() => { openScreen('dex'); game.setState({ selected: seed, dexView: 'mine', armed: false }); }, 900);   // openScreen clears the selection, so select after opening
   }
   // ---- the Lamp Tower: levers flip gates (open = an odd number of its levers are ON), the beacon door leads in, the great lamp ends the climb ----
   // the Lamp Tower (Meaning: the way home is lit by you): a gate opens once the lamp of its chamber has been kept; a lamp takes while you stay beside it (about CL_S seconds), and a kept lamp is saved. Lighting the beacon counts every lamp as kept (old saves).
-  const CL_S = 2.4, CL_REACH = 1.9; let clK = {}, clStamp = 0, clTick = {}, clPeak = {};
+  const CL_S = 2.4, CL_REACH = 1.9; let clK = {}, clStamp = 0, clTick = {}, clPeak = {};   // CL_S per lamp: a lamp may carry its own `cl` seconds (the great lamp GL: 6 s). The numbers belong to package M.
+  const GL_BELOW = ['L1', 'L2', 'L3'];
   const lampKept = (id) => !!(advOf().flags['cl:' + id] || advOf().flags.lampLit);
+  const glReady = () => GL_BELOW.every(lampKept);   // the great lamp lights only from the three kept below it, checked before anything else (no Warden, no button)
+  // the last act (Meaning: you no longer need it kept for you): the great lamp takes after the longest stay of the game; nothing is given, one line, the beam, silence, then the lit arrangement (package S)
+  let hushUntil = 0;
+  function greatLampLit() {
+    advSave((a) => { a.flags.lampLit = true; a.flags['cl:GL'] = true; a.flags.litOn = today(); a.flags.dayAt = today(); });   // litOn: the title "The lamp was lit" appears the next morning; dayAt: tomorrow's first load begins at Home
+    WORLD.gust(); hushUntil = performance.now() + 2400; if (typeof MUSIC !== 'undefined') MUSIC.play(null); game.sfx('light');   // silence, `light`, then `dg-lamp@lit` from musicTrack: package S
+    setTimeout(() => { if (!dlg) showDialog('The great lamp', ['The glass is warm.']); }, 700);
+  }
   function applyLamp() { const m = WORLD.MAPS['dg-lamp']; if (!m || !m.gates) return; Object.keys(m.gates).forEach((gid) => WORLD.setGate('dg-lamp', gid, m.gates[gid].every(lampKept))); }
   function chamberlampState(o) {
     if (lampKept(o.id)) return { lit: 1 };
+    if (o.id === 'GL' && !glReady()) return { lit: 0 };   // a dark glass until the three below burn
     const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - clStamp) / 1000)); clStamp = now;
     const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)), near = d <= CL_REACH && !WORLD.moving();
-    const k0 = clK[o.id] || 0; let k = near ? Math.min(1, k0 + dt / CL_S) : Math.max(0, k0 - dt * 0.8); clK[o.id] = k;
+    const k0 = clK[o.id] || 0; let k = near ? Math.min(1, k0 + dt / (o.cl || CL_S)) : Math.max(0, k0 - dt * 0.8); clK[o.id] = k;
     if (k > k0 && k < 1) { clPeak[o.id] = Math.max(clPeak[o.id] || 0, k); if (now - (clTick[o.id] || 0) >= 600) { clTick[o.id] = now; game.sfx('tick', 392 + 392 * k); } }   // the stay heard growing
     else if (k < k0) { if (k === 0) { if ((clPeak[o.id] || 0) > 0.3) game.sfx('gutter'); clPeak[o.id] = 0; } clTick[o.id] = 0; }   // the withdrawal felt: a lamp that had taken gutters out
-    if (k >= 1) { advSave((a) => { a.flags['cl:' + o.id] = true; }); applyLamp(); game.sfx('light'); }
+    if (k >= 1) { if (o.id === 'GL') greatLampLit(); else { advSave((a) => { a.flags['cl:' + o.id] = true; }); applyLamp(); game.sfx('light'); } }
     return { lit: k };
   }
   // ---- Wren's Gym: the trial of being tended (Meaning: you grew because someone stayed with you). Press Tend by a seedling, then STAY: it grows about one stage per 2.5 s, two stages to bloom.
   // Step away and it stops, keeping what it grew (a stage is saved the moment it is reached, nothing is ever lost). All four in bloom and the vines draw back. Old saves (Wren beaten, or her seal) find the way open. ----
-  const BED_STAGE_S = 2.5, BED_REACH = 1.9; let tending = null, tendP = 0, tendStamp = 0, tendTick = 0;
+  const BED_STAGE_S = 2.5, BED_REACH = 1.9, BED_WAIT_S = 0.6; let tending = null, tendP = 0, tendStamp = 0, tendTick = 0, bedNear = {};   // BED_WAIT_S: in reach, still, this long, and the bed is being tended (no button)
   function gymOpen(id) { const f = advOf().flags, npc = game.state.npc || {}; return !!f['gym:' + id] || (npc.cleared || []).indexOf(id) !== -1 || (npc.seals || []).indexOf(id) !== -1; }
   function gymWrenOpen() { return gymOpen('wren'); }
   function applyGym() {
@@ -7610,7 +7648,12 @@ const APP = (() => {
     ['wren', 'glacia', 'blaze', 'coral'].forEach((id) => { if (WORLD.MAPS['gym-' + id]) WORLD.setGate('gym-' + id, id, gymOpen(id)); });
     const G = WORLD.MAPS['gym-glacia']; if (G && G.pool) { const cells = []; for (let y = G.pool[1]; y <= G.pool[3]; y++) for (let x = G.pool[0]; x <= G.pool[2]; x++) cells.push([x, y]); if (gymOpen('glacia')) WORLD.setTiles('gym-glacia', cells, '.'); else { WORLD.setTiles('gym-glacia', cells, '~'); iceCells = []; stillT = 0; } }   // the whole pool is frozen for good once the trial is done
   }
-  function gymDone(id, line) { advSave((x) => { x.flags['gym:' + id] = true; }); applyGym(); game.sfx('claim'); toast(line); setTimeout(() => toast(line), 900); }
+  function gymDone(id, line) {
+    advSave((x) => { x.flags['gym:' + id] = true; }); applyGym(); game.sfx('claim'); if (line) { toast(line); setTimeout(() => toast(line), 900); }
+    // the seal (Meaning: the fire you tended is the seal; the leader lets go): granted here, the moment the trial is kept, never by a knockout count
+    const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, game.state.npc);
+    if ((npc.seals || []).indexOf(id) === -1) { npc.seals = (npc.seals || []).concat([id]); game.update({ npc: npc }, [{ t: 'leader' }]); }
+  }
   // ---- Glacia's Gym: the trial of stillness. Ice forms on the water around you only while you stand still; what you leave behind melts when you move on; the plate under you never melts. ----
   const STILL_S = 1.2; let iceCells = [], stillT = 0, stillStamp = 0;   // 1.2 s of standing still before the ice takes (review copy; 1.6 if Dan's thumb says it still stutters). APP.stillK() is the forming ratio for the drawing.
   setInterval(() => {
@@ -7667,6 +7710,10 @@ const APP = (() => {
   function bedState(o) {   // called every frame the bed is drawn: this is where growth happens
     const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - tendStamp) / 1000)); if (tending === o.id) tendStamp = now;
     let stage = bedStage(o), p = 0;
+    if (tending === null && stage < 2 && !gymWrenOpen()) {   // the stay begins by itself after BED_WAIT_S beside the bed
+      const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)), dt2 = Math.min(0.1, Math.max(0, (now - (bedNear.stamp || now)) / 1000)); bedNear.stamp = now;
+      if (d <= BED_REACH && !WORLD.moving()) { bedNear[o.id] = (bedNear[o.id] || 0) + dt2; if (bedNear[o.id] >= BED_WAIT_S) { bedNear[o.id] = 0; tending = o.id; tendP = 0; tendStamp = now; } } else bedNear[o.id] = 0;
+    }
     if (tending === o.id && stage < 2) {
       const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5));
       if (d > BED_REACH) { tending = null; tendP = 0; }   // you walked away: it stops, quietly
@@ -7675,7 +7722,7 @@ const APP = (() => {
         if (now - tendTick >= 800) { tendTick = now; game.sfx('tend', 262 + 130 * tendP); }   // the stay heard growing
         if (tendP >= 1) { tendP = 0; stage += 1; const key = 'wb:' + o.id; advSave((x) => { x.flags[key] = stage; }); game.sfx(stage >= 2 ? 'bloom' : 'sprout');
           if (stage >= 2) { tending = null; const M = WORLD.MAPS['gym-wren'], all = (M.objects || []).filter((q) => q.kind === 'gbed').every((q) => (advOf().flags['wb:' + q.id] | 0) >= 2);
-            if (all) { advSave((x) => { x.flags['gym:wren'] = true; }); applyGym(); toast('The vines draw back.'); setTimeout(() => toast('The vines draw back.'), 900); } else toast('It is in bloom.'); } }
+            if (all) gymDone('wren', null); } }   // no toast: the vines drawing back is the statement
         p = tendP;
       }
     }
@@ -7683,26 +7730,10 @@ const APP = (() => {
   }
   // growth happens in bedState (every frame the bed is drawn); walking so far that the bed leaves the screen must end the tending too, so a timer checks the distance as well
   setInterval(() => { if (!tending || !WORLD.map || WORLD.map.id !== 'gym-wren') { tending = null; return; } const o = (WORLD.map.objects || []).find((q) => q.id === tending); if (!o) { tending = null; return; } const P = WORLD.pos(); if (Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)) > BED_REACH) { tending = null; tendP = 0; } }, 250);
-  function gbedUse(o) {
-    if (bedStage(o) >= 2) { toast('It is in bloom.'); return; }
-    if (tending === o.id) { toast('You are already here.'); return; }
-    tending = o.id; tendP = 0; tendStamp = performance.now(); game.sfx('tap'); toast('You kneel by the bed.');
-  }
+  function gbedUse(o) { if (bedStage(o) >= 2) toast(o.text || 'It is in bloom.'); }   // no press: the bed is tended by staying (bedState)
   function beaconDoorUse() {
     if (advOf().open.lamp) { game.sfx('tap'); WORLD.go('dg-lamp'); return; }
-    showDialog('The Beacon', ['The great door is not locked. It never was.', 'It only waited for someone to climb all the way up.'], null, () => { advSave((x) => { x.open.lamp = true; }); game.sfx('claim'); setTimeout(() => WORLD.go('dg-lamp'), 200); });
-  }
-  function greatLampUse() {
-    const beaten = ((game.state.npc && game.state.npc.cleared) || []).indexOf('maren') !== -1;
-    if (!beaten) { toast('The Warden stands between you and the great lamp.'); return; }
-    const lit = advOf().flags.lampLit, got = game.state.caught.some((e) => e.seed === SECRET2_SEED);
-    if (!lit && !['L1', 'L2', 'L3'].every(lampKept)) { toast('The glass stays cold.'); return; }   // the great lamp lights only from the three you kept below it
-    if (lit && got) { toast('The great lamp burns steadily. Its light reaches the whole land.'); return; }
-    if (lit) { showDialog('The great lamp', ['The glass glows warm under your hand. Something small stirs inside it.', 'A spark slips out of the flame, bright and curious, and lands on your shoulder.'], null, () => grantSecret(SECRET2_SEED)); return; }   // lit before Wickling existed, or by the dev tools
-    showDialog('The great lamp', ['You touch the cold glass. A spark answers you.', 'The flame wakes, and a beam of light climbs out of the tower, over the peaks and across the whole land.', 'Far away, in the old arch and the lighthouse, something wakes too.', 'A spark slips out of the flame, bright and curious, and lands on your shoulder.'], null, () => {
-      hush(1600); advSave((x) => { x.flags.lampLit = true; }); WORLD.gust(); game.update({ essence: (game.state.essence || 0) + 30 }); game.sfx('light', 'long'); game.buzz([20, 60, 120]); toast('The beacon is lit! +30 essence.');   // silence, the light, then dg-lamp@lit from the music loop (package R moves this to the lamp's stay)
-      setTimeout(() => grantSecret(SECRET2_SEED), 1800);
-    });
+    showDialog('The door', ['The great door is not locked.', 'The handle is worn bright.'], null, () => { advSave((x) => { x.open.lamp = true; }); game.sfx('claim'); setTimeout(() => WORLD.go('dg-lamp'), 200); });
   }
   // ---- the Forge Below: cores from the two halls go into the hub sockets (either order); both sockets open the north gate; the furnace ends the run ----
   const CORE_NAME = { A: 'flame', B: 'stone' };
@@ -7722,13 +7753,13 @@ const APP = (() => {
   }
   function furnaceUse() {
     const beaten = ((game.state.npc && game.state.npc.cleared) || []).indexOf('hale') !== -1;
-    if (!beaten) { toast('The Forgemaster stands between you and the great furnace.'); return; }
+    if (!beaten) { toast('The furnace door is shut. The Forgemaster is watching it.'); return; }
     const lit = advOf().flags.forgeLit, got = game.state.caught.some((e) => e.seed === SECRET3_SEED);
-    if (lit && got) { toast('The furnace roars quietly. The whole crater glows.'); return; }
-    if (lit) { showDialog('The great furnace', ['A coal in the ash shifts and looks up.', 'It climbs out, small and heavy and warm, and settles against your boots.'], null, () => grantSecret(SECRET3_SEED)); return; }   // lit before Slagback existed, or by the dev tools
-    showDialog('The great furnace', ['You pull the soot-black door open. A single ember glows in the ash.', 'You blow on it. It brightens, then catches, then roars.', 'Far above, the whole crater lights up, and the old forge wakes for the first time in a very long time.', 'A coal in the ash shifts and looks up. It climbs out, small and heavy and warm.'], null, () => {
-      hush(1200); advSave((x) => { x.flags.forgeLit = true; }); game.update({ essence: (game.state.essence || 0) + 30 }); game.sfx('forge'); game.buzz([20, 60, 120]); toast('The forge is lit! +30 essence.');   // silence, the forge's sound, then dg-forge@lit from the music loop (package R quietens the ending)
-      setTimeout(() => grantSecret(SECRET3_SEED), 1800);
+    if (lit && got) { toast('The furnace roars quietly.'); return; }
+    if (lit) { showDialog('The great furnace', ['A coal in the ash shifts and looks up.', 'It climbs out, small and heavy and warm, and settles against your boots.'], null, () => grantSecret(SECRET3_SEED, true)); return; }   // lit before Slagback existed, or by the dev tools
+    showDialog('The great furnace', ['You pull the soot-black door open. A single ember glows in the ash.', 'You blow on it. It brightens, then catches, then roars.'], null, () => {
+      advSave((x) => { x.flags.forgeLit = true; }); hushUntil = performance.now() + 2400; hush(1200); game.sfx('forge');   // no essence, no toast, no jingle: silence, then `dg-forge@lit` (package S)
+      setTimeout(() => grantSecret(SECRET3_SEED, true), 1800);   // Slagback stays, unannounced
     });
   }
   function objectUse(o) {
@@ -7738,23 +7769,18 @@ const APP = (() => {
     if (o.kind === 'furnace') { furnaceUse(); return; }
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
     if (o.id === 'names' && game.ladderStep() >= 5) { toast(o.text + ' The newest is yours.'); return; }   // the rail, once you have climbed
-    if (o.kind === 'chamberlamp') { toast(lampKept(o.id) ? 'The lamp burns steadily.' : o.text); return; }
+    if (o.kind === 'chamberlamp') { toast(lampKept(o.id) ? (o.id === 'GL' ? 'The glass is warm.' : 'The lamp burns steadily.') : (o.id === 'GL' && !glReady() ? 'The glass is cold.' : o.text)); return; }
+    if (o.kind === 'gate') { const gl = WORLD.map.gates && WORLD.map.gates[o.gate]; toast(gl && gl.every(lampKept) ? 'Warm.' : o.text); return; }
+    if (o.id === 'wlog') { const t = game.towerState(); toast(t.best ? 'A book of names and floors, one line a night. The last line is yours: night ' + t.best + '.' : o.text); return; }   // the logbook carries your count
     if (o.clue) { const c = ADV.CLUES.find((q) => q.id === o.clue); showDialog('You look closer', [o.text], null, () => { if (c) gainClue(c); }); return; }
-    if (o.kind === 'windowlamp' && advOf().flags.lampLit && advOf().flags.homeLit !== new Date().toDateString()) { advSave((a) => { a.flags.homeLit = new Date().toDateString(); }); game.sfx('light'); game.buzz([20, 60, 120]); showDialog('The window', ['You light the lamp in the window. It faces the road.']); return; }   // Meaning: being the keeper is a small daily act
+    if (o.kind === 'windowlamp') { const f = advOf().flags; if (f.lampLit && f.homeLit === today() && !hasWick()) { showDialog('The window', ['Something small is asleep on the sill, curled against the warm glass.', 'It opens one eye.'], null, () => grantSecret(SECRET2_SEED)); return; } toast(o.text); return; }   // the window is lit by staying (windowlampState); the first lit morning after the lamp, Wickling is on the sill
     if (o.kind === 'gbed') { gbedUse(o); return; }
     if (o.kind === 'woodpile') { woodUse(); return; }
     if (o.kind === 'gbrazier') { brazierUse(o); return; }
     if (o.kind === 'callamp') { lampUse(o); return; }
-    if (o.kind === 'greatlamp') { greatLampUse(); return; }
     if (o.kind === 'chest') { chestUse(o); return; }
     if (o.order !== undefined) { riteUse(o); return; }
-    if (o.kind === 'crown') {
-      const beaten = ((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1;
-      if (!beaten) { toast('The Keeper stands between you and the crown.'); return; }
-      const got = game.state.caught.some((e) => e.seed === SECRET_SEED) || advOf().flags.secret;
-      if (got) { showDialog('The ninth seat', ['The seat is warm. Whatever was kept here is with you now.']); return; }
-      showDialog('The ninth seat', ['The crown lifts from the stone and the dust settles around it.', 'Something that has been kept here a very long time opens its eyes.', 'It looks at you. Then it looks at the empty seat, and it chooses you instead.'], null, () => grantSecret(SECRET_SEED)); return;
-    }
+    if (o.kind === 'seat') { const got = game.state.caught.some((e) => e.seed === SECRET_SEED) || advOf().flags.secret; toast(got ? 'The seat is warm.' : o.text); return; }   // the act is sitting (seatState); the crown stays where it is
     toast(o.text || 'Nothing happens.');
   }
   // ---------- developer tools (unlocked by tapping the ID in the menu 5 times; options are browser-only, never saved or synced) ----------
@@ -7810,11 +7836,13 @@ const APP = (() => {
   function flavorLine(n) {
     const M = WORLD.map, outside = M.interior ? (M.parent || 'town') : M.id, st = game.state.settings || {};
     const tod = st.daynight === false ? 'day' : timeOfDay(), d = new Date();
-    return FLAVOR.pick({ id: n.id.replace(/^res-/, ''), region: (WEATHER.region(outside) || ''), indoor: !!M.interior, weather: weatherAt(outside), tod: tod, salt: d.toDateString() + '#' + Math.floor(d.getHours() / WEATHER.BLOCK_H) + (tod === 'night' ? 'n' : '') });
+    const fid = n.id.replace(/^res-/, ''), id = fid === 'mom' && (advOf().flags.lampLit || keptDark()) ? 'mom-quiet' : fid;   // after the lamp (and in the night of darkness) Mom's "the lamp in the window stays on" is not true: she gets the house's plain night line
+    return FLAVOR.pick({ id: id, region: (WEATHER.region(outside) || ''), indoor: !!M.interior, weather: weatherAt(outside), tod: tod, salt: d.toDateString() + '#' + Math.floor(d.getHours() / WEATHER.BLOCK_H) + (tod === 'night' ? 'n' : '') });
   }
   function talk(n) {
     WORLD.facePlayer(n);
-    const sc = letGoLines(n) || scaffoldLines(n); if (sc) n = Object.assign({}, n, { lines: sc, afterLines: letGoLines(n) ? sc : n.afterLines, after: n.after ? sc : n.after });
+    const dk = darkLines(n), sc = letGoLines(n) || dk || scaffoldLines(n); if (sc) n = Object.assign({}, n, { lines: sc, afterLines: letGoLines(n) ? sc : n.afterLines, after: n.after ? sc : n.after });
+    if (dk) advSave((a) => { a.flags.momDark = true; });
     const g = game, done = (g.state.npc && g.state.npc.done) || [];
     const qcity = Object.keys(CITY_QUESTS).find((c) => CITY_QUESTS[c].giver === n.id);
     if (qcity) {
@@ -7838,17 +7866,9 @@ const APP = (() => {
       }
       showDialog(n.name, n.ask.concat([n.progress(g)])); return;
     }
-    if (n.kind === 'trainer' && n.ladder && !game.ladderReady(n)) { showDialog(n.name, game.ladderStep() + 1 < n.ladder ? n.notYet : n.tomorrow); n.declined = true; return; }   // the Arena ladder: in order, one a day
+    if (n.kind === 'trainer' && n.ladder && !game.ladderReady(n)) { if (game.ladderStep() + 1 < n.ladder) showDialog(n.name, n.notYet); n.declined = true; return; }   // the Arena ladder: in order, one a day. The day's rival sits by the fire and says nothing: that is the answer
     if (n.kind === 'trainer') challenge(n);
-    if (n.kind === 'leader') {
-      const npcSt = g.state.npc || {}, cleared = npcSt.cleared || [];
-      if (cleared.indexOf(n.needs) === -1) {
-        const tn = Object.values(WORLD.allNpcs()).flat().find((x) => x.id === n.needs);
-        showDialog(n.name, [n.intro[0], 'Before you challenge me, prove yourself against ' + (tn ? tn.name : 'the trainer') + ' in ' + mapName(npcHome(n.needs) || n.zoneId) + '.']);
-        return;
-      }
-      challenge(n);
-    }
+    if (n.kind === 'leader') challenge(n);   // the trial was the door; the duel is for XP
   }
   function challenge(n) {
     const g = game;
@@ -7873,7 +7893,7 @@ const APP = (() => {
     const seals = (game.state.npc && game.state.npc.seals) || [];
     const cleared = (game.state.npc && game.state.npc.cleared) || [];
     // trainers: full reward on the first win, half on daily rematches (keeps daily essence close to the pre-city economy)
-    const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward + (n.bonus || 0) : Math.ceil(n.reward / 2));
+    const reward = n.leader ? (cleared.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward + (n.bonus || 0) : Math.ceil(n.reward / 2));
     const tr = { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss, ladder: n.ladder || 0 };
     if (!ACT.canDuel()) { resumeWorld(); toast('Your lead critter is not ready to fight here.'); return; }
     // the ladder's day is stamped on a WON step in settleBattle, so a lost ladder fight can be tried again today
@@ -7882,6 +7902,9 @@ const APP = (() => {
   }
   // ---------- The Long Watch ----------
   const KEEPER = 'Keeper of the Watch';
+  // the door (Meaning: carrying your own light is not being alone): opens at four seals, and stays open for any save that has already stood a night (tower.runs, tower.best or a live run)
+  const watchOpen = () => { const t = game.towerState(); return sealCount() >= 4 || t.runs > 0 || t.best > 0 || !!t.run || !!game.props.noGates; };
+  const WATCH_LINES = { surge: 'The wind is on the door tonight.', iron: 'Cold one. The blanket is thin.', wind: 'A mild week.', mono: 'They are all of a kind this week.' };   // one observation per twist, no numbers (04-M12)
   function partyLine() {
     return game.towerParty().map((x) => game.make(x.seed, (game.state.caught.find((e) => e.seed === x.seed) || {}).stage || 1).name + ' ' + x.hp + '/' + x.max).join(', ');
   }
@@ -7897,11 +7920,11 @@ const APP = (() => {
     resumeWorld(); toast('Your party is not ready for the night.');
   }
   function towerLobby() {
-    const g = game, t = g.towerState(), seals = ((g.state.npc && g.state.npc.seals) || []).length;
-    if (seals < 4 && !g.props.noGates) { toast("The Long Watch is for those who hold all 4 Leader Seals. You hold " + seals + '.'); return; }
+    const g = game, t = g.towerState();
+    if (!watchOpen()) { toast('The door is shut. Light shows under it.'); return; }
     if (t.run) {
       if (!g.towerParty().some((x) => x.hp > 0)) { g.endTowerRun(); towerLobby(); return; }
-      showDialog(KEEPER, ['The watch is waiting on night ' + t.run.floor + ' of ' + TOWER.floors + '.', 'Your party: ' + partyLine() + '.'], [
+      showDialog(KEEPER, ['The watch waits on night ' + t.run.floor + '.', 'Your party: ' + partyLine() + '.'], [
         { label: 'Keep watching', fn: () => endDialog(towerFloorStart) },
         { label: 'Leave the watch', fn: () => { g.endTowerRun(); endDialog(); toast('The watch is over. Longest: ' + t.best + ' nights.'); } },
         { label: 'Not now', fn: () => endDialog() }
@@ -7909,10 +7932,10 @@ const APP = (() => {
       return;
     }
     const left = g.towerRunsLeft(), party = (g.partySeeds().length ? g.partySeeds() : [g.state.caught[0].seed]).map((sd) => g.make(sd, g.state.caught.find((e) => e.seed === sd).stage).name);
-    const intro = [t.best ? 'Back again. Your longest watch was ' + t.best + ' nights of ' + TOWER.floors + '.' : 'Welcome. Twenty nights, one lamp. Each night someone comes to the door.',
-      'Your party answers every night in a row. HP carries over between nights. Essence is paid only for nights past your longest watch.', 'This week: ' + g.towerTwist().name + '. ' + g.towerTwist().text];
-    if (!left) { showDialog(KEEPER, intro.slice(0, 1).concat(['You have kept today\u2019s ' + TOWER.runsPerDay + ' watches. Come back tomorrow.'])); return; }
-    showDialog(KEEPER, intro.concat(['Watches left today: ' + (g.props.testMode ? 'unlimited (test mode)' : left) + '. You will bring ' + party.join(', ') + '.']), [
+    const tw = g.towerTwist(), lit = !!advOf().flags.lampLit;   // the Keeper observes; the rules are in the weather past the door and in the logbook, never in his mouth. His lines change at lampLit: now they come to you
+    const intro = [lit ? 'They come most nights now. You are the one they come to.' : (t.best ? 'Back again.' : 'Someone comes to the door most nights.'), WATCH_LINES[tw.id] || tw.name + '.'];
+    if (!left) { showDialog(KEEPER, [intro[0], 'Enough for today. The bench is yours until morning.']); return; }
+    showDialog(KEEPER, intro.concat(['You will bring ' + party.join(', ') + '.']), [
       { label: 'Begin the watch', fn: () => { g.startTowerRun(); endDialog(towerFloorStart); } },
       { label: 'Not now', fn: () => endDialog() }
     ]);
@@ -7921,15 +7944,15 @@ const APP = (() => {
     const g = game, t = g.towerState();
     open = false; $('screen').hidden = true;
     if (res.kind === 'win') {
-      const lines = ['Night ' + res.floor + ' kept.' + (res.reward ? ' +' + res.reward + ' essence for a longest watch.' : ''), 'Your party rests: ' + partyLine() + '.'];
+      const lines = ['Night ' + res.floor + '. The lamp held.', 'Your party rests: ' + partyLine() + '.'];   // the essence is paid (settleBattle) and not announced; the logbook carries the count
       setTimeout(() => showDialog(KEEPER, lines, [
         { label: 'Night ' + (res.floor + 1), fn: () => endDialog(towerFloorStart) },
-        { label: 'Rest outside', fn: () => { endDialog(); toast('The watch waits on night ' + (res.floor + 1) + '.'); } }
+        { label: 'Rest', fn: () => { endDialog(); } }
       ]), 60);
     } else if (res.kind === 'top') {
-      setTimeout(() => showDialog(KEEPER, ['Morning. You kept the whole watch.' + (res.reward ? ' +' + res.reward + ' essence.' : ''), res.first ? 'Nobody in Sproutvale has kept it longer. The lamp was yours all night.' : 'Kept to morning again: ' + t.clears + ' times now.']), 60);
+      setTimeout(() => showDialog(KEEPER, ['Morning. You kept the whole watch.', res.first ? 'The lamp was yours all night.' : 'Kept to morning again.']), 60);
     } else {
-      setTimeout(() => showDialog(KEEPER, ['The lamp went out on night ' + res.floor + '.', 'The watch waits on night ' + res.floor + '. Your party rests: ' + partyLine() + '.']), 60);   // a night not kept does not unmake the watch
+      setTimeout(() => showDialog(KEEPER, ['The lamp went out on night ' + res.floor + '.', 'The bench is there. The watch is still yours.']), 60);   // a loss keeps the floor: package M (towerAfter)
     }
   }
   // ---------- the catch pouch (action mode): critters that dropped an orb wait here until you decide ----------
@@ -8013,7 +8036,7 @@ const APP = (() => {
     if (n.kind === 'water') { fish(n); return; }
     if (n.kind === 'object') { objectUse(n.obj); return; }
     if (n.kind === 'npc') { talk(n.npc); return; }
-    if (n.place.open === 'tower' && n.place.enter) { const seals = ((game.state.npc && game.state.npc.seals) || []).length; if (seals < 4 && !game.props.noGates) { toast("The Long Watch is for those who hold all 4 Leader Seals. You hold " + seals + '.'); return; } }   // the door itself keeps the watch for those who tended all four fires
+    if (n.place.open === 'tower' && n.place.enter && !watchOpen()) { toast('The door is shut. Light shows under it.'); return; }   // the Watch's door: four seals, or a watch already stood
     if (n.place.enter && n.place.open !== 'house' && WORLD.MAPS[n.place.enter]) { game.sfx('tap'); WORLD.go(n.place.enter); return; }
     if (n.place.open === 'tower') { towerLobby(); return; }
     if (n.place.open === 'gym') { const L = (WORLD.allNpcs()[WORLD.map.id] || []).find((x) => x.id === n.place.leader); if (L) talk(L); return; }
@@ -8021,11 +8044,20 @@ const APP = (() => {
     if (n.place.open === 'shop' && n.place.id !== 'shop') { const k = (WORLD.allNpcs()[WORLD.map.id] || []).find((x) => x.kind === 'shop'); if (k) talk(k); else openPanel('shop'); return; }
     openScreen(n.place.open);
   }
+  // the one verb has one label: "Stay" wherever staying is the act (a chamber lamp, a seedling, the ninth seat, the window after the lamp)
+  function stayLabel(o) {
+    const f = advOf().flags;
+    if (o.kind === 'chamberlamp') return lampKept(o.id) ? 'Examine' : 'Stay';
+    if (o.kind === 'gbed') return bedStage(o) >= 2 ? 'Examine' : 'Stay';
+    if (o.kind === 'seat') return ((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 && !(game.state.caught.some((e) => e.seed === SECRET_SEED) || f.secret) ? 'Stay' : 'Examine';
+    if (o.kind === 'windowlamp') return f.lampLit ? (f.homeLit === today() ? (hasWick() ? 'The lamp' : 'Look') : 'Stay') : null;
+    return null;
+  }
   function setNear(n) {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', lever: 'Pull the lever', gbed: 'Tend', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', greatlamp: 'Touch the great lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', arena: 'Enter the arena', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex', bell: 'Ring the bell', stair: 'Climb the stair' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || stayLabel(n.obj) || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', arena: 'Enter the arena', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex', bell: 'Ring the bell', stair: 'Climb the stair' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -8086,7 +8118,7 @@ const APP = (() => {
     const tod = timeOfDay(), form = tod === 'night' ? '@night' : (tod === 'dusk' || tod === 'dawn' ? '@dusk' : '');
     return !WORLD.map.interior && !WORLD.map.cave && form && T_HAS(base + form) ? base + form : base;   // at dusk the sound shifts with the light; at night the same tune, quieter
   }
-  function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
+  function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); if (performance.now() < hushUntil) { MUSIC.play(null); return; } MUSIC.play(musicTrack()); }
   function start2() {
     setInterval(() => { musicLoop(); renderWeather(); applyA11y(); }, 400); applyA11y();
     // things that only exist at certain hours (a lantern at night, ribbons at dusk, a boat at dawn, a light in the water at night): [gate id, true while the thing is GONE]
@@ -8133,7 +8165,8 @@ const APP = (() => {
         keep: (k, woke) => { const r = game.actKeep(k, woke); if (r.ok) showKeptCard(k.seed); return r; },   // keep by staying: the same card afterwards
         see: (map, no) => { const key = new Date().toDateString() + '|' + map + '|' + no; if (no !== null) { if (seenToday[key]) return; seenToday[key] = true; } game.questTick('see', map); },   // a city favour: the first sighting of a species per map per day, and every kill
         bag: () => bagOf(), useBag: (id) => { const b = bagOf(); if (!(b[id] > 0)) return false; b[id] -= 1; game.update({ bag: b }); return true; },
-        sfx: (k, a) => game.sfx(k, a)
+        sfx: (k, a) => game.sfx(k, a),
+        doorCritter: () => !!advOf().flags.lampLit && homeLitNow()   // a lit day: one wild critter waits in the grass by the door (Meaning: what comes to the one who keeps)
       });
       const ctr = () => { const r = ring.getBoundingClientRect(), w = wheel.getBoundingClientRect(); return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top }; };
       function openWheel() {
@@ -8172,7 +8205,7 @@ const APP = (() => {
       db.addEventListener('click', (ev) => { if (ev.target.closest('button')) ACT.giveUp(); });
       setInterval(() => {
         const di = ACT.duelInfo(), sig = di ? di.name + di.defeated + '/' + di.total + (di.dawn !== null && di.dawn !== undefined ? '/' + Math.round(di.dawn * 40) : '') : '';
-        if (sig !== dbSig) { dbSig = sig; db.hidden = !di; if (di) db.innerHTML = '<b>' + esc(di.tower ? 'Night ' + di.floor : di.name) + '</b>' + (di.tower && di.dawn !== null ? '<span class="dawn" aria-label="until morning"><i style="width:' + Math.round(di.dawn * 100) + '%"></i></span>' : '<span>' + di.defeated + ' of ' + di.total + ' down</span>') + '<button aria-label="Give up the duel">Give up</button>'; }
+        if (sig !== dbSig) { dbSig = sig; db.hidden = !di; if (di) db.innerHTML = '<b>' + esc(di.tower ? 'Night ' + di.floor : di.name) + '</b>' + (di.tower && di.dawn !== null ? '<span class="dawn" aria-label="until morning"><i style="width:' + Math.round(di.dawn * 100) + '%"></i></span>' : LEADERS.some((L) => L.name === di.name) ? '' : '<span>' + di.defeated + ' of ' + di.total + ' down</span>') + '<button aria-label="Give up the duel">Give up</button>'; }
       }, 150);
       setInterval(() => {
         const show = ACT.ready() && !WORLD.paused && !open; if (atk.hidden === show) atk.hidden = !show; if (!show) { if (wheelOn) closeWheel(false); return; }
@@ -8189,6 +8222,9 @@ const APP = (() => {
     renderScreen = TPL.mount($('screen'), screenTpl, comps, () => game.renderVals());
     game.componentDidMount();
     let saved = null; try { saved = JSON.parse(localStorage.getItem('critter-roll:world') || 'null'); } catch (e) {}
+    // a new day begins at Home (Meaning: being the keeper is the first thing you do each day): on the first load of a new real date after the lamp you stand at Home's door with the window dark above you.
+    // Inside a cave, an interior or the Watch's lobby the saved position is kept (the window waits). Within the day the saved position is honoured as before. adv.flags.dayAt (default today) records the return.
+    { const f = advOf().flags; if (f.lampLit) { const at = f.dayAt || today(), Ms = saved && WORLD.MAPS[saved.map]; if (at !== today() && !(Ms && (Ms.cave || Ms.interior))) saved = null; if (at !== today() || !f.dayAt) advSave((a) => { a.flags.dayAt = today(); }); } }
     WORLD.init($('world'), {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
@@ -8201,8 +8237,8 @@ const APP = (() => {
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1 && game.ladderReady(n),
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
-      onMap: (m) => { trailDir = {}; tending = null; carry = false; burn = {}; coralReset(); iceCells = []; stillT = 0; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); if (m.id !== 'town' && m.rate > 0 && game) setTimeout(() => hint('zone', 'Each zone has its own two types. The sparkling patch is rare grass with better odds.'), 900); },
-      onGrass: () => hint('grass', 'Tall grass hides wild critters. Keep walking through it to find one.'),
+      onMap: (m) => { trailDir = {}; tending = null; carry = false; burn = {}; coralReset(); iceCells = []; stillT = 0; plank(m.name); setNear(null); applyDungeon(); applyGym(); applyLamp(); applyForge(); renderWeather(); if (game && !m.interior && !m.hall && (game.state.visited || []).indexOf(m.id) === -1) game.update({ visited: (game.state.visited || []).concat([m.id]) }); },
+      onGrass: () => {},   // the grass two tiles from the door is the hint; nothing is said
       pos: saved ? { x: saved.x, y: saved.y } : null, map: saved && saved.map
     });
     setNear(WORLD.nearest());
@@ -8290,8 +8326,6 @@ const APP = (() => {
       if (devTaps >= 5 && !game.state.dev) { devTaps = 0; game.update({ dev: true }); renderMenu(); toast('Developer tools unlocked: open Menu, Game, Dev tools. Test mode is also in Settings.'); }
     });
     $('st-list').addEventListener('click', (e) => { const b = e.target.closest('[data-start]'); if (b) chooseStarter(+b.dataset.start); });
-    $('tip').hidden = true;
-    $('tip-close').addEventListener('click', () => { $('tip').hidden = true; try { localStorage.setItem('critter-roll:tip', '1'); } catch (e) {} });
 
     window.addEventListener('keydown', (e) => {
       if (dlg && (e.key === 'Enter' || e.key === ' ') && !(e.target && e.target.closest && e.target.closest('#dlg-choices'))) { e.preventDefault(); advance(); return; }
@@ -8307,7 +8341,7 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { homeLitNow: homeLitNow, placeRivals: placeRivals, tending: () => tending, carry: () => carry, stillT: () => stillT, stillK: () => Math.min(1, stillT / STILL_S), STILL_S: STILL_S, BURN_S: BURN_S, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { homeLitNow: homeLitNow, keptDark: keptDark, objState: objState, watchOpen: watchOpen, placeRivals: placeRivals, tending: () => tending, carry: () => carry, stillT: () => stillT, stillK: () => Math.min(1, stillT / STILL_S), STILL_S: STILL_S, BURN_S: BURN_S, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
 

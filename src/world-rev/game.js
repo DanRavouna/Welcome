@@ -324,7 +324,7 @@ class Game extends Component {
         const npc = Object.assign({ done: [], beaten: {}, cleared: [], seals: [] }, this.state.npc);
         npc.beaten = Object.assign({}, npc.beaten, { [tr.id]: new Date().toDateString() });
         if ((npc.cleared || []).indexOf(tr.id) === -1) npc.cleared = (npc.cleared || []).concat([tr.id]);
-        if (tr.leader && (npc.seals || []).indexOf(tr.id) === -1) { npc.seals = (npc.seals || []).concat([tr.id]); patch.justSealed = tr.id; events.push({ t: 'leader' }); }
+        // a leader's seal is granted when the trial is kept (app.js gymDone), never here: the duel is for XP
         patch.npc = npc;
         if (tr.ladder) {   // the Arena ladder: the step climbed; the top step keeps Kindlemane for whoever climbs it
           const ar = Object.assign({ step: 0, day: '' }, this.state.arena); if (tr.ladder === ar.step + 1) ar.day = new Date().toDateString(); ar.step = Math.max(ar.step, tr.ladder); patch.arena = ar;   // the day is stamped on a WON ladder fight (a lost one can be tried again today)
@@ -421,7 +421,7 @@ class Game extends Component {
       const st = this.state, have = st.titles || [];
       v.titleName = this.titleName();
       v.titleCount = have.length;
-      v.titleList = TITLES.map((t) => { const got = have.indexOf(t.id) !== -1, on = got && st.title === t.id, n = Math.min(t.goal, t.of(st));
+      v.titleList = TITLES.filter((t) => !t.hidden || have.indexOf(t.id) !== -1).map((t) => { const got = have.indexOf(t.id) !== -1, on = got && st.title === t.id, n = Math.min(t.goal, t.of(st));   // a hidden title (the lamp's) exists only once earned
         return { name: t.name, sub: got ? (on ? 'Wearing now · tap to remove' : 'Earned · tap to wear') : t.desc + ' (' + n + '/' + t.goal + ')' + (t.essence ? ' · +' + t.essence + ' essence' : ''),
           bg: on ? 'linear-gradient(180deg, #FFE69A, #F5B93A)' : (got ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.45)'), fg: got ? '#1E2A4A' : '#5A6890', pressed: on ? 'true' : 'false', disabled: !got,
           pick: () => { if (got) this.update({ title: on ? '' : t.id }); } }; });
