@@ -6,4 +6,5 @@ ok signs name places, not types, gyms, levels or counts | #
 ok no leader or keeper asks for the next act | #
 ok none of the retired words is left anywhere in the build | #
 ok no prose string has unbalanced parentheses | #
+ok no trainer line is said by more than four people | #
 ok no page errors | []

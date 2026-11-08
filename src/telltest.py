@@ -19,7 +19,7 @@ SIGN=re.compile(r"critters\)|hide in the tall grass|Sparkling grass|\bgym\b|open
 # words the review retired from the whole build (02 F1-F30, 01 F18-F24, 03 F6-F8, 04 W12/W13): a prose string anywhere in the scripts or the page
 RETIRED=re.compile(r"Go and wake|Touch the glass|Show me\.|Prove you\b|Somewhere a lever|\+\d+ essence|You earned \d|Far away, in the old arch|camp rhyme|must wake first|belongs in one of|refill at midnight|used up for today|Leader Seals?|not yet beaten|Same (remedies|goods) as|Progress: |Ember beats Moss|(Volt|Dusk|Frost|Stone|Moss|Bloom|Tide|Ember) critters (ride|roam|come out)|HP carries over|Essence is paid|It never was|It only waited|the whole country|Its light reaches|Gym\b|\bgym\b|Enter the Tower", re.I)
 LEADKEEP={'wren','glacia','blaze','coral','maren','hale','orlen','keeper'}
-ORDER=re.compile(r"^(Go|Touch|Open|Climb|Take|Light)\b")
+ORDER=re.compile(r"(^|[.!?] )(Go|Touch|Open|Climb|Take|Light)\b")   # any sentence of theirs that starts with an order
 
 def literals(src):
   """Every string literal in a script (quotes and template text), skipping comments and regex literals."""
@@ -90,8 +90,11 @@ with sync_playwright() as p:
     signs=[say(*x) for x in w if x[1].startswith('sign:') and SIGN.search(x[3])]
     orders=[say(*x) for x in w if x[1] in LEADKEEP and x[2] in ('winLine','afterLines','sealLine','lines') and ORDER.search(x[3])]
     retired=sorted({l[:110] for l in lits+dom+[x[3] for x in w] if RETIRED.search(l)})
+    from collections import Counter   # 02-F19: no trainer line is said by more than four people
+    tl=Counter((k,x) for (m,i,k,x) in w if k in ('winLine','beatenLines','intro','afterLines') and not i.startswith(('obj:','sign:','words')))
+    shared=sorted({x[:80]+' (x%d)'%c for (k,x),c in tl.items() if c>4})
     parens=sorted({l[:110] for l in lits+[x[3] for x in w] if l.count('(')!=l.count(')') and re.match(r'[A-Z]',l) and re.search(r'[.!?]$',l)})   # whole sentences only (a fragment joined to a number is not a slip)
-    for name,lst in (('tells',tells),('tips',tips),('thesis',thesis),('signs',signs),('orders',orders),('retired',retired),('parens',parens)):
+    for name,lst in (('tells',tells),('tips',tips),('thesis',thesis),('signs',signs),('orders',orders),('retired',retired),('parens',parens),('shared',shared)):
       for l in lst: print('  '+name+' | '+l)
     check('nobody recites a sign (types that live here, what links what, where the gym is, how to climb)', not tells, len(tells))
     check('nobody hands out tips or orders the player about', not tips, len(tips))
@@ -100,5 +103,6 @@ with sync_playwright() as p:
     check('no leader or keeper asks for the next act', not orders, len(orders))
     check('none of the retired words is left anywhere in the build', not retired, len(retired))
     check('no prose string has unbalanced parentheses', not parens, len(parens))
+    check('no trainer line is said by more than four people', not shared, len(shared))
     check('no page errors', not errs, errs); b.close()
 done()

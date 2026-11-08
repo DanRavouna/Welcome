@@ -129,7 +129,7 @@ with sync_playwright() as p:
   ok3=goto((1,14)) and cross(-1,0,'mossbrook'); lap['Mossbrook']=round(time.time()-T,1)
   check('on to Mossbrook', ok3, lap)
   d=pg.evaluate("WORLD.map.places.find(p=>p.id==='gym-wren').door"); ok4=ok3 and goto((d[0],d[1]+1)); lap["Wren's door"]=round(time.time()-T,1)
-  check("to Wren's door, with the action button offering the gym", ok4 and 'gym' in pg.inner_text('#act-label').lower(), [lap, pg.inner_text('#act-label')])
+  check("to Wren's door, with the action button offering the gym", ok4 and ('go in' if pg.evaluate("APP.build||''")=='review' else 'gym') in pg.inner_text('#act-label').lower(), [lap, pg.inner_text('#act-label')])
   print('the second minute, seconds after the first keep:', lap, '| party HP at the end:', pg.evaluate("ACT.hero?[ACT.hero.hp,ACT.hero.max]:null"))
   check('no page errors', not errs, errs); b.close()
 done()

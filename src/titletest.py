@@ -25,7 +25,7 @@ with sync_playwright() as p:
   # wear title + profile
   pg.evaluate("APP.open('badges')"); pg.wait_for_timeout(300)
   pg.click("button:has-text('Critter Master')", timeout=2000) if False else None
-  pg.click("button:has-text('Shiny Hunter')"); pg.wait_for_timeout(150)
+  pg.click("button:has-text('%s')" % ('Three Sparks' if pg.evaluate("APP.build||''")=='review' else 'Shiny Hunter')); pg.wait_for_timeout(150)   # the review copy names the titles in one register (02-F35)
   print('wearing:', pg.evaluate("APP.game.titleName()"), '| locked button disabled:', pg.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Watchkeeper')).disabled"))
   sec=pg.locator("text=Titles").first; sec.scroll_into_view_if_needed(); pg.wait_for_timeout(200)
   box=pg.locator("text=Titles").first.bounding_box(); pg.screenshot(path='/tmp/titles.png', clip={'x':0,'y':max(0,box['y']-20),'width':320,'height':330})

@@ -1,10 +1,11 @@
 # The words pass (package T): every line changed in src/world-rev/, as data. Each row is (file, old, new, finding[, count]).
-# Run once from the repo root: python3 docs/review/words-edits.py   (it refuses to run twice: every old string must be found exactly `count` times)
+# Run from the repo root on the copy as it was before the pass: python3 docs/review/words-edits.py 1, then 2 (it refuses to run twice: every old string must be found exactly `count` times)
 # docs/review/15-words.md is the readable record of the same rows.
 import sys, os
 R = 'src/world-rev/'
 E = []
-def e(f, old, new, why, n=1): E.append((f, old, new, why, n))
+BATCH = [1]
+def e(f, old, new, why, n=1): E.append((f, old, new, why, n, BATCH[0]))
 
 # ---------- the scripted lines, as one table the lint can read (02-F34) ----------
 e('app.js', "  const sealCount = () => ((game.state.npc && game.state.npc.seals) || []).length;\n",
@@ -238,12 +239,44 @@ e('data.js', "{ id: 'champion', name: 'Fire-keeper', desc: 'Earn all 4 Leader Se
 e('app.js', "seals: 'Leader seals' }[id]", "seals: 'The four fires' }[id]", 'F7 (the menu scrolls to the renamed heading)')
 e('app.js', "'Take the core. The forge chose you before I did.'", "'The core is yours. The forge chose you before I did.'", 'F34 (the lint: an order in a win line)')
 
+# ======== batch 2: the optional findings (02 F19, F31, F35, F36), applied after batch 1 ========
+BATCH[0] = 2
+# F19: the beaten line of the twenty-four route, climb and hall trainers is the place's, not one sentence for all (none on more than four people)
+e('app.js', "    Object.values(out).forEach((list) => list.forEach((n) => { if (n.trainer)",
+  "    const RT_BEATEN = { 'route-mf': 'Tomorrow. The wind will have changed by then.', 'route-cm': 'Tomorrow. The embers will still be going.', 'route-fc': 'Tomorrow, with the tide.', 'route-cc': 'Tomorrow. The steam is the same every day; I am not.', ascent: 'Tomorrow. The snow will have filled your tracks.', descent: 'Tomorrow. The vents will still be going.', 'dg-forge': 'Tomorrow. The hammer needs a rest.', 'dg-lamp': 'Tomorrow. I do not go far.', 'dg-arch': 'Tomorrow. The moss will still be glowing.' };   // 02-F19: one voice per place\n"
+  "    Object.keys(RT_BEATEN).forEach((mid) => (out[mid] || []).forEach((n) => { if (n.trainer && n.beatenLines && n.beatenLines[0] === 'That was a good battle. Come back tomorrow for another.') n.beatenLines = [RT_BEATEN[mid]]; }));\n"
+  "    Object.values(out).forEach((list) => list.forEach((n) => { if (n.trainer)", 'F19')
+e('app.js', "intro: ['Halt! Nobody enters Frosthold without a snowball fight.', 'Well, a critter battle. Same thing up here.']",
+  "intro: ['I have been throwing snowballs at the gate since dawn. You are the first thing that threw back.', 'Well, a critter battle. Same thing up here.']", 'F19')
+e('app.js', "intro: ['Ahoy! Nobody walks my pier without a battle.', 'Storm-tested critters, ready to sail.']",
+  "intro: ['Ahoy! I have coiled this rope four times today. It keeps uncoiling.', 'Storm-tested critters, ready to sail.']", 'F19')
+e('app.js', "['The forge is just below. Nobody walks past my wagon without a battle.', 'I have been hauling slag all day and I need some fun.']",
+  "['The forge is just below. The wagon goes down full and comes up full.', 'I have been hauling slag all day and I need some fun.']", 'F19')
+e('app.js', "['The summit is right above us. Nobody passes the last ledge without a battle.', 'My critters have been waiting in the cold all day.']",
+  "['The summit is right above us. I have not been up it in years.', 'My critters have been waiting in the cold all day.']", 'F19')
+e('app.js', "['Halt. Nobody crosses the glowing moss without a battle.', 'The seat is kept. So are its rules.']",
+  "['The moss glows brighter where someone has walked. It is very bright tonight.', 'The seat is kept. So are its rules.']", 'F19')
+e('app.js', "'You climbed right over me.', { cap: true, c: '#4E8A3A'", "'The pass is yours, then.', { cap: true, c: '#4E8A3A'", 'F19 ("climbed right over me" twice)')
+# F31: the two names that collide outside the interiors (ids kept, so saves keep their beaten trainers; Old Tam, Guard Brann and Smith Hal live in the protected interiors)
+e('app.js', "rt('odo', 'Lampkeeper Odo',", "rt('odo', 'Lampkeeper Una',", 'F31')
+e('app.js', "rt('pell', 'Delver Pell',", "rt('pell', 'Delver Rook',", 'F31')
+# F35: the titles in one register
+e('data.js', "name: 'Critter Master', desc: 'Discover all 48 species'", "name: 'Every Name', desc: 'Discover all 48 species'", 'F35')
+e('data.js', "name: 'Challenger', desc: 'Climb the first step of the Arena ladder'", "name: 'First Step', desc: 'Climb the first step of the Arena ladder'", 'F35')
+e('data.js', "name: 'Ring Champion', desc: 'Climb all five steps of the Arena ladder'", "name: 'Top of the Ladder', desc: 'Climb all five steps of the Arena ladder'", 'F35')
+e('data.js', "name: 'Tower Climber', desc: 'Clear floor 10 of the Tower'", "name: 'Ten Nights', desc: 'Keep ten nights of the Long Watch'", 'F35')
+e('data.js', "name: 'Shiny Hunter', desc: 'Keep 3 shiny critters'", "name: 'Three Sparks', desc: 'Keep 3 shiny critters'", 'F35')
+# F36: the turn-based leftover
+e('app.js', " Uses your turn.", "", 'F36', 5)
+
 if __name__ == '__main__':
+    batch = int(sys.argv[1]) if len(sys.argv) > 1 else 1
     texts = {}
-    for f, old, new, why, n in E:
+    for f, old, new, why, n, b in E:
+        if b != batch: continue
         p = R + f; t = texts.get(p) or open(p, encoding='utf-8').read()
         c = t.count(old)
         if c != n: sys.exit('%s: expected %d of %r, found %d (%s)' % (f, n, old[:90], c, why))
         texts[p] = t.replace(old, new)
     for p, t in texts.items(): open(p, 'w', encoding='utf-8').write(t)
-    print('applied', len(E), 'edits to', len(texts), 'files')
+    print('batch', batch, ': applied', sum(1 for x in E if x[5] == batch), 'edits to', len(texts), 'files')

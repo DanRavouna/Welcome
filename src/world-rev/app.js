@@ -472,13 +472,13 @@ const APP = (() => {
   function fernHome() { const f = (WORLD.allNpcs().town || []).find((n) => n.id === 'fern'); if (f) { f.x = 37; f.y = 11; f.dir = 'down'; } }
   // ---------- party, bag, shop ----------
   const ITEMS = {
-    potion: { name: 'Potion', price: 3, desc: 'Heals 40% HP in battle. Uses your turn.' },
-    super: { name: 'Super Potion', price: 7, desc: 'Fully heals in battle. Uses your turn.' },
+    potion: { name: 'Potion', price: 3, desc: 'Heals 40% HP in battle.' },
+    super: { name: 'Super Potion', price: 7, desc: 'Fully heals in battle.' },
     charm: { name: 'Rare Charm', price: 10, desc: 'Your next 3 wild encounters get sparkling-grass odds.' },
     ticket: { name: 'Roll Ticket', price: 5, desc: 'Gives back 1 roll today. Up to 3 per day.' },
-    herb: { name: 'Mossleaf Remedy', price: 4, desc: 'Heals 40% HP and cures burn, weaken, daze and drain. Uses your turn. Sold in Mossbrook.', city: 'mossbrook' },
-    ward: { name: 'Frost Ward', price: 5, desc: 'Your critter takes 65% less damage from the next 5 hits. Uses your turn. Sold in Frosthold.', city: 'frosthold' },
-    whet: { name: 'Whetstone', price: 5, desc: 'Your critter deals 70% more damage for the rest of the battle. Uses your turn. Sold in Cinderport.', city: 'cinderport' },
+    herb: { name: 'Mossleaf Remedy', price: 4, desc: 'Heals 40% HP and cures burn, weaken, daze and drain. Sold in Mossbrook.', city: 'mossbrook' },
+    ward: { name: 'Frost Ward', price: 5, desc: 'Your critter takes 65% less damage from the next 5 hits. Sold in Frosthold.', city: 'frosthold' },
+    whet: { name: 'Whetstone', price: 5, desc: 'Your critter deals 70% more damage for the rest of the battle. Sold in Cinderport.', city: 'cinderport' },
     lure: { name: 'Tide Lure', price: 12, desc: 'Your next wild critter is a species you have not kept yet, if this area has one. Sold in Coralbay.', city: 'coralbay' }
   };
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -672,7 +672,7 @@ const APP = (() => {
     city('frost', 'frosthold', 'glacia', 'I am Glacia. This is my pool.', [
       { id: 'tove', name: 'Quartermaster Tove', x: 8, y: 10, kind: 'shop', pal: { h: '#E8E8F0', y: '#4A6A9A', Y: '#2E4A66' }, lines: ['Packed for the snow. Counted twice.'] },
       { lv: 8, id: 'pike', name: 'Skier Pike', x: 15, y: 19, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' }, types: ['Frost', 'Tide'], size: 4, stage: 2, pick: 0.6,
-        intro: ['Halt! Nobody enters Frosthold without a snowball fight.', 'Well, a critter battle. Same thing up here.'], winLine: 'Brr, you are tough.', beatenLines: ['My critters need to thaw out. Tomorrow, rematch!'] },
+        intro: ['I have been throwing snowballs at the gate since dawn. You are the first thing that threw back.', 'Well, a critter battle. Same thing up here.'], winLine: 'Brr, you are tough.', beatenLines: ['My critters need to thaw out. Tomorrow, rematch!'] },
       { id: 'hilde', name: 'Hilde', x: 24, y: 15, kind: 'talk', pal: { h: '#E8C07A', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The palisade keeps out the wind, not the critters. They come and go as they like.', 'Some nights there is a light in the pass that is nobody\u2019s.', 'Glacia trains on the ice every morning. Her critters do not slip.'] },
       { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['Every night up on the Peak, they say, someone comes to the door.', 'Before first light the shore gives back things the sea took.'] }
     ]);
@@ -686,7 +686,7 @@ const APP = (() => {
     city('tide', 'coralbay', 'coral', 'I am Coral. This is my lamp hall.', [
       { id: 'marina', name: 'Marina', x: 8, y: 10, kind: 'shop', pal: { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, lines: ['The crate comes back half full with every tide. It always does.'] },
       { lv: 15, id: 'rafe', name: 'Deckhand Rafe', x: 27, y: 6, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#2A5A9A', y: '#FFFFFF', Y: '#C9D3E6' }, types: ['Tide', 'Volt'], size: 4, stage: 3, pick: 0.55,
-        intro: ['Ahoy! Nobody walks my pier without a battle.', 'Storm-tested critters, ready to sail.'], winLine: 'Blow me down! A fine battle.', beatenLines: ['My crew needs a rest. Come back with tomorrow\u2019s tide.'] },
+        intro: ['Ahoy! I have coiled this rope four times today. It keeps uncoiling.', 'Storm-tested critters, ready to sail.'], winLine: 'Blow me down! A fine battle.', beatenLines: ['My crew needs a rest. Come back with tomorrow\u2019s tide.'] },
       { id: 'finn', name: 'Finn', x: 24, y: 15, kind: 'talk', pal: { h: '#8A5A34', y: '#4A9A8A', Y: '#2A6A6A' }, lines: ['Coral was the youngest admiral the harbor ever had. Her critters never lose their footing.', 'Count the waves on the causeway at night. Everyone gets a different number.', 'Coral trims the harbour lamp herself. She says the one on the Peak is the only lamp she has never seen lit.'] },
       { id: 'pearl', name: 'Pearl', x: 16, y: 16, kind: 'talk', pal: { h: '#F4EAD6', y: '#E0A0B8', Y: '#C07898' }, lines: ['I collect shells. My brother collects critter species. He has all 48!', 'Well, he says he does.'] }
     ]);
@@ -694,7 +694,7 @@ const APP = (() => {
     [['glacia', 'frosthold'], ['blaze', 'cinderport'], ['coral', 'coralbay']].forEach(([id, cid]) => { const L = out[cid].find((n) => n.id === id); out[cid] = out[cid].filter((n) => n.id !== id); Object.assign(L, { x: 10, y: 3, dir: 'down' }); out['gym-' + id] = [L]; });
     // route trainers (one per route; tuned with lbal5.py against the gate's party model)
     const rt = (id, name, x, y, dir, types, size, stage, lv, pick, intro, winLine, pal) => ({ id, name, x, y, dir, kind: 'trainer', trainer: true, types, size, stage, lv, pick, pal, intro, winLine, beatenLines: ['That was a good battle. Come back tomorrow for another.'] });
-    out['route-mf'] = [rt('kai', 'Mountaineer Kai', 16, 7, 'up', ['Moss', 'Frost'], 4, 2, 11, 0.55, ['The pass is steep, and so is my challenge!', 'Highland critters are tough. Prove yours are tougher.'], 'You climbed right over me.', { cap: true, c: '#4E8A3A', y: '#E8E8F0', Y: '#A8B2C8' })];
+    out['route-mf'] = [rt('kai', 'Mountaineer Kai', 16, 7, 'up', ['Moss', 'Frost'], 4, 2, 11, 0.55, ['The pass is steep, and so is my challenge!', 'Highland critters are tough. Prove yours are tougher.'], 'The pass is yours, then.', { cap: true, c: '#4E8A3A', y: '#E8E8F0', Y: '#A8B2C8' })];
     out['route-cm'] = [rt('elm', 'Woodcutter Elm', 16, 7, 'up', ['Ember', 'Moss'], 4, 2, 11, 0.5, ['Careful, the Ashwood still smoulders.', 'My critters grew up between the embers and the moss. Battle!'], 'You chopped right through my team.', { cap: true, c: '#8A4A2A', y: '#C9A26A', Y: '#8A6A44' })];
     out['route-fc'] = [rt('signe', 'Ice Fisher Signe', 16, 7, 'up', ['Frost', 'Tide'], 4, 3, 18, 0.5, ['Shh, you will scare the fish. Unless you want a battle?', 'Of course you do. Everyone on this coast does.'], 'Hooked and landed. You win this one.', { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' })];
     out['route-cc'] = [rt('mako', 'Diver Mako', 16, 7, 'up', ['Tide', 'Ember'], 4, 3, 18, 0.5, ['I just surfaced from the reef. My critters are warmed up!', 'Steam and spray. Let us battle.'], 'You out-swam me!', { cap: true, c: '#2A6A6A', y: '#FF7A45', Y: '#B83A10' })];
@@ -727,14 +727,14 @@ const APP = (() => {
     const lsp = M['dg-lamp'].spots;
     out['dg-lamp'] = [
       rt('bex', 'Lampkeeper Bex', lsp.guard1[0], lsp.guard1[1], 'down', ['Volt', 'Stone'], 5, 3, 20, 0.5, ['Another climber. The lamp in here went out before I was born.', 'The second chamber has a keeper, and it is me.'], 'Light on your feet and on your critters. Go on.', { h: '#2A1A10', y: '#F5C518', Y: '#C99A00' }),
-      rt('odo', 'Lampkeeper Odo', lsp.guard2[0], lsp.guard2[1], 'down', ['Frost', 'Tide'], 5, 3, 20, 0.5, ['Cold up here, is it not? I keep the third chamber warm with battles.', 'Ready?'], 'Well fought. It is colder above.', { h: '#E8E8F0', y: '#3E8EF7', Y: '#2A5A9A' }),
+      rt('odo', 'Lampkeeper Una', lsp.guard2[0], lsp.guard2[1], 'down', ['Frost', 'Tide'], 5, 3, 20, 0.5, ['Cold up here, is it not? I keep the third chamber warm with battles.', 'Ready?'], 'Well fought. It is colder above.', { h: '#E8E8F0', y: '#3E8EF7', Y: '#2A5A9A' }),
       Object.assign(rt('maren', 'Warden Maren', lsp.warden[0], lsp.warden[1], 'down', ['Volt', 'Frost'], 5, 3, 18, 0.5, ['You climbed the whole way.', 'I used to stand here all night.'], 'I think I will sit down.', { h: '#C9A8FF', y: '#FFF3B0', Y: '#E0C060' }), { boss: true, bonus: 10, afterLines: ['I am still here. I find I like sitting.'] })   // she sits beside the stair (spots.warden), facing the wall: she never stands between you and the lamp
     ];
     // the Cinder Descent (the Ascent turned upside down): a cook at the camp, an old smelter by the lava bridge, and three trainers (now facing up toward the trail)
     out.descent = [
       rt('kolb', 'Smelter Kolb', 14, 23, 'up', ['Ember', 'Stone'], 3, 3, 18, 0.5, ['The second ledge is mine, climber. Or should I say descender?', 'The heat sharpens my critters. Let us see yours!'], 'Cool as slag. Go on down.', { h: '#2A1A10', y: '#D8574A', Y: '#8A3A28' }),
       rt('yara', 'Cinder Runner Yara', 17, 39, 'up', ['Ember', 'Volt'], 5, 3, 18, 0.5, ['I run this trail every morning before the vents wake up!', 'Race me, in a battle!'], 'Fast and tough. Mind the lava.', { h: '#C0392B', y: '#FFD86B', Y: '#E0A830' }),
-      rt('brec', 'Slag Hauler Brec', 18, 47, 'up', ['Stone', 'Ember'], 5, 3, 18, 0.5, ['The forge is just below. Nobody walks past my wagon without a battle.', 'I have been hauling slag all day and I need some fun.'], 'Hm. The forge is yours to look at.', { h: '#8A5A34', y: '#6A6A86', Y: '#3E3E58' }),
+      rt('brec', 'Slag Hauler Brec', 18, 47, 'up', ['Stone', 'Ember'], 5, 3, 18, 0.5, ['The forge is just below. The wagon goes down full and comes up full.', 'I have been hauling slag all day and I need some fun.'], 'Hm. The forge is yours to look at.', { h: '#8A5A34', y: '#6A6A86', Y: '#3E3E58' }),
       { id: 'mirel', name: 'Cook Mirel', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#E8C07A', y: '#FF8A3D', Y: '#C0503A' }, lines: ['The climbers down there sit where they can see the trail. The ash moves when nobody is walking on it.'] },
       { id: 'brand', name: 'Old Brand', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#BDBDBD', y: '#8A5A34', Y: '#5E3C22' }, lines: ['That bridge crosses a river of real lava. It was built before anyone here was born, and it has never burned.', 'Below the crater there is a forge. They say it made every blade in the land, and then it went quiet.'] }
     ];
@@ -743,7 +743,7 @@ const APP = (() => {
     out.ascent = [
       rt('reka', 'Climber Reka', 14, 42, 'down', ['Frost', 'Stone'], 3, 3, 18, 0.5, ['The second ledge is mine. Everybody crosses it, and everybody battles me.', 'Rope up, trainer!'], 'Good footing. Go on up.', { h: '#C0503A', y: '#5E97AE', Y: '#3E6E8E' }),
       rt('joran', 'Skier Joran', 17, 26, 'down', ['Frost', 'Dusk'], 4, 3, 18, 0.5, ['I came down this slope in nine seconds once. Think you can climb it in ten minutes?', 'Show me what you have!'], 'You climb as well as you battle.', { h: '#2A1A10', y: '#E8E8F0', Y: '#9AA3B5' }),
-      rt('dag', 'Ice Climber Dag', 18, 18, 'down', ['Stone', 'Volt'], 5, 3, 18, 0.5, ['The summit is right above us. Nobody passes the last ledge without a battle.', 'My critters have been waiting in the cold all day.'], 'Fine, fine. The summit is right there.', { h: '#8A5A34', y: '#4A4A7A', Y: '#2E2E58' }),
+      rt('dag', 'Ice Climber Dag', 18, 18, 'down', ['Stone', 'Volt'], 5, 3, 18, 0.5, ['The summit is right above us. I have not been up it in years.', 'My critters have been waiting in the cold all day.'], 'Fine, fine. The summit is right there.', { h: '#8A5A34', y: '#4A4A7A', Y: '#2E2E58' }),
       { id: 'ansel', name: 'Guide Ansel', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#BDBDBD', y: '#D8574A', Y: '#8A3A28' }, lines: ['The climbers sit where they can see the trail. The snow moves when nobody is walking on it.'] },
       { id: 'marta', name: 'Old Marta', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#E8E8F0', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The glacier river does not freeze, whatever the climbers say. The log bridge is older than my grandmother.', 'They say the beacon above once lit every road in the land. My grandmother could see it from her kitchen. She never drew the curtain.'] }
     ];
@@ -751,7 +751,7 @@ const APP = (() => {
     // the Sealed Arch's guards and the Keeper (the Keeper is a boss: bonus essence on the first win, boss music)
     const dsp = M['dg-arch'].spots;
     out['dg-arch'] = [
-      rt('pell', 'Delver Pell', dsp.guard1[0], dsp.guard1[1], 'down', ['Dusk', 'Moss'], 4, 2, 14, 0.5, ['Halt. Nobody crosses the glowing moss without a battle.', 'The seat is kept. So are its rules.'], 'You are stronger than you look. Go on.', { h: '#3A2A1A', y: '#6A6A86', Y: '#3E3E58' }),
+      rt('pell', 'Delver Rook', dsp.guard1[0], dsp.guard1[1], 'down', ['Dusk', 'Moss'], 4, 2, 14, 0.5, ['The moss glows brighter where someone has walked. It is very bright tonight.', 'The seat is kept. So are its rules.'], 'You are stronger than you look. Go on.', { h: '#3A2A1A', y: '#6A6A86', Y: '#3E3E58' }),
       rt('ione', 'Delver Ione', dsp.guard2[0], dsp.guard2[1], 'down', ['Stone', 'Frost'], 4, 2, 14, 0.5, ['The lamp hall is mine. The Keeper is beyond me.', 'Show me you can hold your own first.'], 'Hm. Fair enough. The Keeper is waiting.', { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }),
       Object.assign(rt('keeper', 'Keeper Orlen', dsp.keeper[0], dsp.keeper[1], 'down', ['Dusk', 'Stone'], 5, 3, 17, 0.6, ['You found your way in. Few remember the rhyme.', 'Eight seats are warm. One is not.'], 'The fire has not moved. Everything else has.', { h: '#E8E8F0', y: '#33226E', Y: '#1E1448' }), { boss: true, bonus: 10, afterLines: ['I am still here. So is the seat.'] })
     ];
@@ -774,6 +774,8 @@ const APP = (() => {
     out['in-lab'] = [{ id: 'remy', name: 'Lab Aide Remy', x: 3, y: 5, dir: 'down', kind: 'talk', pal: { h: '#3A2A1A', y: '#E8EEF8', Y: '#9AA3B5' }, lines: ['Professor Fern is usually just outside, greeting new trainers.', 'The terminal keeps every name. It has never lost one.'] }];
     const RPAL = [{ h: '#8A5A34', y: '#C0503A', Y: '#8A3A28' }, { h: '#E8E8F0', y: '#4A6A9A', Y: '#2E4A66' }, { h: '#3A2A1A', y: '#4FB06D', Y: '#2E6A2C' }, { h: '#C0392B', y: '#E0A0B8', Y: '#C07898' }];
     Object.keys(RES).forEach((pid, i) => { out['in-' + pid] = [Object.assign({ id: 'res-' + pid, name: RES[pid][0], x: 7, y: 3, dir: 'down', kind: 'talk', pal: RPAL[i % RPAL.length], lines: RES[pid][1] }, pid === 'house-moss' ? { x: 4, y: 5, late: true } : {})]; });   // Wil is home only from dusk (the note on the door): `late` is read by the 500 ms rules
+    const RT_BEATEN = { 'route-mf': 'Tomorrow. The wind will have changed by then.', 'route-cm': 'Tomorrow. The embers will still be going.', 'route-fc': 'Tomorrow, with the tide.', 'route-cc': 'Tomorrow. The steam is the same every day; I am not.', ascent: 'Tomorrow. The snow will have filled your tracks.', descent: 'Tomorrow. The vents will still be going.', 'dg-forge': 'Tomorrow. The hammer needs a rest.', 'dg-lamp': 'Tomorrow. I do not go far.', 'dg-arch': 'Tomorrow. The moss will still be glowing.' };   // 02-F19: one voice per place
+    Object.keys(RT_BEATEN).forEach((mid) => (out[mid] || []).forEach((n) => { if (n.trainer && n.beatenLines && n.beatenLines[0] === 'That was a good battle. Come back tomorrow for another.') n.beatenLines = [RT_BEATEN[mid]]; }));
     Object.values(out).forEach((list) => list.forEach((n) => { if (n.trainer) n.reward = 3 + 2 * n.size + (n.stage - 1) * 2; if (n.leader) n.reward = 10; }));
     return out;
   }
