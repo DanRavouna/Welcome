@@ -1,11 +1,13 @@
 # The secret critter (Veilcrown): reserved seed, fixed data, kept out of the 48 counts, the crown hands it over once, it cannot be released,
 # its ability replaces Dusk's Veil, and the Dex shows it as a bonus entry.
 from playwright.sync_api import sync_playwright
+from chk import check, done
 errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':780}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.add_init_script("window.__noFollower = true")   # test hook: no follower, so no action mode (these suites test the older flows)
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
+  REV=pg.evaluate("APP.build")=='review'   # the review copy (11's item 16): the ninth seat is sat in (a 2.4 s stay), the crown is not taken; secret rows are not shown until caught
   pg.evaluate("APP.game.update({caught:[{seed:2,stage:2,lv:9}],party:[2],fighter:2,intro:true,essence:10,settings:Object.assign({},APP.game.state.settings,{follow:false,weather:false,ambient:false})}); document.getElementById('tip')&&(document.getElementById('tip').hidden=true)")
   def finish():
     for _ in range(60):
@@ -22,19 +24,38 @@ with sync_playwright() as p:
   pg.evaluate("APP.game.update({adv:{clues:['ruin','camp','lighthouse','wreck'],open:{arch:true},flags:{rubble:true,rite:[0,1,2]}},npc:Object.assign({},APP.game.state.npc,{cleared:(APP.game.state.npc.cleared||[]).concat(['keeper'])})}); WORLD.enter('dg-arch'); WORLD.npcs.forEach(n=>n.declined=true)")
   def at_crown():
     pg.evaluate("(()=>{const o=WORLD.objects.find(x=>x.id==='crown');WORLD.setPos((o.x-0.5)*WORLD.TS,(o.y+0.5)*WORLD.TS)})()"); pg.evaluate("[0,1,2,3].forEach(()=>WORLD.step(1/30))"); pg.wait_for_timeout(300)
-  at_crown(); e0=pg.evaluate("APP.game.state.essence"); pg.click('#act'); pg.wait_for_timeout(300)
+  if REV:
+    def sit(ms):   # sit in the seat and stay; [t, braziers lit 0..8, dialog open] every frame against the clock
+      return pg.evaluate("""(ms)=>new Promise(res=>{const o=WORLD.objects.find(x=>x.id==='seat');WORLD.setPos((o.x+0.5)*WORLD.TS,(o.y+0.6)*WORLD.TS);WORLD.input.jx=0;WORLD.input.jy=0;const t0=performance.now(),out=[];
+        const tick=()=>{const t=performance.now()-t0;const st=APP.objState(o);out.push([Math.round(t),st.lit|0,!!APP.dialog]);if(t<ms&&!APP.dialog)requestAnimationFrame(tick);else res(out)};tick()})""", ms)
+    pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{cleared:(APP.game.state.npc.cleared||[]).filter(x=>x!=='keeper')})})")
+    L=sit(3500); check('review copy: before the Keeper lets you pass, sitting does nothing', not L[-1][2] and all(n==0 for t,n,d in L), L[-1])
+    pg.evaluate("WORLD.setPos(13.5*WORLD.TS,12.5*WORLD.TS)"); pg.wait_for_timeout(1500)
+    pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{cleared:(APP.game.state.npc.cleared||[]).concat(['keeper'])})})")
+    e0=pg.evaluate("APP.game.state.essence"); L=sit(5000); ans=[t for t,n,d in L if d]; b8=[t for t,n,d in L if n>=4]
+    check('review copy: a stay in the seat of about 2.4 s answers (2.0 to 3.2 s), the braziers coming up as you stay', ans and 2000<=ans[0]<=3200 and b8 and b8[0]<ans[0], [ans[:1], b8[:1]])
+    check('review copy: no press: the act label by the seat is not a crown to take', 'crown' not in pg.inner_text('#act-label').lower(), pg.inner_text('#act-label'))
+  else:
+    at_crown(); e0=pg.evaluate("APP.game.state.essence"); pg.click('#act'); pg.wait_for_timeout(300)
   print('crown dialogue lines:', pg.evaluate("APP.dialog.lines.length"), '| first:', pg.evaluate("APP.dialog.lines[0]")); finish(); pg.wait_for_timeout(1500)
+  if REV: check('review copy: the crown is not taken (it stays on the stone)', pg.evaluate("WORLD.objects.some(o=>o.id==='crown'&&!o.hidden)"))
   print('obtained:', pg.evaluate("APP.game.state.caught.filter(e=>e.seed===SECRET_SEED)"), '| flag:', pg.evaluate("APP.game.state.adv.flags.secret"), '| essence +', pg.evaluate("APP.game.state.essence")-e0, '(title bonus)', '| titles has secret:', pg.evaluate("APP.game.state.titles.indexOf('secret')!==-1"))
   print('Dex opened on it:', pg.evaluate("APP.game.state.selected===SECRET_SEED && !document.getElementById('screen').hidden"), '| detail text:', [l for l in pg.inner_text('#screen').split('\n') if 'Veilcrown' in l or 'Last Light' in l or 'Seed' in l][:4])
   pg.screenshot(path='/tmp/secret-detail.png')
   # 4) cannot be released; fully evolved
-  lab=[l for l in pg.inner_text('#screen').split('\n') if 'release' in l.lower() or 'evolved' in l.lower() or 'Release' in l]
+  lab=[l for l in pg.inner_text('#screen').split('\n') if 'release' in l.lower() or 'evolved' in l.lower() or 'Release' in l or (REV and 'stays with you' in l)]
   print('buttons:', lab)
-  pg.click("#screen button:has-text('Cannot be released')"); pg.click("#screen button:has-text('Cannot be released')"); pg.wait_for_timeout(200)
+  REL='It stays with you' if REV else 'Cannot be released'   # the review copy's label for a secret critter (item 15 renamed release)
+  pg.click("#screen button:has-text('%s')"%REL); pg.click("#screen button:has-text('%s')"%REL); pg.wait_for_timeout(200)
   print('still kept after two taps on Release:', pg.evaluate("APP.game.state.caught.some(e=>e.seed===SECRET_SEED)"))
   pg.evaluate("APP.close()")
   # 5) the seat answers only once
-  at_crown(); pg.click('#act'); pg.wait_for_timeout(300); print('second visit:', pg.evaluate("APP.dialog&&APP.dialog.lines[0]")); finish()
+  if REV:   # the seat again: warm, nothing more
+    pg.evaluate("(()=>{const o=WORLD.objects.find(x=>x.id==='seat');WORLD.setPos((o.x+0.5)*WORLD.TS,(o.y+0.6)*WORLD.TS)})()"); pg.evaluate("[0,1,2,3].forEach(()=>WORLD.step(1/30))"); pg.wait_for_timeout(2900)
+    check('review copy: sitting again opens nothing', not pg.evaluate("!!APP.dialog"))
+    pg.click('#act'); pg.wait_for_timeout(300); print('second visit:', pg.inner_text('#toast')); finish()
+  else:
+    at_crown(); pg.click('#act'); pg.wait_for_timeout(300); print('second visit:', pg.evaluate("APP.dialog&&APP.dialog.lines[0]")); finish()
   print('copies kept:', pg.evaluate("APP.game.state.caught.filter(e=>e.seed===SECRET_SEED).length"))
   # 6) Last Light replaces Veil: survives one lethal hit with 1 HP, next hit lands harder; never dodges
   r=pg.evaluate("""(()=>{const g=APP.game,sec=g.make(SECRET_SEED,3,12),foe=g.make(7,3,12);const b=g.newBattle(sec,foe,0);const D=b.s[0],A=b.s[1];
@@ -49,9 +70,11 @@ with sync_playwright() as p:
   pg.evaluate("APP.game.update({caught:APP.game.state.caught.filter(e=>e.seed!==SECRET_SEED),adv:{clues:[],open:{},flags:{}}})")
   t=species(); print('before the arch opens, bonus shown:', 'Bonus species' in t)
   pg.evaluate("APP.close(); APP.game.update({adv:{clues:[],open:{arch:true},flags:{}}})"); t=species(); print('arch open, not found:', [l for l in t.split('\n') if 'Bonus species' in l or l=='???'])
+  if REV: check('review copy: a secret not yet caught has no ??? row', '???' not in t.split('\n'))
   pg.evaluate("APP.close(); APP.game.update({caught:APP.game.state.caught.concat([{seed:SECRET_SEED,stage:3,lv:12}])})"); t=species(); print('found:', [l for l in t.split('\n') if 'Bonus species' in l or 'Veilcrown' in l or '#049' in l]); print('species counter still counts 48 only:', [l for l in t.split('\n') if '/48' in l][:2])
   pg.screenshot(path='/tmp/secret-species.png')
   # 8) reload keeps it, and `seen` never gets 49
   pg.evaluate("APP.close()"); pg.reload(); pg.wait_for_timeout(1300)
   print('after reload: kept', pg.evaluate("APP.game.state.caught.some(e=>e.seed===SECRET_SEED)"), '| seen has 49:', pg.evaluate("APP.game.state.seen.indexOf(49)!==-1"), '| title kept:', pg.evaluate("APP.game.state.titles.indexOf('secret')!==-1"))
   print('errors:', errs or 'none'); b.close()
+done()

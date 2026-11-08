@@ -506,8 +506,9 @@ const WORLD = (() => {
     // among every tile that is clear, beside a path and (when asked) beside water, take the one that is the LEAST open (most trees and rocks around it), nearest the hint and nearest the gate road
     // (review 03-F3, F13: a hint not met is no hint; the walking distance to the road counts three times a tile), so a thing never sits in the middle of the zone's open ground, which action fights need, and never in a corner nobody walks to
     const g = M.grid, W = M.W, H = M.H, clear = (x, y) => ['.', ','].indexOf((g[y] || [])[x]) !== -1, rd = roadDist(M); let best = null;
+    const zs = o.id && o.id.indexOf('z-') === 0 ? (M.objects || []).filter((q) => q.id && q.id.indexOf('z-') === 0) : [];   // two of a zone's things (Tide: the returned row, the moored knot) are two meetings, never one heap: 6 tiles apart
     for (let y = 4; y < H - 4; y++) for (let x = 4; x < W - 4; x++) {
-      if (!clear(x, y)) continue;
+      if (!clear(x, y) || zs.some((q) => Math.max(Math.abs(q.x - x), Math.abs(q.y - y)) < 6)) continue;
       let ok = true, water = false, path = false, open = 0; for (let yy = y - 3; yy <= y + 3; yy++) for (let xx = x - 3; xx <= x + 3; xx++) { const c = (g[yy] || [])[xx]; if (clear(xx, yy)) open++; if (Math.abs(xx - x) <= 2 && Math.abs(yy - y) <= 2) { if (c === '~' && Math.abs(xx - x) + Math.abs(yy - y) <= 2) water = true; if (c === '=') path = true; } if (Math.abs(xx - x) <= 1 && Math.abs(yy - y) <= 1 && !clear(xx, yy) && !(c === '~' && (xx === x || yy === y))) ok = false; }
       if (needWater) { ok = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([ax, ay]) => clear(x + ax, y + ay)); path = true; }
       if (!ok || !path || (needWater && !water)) continue;
@@ -625,8 +626,8 @@ const WORLD = (() => {
   addSpot(MAPS.moss, { id: 'z-sprouts', kind: 'sprouts', text: 'Rows of young plants. The soil is turned.' }, 9, 6, false);
   addSpot(MAPS.frost, { id: 'z-icelamp', kind: 'icelamp', text: 'A flame, held in the ice.' }, 19, 6, false);
   addSpot(MAPS.ember, { id: 'z-hearth', kind: 'hearth', text: 'Fresh logs.' }, 19, 22, false);
-  addSpot(MAPS.tide, { id: 'z-moored', kind: 'moored', text: 'The knot is a good one.' }, 26, 6, true);
   addRow(MAPS.tide, { id: 'z-returned', kind: 'returned', v: 'sandal', text: 'A cup, a sandal, a toy boat, set in a row above the tide line. Someone straightened them.' }, [{ id: 'z-returned-a', kind: 'returned', v: 'cup', text: 'A cup, the right way up.' }, { id: 'z-returned-b', kind: 'returned', v: 'boat', text: 'A toy boat, dry.' }], 26, 15);   // Meaning: what the sea gives back, met on the shore before Coral asks you to answer; three things in a row by the boardwalk (review 03-F10)
+  addSpot(MAPS.tide, { id: 'z-moored', kind: 'moored', text: 'The knot is a good one.' }, 26, 6, true);   // placed after the returned row (the zone's thing, nearest the road), at least 6 tiles from it
   // ---------- the Cold Ascent: five switchback ledges up the peaks above Frosthold, ending under the beacon tower ----------
   // Ledges are rectangles joined by 4-wide ramps through the cliff rows between them; a packed-snow trail zig-zags up, so trainers beside it
   // see you cross. Wild snow patches (W), a glacier river with a log bridge, a rare patch near the top, and a summit plateau with the beacon.
