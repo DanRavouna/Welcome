@@ -24,8 +24,16 @@ const MUSIC = (() => {
       lead: 'G5 . E5 . C5 . E5 G5 | A5 - - - E5 - C5 - | F5 . A5 . C6 . A5 . | G5 - - - D5 - - . | G5 . E5 . C6 . B5 A5 | A5 - E5 - C5 - E5 - | F5 . D5 . A5 . F5 . | G5 - - - B4 - - .' },
     'dg-arch': { bpm: 70, wave: 'triangle', chords: 'Dm Dm Bb A Dm Gm Bb A', bass: 'R - - - 5 - - -', drums: '. . . . . . . h',
       lead: 'D5 - - - F5 - A5 - | D5 - - - F5 - - . | Bb4 - - - D5 - F5 - | E5 - - - C#5 - - . | A5 - - - F5 - D5 - | G5 - - - Bb5 - D6 - | F5 - - - D5 - Bb4 - | E5 - C#5 - A4 - - .' },
-    'dg-lamp': { bpm: 88, wave: 'triangle', chords: 'G Em C D G Em C D', bass: 'R . 5 . R . 5 .', drums: 'k . h . s . h .',
-      lead: 'G5 - B5 - D6 - B5 - | E5 - G5 - B5 - - . | C5 - E5 - G5 - E5 - | D5 - F#5 - A5 - - . | G5 - B5 - D6 - G6 - | E6 - D6 - B5 - G5 - | C6 - B5 - A5 - G5 - | F#5 - A5 - D6 - - .' },
+    // the Lamp Tower (Meaning: the music is the fourth lamp): the dark form has no drums and half the notes, held low, in the Watch's key (the way home and the long watch share it);
+    // each lamp kept below the great lamp adds a layer (@1 the bass walks, @2 the whole tune comes back an octave down, @3 = @lit the drums and the tune as written)
+    'dg-lamp': { bpm: 66, wave: 'triangle', chords: 'Em C G D Em C Am B', bass: 'R - - - - - - -', drums: '. . . . . . . .',
+      lead: 'G4 - - - D5 - - - | E4 - - - B4 - - . | B4 - - - G4 - - - | D5 - - - A4 - - . | G4 - - - D5 - - - | C5 - - - B4 - - - | C5 - - - A4 - - - | B4 - - - - - - .' },
+    'dg-lamp@1': { bpm: 66, wave: 'triangle', chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: '. . . . . . . .',
+      lead: 'G4 - - - D5 - - - | E4 - - - B4 - - . | B4 - - - G4 - - - | D5 - - - A4 - - . | G4 - - - D5 - - - | C5 - - - B4 - - - | C5 - - - A4 - - - | B4 - - - - - - .' },
+    'dg-lamp@2': { bpm: 66, wave: 'triangle', chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: '. . . . . . . .',
+      lead: 'G4 - B4 - D5 - B4 - | E4 - G4 - B4 - - . | C4 - E4 - G4 - E4 - | D4 - F#4 - A4 - - . | G4 - B4 - D5 - G5 - | E5 - D5 - B4 - G4 - | C5 - B4 - A4 - G4 - | F#4 - A4 - B4 - - .' },
+    'dg-lamp@3': { bpm: 66, wave: 'triangle', chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: 'k . h . s . h .',
+      lead: 'G5 - B5 - D6 - B5 - | E5 - G5 - B5 - - . | C5 - E5 - G5 - E5 - | D5 - F#5 - A5 - - . | G5 - B5 - D6 - G6 - | E6 - D6 - B5 - G5 - | C6 - B5 - A5 - G5 - | F#5 - A5 - B5 - - .' },
     watch: { bpm: 72, wave: 'triangle', vol: 0.72, chords: 'Em C G D Em C Am B', bass: 'R - - - - - - -', drums: '. . . . . . . h',
       lead: 'E5 - - - B5 - - - | G5 - - - - - - . | C6 - - - B5 - - - | D6 - - - - - - . | E5 - - - B5 - - - | G5 - - - E6 - - - | A5 - - - C6 - - - | B5 - - - - - - .' },   // the Watch's lobby: a lamp that does not go out, waiting
     'dg-forge': { bpm: 78, wave: 'square', duty: 0.25, chords: 'Em Em C C Am Am B B', bass: 'R . R . 5 . R .', drums: 'k . . h k . s h',
@@ -35,8 +43,26 @@ const MUSIC = (() => {
     battle: { bpm: 150, wave: 'square', duty: 0.25, chords: 'Am F G E Am F D E', bass: 'R R R R 5 R R 5', drums: 'k h s h k k s h',
       lead: 'A5 . E5 A5 C6 . B5 A5 | F5 . C5 F5 A5 . G5 F5 | G5 . D5 G5 B5 . A5 G5 | G#5 - E5 - B5 - G#5 - | A5 . E5 A5 C6 . E6 D6 | C6 . A5 . F5 . A5 . | D6 . A5 . F#5 . A5 D6 | E6 - B5 - G#5 - E5 -' },
     boss: { bpm: 136, wave: 'square', duty: 0.5, chords: 'Cm Ab Bb G Cm Ab Fm G', bass: 'R R 5 R R R 5 5', drums: 'k h s h k k s s',
-      lead: 'C5 - G5 - Eb6 - D6 C6 | Ab5 - - - C6 - Eb6 - | D6 - Bb5 - F5 - Bb5 D6 | B5 - - - G5 - D5 - | C5 - G5 - Eb6 - F6 G6 | Ab6 - G6 - Eb6 - C6 - | F6 - Eb6 - D6 - C6 Ab5 | B5 - D6 - G6 - - -' }
+      lead: 'C5 - G5 - Eb6 - D6 C6 | Ab5 - - - C6 - Eb6 - | D6 - Bb5 - F5 - Bb5 D6 | B5 - - - G5 - D5 - | C5 - G5 - Eb6 - F6 G6 | Ab6 - G6 - Eb6 - C6 - | F6 - Eb6 - D6 - C6 Ab5 | B5 - D6 - G6 - - -' },
+    // a trial (Meaning: a keeper letting go is not an enemy): Frosthold's chords without the A major, so no menace; brisk, but it keeps its feet on the ground
+    trial: { bpm: 128, wave: 'square', duty: 0.25, chords: 'Dm Bb F C Dm Bb Gm C', bass: 'R . 5 . R . 5 R', drums: 'k . s . k h s .',
+      lead: 'D5 . F5 A5 D6 - C6 A5 | Bb5 - F5 - D5 - F5 . | A5 . C6 . F5 . A5 C6 | G5 - E5 - C6 - - . | D5 . F5 A5 D6 - A5 F5 | Bb5 - A5 - F5 - D5 . | G5 . Bb5 . D6 . C6 Bb5 | A5 - - - E5 - - .' },
+    // a night of the Watch (Meaning: the watch thickens, it is not a brawl): the lobby's own tune, a little faster, with a pulse under it; the long nights press harder
+    night: { bpm: 96, wave: 'triangle', chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: '. . h . k . h .',
+      lead: 'E5 - - - B5 - - - | G5 - - - - - - . | C6 - - - B5 - - - | D6 - - - - - - . | E5 - - - B5 - - - | G5 - - - E6 - - - | A5 - - - C6 - - - | B5 - - - - - - .' },
+    'night@long': { bpm: 104, wave: 'square', duty: 0.25, chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: 'k . h . k . h h',
+      lead: 'E5 - - - B5 - - - | G5 - - - - - - . | C6 - - - B5 - - - | D6 - - - - - - . | E5 - - - B5 - - - | G5 - - - E6 - - - | A5 - - - C6 - - - | B5 - - - - - - .' },
+    // the Forge lit (Meaning: heard working): the same tune, faster, a fuller wave, every step drummed
+    'dg-forge@lit': { bpm: 96, wave: 'square', duty: 0.5, chords: 'Em Em C C Am Am B B', bass: 'R . R . 5 . R .', drums: 'k h s h k h s h',
+      lead: 'E5 - - - G5 - B5 - | E5 - - - D5 - - . | C5 - E5 - G5 - E5 - | D5 - C5 - B4 - - . | A4 - C5 - E5 - A5 - | G5 - E5 - C5 - - . | B4 - D#5 - F#5 - B5 - | A5 - F#5 - D#5 - - .' },
+    // the Arch once the seat has answered: the bass on two steps and one kick a bar
+    'dg-arch@seat': { bpm: 70, wave: 'triangle', chords: 'Dm Dm Bb A Dm Gm Bb A', bass: 'R - - - 5 - - -', drums: 'k . . . . . . h',
+      lead: 'D5 - - - F5 - A5 - | D5 - - - F5 - - . | Bb4 - - - D5 - F5 - | E5 - - - C#5 - - . | A5 - - - F5 - D5 - | G5 - - - Bb5 - D6 - | F5 - - - D5 - Bb4 - | E5 - C#5 - A4 - - .' },
+    // Home with the window dark (Meaning: after the beacon the window is lit only by you, each day): the village tune without its tune, until you light it
+    'town@dark': { bpm: 104, wave: 'square', duty: 0.25, chords: 'C G Am F C G F G', bass: 'R . R . 5 . R .', drums: 'k . h . s . h .',
+      lead: '. . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . .' }
   };
+  T['dg-lamp@lit'] = T['dg-lamp@3'];
   const SEMI = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const midi = (n) => { const m = n.match(/^([A-G])([#b]?)(\d)$/); return 12 * (+m[3] + 1) + SEMI[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0); };
   const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
@@ -67,6 +93,8 @@ const MUSIC = (() => {
     coralbay: 'G4 - - - E4 - - - | A4 - - - E4 - - . | F4 - - - A4 - C5 - | G4 - - - D4 - - . | G4 - - - E4 - C5 - | A4 - - - E4 - - . | F4 - - - D4 - A4 - | G4 - - - - - - .',
   };   // the day's tune remembered: the same chords, fewer notes, lower and held
   Object.keys(NIGHT_LEAD).forEach((id) => { const t = T[id]; T[id + '@night'] = { bpm: Math.round(t.bpm * 0.78), wave: 'triangle', chords: t.chords, bass: 'R - - - - - - -', drums: '. . . . . . . .', lead: NIGHT_LEAD[id], vol: 0.62 }; });
+  // dusk and dawn (Meaning: the hour is a hint; the sound shifts with the light, before the night does): the night's tune on the day's wave, a little slower, the day's bass, only the hats of the drums
+  Object.keys(NIGHT_LEAD).forEach((id) => { const t = T[id]; T[id + '@dusk'] = { bpm: Math.round(t.bpm * 0.9), wave: t.wave, duty: t.duty, chords: t.chords, bass: t.bass, drums: t.drums.replace(/[ks]/g, '.'), lead: NIGHT_LEAD[id], vol: 0.8 }; });
   Object.keys(T).forEach((k) => { T[k].steps = compile(T[k]); });
 
   let ac = null, master = null, bus = null, noise = null, cur = null, want = null, step = 0, nextT = 0, timer = null, enabled = true, hidden = false, unlocked = false;
