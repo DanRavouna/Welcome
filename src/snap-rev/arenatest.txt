@@ -2,9 +2,11 @@ ok five rivals in ladder order | [['juno', #, #, #], ['bastian', #, #, #], ['sab
 ok step #: Juno waits on the sand, the others by their tents | [['juno', #, #, #], ['bastian', #, #, #], ['sable', #, #, #], ['halvard', #, #, #], ['ash', #, #, #]]
 ok only Juno can be fought first | [['juno', True], ['bastian', False], ['sable', False], ['halvard', False], ['ash', False]]
 ok Bastian out of order: a line, no fight | ['Juno first. That is the order.']
+ok review copy: losing to Juno spends nothing: step #, no essence, the day not stamped, Juno ready again today | [[#, #, False], [['juno', True], ['bastian', False], ['sable', False], ['halvard', False], ['ash', False]]]
 ok beating Juno: step #, +# essence, cleared | [#, #, True]
 ok after the win the day is spent: Bastian waits until tomorrow
-ok Bastian the same day: one a day | ['One a day. Come back with the sun.']
+ok review copy: the win stamped the day by itself (nothing stamped at the start of a fight)
+ok Bastian the same day: one a day (review copy: he sits by the fire and says nothing; no fight) | [None, [#...]]
 ok the Challenger title is earned on the first step
 ok next day: Bastian ready, Juno ready for a rematch, Sable still waits | [['juno', True], ['bastian', True], ['sable', False], ['halvard', False], ['ash', False]]
 ok four steps climbed

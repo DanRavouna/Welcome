@@ -1,14 +1,23 @@
 ok duel multipliers (tuned with duelsim.py) | [#...]
 ok per-boss duel corrections | {'maren': {'hp': #}, 'keeper': {'hp': #}, 'coral': {'hp': #}}
 ok action rewards: half a KO of XP, # essence a day | [#...]
-ok zone level gates #/#/#/# | {'moss': #, 'frost': #, 'ember': #, 'tide': #}
-ok route gates follow the higher of the two places (#/#/#/#), climbs # and # | {'route-mf': #, 'route-mf-gate': #, 'route-mf-fork': #, 'route-cm': #, 'route-cm-edge': #, 'route-cm-crossing': #, 'route-fc': #, 'route-fc-shelf': #, 'route-fc-landing': #, 'route-cc': #, 'route-cc-pier': #, 'route-cc-steam': #, 'ascent': #, 'descent': #}
+ok review copy: town gates by seals (Moss #, the north gate to Frost #, Ember #, Tide #) | {'moss': #, 'frost': #, 'ember': #, 'tide': #}
+ok review copy: routes by seals (the Pass #, Ashwood #, the coast and the causeway #, Ascent #, Descent #) | {'route-mf': #, 'route-mf-gate': #, 'route-mf-fork': #, 'route-cm': #, 'route-cm-edge': #, 'route-cm-crossing': #, 'route-fc': #, 'route-fc-shelf': #, 'route-fc-landing': #, 'route-cc': #, 'route-cc-pier': #, 'route-cc-steam': #, 'ascent': #, 'descent': #}
+ok review copy: the old level gates are kept unchanged for older saves | {'GATES_LV': {'moss': #, 'frost': #, 'ember': #, 'tide': #}, 'ROUTE_GATES_LV': {'route-mf': #, 'route-mf-gate': #, 'route-mf-fork': #, 'route-cm': #, 'route-cm-edge': #, 'route-cm-crossing': #, 'route-fc': #, 'route-fc-shelf': #, 'route-fc-landing': #, 'route-cc': #, 'route-cc-pier': #, 'route-cc-steam': #, 'ascent': #, 'descent': #}}
+ok review copy: a new save at level # with no seal is not let through by its level | {'newLv#': False, 'oldLv#': [True, True, False], 'oneSealLv#': [True, False], 'three': [False, True], 'walked': True}
+ok review copy: a save with lvGates keeps the level rule (level #: the Pass and Frost, not Ember) | {'newLv#': False, 'oldLv#': [True, True, False], 'oneSealLv#': [True, False], 'three': [False, True], 'walked': True}
+ok review copy: one seal at level # opens the Highland Pass (Frost Peaks is walked to), the town's north gate stays shut | {'newLv#': False, 'oldLv#': [True, True, False], 'oneSealLv#': [True, False], 'three': [False, True], 'walked': True}
+ok review copy: three seals open the Descent, not the Ascent; a save that walked the Ascent keeps it | {'newLv#': False, 'oldLv#': [True, True, False], 'oneSealLv#': [True, False], 'three': [False, True], 'walked': True}
+ok review copy: the leaders' levels: Wren #, Glacia #, Blaze #, Coral # (simmed, docs/review/#-balance.md) | {'wren': #, 'glacia': #, 'blaze': #, 'coral': #}
+ok review copy: keep prices Common #, Uncommon #, Rare #, Mythic # | {'Common': #, 'Uncommon': #, 'Rare': #, 'Mythic': #}
+ok review copy: STILL_S # and BURN_S # | {'still': #, 'burn': #}
 ok the Long Watch: # floors, # climbs a day, #% heal | {'floors': #, 'runsPerDay': #, 'heal': #}
 ok shiny odds # in #, city quest reward #
-ok wren hands over a fire: "It grows because someone stays beside it." | It grows because someone stays beside it. Stay a while. The Moss Seal.
-ok glacia hands over a fire: "The cold keeps what it is given." | The cold keeps what it is given. Take the Frost Seal. It will keep.
-ok blaze hands over a fire: "You did not put it out. You fed it." | You did not put it out. You fed it. Take the Ember Seal.
-ok coral hands over a fire: "The sea gives back what it is given." | The sea gives back what it is given. The Tide Seal is yours.
+ok wren hands over a fire: "Four in bloom." | Four in bloom. I did not see you hurry.
+ok glacia hands over a fire: "The pool is still." | The pool is still. It will stay that way now.
+ok blaze hands over a fire: "All three at once." | All three at once. The woodpile is lower than it was.
+ok coral hands over a fire: "Every lamp answered." | Every lamp answered. The chain is down.
 ok no conquest wording on any leader | []
 ok Coral ends with the light left on
+ok review copy: no leader's seal line names a trainer level (the gates are fires now) | ['The beds will want you back. They always want someone.', 'Nothing up here has moved since you came in.', 'Someone will stack it again tonight. It is never me.', 'The harbour lamp was already lit when I came down this morning. Nobody here will say who.']
 ok Vigil Peak / The Long Watch / Fire-keeper / Watchkeeper | ['Vigil Peak', 'The Long Watch', 'Fire-keeper', 'Watchkeeper']

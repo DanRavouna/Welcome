@@ -2,6 +2,7 @@ party after adding #: [#...] | count text: #/# in party | #th disabled: True
 after make-lead #: [#...] fighter #
 remove+re-add #: [#...]
 shop open after Mira: True | # essence
+ok review copy: the shop sells no Roll Ticket | ['potion', 'super', 'charm']
 bag: {'potion': #, 'super': #, 'charm': #, 'ticket': #, 'herb': #, 'ward': #, 'whet': #, 'lure': #} | essence left: # | charm button disabled (not enough): False
 battle screen gone: True
 charm active: # | Rare Charm active: # encounters left.

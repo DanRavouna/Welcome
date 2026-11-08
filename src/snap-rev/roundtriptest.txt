@@ -2,4 +2,7 @@ ok every save field comes back as written after a reload | []
 ok seen is rebuilt from the kept critters (species of seeds # and #) | [#...]
 ok the Dex species count matches seen (#/#) | {'toggle': ['My critters (#)', 'Species (#/#)'], 'found': #}
 ok the record on disk holds every field | []
+ok review copy: an old save with critters: act.tx #, returned [], lvGates true, arena step # | {'act': {'day': '<date>', 'n': #, 'tx': #}, 'returned': [], 'lvGates': True, 'arena': {'step': #, 'day': ''}}
+ok review copy: a new save: lvGates false (gates by seals only) | {'act': {'day': '', 'n': #, 'tx': #}, 'returned': [], 'lvGates': False, 'arena': {'step': #, 'day': ''}}
+ok review copy: lvGates false as written stays false | {'act': {'day': '<date>', 'n': #, 'tx': #}, 'returned': [], 'lvGates': False, 'arena': {'step': #, 'day': ''}}
 ok no page errors | []

@@ -12,10 +12,11 @@ ok Pip's room: a small bed, finds in jars, bowls
 ok Mira's room: the shelf, the ledger, the kettle
 ok town rooms: no line is a tip
 ok tower door: Enter the Tower
-ok without four seals the door refuses and you stay outside | The Long Watch is for those who hold all # Leader Seals. You hold #.
+ok without four seals the door refuses and you stay outside | The door is shut. Light shows under it.
+ok review copy: a save that kept a night (tower.best #, no seals) goes in | in-tower
 ok with four seals it leads into the lobby of the Watch
 ok the lobby: two lamps that stay lit, a bench with a blanket, the book of nights
 ok by the stair: Climb the stair | Climb the stair
-ok the stair opens the keeper's lobby dialog | Welcome. Twenty nights, one lamp. Each night someone comes to the door.
+ok the stair opens the keeper's lobby dialog | Someone comes to the door most nights.
 ok walking out of the lobby returns to Vigil Peak | peak
 ok no page errors | []

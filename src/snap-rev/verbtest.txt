@@ -2,7 +2,7 @@ ok the world runs (nothing left it paused) | {'dlg': False, 'tr': False, 'open':
 ok a Frost critter leads
 ok pressing the special starts the stillness verb | {'kind': 'frost', 't': #, 'r': #, 'charge': #}
 ok the ring widens over real time while you stand still (monotonic, about # tile per second) | [#...]
-ok no other attack while the ring stands
+ok review copy: the quick slash fires while the ring stands (the verb never set its cooldown), and the ring stays | [#, True, {'kind': 'frost', 't': #, 'r': #, 'charge': #}]
 ok the first step shatters it
 ok an Ember critter leads
 ok a tap is a puff: it starts and ends a charge of # | None
@@ -26,6 +26,7 @@ ok it lands far harder than the same blow in the open (#x, with the roll of # to
 ok a Stone critter leads
 ok the wall is set on the tile you face | [{'tx': #, 'ty': #, 'hp': #, 't': #}]
 ok a chasing critter cannot pass it: still beyond the wall (more than # tiles) after # s, and you are unhurt | [#...]
+ok a shot at you breaks on the wall instead (the wall has taken a hit, you have not) | ['wall hp #', True]
 ok a Bloom critter leads
 ok petals bloom around you
 ok you heal while you stand in them (at least #% in # s) | [#...]

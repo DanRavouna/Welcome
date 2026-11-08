@@ -56,6 +56,7 @@ class Component extends Base {
       shinies: Array.isArray(d.shinies) ? d.shinies.filter((n) => Number.isInteger(n)) : [],
       pouch: Array.isArray(d.pouch) ? d.pouch.filter((n) => Number.isInteger(n)).slice(0, 8) : [],
       act: { day: d.act && typeof d.act.day === 'string' ? d.act.day : '', n: d.act ? Math.max(0, d.act.n | 0) : 0, tx: d.act ? Math.max(0, d.act.tx | 0) : 0 },
+      arena: d.arena && typeof d.arena === 'object' ? { step: Math.max(0, Math.min(5, d.arena.step | 0)), day: typeof d.arena.day === 'string' ? d.arena.day : '' } : { step: 0, day: '' },   // the Arena ladder (was never written: a reload lost the climb); default step 0
       returned: Array.isArray(d.returned) ? d.returned.filter((n) => Number.isInteger(n)).slice(-40) : [],   // critters you let go: met again on their own shore (item 15); default empty
       lvGates: d.lvGates === true || (d.lvGates === undefined && Array.isArray(d.caught) && d.caught.length > 0),   // a save older than the gates-by-fires build keeps the trainer-level gates as an alternative
       tower: (() => {
@@ -93,7 +94,7 @@ class Component extends Base {
     try {
       // keep fields this build does not know (written by a newer build or another device): merge them under our own fields instead of dropping them
       let keep = {}; try { const old = JSON.parse(window.localStorage.getItem('critter-roll:v2') || '{}'); if (old && typeof old === 'object') keep = old; } catch (e2) {}
-      window.localStorage.setItem('critter-roll:v2', JSON.stringify(Object.assign({}, keep, { caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, act: s.act, pouch: s.pouch, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv, returned: s.returned, lvGates: s.lvGates })));
+      window.localStorage.setItem('critter-roll:v2', JSON.stringify(Object.assign({}, keep, { caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, act: s.act, pouch: s.pouch, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv, returned: s.returned, lvGates: s.lvGates, arena: s.arena })));
     } catch (e) {}
   }
 

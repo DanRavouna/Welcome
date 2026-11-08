@@ -1,18 +1,29 @@
 ok a new game opens on the title: one light to touch
 ok touching the light crosses into the game like a zone change
-ok Fern points at what you can see (the gate with the lamp, the grass by your door) | ['The gate with the lamp on it. Most people start in the tall grass past it, and there is some by your door. Talk to people on the way; they know more than the signs do.']
+ok review copy: Fern says her two lines (the lamp on the west gate, then go on) | ['Someone has the lamp on the west gate lit already. They do, most mornings.', 'Someone has the lamp on the west gate lit already. They do, most mornings.', 'Go on, then.']
+ok review copy: during her lines Fern stands by Home's door, within # tiles of you (on screen) | {'f': [#...], 'p': [#...]}
+ok review copy: the starter cards name no Power (name and picture only) | Choose your partner
+There is no wrong choice. You will find many more.
+Mornub
+Choose Mornub
+Nibbris
+Choose Nibbris
+Elmtuft
+Choose Elmtuft
+ok review copy: after her lines Fern goes back to the Lab (#, #) | {'f': [#...], 'p': [#...]}
+ok review copy: no #tip in the page
 ok you start at the door of Home | [[#...], [#...]]
 tiles to the first tall grass: # | tiles to the west gate: #
 ok the first tall grass is within # tiles of the door | #
 ok the open gate (west) is within # tiles and in the direction the road runs | #
-ok a lamp stands by the west gate and is lit by day | {'id': 'gate-lamp', 'kind': 'postlamp', 'day': True, 'x': #, 'y': #, 'reach': #, 'text': 'A lamp on a post by the gate. Lit, in daylight. Someone keeps it that way.'}
-ok the gate lamp burns in daylight (its level is #) | {'gate-lamp': #}
+ok a lamp stands by the west gate and is lit by day | {'id': 'gate-lamp', 'kind': 'postlamp', 'day': True, 'x': #, 'y': #, 'reach': #, 'text': 'A lamp on a post by the gate. Lit, in daylight.'}
+ok the gate lamp burns in daylight (its level is #) | {'gate-lamp-frost': #, 'gate-lamp-peak': #, 'gate-lamp': #, 'gate-lamp-tide': #, 'gate-lamp-ember': #}
 ok the window above the door is kept lit for you at the start (by day) | None
-seconds to a wild critter within # tiles: # | to its orb in the pouch: # | to the first keep: #
-ok a real first keep happens within # s of the opening (bot, real attack, no cheats) | [#...]
+seconds to a wild critter within # tiles: # | to its orb in the pouch: None | to the first keep: #
+ok a real first keep happens within # s of the opening (bot, real attack, no cheats) | [#, None, #]
 ok the bot walks from the keep to the west gate and into Moss Forest | {'Moss Forest': #}
 ok standing in the sparkling patch, something comes out of it | {'Moss Forest': #, 'the sparkling patch stirs and the rare one wakes': #}
 ok on to Mossbrook | {'Moss Forest': #, 'the sparkling patch stirs and the rare one wakes': #, 'Mossbrook': #}
-ok to Wren's door, with the action button offering the gym | [{'Moss Forest': #, 'the sparkling patch stirs and the rare one wakes': #, 'Mossbrook': #, "Wren's door": #}, 'Enter the gym']
+ok to Wren's door, with the action button offering the gym | [{'Moss Forest': #, 'the sparkling patch stirs and the rare one wakes': #, 'Mossbrook': #, "Wren's door": #}, 'Go in']
 the second minute, seconds after the first keep: {'Moss Forest': #, 'the sparkling patch stirs and the rare one wakes': #, 'Mossbrook': #, "Wren's door": #} | party HP at the end: [#...]
 ok no page errors | []

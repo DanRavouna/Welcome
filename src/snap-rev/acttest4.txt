@@ -1,19 +1,11 @@
 no keep chips in the page any more: True
-every defeated critter you do not own drops an orb (even of a known species): #
-walking over it collects it: [#, #] | pouch icon shown with the count: [True, '#']
-after more defeats: pouch holds # | visible HUD extras besides the pouch: []
-the pouch opens the critter card: True | shows type / ability / moves: True | has Keep and Let it go: True | note: Dropped by a defeated wild critter (it joins at level #). Keeping uses
-kept: # -> # | rolls used # -> # | free sighting # -> # | pouch # -> # | it was the one shown: True | joins at stage #
-after keeping the button offers the next critter: True
-letting one go removes it from the pouch: # -> # | no critter was added: True
-closing the card leaves the rest in the pouch: # -> # | world playable again: [True, True]
-no rolls left: True | keep button disabled: True
-price with / without free sightings: [#, #]
-a rare critter drops one too (orbs): # | its rarity is Rare or better: True
-a critter you already keep does not drop one: True
-uncollected orbs fade away: #
-full pouch (#): the orb stays on the ground, pouch [#, #]
-changing map clears orbs, the pouch stays: [#, #]
-save holds the pouch: True
-old save without pouch loads: []
+ok review copy: a wild critter at # HP stays on the map, sitting down (mode down)
+ok review copy: no orb drops and nothing goes into the pouch
+ok review copy: while one is down, a critter within # tiles of you lets you be (calm, idle)
+ok review copy: standing within reach, it is kept after about # s (# to # s from the knock-out)
+ok review copy: kept at the price of any keep, and it is the one that sat down
+ok review copy: the kept one is off the map
+ok review copy: left alone, it stays down for about # s
+ok review copy: then it gets up and is gone, not kept (by # s)
+ok review copy: a pouch held from before still opens the card with Keep and Let it go
 errors: none

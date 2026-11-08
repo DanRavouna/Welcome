@@ -3,7 +3,7 @@ no lamp kept: the top is out of reach and only L# can be reached: True
 each kept lamp opens the next chamber (L# -> L#, L#+L# -> L#), all three -> the top: True
 nothing closes: reachable cells only grow: True | the climb is dark: True
 door label: Examine the beacon door
-first visit dialogue: The great door is not locked. It never was.
+first visit dialogue: The great door is not locked.
 inside: dg-lamp | open.lamp saved: True
 start: g#:shut g#:shut g#:shut
 after # s by L# (not yet): g#:shut g#:shut g#:shut | kept flag: False
@@ -14,14 +14,19 @@ with all three lamps kept, reachable (walls of the real map, NPCs solid): {'bex'
 after a reload the kept lamps stay kept: g#:open g#:open g#:open
 bex {'at': [#...], 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False, 'bonus': #}
 odo {'at': [#...], 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False, 'bonus': #}
-maren {'at': [#...], 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': True, 'bonus': #}
-lamp before the Warden falls: The Warden stands between you and the great lamp.
-Warden down but one lamp below unkept: The glass stays cold.
-lamp dialogue: # lines
-lit: True | essence + # | title: True
-again: New title: Lamplighter (+# essence). Wear it from | essence unchanged: True
+maren {'at': [#...], 'sees': False, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': True, 'bonus': #}
+ok review copy: no line in the tower says how to light it (wake it / touch the glass / lever)
+ok review copy: no action label by the great lamp (it is not pressed) | Stay
+ok review copy: with one lamp below unkept the glass stays cold through a # s stay
+ok review copy: a # s stay brings the glow up about half way (# to #), stepping away makes it fall
+ok review copy: the stay lights it after about # s (# to # s), never sooner
+ok review copy: silence at the lighting, then the lit arrangement (want null at # s, the lit form dg-lamp@# at # s)
+ok review copy: one line, "The glass is warm." | ['The glass is warm.']
+ok review copy: lit without the Warden (Maren never a gate)
+ok review copy: nothing given: essence unchanged, no title shown today, no essence toast, no jingle, no Wickling here
+lit: True | essence + #
 brightness above the beacon lantern: lit # vs unlit # | brighter when lit: True
-journal: ['The Lamp Tower: the great lamp is lit, and its beam crosses ']
-music in the tower: dg-lamp | own track: True
-after reload: gates g#:open g#:open g#:open | flags: {"cl:L#":true,"cl:L#":true,"cl:L#":true,"lampLit":true,"wickling":true,"lv:L#":true}
+journal: ['The Lamp Tower: the great lamp is lit.']
+music in the tower: dg-lamp@# | own track: True
+after reload: gates g#:open g#:open g#:open | flags: {"cl:L#":true,"cl:L#":true,"cl:L#":true,"lampLit":true,"cl:GL":true,"litOn":"<date>","dayAt":"<date>","lv:L#":true}
 errors: none

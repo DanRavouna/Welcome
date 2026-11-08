@@ -1,11 +1,18 @@
 ok Home holds the two chairs (one has always been yours) | ['windowlamp', 'twochairs', 'photo', 'cloakpeg']
 ok before the beacon the window lamp is only something to look at | A lamp on the windowsill, facing the road.
-ok after the beacon, touching the window lamp lights it (you keep it now) | You light the lamp in the window. It faces the road.
+ok review copy: four seals, no lamp: the window is dark by day and by night (the night of darkness) | [[False, #], [False, #]]
+ok review copy: and the gate lamp on the west gate is out | #
+ok review copy: after the lamp, the window is dark at night until you light it
+ok review copy: touching it opens no dialog and lights nothing (the act is staying) | ['Stay', None]
+ok review copy: standing beside it, the window takes after about # s (# to # s from the press)
 ok the light is remembered for today only | <date>
+ok review copy: lit, the window shows the light and the `light` sound plays | [None, 'light']
 ok lit once, the lamp goes back to being something to look at for the rest of the day | A lamp on the windowsill, facing the road.
-ok a new day: the lamp waits to be lit again (the action is offered) | Examine
+ok review copy: the village plays town@dark while the window is dark, town once it is lit | ['town@dark', 'town']
+ok a new day: the lamp waits to be lit again (the action is offered) | Stay
 ok before the beacon, standing by a road post saves nothing (it is kept for you)
 ok after the beacon, a post you pass is yours and stays lit (saved)
 ok the post further up the road, not passed yet, is still dark
-ok Tide Shore holds the returned things, at least # tiles from the moored knot | [['z-moored', #, #], ['z-returned', #, #]]
+ok review copy: a post you keep is dark on a day the window is not lit, and burns on a day it is
+ok Tide Shore holds the returned things, at least # tiles from the moored knot | [['z-returned', #, #], ['z-moored', #, #]]
 ok no page errors | []

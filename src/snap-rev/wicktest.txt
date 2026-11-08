@@ -1,16 +1,20 @@
 data: {"name":"Wickling","no":50,"stage":3,"same":true,"stats":[139,156,125,186],"lv1":[100,112,90,134],"type":"Volt","rarity":"Mythic","ability":"Afterglow","kit":["Wick Flick","Lanternburst","Grounding","Guiding Light"],"shiny":false,"seedLabel":"secret","distinctFromVeil":true}
 Afterglow: {'before': 167, 'max': 269, 'afterFirstBelowHalf': 182, 'afterglowUsed': True, 'foeDazed': 2, 'secondHitHealed': False, 'note': '13 dmg (Afterglow: healed, and Wild Nibtitan is dazed)', 'staticTriggers': 0}
 nothing opened: []
-arch open: ['Bonus species · 0/4', '???']
-beacon door open too: ['Bonus species · 0/4', '???', '???']
-before the Warden falls: The Warden stands between you and the great lamp. | has Wickling: False
-first light: dialogue 4 lines | lit: True | essence + 50 | Wickling: True | flag: True | Dex opened on it: True
+arch open: []
+beacon door open too: []
+ok   review copy: before the great lamp, nobody is on the sill | None
+ok   review copy: after the lamp, on a morning the window is not lit yet, nobody on the sill either
+ok   review copy: the window is lit by staying | <date>
+ok   review copy: the first lit morning after the lamp, something is on the sill (drawn)
+first light: dialogue 2 lines | lit: True | essence + 0 | Wickling: True | flag: True | Dex opened on it: True
+ok   review copy: touching the sill, Wickling joins and the Dex opens on it
 detail: ['#050 Wickling · St.3 · Lv 14', 'Wickling', 'Seed secret · 0.8 m · 4.2 kg', 'Ability · Afterglow: The first time it drops below half HP each battle, it glows: it heals 20% of its max HP and dazes the foe for 2 turns.']
 release blocked: True
-lit and owned: The great lamp burns steadily. Its light reaches the whole l
-lit earlier, no Wickling: dialogue 2 lines | Wickling now: True
-Dex bonus list: ['Bonus species · 1/4', '???', 'Wickling', '#050 · Volt · Afterglow']
+ok   review copy: the sill is empty after (drawn)
+lit and owned: A lamp on the windowsill, facing the road.
+ok   review copy: touching the window again opens nothing
+Dex bonus list: ['Bonus species · 1/4', 'Wickling', '#050 · Volt · Afterglow']
 both found: ['Bonus species · 2/4', 'Veilcrown', '#049 · Dusk · Last Light', 'Wickling', '#050 · Volt · Afterglow']
 species counts still 48 only: [1, True]
-after reload: Wickling kept True | seen has 50: False
 errors: none

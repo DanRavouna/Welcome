@@ -1,9 +1,14 @@
+ok review copy: a new save keeps no level gates | {'lvGates': False, 'lv#': [False, False], 'one': [True, False, False], 'two': [True, True, False]}
+ok review copy: level # and no seal opens neither the Pass nor Frost Peaks | {'lvGates': False, 'lv#': [False, False], 'one': [True, False, False], 'two': [True, True, False]}
+ok review copy: one seal opens the Highland Pass, not the town's north gate | {'lvGates': False, 'lv#': [False, False], 'one': [True, False, False], 'two': [True, True, False]}
+ok review copy: two seals open Frost Peaks and Ember Fields, not Tide Shore | {'lvGates': False, 'lv#': [False, False], 'one': [True, False, False], 'two': [True, True, False]}
 map cards:
 Sproutvale | Home and the Lab | <weather> | You are here
-Moss Forest | Moss and Bloom critters | #/# species found | Elder Wren: not yet beaten | <weather> | Travel here
-Frost Peaks | Frost and Stone critters | #/# species found | Glacia: not yet beaten | <weather> | Travel here
-Ember Fields | Ember and Volt critters | #/# species found | Blaze: not yet beaten | <weather> | Opens at level #
-Tide Shore | Tide and Dusk critters | #/# species found | Admiral Coral: not yet beaten | <weather> | Opens at level #
+Moss Forest | #/# species found | Elder Wren’s fire: kept | <weather> | Travel here
+Frost Peaks | #/# species found | Glacia’s fire: kept | <weather> | Travel here
+Ember Fields | #/# species found | Blaze’s fire: not yet kept | <weather> | Travel here
+Tide Shore | #/# species found | Admiral Coral’s fire: not yet kept | <weather> | The gate is shut
+ok review copy: a shut gate names no level on the map
 travel button in card: ['frost']
 after travel: frost | Frost Peaks | toast: You travel to Frost Peaks.
 here marker on frost: True | moss travel from frost -> moss

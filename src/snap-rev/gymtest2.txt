@@ -8,6 +8,7 @@ ok Glacia: no object text tells the rule | icicles, thick as arms. | icicles, th
 ok Glacia unreachable: black water lies between
 ok nothing freezes while you move | #
 ok standing still: ice forms around you after about # s (# to # s) | [#...]
+ok review copy: the ice takes after STILL_S (# s): none before # s, some by # s | [#, [#...]]
 ok the plates are the water cells next to you | [[#...], [#...], [#...]]
 ok a plate is walkable floor now
 ok standing on the plate, the next ring forms ahead | [#...]
@@ -15,7 +16,7 @@ ok moving melts the plates that are no longer beside you | [#...]
 ok a melted plate is water again
 ok crossing by stopping and stepping reaches the far shore and the pool freezes for good | #
 ok Glacia can be reached now
-ok Blaze: no object text tells the rule | a great brazier. the iron is warm. | a great brazier. the iron is warm. | a great brazier. the iron is warm. | split logs, stacked by someone who stacks logs every day. | cold slag, poured across the way. | cold slag, poured across the way. | cold slag, poured across the way. | cold slag, poured across the way. | a brazier. somebody keeps it lit. | a brazier. somebody keeps it lit.
+ok Blaze: no object text tells the rule | a great brazier. the iron is warm. | a great brazier. the iron is warm. | a great brazier. the iron is warm. | split logs, stacked. the bark is still wet. | cold slag, poured across the way. | cold slag, poured across the way. | cold slag, poured across the way. | cold slag, poured across the way. | a brazier. ash a hand deep under it. | a brazier. ash a hand deep under it.
 ok Blaze unreachable: cold slag across the way
 ok feeding without a log does nothing but tell you it is cold | It is cold.
 ok by the woodpile the action is Take a log
@@ -24,13 +25,17 @@ ok only one at a time
 ok by a brazier the action is Feed the fire
 ok the fire takes the log and you carry none
 ok it burns down over time (about #/# a second) | [#...]
+ok review copy: it burns down at #/BURN_S a second (BURN_S #: about # after # s) | [#...]
 ok with all three alight at once the slag cracks and the flag is saved | {'fire#': #, 'fire#': #, 'fire#': #}
+ok review copy: a fire left alone is still alight at # s | [[#...], [#...]]
+ok review copy: and out by BURN_S + # s (it lasts BURN_S, about # s) | [#...]
 ok a fire left alone for # s is out again (the fire has to be fed) | {'fire#': #}
-ok Coral: the hall is dark and no object text tells the rule | a lamp on a post. the glass is warm. | a lamp on a post. the glass is warm. | a lamp on a post. the glass is warm. | a lamp on a post. the glass is warm. | a lamp on a post. the glass is warm. | a chain across the way, wet from the sea. | a chain across the way, wet from the sea. | a chain across the way, wet from the sea. | a chain across the way, wet from the sea. | a brazier. somebody keeps it lit. | a brazier. somebody keeps it lit.
+ok Coral: the hall is dark and no object text tells the rule | a lamp on a post. the glass is warm. | a lamp on a post. the glass is warm. | a lamp on a post. the glass is warm. | a lamp on a post. the glass is warm. | a lamp on a post. the glass is warm. | a chain across the way, wet from the sea. | a chain across the way, wet from the sea. | a chain across the way, wet from the sea. | a chain across the way, wet from the sea. | a brazier. salt on the iron. | a brazier. salt on the iron.
 ok Coral unreachable: a chain across the way
 ok the lamps call in an order, one at a time | [[#...], [#...]]
 ok then the hall listens
 ok a wrong lamp: all blink, nothing lost, the call comes again
+ok review copy: the call after a wrong answer is slower, about # s a lamp | [[#...], [#...]]
 ok listening again | listen
 ok the right answer ends round #
 ok round #: one lamp longer, listening | ['listen', #]

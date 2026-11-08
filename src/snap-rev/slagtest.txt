@@ -1,9 +1,12 @@
 data: {"name":"Slagback","no":51,"stage":3,"same":true,"stats":[189,162,174,107],"type":"Ember","ability":"Slow Burn","kit":["Magma Nudge","Caldera Slam","Ember Shell","Slow Roast"],"shiny":false,"distinct":true}
-before Hale falls: The Forgemaster stands between you and the great furnace. | has Slagback: False
-first light: dialogue 4 lines | lit: True | essence + 50 | Slagback: True
+before Hale falls: The furnace door is shut. The Forgemaster is watching it. | has Slagback: False
+first light: dialogue 2 lines | lit: True | essence + 20 | Slagback: True
+ok   review copy: the furnace itself pays no essence (only the titles it earns) | [20, 20]
+ok   review copy: no "essence" toast and no mythic jingle at the first light | ['New title: Forge Keeper (+20 essence). Wear it from your Trainer card.', [None, 'forge', 'level']]
+ok   review copy: Slagback joins without opening the Dex
 detail: ['#051 Slagback · St.3 · Lv 16', 'Slagback', 'Ability · Slow Burn: Each of its hits has a 25% chance to burn the target for 3 turns.']
 release blocked: True
-lit and owned: The furnace roars quietly. The whole crater glows.
+lit and owned: The furnace roars quietly.
 lit earlier, no Slagback: dialogue 2 | now: True
 Dex: ['Bonus species · 1/4', 'Slagback', '#051 · Ember · Slow Burn']
 seen has 51, seen<=48 count: [False, 1]

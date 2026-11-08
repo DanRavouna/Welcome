@@ -4,10 +4,11 @@ ok the gym door leads inside
 ok four seedlings, a trough, vines, and no sign that explains anything | ['gbed', 'gbed', 'gbed', 'gbed', 'trough', 'vines', 'vines', 'vines', 'vines', 'brazier', 'brazier', 'brazier', 'brazier']
 ok no object text tells the rule | A seedling in turned soil. | A seedling in turned soil. | A seedling in turned soil. | A seedling in turned soil. | A stone trough. The water is clear, and it was filled today. | Vines hang across the way. | Vines hang across the way. | Vines hang across the way. | Vines hang across the way. | A brazier. The coals are warm. | A brazier. The coals are warm. | A brazier. The coals are warm. | A brazier. The coals are warm.
 ok Wren cannot be reached before the trial
-ok the action by a seedling is Tend | Tend
-ok pressing Tend kneels you by the bed | You kneel by the bed.
+ok review copy: no Tend button by a seedling | Stay
+ok review copy: standing in reach, the bed is tended without a press (nothing kneels, no toast)
 ok it grows a stage after about # s of staying (not before # s, not after # s) | [#...]
 ok and blooms after about # s | [#...]
+ok review copy: the stay is heard growing (tend sounds), then sprout and bloom | ['bloom', 'sprout', 'tend']
 ok in bloom it is no longer being tended
 ok bed# grew one stage while you stayed # s | #
 ok walking away ends the tending
@@ -17,6 +18,7 @@ ok Wren is still out of reach with two beds done
 ok all four in bloom | [#...]
 ok the vines drew back and the flag is saved
 ok Wren can be reached now
+ok review copy: the Moss Seal is held the moment the beds bloom, before any duel | {'done': [], 'beaten': {}, 'cleared': [], 'seals': ['wren']}
 ok Wren speaks
 ok after a reload: stages kept, vines gone, Wren reachable
 ok an old save with the Moss Seal: beds in bloom, way open
