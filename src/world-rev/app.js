@@ -944,7 +944,7 @@ const APP = (() => {
   }
   // ---- the Lamp Tower: levers flip gates (open = an odd number of its levers are ON), the beacon door leads in, the great lamp ends the climb ----
   // the Lamp Tower (Meaning: the way home is lit by you): a gate opens once the lamp of its chamber has been kept; a lamp takes while you stay beside it (about CL_S seconds), and a kept lamp is saved. Lighting the beacon counts every lamp as kept (old saves).
-  const CL_S = 2.4, CL_REACH = 1.9; let clK = {}, clStamp = 0, clTick = {}, clPeak = {};   // CL_S per lamp: a lamp may carry its own `cl` seconds (the great lamp GL: 6 s). The numbers belong to package M.
+  const CL_S = 2.4, CL_REACH = 1.9; let clK = {}, clStamp = {}, clTick = {}, clPeak = {};   // CL_S per lamp: a lamp may carry its own `cl` seconds (the great lamp GL: 6 s). The numbers belong to package M.
   const GL_BELOW = ['L1', 'L2', 'L3'];
   const lampKept = (id) => !!(advOf().flags['cl:' + id] || advOf().flags.lampLit);
   const glReady = () => GL_BELOW.every(lampKept);   // the great lamp lights only from the three kept below it, checked before anything else (no Warden, no button)
@@ -959,7 +959,7 @@ const APP = (() => {
   function chamberlampState(o) {
     if (lampKept(o.id)) return { lit: 1 };
     if (o.id === 'GL' && !glReady()) return { lit: 0 };   // a dark glass until the three below burn
-    const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - clStamp) / 1000)); clStamp = now;
+    const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - (clStamp[o.id] || now)) / 1000)); clStamp[o.id] = now;   /* one clock per lamp (a shared stamp gave every lamp drawn after another unkept one a dt of 0) */
     const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)), near = d <= CL_REACH && !WORLD.moving();
     const k0 = clK[o.id] || 0; let k = near ? Math.min(1, k0 + dt / (o.cl || CL_S)) : Math.max(0, k0 - dt * 0.8); clK[o.id] = k;
     if (k > k0 && k < 1) { clPeak[o.id] = Math.max(clPeak[o.id] || 0, k); if (now - (clTick[o.id] || 0) >= 600) { clTick[o.id] = now; game.sfx('tick', 392 + 392 * k); } }   // the stay heard growing
