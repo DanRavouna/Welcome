@@ -5,6 +5,7 @@ errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_function("typeof APP!=='undefined' && APP.game")
+  REV=pg.evaluate("APP.build")=='review'   # the review copy (11's item 12): STILL_S 1.2 (the frost drawn forming), BURN_S 18 (feeding is not hurrying)
   pg.evaluate("APP.game.update({hints:['party','shop','evolve','weather','zone','grass','keep','battle','online'],caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,npc:{done:[],beaten:{},cleared:[],seals:[]},adv:{clues:[],open:{},flags:{}}}); DEV.safe=true; window.__noTransition=true; window.__noFollower=true; window.__tod='day'; document.getElementById('starter').hidden=true")
   reach=lambda: pg.evaluate("""()=>{const M=WORLD.map,walk=(x,y)=>x>=0&&y>=0&&x<M.W&&y<M.H&&'.,=WZG'.includes(M.grid[y][x]);const seen=new Set(),q=[[10,M.H-2]];seen.add(q[0].join());while(q.length){const [x,y]=q.shift();[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{const k=(x+dx)+','+(y+dy);if(!seen.has(k)&&walk(x+dx,y+dy)){seen.add(k);q.push([x+dx,y+dy])}})}return seen.has('10,4')}""")
   def at(x,y): pg.evaluate("([x,y])=>WORLD.setPos((x+0.5)*32,(y+0.5)*32)",[x,y]); pg.wait_for_timeout(150)
@@ -23,6 +24,9 @@ with sync_playwright() as p:
   log=pg.evaluate("""()=>new Promise(res=>{WORLD.input.jx=0;const t0=performance.now(),out=[];const tick=()=>{out.push([Math.round(performance.now()-t0),APP.ice().length]);if(performance.now()-t0<2000)setTimeout(tick,50);else res(out)};tick()})""")   # the clock starts the moment you stop
   first=[t for t,n in log if n>0]
   check('standing still: ice forms around you after about 0.8 s (0.6 to 1.4 s)', first and 600<=first[0]<=1400, first[:1])
+  if REV:
+    S=pg.evaluate("APP.STILL_S")
+    check('review copy: the ice takes after STILL_S (1.2 s): none before 1.1 s, some by 1.7 s', S==1.2 and first and 1100<=first[0]<=1700 and all(n==0 for t,n in log if t<1100), [S, first[:1]])
   ice=pg.evaluate("APP.ice()"); px=pg.evaluate("[Math.floor(WORLD.pos().x/32),Math.floor(WORLD.pos().y/32)]")
   check('the plates are the water cells next to you', ice and all(max(abs(c[0]-px[0]),abs(c[1]-px[1]))<=1 for c in ice), ice)
   check('a plate is walkable floor now', pg.evaluate("(c)=>WORLD.map.grid[c[1]][c[0]]",ice[0])=='.')
@@ -54,13 +58,24 @@ with sync_playwright() as p:
   check('the fire takes the log and you carry none', pg.evaluate("APP.carry()")==False and pg.evaluate("APP.burn()")[fires[0][0]]>0.9)
   log=pg.evaluate("""([id])=>new Promise(res=>{const t0=performance.now(),out=[];const tick=()=>{out.push([Math.round(performance.now()-t0),Math.round(APP.burn()[id]*100)/100]);if(performance.now()-t0<3000)setTimeout(tick,100);else res(out)};tick()})""",[fires[0][0]])
   check('it burns down over time (about 1/14 a second)', 0.72<=log[-1][1]<=0.86, log[-1])
+  if REV: check('review copy: it burns down at 1/BURN_S a second (BURN_S 18: about 0.83 after 3 s)', pg.evaluate("APP.BURN_S")==18 and 0.80<=log[-1][1]<=0.87, log[-1])
   for f in fires[1:]:
     at(wood[0], wood[1]-1); press(); at(f[1], f[2]+1); press()
   check('with all three alight at once the slag cracks and the flag is saved', pg.evaluate("!!APP.game.state.adv.flags['gym:blaze']") and reach(), pg.evaluate("APP.burn()"))
   # a fresh attempt where you dawdle: the first fire is out before the third is fed
+  if REV: pg.evaluate("APP.game.update({npc:{done:[],beaten:{},cleared:[],seals:['glacia']}})")   # the review copy grants the seal with the trial (gymDone), and a held seal keeps the hall open: take Blaze's back for the fresh attempt
   pg.evaluate("APP.game.update({adv:{clues:[],open:{},flags:{'gym:glacia':true}}}); WORLD.enter('cinderport'); WORLD.enter('gym-blaze'); WORLD.setPaused(false)"); pg.wait_for_timeout(300)
-  at(wood[0], wood[1]-1); press(); at(fires[0][1], fires[0][2]+1); press(); pg.wait_for_timeout(15500)
-  check('a fire left alone for 15 s is out again (the fire has to be fed)', pg.evaluate("APP.burn()")[fires[0][0]]==0 and not pg.evaluate("!!APP.game.state.adv.flags['gym:blaze']"), pg.evaluate("APP.burn()"))
+  at(wood[0], wood[1]-1); press(); at(fires[0][1], fires[0][2]+1); press()
+  if REV:   # the fire lasts BURN_S: still alight at 15.5 s, out by BURN_S + 1 s (logged against the clock)
+    B=pg.evaluate("APP.BURN_S")
+    log=pg.evaluate("""([id,ms])=>new Promise(res=>{const t0=performance.now(),out=[];const tick=()=>{out.push([Math.round(performance.now()-t0),APP.burn()[id]||0]);if(performance.now()-t0<ms)setTimeout(tick,250);else res(out)};tick()})""",[fires[0][0], int(B*1000)+1500])
+    out=[t for t,v in log if v<=0]
+    check('review copy: a fire left alone is still alight at 15.5 s', all(v>0 for t,v in log if t<=15500), [x for x in log if x[0]>15000][:2])
+    check('review copy: and out by BURN_S + 1 s (it lasts BURN_S, about 18 s)', out and B*1000-1000<=out[0]<=B*1000+1000, out[:1])
+    check('a fire left alone for 15 s is out again (the fire has to be fed)', (pg.evaluate("APP.burn()").get(fires[0][0],0))==0 and not pg.evaluate("!!APP.game.state.adv.flags['gym:blaze']"), pg.evaluate("APP.burn()"))
+  else:
+    pg.wait_for_timeout(15500)
+    check('a fire left alone for 15 s is out again (the fire has to be fed)', pg.evaluate("APP.burn()")[fires[0][0]]==0 and not pg.evaluate("!!APP.game.state.adv.flags['gym:blaze']"), pg.evaluate("APP.burn()"))
   # ================= Coral: answering across the dark =================
   pg.evaluate("APP.game.update({adv:{clues:[],open:{},flags:{'gym:glacia':true,'gym:blaze':true}}}); WORLD.enter('gym-coral'); WORLD.setPaused(false)"); pg.wait_for_timeout(300)
   check('Coral: the hall is dark and no object text tells the rule', pg.evaluate("!!WORLD.map.dark") and not any(w in texts() for w in ['order','repeat','answer','touch them','same','must']), texts())
@@ -76,7 +91,15 @@ with sync_playwright() as p:
   check('then the hall listens', pg.evaluate("APP.coral().phase")=='listen')
   def touch(n): at(lamps[n][0], lamps[n][1]+1); press()
   touch(seq[1]); check('a wrong lamp: all blink, nothing lost, the call comes again', pg.evaluate("APP.coral().phase") in ('wrong','call') and pg.evaluate("APP.coral().round")==0)
-  pg.wait_for_timeout(1900+len(seq)*700+700); check('listening again', pg.evaluate("APP.coral().phase")=='listen', pg.evaluate("APP.coral().phase"))
+  if REV:   # the review copy (06-F2): after a wrong answer the call comes again slower, 1.0 s a lamp (0.7 s before), logged against the clock
+    lg=pg.evaluate("""()=>new Promise(res=>{const t0=performance.now(),out=[];const tick=()=>{const c=APP.coral();const lit=Object.keys(c.lit).filter(k=>c.lit[k]>0.5).map(Number);out.push([Math.round(performance.now()-t0),c.phase,lit.length===1?lit[0]:null]);if(performance.now()-t0<5200)setTimeout(tick,40);else res(out)};tick()})""")
+    starts=[]; prev=None
+    for t,ph,l in lg:
+      if ph=='call' and l is not None and l!=prev: starts.append(t)
+      prev=l if ph=='call' else None
+    gaps=[b-a for a,b in zip(starts,starts[1:])]
+    check('review copy: the call after a wrong answer is slower, about 1.0 s a lamp', len(starts)==len(seq) and all(850<=g<=1150 for g in gaps), [starts,gaps])
+  pg.wait_for_timeout(900 if REV else 1900+len(seq)*700+700); check('listening again', pg.evaluate("APP.coral().phase")=='listen', pg.evaluate("APP.coral().phase"))
   for n in seq: touch(n)
   check('the right answer ends round 1', pg.evaluate("APP.coral().phase")=='right'); pg.wait_for_timeout(1500)
   for r in (1,2):
