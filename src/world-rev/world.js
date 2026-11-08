@@ -11,7 +11,9 @@ const WORLD = (() => {
     moss: { ground: '#4E9A3E', blade: 'rgba(20,70,20,0.5)', path: '#B99B6A', water: '#3F8FC8', tall: '#2E7D33', tallBlade: '#1D5A24', tree: 'round', bg: '#1F5A24', flowers: ['#F59ACB', '#FFFFFF', '#C9A8FF'], dense: true },
     tide: { ground: '#F0DCA6', blade: 'rgba(150,120,60,0.3)', path: '#E2C98E', water: '#2F8FD8', tall: '#B9C46A', tallBlade: '#7E8A32', tree: 'palm', bg: '#1F6FB0', flowers: ['#FFFFFF', '#F59ACB'] }
   };
-  THEMES.peak = { ground: '#8DB07A', blade: 'rgba(50,80,40,0.35)', path: '#C9C3D6', water: '#6FB6E8', tall: '#6E8E5E', tallBlade: '#4E6E40', tree: 'pine', bg: '#4E5E7A', flowers: ['#FFFFFF', '#C9A8FF', '#FFD86B'] };
+  THEMES['route-mf'] = { ground: '#8DB07A', blade: 'rgba(50,80,40,0.35)', path: '#C9C3D6', water: '#6FB6E8', tall: '#6E8E5E', tallBlade: '#4E6E40', tree: 'pine', bg: '#4E5E7A', flowers: ['#FFFFFF', '#C9A8FF', '#FFD86B'] };
+  // Meaning (review 05-F14): Vigil Peak is the still cold above the tree line, the same cold the Lamp Tower sits in: the Ascent's snow with the lilac path kept
+  THEMES.peak = { ground: '#E8F0F8', blade: 'rgba(120,150,190,0.35)', path: '#C9C3D6', water: '#7FB8E0', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#9FB4D0', flowers: ['#FFFFFF'] };
   THEMES.frosthold = { ground: '#E6EFF8', blade: 'rgba(120,150,190,0.35)', path: '#9AA3B5', water: '#BFE3F5', tall: '#9CC9D9', tallBlade: '#5E97AE', tree: 'pine', bg: '#C9D9EA', flowers: ['#FFFFFF', '#BBD5FF'] };
   THEMES.cinderport = { lava: true, ground: '#C9925C', blade: 'rgba(110,60,20,0.35)', path: '#7A6A62', water: '#FF6A2B', tall: '#B9963A', tallBlade: '#8E6B1E', tree: 'dead', bg: '#5A3418', flowers: ['#FFD86B', '#FF8A3D'] };
   THEMES.coralbay = { ground: '#F2DFA8', blade: 'rgba(150,120,60,0.3)', path: '#C9A070', water: '#2F8FD8', tall: '#B9C46A', tallBlade: '#7E8A32', tree: 'palm', bg: '#1F6FB0', flowers: ['#FFFFFF', '#F59ACB'] };
@@ -24,7 +26,7 @@ const WORLD = (() => {
   THEMES['dg-lamp'] = { ground: '#C9BFA8', blade: 'rgba(120,100,70,0.25)', path: '#E4DAC2', water: '#7FB8E0', tall: '#9CB89A', tallBlade: '#6A8A68', tree: 'pine', bg: '#8E8470', flowers: ['#FFFFFF'], cave: true };
   THEMES.descent = { ground: '#8A6A58', blade: 'rgba(60,30,20,0.35)', path: '#B08A70', water: '#FF6A2B', tall: '#C7A23A', tallBlade: '#8E6B1E', tree: 'dead', bg: '#3A1E14', flowers: ['#FFD86B', '#FF8A3D'], lava: true };
   THEMES['dg-forge'] = { ground: '#4A3A38', blade: 'rgba(20,10,10,0.35)', path: '#8A6A5A', water: '#FF6A2B', tall: '#6A4A38', tallBlade: '#3A2A20', tree: 'dead', bg: '#1A0E0A', flowers: ['#FF8A3D'], cave: true, lava: true };
-  THEMES['route-mf'] = THEMES.peak; THEMES['route-cm'] = Object.assign({}, THEMES.moss, { dense: false }); THEMES['route-fc'] = THEMES.frost; THEMES['route-cc'] = THEMES.tide;
+  THEMES['route-cm'] = Object.assign({}, THEMES.moss, { dense: false }); THEMES['route-fc'] = THEMES.frost; THEMES['route-cc'] = THEMES.tide;
   THEMES.mossbrook = { ground: '#5FA34A', blade: 'rgba(30,80,30,0.4)', path: '#C9A878', water: '#4F9AD0', tall: '#44803A', tallBlade: '#2A6A2C', tree: 'round', bg: '#2A5A2C', flowers: ['#F5A3D0', '#FFFFFF', '#FFD86B'] };
   const ZONES = {
     frost: { name: 'Frost Peaks', types: ['Frost', 'Stone'], from: 'n', seed: 11 },
@@ -375,7 +377,7 @@ const WORLD = (() => {
   const PROPS = {
     descent: [['camp', [6, 7]], ['cairn', [24, 15], ''], ['cairn', [6, 19], ''], ['cairn', [24, 27], ''], ['cairn', [6, 35], ''], ['cairn', [24, 43], '']],
     ascent: [['camp', [6, 57]], ['cairn', [24, 50], ''], ['cairn', [6, 46], ''], ['cairn', [24, 38], ''], ['cairn', [6, 30], ''], ['cairn', [24, 22], '']],
-    'route-mf': [['ruin', [9, 17]], ['cairn', [26, 9]], ['cairn', [7, 11], '']],
+    'route-mf': [['ruin', [14, 20]], ['cairn', [26, 9]], ['cairn', [7, 11], '']],   // the ruin beside the road, in the arrival view from the Highland Gate (review 03-F16)
     'route-cm': [['camp', [25, 18]], ['well', [8, 9]], ['cairn', [27, 7]]],
     'route-fc': [['lighthouse', [27, 8]], ['cairn', [8, 18]]],
     'route-cc': [['wreck', [8, 17]], ['cairn', [24, 6]]]
@@ -446,7 +448,7 @@ const WORLD = (() => {
   const NET_META = [];
   // a trail of lantern posts along the road between two doors (Meaning: the road is kept open by people you never meet). Only the posts are placed here; the app lights the one just ahead of you at dusk and night.
   function addTrail(M, fromEdge, toEdge, o) {
-    o = o || {}; const kind = o.kind || 'postlamp', step = o.step || 7, start = o.start || 6;
+    o = o || {}; const kind = o.kind || 'postlamp', step = o.step || 5, start = o.start || 6;   // step 5 (review 03-F14): three or four posts per box, so the road reads as a line of posts
     const W = M.W, H = M.H, g = M.grid, ex = (edge) => M.exits.find((e) => e.edge === edge); const ea = ex(fromEdge), eb = typeof toEdge === 'string' ? ex(toEdge) : { point: toEdge }; if (!ea || !eb) return;
     const cell = (e) => e.point ? (() => { let bc = null, bd = 1e9; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === '=') { const d = (x - e.point[0]) ** 2 + (y - e.point[1]) ** 2; if (d < bd) { bd = d; bc = [x, y]; } } return bc; })() : e.edge === 's' ? [e.a, H - 2] : e.edge === 'n' ? [e.a, 1] : e.edge === 'w' ? [1, e.a] : [W - 2, e.a], A = cell(ea), B = cell(eb), key = (x, y) => y * W + x;
     const prev = new Map([[key(A[0], A[1]), null]]), q = [A]; let found = null;
@@ -460,31 +462,69 @@ const WORLD = (() => {
     if (o.wave) M.objects.forEach((q) => { if (q.wave) q.wave.n = lamps.length; });
     if (!o.kind && !o.wave) M.trail = { cells: cells, lamps: lamps }; else (M.chains = M.chains || []).push({ kind: kind, count: lamps.length });
   }
-  // Glacier Coast: a neat row of small returned things beside the water at dawn, and an empty chair facing them (Meaning: what the sea gives back, and someone who tidies it before you wake)
+  // Glacier Coast: a neat row of small returned things on the sand under the water, and an empty chair facing them (Meaning: what the sea gives back, and someone who tidies it before you wake).
+  // The row stands at every hour; only the comb comes at dawn (review 03-F4, F11: a hint the clock hides is no hint). Every thing in the row has the water beside it (d === 0).
   function addShore(M) {
     const W = M.W, H = M.H, g = M.grid, ok = (x, y) => x > 3 && y > 3 && x < W - 4 && y < H - 4 && ['.', ','].indexOf(g[y][x]) !== -1; let best = null;
+    const wet = (x, y) => [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([a, b]) => g[y + b] && g[y + b][x + a] === '~');
     const water = []; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === '~') water.push([x, y]);
-    for (let y = 4; y < H - 4; y++) for (let x = 4; x < W - 14; x++) {
-      let good = true; for (let k = 0; k < 10 && good; k++) for (let dy = -1; dy <= 1; dy++) if (!ok(x + k, y + dy)) good = false; if (!good) continue;
-      let near = false; for (let yy = y - 1; yy <= y + 1 && !near; yy++) for (let xx = x - 1; xx <= x + 10; xx++) if (g[yy] && g[yy][xx] === '=') near = true; if (near) continue;
+    for (let pass = 0; pass < 2 && !best; pass++) for (let y = 4; y < H - 4; y++) for (let x = 4; x < W - 14; x++) {
+      let good = true; for (let k = 0; k < 10 && good; k++) for (let dy = 0; dy <= 1; dy++) if (!ok(x + k, y + dy)) good = false; if (!good) continue;   // the row and the sand in front of it
+      if (pass === 0 && ![0, 2, 4, 6, 9].every((k) => wet(x + k, y))) continue;   // first pass: every thing (and the chair) has the water beside it; second pass: the old rule, nearest the water
+      let near = false; for (let yy = y - 1; yy <= y + 2 && !near; yy++) for (let xx = x - 1; xx <= x + 10; xx++) if (g[yy] && g[yy][xx] === '=') near = true; if (near) continue;
       const d = water.length ? Math.min.apply(null, water.map((w) => Math.abs(w[0] - (x + 5)) + Math.abs(w[1] - y))) : 0; if (!best || d < best.d) best = { x: x, y: y, d: d };
     }
     if (!best) return; const items = [['sandal', 'One sandal, set down heels together.'], ['cup', 'A cup, the right way up.'], ['boat', 'A toy boat, dry.'], ['comb', 'A comb. The teeth are all there.']];
-    items.forEach((it, i) => { const x = best.x + i * 2, y = best.y; g[y][x] = 'O'; (M.objects = M.objects || []).push({ id: 'shore-' + i, kind: 'returned', v: it[0], gate: 'dawn', x: x, y: y, reach: 1.7, text: it[1] }); });
+    items.forEach((it, i) => { const x = best.x + i * 2, y = best.y; g[y][x] = 'O'; (M.objects = M.objects || []).push(Object.assign({ id: 'shore-' + i, kind: 'returned', v: it[0], x: x, y: y, reach: 1.7, text: it[1] }, it[0] === 'comb' ? { gate: 'dawn' } : {})); });
     g[best.y][best.x + 9] = 'O'; M.objects.push({ id: 'shore-chair', kind: 'chair', x: best.x + 9, y: best.y, reach: 1.7, text: 'An empty chair. It faces the row.' });
   }
-  // one signature thing per zone (Meaning, see the handoff): placed on the nearest clear ground to a hint, beside the water when asked
+  // the gate road of a map: the road cells between the way in and the way on (a zone: the town gate to the city gate; a city: the gate to the gym door), found once and kept on the map
+  const WALK = '.,=WZG';
+  function roadCells(M, A, B) {
+    const W = M.W, H = M.H, g = M.grid, key = (x, y) => y * W + x, prev = new Map([[key(A[0], A[1]), null]]), q = [A]; let found = null;
+    while (q.length && !found) { const [x, y] = q.shift(); if (x === B[0] && y === B[1]) { found = [x, y]; break; } [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || prev.has(key(nx, ny)) || g[ny][nx] !== '=') return; prev.set(key(nx, ny), [x, y]); q.push([nx, ny]); }); }
+    if (!found) return null; const cells = []; for (let c = found; c; c = prev.get(key(c[0], c[1]))) cells.push(c); return cells.reverse();
+  }
+  function gateRoad(M) {
+    if (M.gateRoad !== undefined) return M.gateRoad;
+    const gap = (e) => e.edge === 's' ? [e.a, M.H - 2] : e.edge === 'n' ? [e.a, 1] : e.edge === 'w' ? [1, e.a] : [M.W - 2, e.a];
+    let A = null, B = null;
+    if (M.city) { const gym = M.places.find((p) => p.kind === 'gym'), ex = M.exits[0]; if (gym && ex) { A = gap(ex); B = [gym.door[0], gym.door[1] + 1]; } }
+    else { const back = M.exits.find((e) => e.to === 'town'), on = M.exits.find((e) => e.to !== 'town'); if (back && on) { A = gap(back); B = gap(on); } }
+    M.gateRoad = A && B ? roadCells(M, A, B) : null; return M.gateRoad;
+  }
+  // walking distance from the gate road to every tile (null where the road is not known)
+  function roadDist(M) {
+    if (M.roadDist !== undefined) return M.roadDist; const road = gateRoad(M); if (!road) return (M.roadDist = null);
+    const W = M.W, H = M.H, g = M.grid, d = []; for (let y = 0; y < H; y++) d.push(new Array(W).fill(99));
+    const q = []; road.forEach(([x, y]) => { d[y][x] = 0; q.push([x, y]); });
+    while (q.length) { const [x, y] = q.shift(); [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || d[ny][nx] <= d[y][x] + 1 || WALK.indexOf(g[ny][nx]) === -1) return; d[ny][nx] = d[y][x] + 1; q.push([nx, ny]); }); }
+    return (M.roadDist = d);
+  }
+  // one signature thing per zone (Meaning, see the handoff): placed on the nearest clear ground to a hint, beside the water when asked, and ON THE PLAYER'S WAY
   function addSpot(M, o, hx, hy, needWater) {
-    // among every tile that is clear, beside a path and (when asked) beside water, take the one that is the LEAST open (most trees and rocks around it) and nearest the hint, so a thing never sits in the middle of the zone's open ground, which action fights need
-    const g = M.grid, W = M.W, H = M.H, clear = (x, y) => ['.', ','].indexOf((g[y] || [])[x]) !== -1; let best = null;
+    // among every tile that is clear, beside a path and (when asked) beside water, take the one that is the LEAST open (most trees and rocks around it), nearest the hint and nearest the gate road
+    // (review 03-F3, F13: a hint not met is no hint; the walking distance to the road counts three times a tile), so a thing never sits in the middle of the zone's open ground, which action fights need, and never in a corner nobody walks to
+    const g = M.grid, W = M.W, H = M.H, clear = (x, y) => ['.', ','].indexOf((g[y] || [])[x]) !== -1, rd = roadDist(M); let best = null;
     for (let y = 4; y < H - 4; y++) for (let x = 4; x < W - 4; x++) {
       if (!clear(x, y)) continue;
       let ok = true, water = false, path = false, open = 0; for (let yy = y - 3; yy <= y + 3; yy++) for (let xx = x - 3; xx <= x + 3; xx++) { const c = (g[yy] || [])[xx]; if (clear(xx, yy)) open++; if (Math.abs(xx - x) <= 2 && Math.abs(yy - y) <= 2) { if (c === '~' && Math.abs(xx - x) + Math.abs(yy - y) <= 2) water = true; if (c === '=') path = true; } if (Math.abs(xx - x) <= 1 && Math.abs(yy - y) <= 1 && !clear(xx, yy) && !(c === '~' && (xx === x || yy === y))) ok = false; }
       if (needWater) { ok = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([ax, ay]) => clear(x + ax, y + ay)); path = true; }
       if (!ok || !path || (needWater && !water)) continue;
-      const score = open * 1.0 + (Math.abs(x - hx) + Math.abs(y - hy)) * 0.35; if (!best || score < best.score) best = { x: x, y: y, score: score };
+      const road = rd ? Math.min(...[[1, 0], [-1, 0], [0, 1], [0, -1]].map(([ax, ay]) => (rd[y + ay] || [])[x + ax] === undefined ? 99 : rd[y + ay][x + ax])) : 0;   // the tile itself is solid once the thing stands on it: the walk ends beside it
+      const score = open * 1.0 + (Math.abs(x - hx) + Math.abs(y - hy)) * 0.35 + 3 * road; if (!best || score < best.score) best = { x: x, y: y, score: score };
     }
     if (!best) return false; g[best.y][best.x] = 'O'; (M.objects = M.objects || []).push(Object.assign({ x: best.x, y: best.y, reach: 1.7 }, o)); return true;
+  }
+  // a row of three things along the shore (Tide Shore's returned things, review 03-F10): the middle one is placed like a spot beside the water, the other two beside it along the water's edge
+  function addRow(M, mid, sides, hx, hy) {
+    if (!addSpot(M, mid, hx, hy, true)) return false;
+    const g = M.grid, o = M.objects[M.objects.length - 1], clear = (x, y) => ['.', ','].indexOf((g[y] || [])[x]) !== -1, wet = (x, y) => [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([a, b]) => g[y + b] && g[y + b][x + a] === '~');
+    const pairs = [[[0, -1], [0, 1]], [[-1, 0], [1, 0]]];
+    const along = pairs.find((pair) => pair.every(([a, b]) => clear(o.x + a, o.y + b) && wet(o.x + a, o.y + b))) || pairs.find((pair) => pair.every(([a, b]) => clear(o.x + a, o.y + b)));
+    if (!along) return true;
+    along.forEach(([a, b], i) => { const x = o.x + a, y = o.y + b; g[y][x] = 'O'; M.objects.push(Object.assign({ x: x, y: y, reach: 1.7 }, sides[i])); });
+    return true;
   }
   function buildNet(net) {
     net.maps.forEach((sp) => { sp.keep = (net.props || []).filter((pr) => pr[0] === sp.id).map((pr) => pr[2]); const Mp = buildWild(sp); MAPS[Mp.id] = Mp; THEMES[Mp.id] = THEMES[sp.base]; if (PXW.PAL[sp.base]) PXW.PAL[Mp.id] = PXW.PAL[sp.base]; });
@@ -495,6 +535,7 @@ const WORLD = (() => {
     (net.trail || []).forEach((t) => addTrail(MAPS[t[0]], t[1], t[2], t[3]));
     (net.causeway || []).forEach(([mid, x1, y1, x2, y2]) => { const g = MAPS[mid].grid; for (let y = y1; y <= y2; y++) for (let x = x1; x <= x2; x++) if (g[y] && g[y][x] === 'W') g[y][x] = '~';
       const open = (x, y) => g[y] && ['.', ',', 'W', 'Z', '='].indexOf(g[y][x]) !== -1; for (let y = y1 - 1; y <= y2 + 1; y++) for (let x = x1 - 1; x <= x2 + 1; x++) if (g[y] && ['.', ','].indexOf(g[y][x]) !== -1 && !open(x + 1, y) && !open(x - 1, y) && !open(x, y + 1) && !open(x, y - 1)) g[y][x] = '~'; });   // a lone cell the water walled in becomes water too   // the lantern road runs between water: only tall-grass cells turn to water, so every path and open cell stays
+    (net.coast || []).forEach(([mid, y1, y2]) => { const Mc = MAPS[mid], g = Mc.grid; for (let y = y1; y <= y2; y++) for (let x = 2; x < Mc.W - 2; x++) if (['.', ',', 'T', 'R', 'W'].indexOf(g[y][x]) !== -1) g[y][x] = '~'; });   // the sea along one edge (review 03-F4): the row below it is a shore, not a snowfield
     if (net.shore) addShore(MAPS[net.shore]);
     const post = (Mp, edge, a, text) => { const xy = { n: [a + 2, 1], s: [a + 2, Mp.H - 2], w: [1, a - 1], e: [Mp.W - 2, a - 1] }[edge]; Mp.grid[xy[1]][xy[0]] = 'G'; Mp.signs.push({ x: xy[0], y: xy[1], text: text }); };
     (net.posts || []).forEach((pt) => post(MAPS[pt[0]], pt[1], pt[2], pt[3]));
@@ -504,11 +545,11 @@ const WORLD = (() => {
   NETS.push({ base: 'route-mf', main: 'route-mf', cityA: 'mossbrook', cityB: 'frosthold', spawnFrom: 'route-mf-gate', trail: [['route-mf-gate', 's', 'n'], ['route-mf', 's', 'e'], ['route-mf-fork', 'w', 'e']],
     maps: [
       { id: 'route-mf-gate', base: 'route-mf', name: 'Highland Gate', seed: 5501, types: ['Moss', 'Frost'], hub: [16, 13], grass: 4, doors: [{ edge: 's', a: 16 }, { edge: 'n', a: 16 }, { edge: 'e', a: 12 }], nooks: [{ x: 26, y: 6, r: 2 }],
-        objects: [{ id: 'hp-door', kind: 'doorframe', x: 26, y: 6, text: 'A door with nothing behind it. It does not open.' }] },
+        objects: [{ id: 'hp-ring', kind: 'ringstones', x: 26, y: 6, text: 'Eight stones in a ring. There is room for one more.' }] },   // Meaning (review 03-F15): the seat is hinted here, on the first road, before the arch plays it
       { id: 'route-mf-hollow', base: 'route-mf', name: 'Whisper Hollow', seed: 5502, types: ['Moss', 'Frost'], hub: [14, 13], grass: 6, doors: [{ edge: 'w', a: 12 }, { edge: 'n', a: 14 }], nooks: [{ x: 26, y: 21, r: 3 }, { x: 7, y: 6, r: 2 }], rare: 0,
         objects: [{ id: 'hp-chest1', kind: 'chest', x: 26, y: 22, reward: { potion: 2, essence: 4 }, text: 'A chest, half sunk in the moss.' }, { id: 'hp-lantern', kind: 'lantern', gate: 'night', x: 7, y: 6, text: 'It is warm.' }] },
       { id: 'route-mf-lookout', base: 'route-mf', name: 'Windy Lookout', seed: 5503, types: ['Frost', 'Moss'], hub: [16, 12], grass: 3, doors: [{ edge: 's', a: 8 }, { edge: 's', a: 24 }], nooks: [{ x: 9, y: 6, r: 2 }],
-        objects: [{ id: 'hp-ring', kind: 'ringstones', x: 9, y: 6, text: 'Stones, set in a circle by someone who was not in a hurry.' }] },
+        objects: [{ id: 'hp-door', kind: 'doorframe', x: 9, y: 6, text: 'A door with nothing behind it. It does not open.' }] },
       { id: 'route-mf-fork', base: 'route-mf', name: 'Frost Fork', seed: 5504, types: ['Frost', 'Moss'], hub: [17, 13], grass: 5, doors: [{ edge: 'w', a: 13 }, { edge: 'n', a: 24 }, { edge: 'e', a: 13 }] },
       { id: 'route-mf-cliff', base: 'route-mf', name: 'Hermit\u2019s Cliff', seed: 5505, types: ['Frost', 'Dusk'], hub: [20, 14], grass: 3, doors: [{ edge: 'e', a: 20 }], nooks: [{ x: 8, y: 13, r: 3 }, { x: 10, y: 22, r: 2 }], rare: 0,
         objects: [{ id: 'hp-chest2', kind: 'chest', x: 8, y: 16, reward: { charm: 1, essence: 8 }, text: 'A small chest under the overhang.' }, { id: 'hp-cups', kind: 'cups', x: 6, y: 12, text: 'Two cups.' }, { id: 'hp-postlamp', kind: 'postlamp', always: true, x: 28, y: 17, text: 'A lantern on a post.' }] }
@@ -525,7 +566,7 @@ const WORLD = (() => {
       { id: 'route-cm-smoulder', base: 'route-cm', name: 'Smoulder Wood', seed: 6602, types: ['Ember', 'Moss'], hub: [15, 14], grass: 5, doors: [{ edge: 's', a: 14 }, { edge: 'e', a: 12 }], nooks: [{ x: 8, y: 7, r: 2 }, { x: 25, y: 20, r: 3 }], rare: 1,
         objects: [{ id: 'cm-bell', kind: 'bell', x: 8, y: 7, text: 'It rings once, softly. Nothing answers.' }, { id: 'cm-chest1', kind: 'chest', x: 25, y: 21, reward: { super: 1, essence: 5 }, text: 'A chest, blackened on one side only.' }] },
       { id: 'route-cm-crossing', base: 'route-cm', name: 'Mossroot Crossing', seed: 6603, types: ['Moss', 'Ember'], hub: [16, 13], grass: 4, doors: [{ edge: 'w', a: 12 }, { edge: 's', a: 16 }, { edge: 'n', a: 22 }], nooks: [{ x: 26, y: 20, r: 2 }],
-        objects: [{ id: 'cm-stakes', kind: 'stakes', gate: 'dusk', x: 26, y: 20, text: 'Ribbons on stakes, faded different colours. One is new.' }] },
+        objects: [{ id: 'cm-stakes', kind: 'stakes', x: 26, y: 20, text: 'Ribbons on stakes, faded different colours. One is new.' }] },   // always there; the ribbons move at dusk (the art reads the hour)
       { id: 'route-cm-hollow', base: 'route-cm', name: 'Charred Hollow', seed: 6604, types: ['Ember', 'Dusk'], hub: [17, 11], grass: 2, doors: [{ edge: 'n', a: 17 }], nooks: [{ x: 9, y: 17, r: 3 }],
         objects: [{ id: 'cm-bench', kind: 'bench', x: 9, y: 17, text: 'The wood is smooth where hands have rested.' }] }
     ],
@@ -534,18 +575,18 @@ const WORLD = (() => {
     props: [['route-cm-edge', 'cairn', [24, 8], 'Soot on one side only.'], ['route-cm-smoulder', 'well', [18, 8], 'A well with no bucket and no rope.'], ['route-cm-crossing', 'cairn', [8, 20], 'Stones balanced so lightly that the wind should have won.'], ['route-cm-hollow', 'cairn', [22, 18], 'Ash, and one footprint pressed into it that has not filled in.']],
     posts: [['cinderport', 'w', 13, 'West: the Ashwood Trail (Ember and Moss critters), the road to Mossbrook.'], ['mossbrook', 's', 22, 'South: the Ashwood Trail (Ember and Moss critters), the road to Cinderport.']] });
   // ---- Glacier Coast: Frosthold -> Frozen Shelf -> the coast proper (Signe, the lighthouse) -> Gull Landing -> Coralbay; a bypass along Rime Strand; the Skerry is a dead end off the coast
-  NETS.push({ base: 'route-fc', main: 'route-fc', cityA: 'frosthold', cityB: 'coralbay', spawnFrom: 'route-fc-shelf', shore: 'route-fc',
+  NETS.push({ base: 'route-fc', main: 'route-fc', cityA: 'frosthold', cityB: 'coralbay', spawnFrom: 'route-fc-shelf', shore: 'route-fc', coast: [['route-fc', 2, 4]],
     maps: [
       { id: 'route-fc-shelf', base: 'route-fc', name: 'Frozen Shelf', seed: 7701, types: ['Frost', 'Tide'], hub: [16, 13], grass: 4, doors: [{ edge: 'w', a: 13 }, { edge: 'e', a: 13 }, { edge: 's', a: 12 }] },
       { id: 'route-fc-strand', base: 'route-fc', name: 'Rime Strand', seed: 7702, types: ['Tide', 'Frost'], hub: [15, 14], grass: 5, doors: [{ edge: 'n', a: 12 }, { edge: 'e', a: 12 }], nooks: [{ x: 8, y: 20, r: 3 }], rare: 0,
         objects: [{ id: 'fc-sled', kind: 'sled', x: 8, y: 21, text: 'The runners are polished.' }, { id: 'fc-chest1', kind: 'chest', x: 8, y: 17, reward: { ticket: 1, essence: 5 }, text: 'A chest, rimed over. The lid gives easily.' }] },
       { id: 'route-fc-landing', base: 'route-fc', name: 'Gull Landing', seed: 7703, types: ['Tide', 'Frost'], hub: [17, 13], grass: 4, doors: [{ edge: 'n', a: 16 }, { edge: 'w', a: 12 }, { edge: 's', a: 28 }] },
       { id: 'route-fc-skerry', base: 'route-fc', name: 'The Skerry', seed: 7704, types: ['Tide', 'Dusk'], hub: [20, 13], grass: 2, doors: [{ edge: 'w', a: 12 }], nooks: [{ x: 26, y: 8, r: 3 }, { x: 24, y: 21, r: 2 }],
-        objects: [{ id: 'fc-skiff', kind: 'skiff', gate: 'dawn', x: 26, y: 9, text: 'Wet. The tide is hours away.' }, { id: 'fc-chair', kind: 'chair', x: 24, y: 21, text: 'An empty chair, facing the water.' }] }
+        objects: [{ id: 'fc-skiff', kind: 'skiff', x: 26, y: 9, text: 'Wet. The tide is hours away.' }, { id: 'fc-chair', kind: 'chair', x: 24, y: 21, text: 'An empty chair, facing the water.' }] }   // always there; wet at dawn, dry by day (the art reads the hour)
     ],
     links: [['frosthold', 'e', 13, 'route-fc-shelf', 'w', 13, [34.6, 14.2]], ['route-fc-shelf', 'e', 13, 'route-fc', 'w', 14], ['route-fc-shelf', 's', 12, 'route-fc-strand', 'n', 12], ['route-fc-strand', 'e', 12, 'route-fc-landing', 'w', 12],
       ['route-fc', 's', 16, 'route-fc-landing', 'n', 16], ['route-fc', 'e', 12, 'route-fc-skerry', 'w', 12], ['route-fc-landing', 's', 28, 'coralbay', 'n', 28, null, [28.9, 1.4]]],
-    props: [['route-fc-shelf', 'cairn', [24, 8], 'Frost on the south face. Dry on the north.'], ['route-fc-strand', 'cairn', [20, 9], 'Shells set in a line, smallest to largest. The last place is empty.'], ['route-fc-skerry', 'cairn', [12, 8], 'Something was weighed against these stones and taken away.']],
+    props: [['route-fc-shelf', 'cairn', [24, 8], 'Frost on the south face. Dry on the north.'], ['route-fc-shelf', 'wreck', [10, 17], 'A hull, turned over and whole. Someone dragged it clear of the ice.'], ['route-fc-strand', 'cairn', [20, 9], 'Shells set in a line, smallest to largest. The last place is empty.'], ['route-fc-landing', 'campfire', [20, 18], 'A ring of stones, the ash raked flat.'], ['route-fc-skerry', 'cairn', [12, 8], 'Something was weighed against these stones and taken away.']],
     posts: [['frosthold', 'e', 13, 'East: the Glacier Coast (Frost and Tide critters), the road to Coralbay.'], ['coralbay', 'n', 28, 'North: the Glacier Coast (Frost and Tide critters), the road to Frosthold.']] });
   // ---- Reef Causeway: Coralbay -> Pier Road -> the causeway proper (Mako, the wreck) -> Steamvent Flats -> Cinderport; a bypass over the Low Shoals; the Drowned Orchard is a dead end south of the causeway
   NETS.push({ base: 'route-cc', main: 'route-cc', cityA: 'coralbay', cityB: 'cinderport', spawnFrom: 'route-cc-pier', causeway: [['route-cc', 11, 2, 15, 5], ['route-cc', 3, 7, 6, 12], ['route-cc-pier', 5, 9, 9, 11], ['route-cc-pier', 14, 7, 18, 12], ['route-cc-steam', 19, 7, 23, 11], ['route-cc-steam', 7, 15, 21, 18]], trail: [['route-cc-pier', 'n', 's', { wave: true, step: 6, start: 5 }], ['route-cc', 'n', 'w', { wave: true, step: 6, start: 5 }], ['route-cc-steam', 'e', 'w', { wave: true, step: 6, start: 5 }]],
@@ -568,10 +609,10 @@ const WORLD = (() => {
   [[4, 3], [7, 3], [4, 7], [7, 7], [4, 11]].forEach((h) => addProp(MAPS.arena, 'tent', h)); addProp(MAPS.arena, 'campfire', [7, 12]);   // the rivals' camp: five tents and one fire
   addTrail(MAPS.ascent, 's', [14, 10], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
   addTrail(MAPS.descent, 'n', [14, 62], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
-  addSpot(MAPS.mossbrook, { id: 'c-growth', kind: 'growthpost', text: 'Notches, each a little higher than the last.' }, 19, 10, false);
-  addSpot(MAPS.frosthold, { id: 'c-kettle', kind: 'kettle', text: 'The kettle is hot. Two cups.' }, 29, 9, false);
+  addSpot(MAPS.mossbrook, { id: 'c-growth', kind: 'growthpost', text: 'Notches, each a little higher than the last.' }, 19, 9, false);
+  addSpot(MAPS.frosthold, { id: 'c-kettle', kind: 'kettle', text: 'The kettle is hot. Two cups.' }, 19, 22, false);
   addSpot(MAPS.cinderport, { id: 'c-bench', kind: 'workbench', text: 'Tools, laid out for the morning.' }, 21, 11, false);
-  addSpot(MAPS.coralbay, { id: 'c-lamp', kind: 'harborlamp', text: 'Left on.' }, 26, 16, false);
+  addSpot(MAPS.coralbay, { id: 'c-lamp', kind: 'harborlamp', text: 'Left on.' }, 20, 12, false);   // where the entry road turns up to the gym: the boardwalk's road begins here (03-F13 asked for the boardwalk's junction, 10 tiles off the gate-to-gym road; the road rule wins)
   // the clue things stand beside their landmarks (the ruin's clue is the arch itself): a free tile just below or beside the prop
   ADV.CLUES.filter((c) => c.obj).forEach((c) => {
     const mid = { camp: 'route-cm', lighthouse: 'route-fc', wreck: 'route-cc' }[c.id], pid = { camp: 'camp', lighthouse: 'lighthouse', wreck: 'wreck' }[c.id], M2 = MAPS[mid], pr = (M2.props || []).find((q) => q.id === pid); if (!pr) return;
@@ -582,10 +623,10 @@ const WORLD = (() => {
     M2.grid[spot[1]][spot[0]] = 'O'; (M2.objects = M2.objects || []).push({ id: 'clue-' + c.id, kind: c.obj.kind, clue: c.id, x: spot[0], y: spot[1], reach: 1.7, text: c.obj.text });
   });
   addSpot(MAPS.moss, { id: 'z-sprouts', kind: 'sprouts', text: 'Rows of young plants. The soil is turned.' }, 9, 6, false);
-  addSpot(MAPS.frost, { id: 'z-icelamp', kind: 'icelamp', text: 'A flame, held in the ice.' }, 26, 19, false);
-  addSpot(MAPS.ember, { id: 'z-hearth', kind: 'hearth', text: 'Fresh logs.' }, 10, 20, false);
+  addSpot(MAPS.frost, { id: 'z-icelamp', kind: 'icelamp', text: 'A flame, held in the ice.' }, 19, 6, false);
+  addSpot(MAPS.ember, { id: 'z-hearth', kind: 'hearth', text: 'Fresh logs.' }, 19, 22, false);
   addSpot(MAPS.tide, { id: 'z-moored', kind: 'moored', text: 'The knot is a good one.' }, 26, 6, true);
-  addSpot(MAPS.tide, { id: 'z-returned', kind: 'returned', text: 'A cup, a sandal, a toy boat, set in a row above the tide line. Someone straightened them.' }, 26, 20, true);   // Meaning: what the sea gives back, met on the shore before Coral asks you to answer
+  addRow(MAPS.tide, { id: 'z-returned', kind: 'returned', v: 'sandal', text: 'A cup, a sandal, a toy boat, set in a row above the tide line. Someone straightened them.' }, [{ id: 'z-returned-a', kind: 'returned', v: 'cup', text: 'A cup, the right way up.' }, { id: 'z-returned-b', kind: 'returned', v: 'boat', text: 'A toy boat, dry.' }], 26, 15);   // Meaning: what the sea gives back, met on the shore before Coral asks you to answer; three things in a row by the boardwalk (review 03-F10)
   // ---------- the Cold Ascent: five switchback ledges up the peaks above Frosthold, ending under the beacon tower ----------
   // Ledges are rectangles joined by 4-wide ramps through the cliff rows between them; a packed-snow trail zig-zags up, so trainers beside it
   // see you cross. Wild snow patches (W), a glacier river with a log bridge, a rare patch near the top, and a summit plateau with the beacon.
@@ -605,24 +646,26 @@ const WORLD = (() => {
     const px = (x0, y0, x1, y1) => rect(Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1) + 1, Math.max(y0, y1) + 1, '=');
     px(14, 61, 14, 65); px(14, 60, 23, 60); px(23, 56, 23, 60);
     L.forEach((l, i) => { const e = l.enter === 'r' ? 23 : 5, x = l.enter === 'r' ? 5 : 23; px(e, l.y1 + 1, e, l.yc); px(e, l.yc, x, l.yc); px(x, l.y0 - 1, x, l.yc); });
-    px(5, 12, 5, 16); px(5, 12, 14, 12); px(14, 9, 14, 12);
+    px(5, 14, 5, 16); px(5, 14, 14, 14);
     rect(7, 18, 9, 20, 'Z');                                                                                        // a rare patch on the last ledge
-    for (let y = 3; y <= 7; y++) for (let x = 13; x <= 15; x++) set(x, y, 'X');                                      // footprint of the beacon tower (3 x 5; its prop is registered below)
-    set(14, 8, 'O');                                                                                               // the door tile under it (an object, see the app)
+    for (let y = 3; y <= 6; y++) for (let x = 3; x <= 26; x++) if (m[y][x] === '.' || m[y][x] === ',' || m[y][x] === 'R') set(x, y, (x * 7 + y * 13) % 5 === 0 && y === 6 ? ',' : 'T');   // the plateau's north rows are trees: the tower stands against them (review 03-F21)
+    for (let y = 8; y <= 12; y++) for (let x = 13; x <= 15; x++) set(x, y, 'X');                                     // footprint of the beacon tower (3 x 5; its prop is registered below), low enough on the plateau to be seen from the last ledge
+    set(14, 13, 'O');                                                                                              // the door tile under it (an object, see the app)
     // trees on the summit plateau edges
-    [[4, 4], [5, 7], [4, 10], [25, 4], [24, 8], [25, 12], [9, 5], [20, 6], [10, 10], [19, 10]].forEach(([x, y]) => { if (m[y][x] === '.' || m[y][x] === ',') set(x, y, 'T'); });
+    [[4, 8], [5, 11], [4, 14], [25, 8], [24, 11], [25, 14], [9, 9], [20, 9], [10, 13], [19, 13]].forEach(([x, y]) => { if (m[y][x] === '.' || m[y][x] === ',') set(x, y, 'T'); });
     m[64][14] = '='; m[64][15] = '=';
     const arrive = [14.9, H - 1.4];
     return { id: 'ascent', name: 'The Cold Ascent', theme: THEMES.ascent, grid: m, W, H, places: [], signs: [], types: ['Frost', 'Stone'], rate: 0.12, rare: { x: 7, y: 18, w: 3, h: 3 },
-      props: [{ id: 'beacon', x: 13, y: 3, w: 3, h: 5 }], objects: [{ id: 'beacon-door', kind: 'plaque', x: 14, y: 8, reach: 1.9, label: 'Examine the beacon door', text: 'The Beacon' }], exits: [{ edge: 's', a: 14, b: 15, to: 'frosthold' }], arrive: { s: arrive }, spawn: arrive };
+      props: [{ id: 'beacon', x: 13, y: 8, w: 3, h: 5 }], objects: [{ id: 'beacon-door', kind: 'plaque', x: 14, y: 13, reach: 1.9, label: 'Examine the beacon door', text: 'The Beacon' }], exits: [{ edge: 's', a: 14, b: 15, to: 'frosthold' }], arrive: { s: arrive }, spawn: arrive };
   }
   // ---------- the Cinder Descent: the Ascent's layout turned upside down. Entrance at the north (from Cinderport), ledges that step DOWN into the volcano, a lava river with a bridge,
   // and the forge door cut into the crater's south wall. ----------
   function buildDescent() {
     const A = buildAscent(), W = A.W, H = A.H, g = A.grid.map((r) => r.slice()).reverse();
-    for (let y = 58; y <= 62; y++) for (let x = 13; x <= 15; x++) g[y][x] = '.';     // the Ascent's beacon footprint is not needed here
-    g[57][14] = '.';
-    for (let y = 53; y <= 62; y++) { g[y][14] = '='; g[y][15] = '='; }                 // the trail runs on to the crater floor
+    for (let y = 53; y <= 57; y++) for (let x = 13; x <= 15; x++) g[y][x] = '.';     // the Ascent's beacon footprint is not needed here
+    g[52][14] = '.';
+    for (let y = 59; y <= 62; y++) for (let x = 3; x <= 26; x++) if (g[y][x] === 'T') g[y][x] = (x * 7 + y * 13) % 3 === 0 ? 'R' : '.';   // the Ascent's tree rows against the tower are the crater's floor here: rock and ash, not a wood
+    for (let y = 51; y <= 62; y++) { g[y][14] = '='; g[y][15] = '='; }                 // the trail runs on to the crater floor
     g[63][14] = 'O';                                                                    // the forge door (an object) in the south wall
     const arrive = [14.9, 1.4];
     return { id: 'descent', name: 'The Cinder Descent', theme: THEMES.descent, grid: g, W, H, places: [], signs: [], types: ['Ember', 'Stone'], rate: 0.12, rare: { x: 7, y: 45, w: 3, h: 3 }, props: [],
@@ -660,8 +703,8 @@ const WORLD = (() => {
     for (let y = 0; y <= 11; y++) { F.grid[y][31] = '='; F.grid[y][32] = '='; }
     F.grid[4][30] = 'G'; F.signs.push({ x: 30, y: 4, to: 'ascent', text: 'North: the Cold Ascent. A trail climbs the peaks to an old beacon (Frost and Stone critters). Climbers should be at least level 11.' });
     F.exits.push({ edge: 'n', a: 31, b: 32, to: 'ascent' }); F.arriveFrom = Object.assign({}, F.arriveFrom, { ascent: [31.9, 1.4] });
-    A.arriveFrom = { frosthold: A.spawn, 'dg-lamp': [14.5, 9.7] };
-    A.objects[0].beam = { x: 14.5, y: 3.75 };   // the beacon's lantern: a light shaft rises from it once the lamp is relit
+    A.arriveFrom = { frosthold: A.spawn, 'dg-lamp': [14.5, 14.7] };
+    A.objects[0].beam = { x: 14.5, y: 8.75 };   // the beacon's lantern: a light shaft rises from it once the lamp is relit
     A.grid[60][12] = 'G'; A.signs.push({ x: 12, y: 60, text: 'The Cold Ascent. Five ledges up to the old beacon. Wild Frost and Stone critters hide in the snow tufts. Turn back if the weather turns.' });
     A.grid[16][3] = 'C';
   })();
@@ -674,6 +717,24 @@ const WORLD = (() => {
     (Rm.objects = Rm.objects || []).push({ id: 'arch', kind: 'plaque', x: sx, y: sy, reach: 1.9, portal: { x: ruin.x, y: ruin.y }, text: 'The Sealed Arch' });
     Rm.arriveFrom = Object.assign({}, Rm.arriveFrom, { 'dg-arch': [sx + 0.5, sy + 1.6] });
   })();
+  // ---------- shut gates are unlit lamps (review 11 item 6; Meaning: the road is kept open for you when you are ready, not roadworks) ----------
+  // Every exit that can be shut (the town's gates, the cities' roads out to the routes and the climbs) gets a lamp post beside its gap. Its `day` is a live value:
+  // lit when the way is open; after the great lamp is lit, only on a day the window at Home is lit (you keep the gates as you keep the window; review 05-F16).
+  // The app's lampState reads `day` as before; `opts.gateKept()` (optional) replaces the window rule when the app wants its own (the night of darkness, item 20).
+  function gateLamp(M, e, o) {
+    const W = M.W, H = M.H, g = M.grid;
+    const spots = e.edge === 'n' ? [[e.a - 1, 3], [e.b + 1, 3], [e.a - 1, 2], [e.b + 1, 2], [e.a - 2, 3], [e.b + 2, 3]] : e.edge === 's' ? [[e.a - 1, H - 4], [e.b + 1, H - 4], [e.a - 1, H - 3], [e.b + 1, H - 3], [e.a - 2, H - 4], [e.b + 2, H - 4]]
+      : e.edge === 'w' ? [[3, e.a - 1], [3, e.b + 1], [2, e.a - 1], [2, e.b + 1], [3, e.a - 2], [3, e.b + 2]] : [[W - 4, e.a - 1], [W - 4, e.b + 1], [W - 3, e.a - 1], [W - 3, e.b + 1], [W - 4, e.a - 2], [W - 4, e.b + 2]];
+    if (!o) {
+      const put = spots.find(([x, y]) => g[y] && ['.', ',', 'T', 'R'].indexOf(g[y][x]) !== -1 && !(M.signs || []).some((s) => Math.abs(s.x - x) + Math.abs(s.y - y) <= 1) && !(M.objects || []).some((q) => Math.abs(q.x - x) <= 1 && Math.abs(q.y - y) <= 1));
+      if (!put) return null; g[put[1]][put[0]] = 'O'; o = { id: 'gate-lamp-' + e.to, kind: 'postlamp', x: put[0], y: put[1], reach: 1.7, text: 'A lamp on a post by the gate.' }; (M.objects = M.objects || []).push(o);
+    }
+    Object.defineProperty(o, 'day', { enumerable: true, configurable: true, get: () => !locked(e) && (opts.gateKept ? !!opts.gateKept() : (!(opts.relit && opts.relit()) || !!(opts.homeLit && opts.homeLit()))) });
+    return o;
+  }
+  ['town', 'mossbrook', 'frosthold', 'cinderport', 'coralbay'].forEach((mid) => { const Mm = MAPS[mid]; Mm.exits.forEach((e) => {
+    if (mid !== 'town' && ['frost', 'ember', 'moss', 'tide'].indexOf(e.to) !== -1) return;   // the road back to the zone is never shut
+    gateLamp(Mm, e, mid === 'town' && e.to === 'moss' ? Mm.objects.find((q) => q.id === 'gate-lamp') : null); }); });
   // ---------- house interiors: every city house gets a room (door on the outside, exit through the bottom) ----------
   const ROOM_STYLE = { town: { floor: '#B07A46', wall: '#F4EAD6', rug: '#D8574A', bed: '#D8574A', mat: 'timber' }, lab: { floor: '#C9CFDA', wall: '#E8EEF8', rug: '#3C6FE0', bed: '#3C6FE0', mat: 'timber' }, mossbrook: { floor: '#B07A46', wall: '#D9B98A', rug: '#4E8A3A', bed: '#4FB06D', mat: 'log' }, frosthold: { floor: '#9AA3B5', wall: '#C9D3E6', rug: '#3C6FE0', bed: '#8FD8EA', mat: 'stone' }, cinderport: { floor: '#4A3A38', wall: '#8A4A3A', rug: '#FF7A45', bed: '#C0503A', mat: 'brick' }, coralbay: { floor: '#D9C29A', wall: '#F4F0E6', rug: '#3C95DC', bed: '#3C95DC', mat: 'shell' }, arena: { floor: '#E8D3A2', wall: '#C2A06A', rug: '#D8574A', bed: '#D8574A', mat: 'timber' }, watch: { floor: '#6E6A94', wall: '#8F8BB4', rug: '#F5C542', bed: '#F5C542', mat: 'stone' } };
   const ROOM_LAYOUTS = [
@@ -1150,17 +1211,16 @@ const WORLD = (() => {
     (NPCS[M.id] || []).forEach((n) => { if (!n.leader) return; const x = snap(n.x * TS - cx), y = snap(n.y * TS - cy);
       ctx.fillStyle = '#4A5878'; ctx.fillRect(x - 10, y - 6, 52, 44); ctx.fillStyle = '#C9D3E6'; ctx.fillRect(x - 8, y - 4, 48, 40); ctx.fillStyle = '#A8B4CC'; ctx.fillRect(x - 8, y + 16, 48, 2); ctx.fillRect(x + 14, y - 4, 2, 40);
       ctx.fillStyle = '#FFD86B'; [[-8, -4], [38, -4], [-8, 34], [38, 34]].forEach(([a, c2]) => ctx.fillRect(x + a, y + c2, 2, 2)); });
-    // barricades on locked trails
-    M.exits.forEach((e) => { if (!locked(e)) return;
-      for (let k = e.a; k <= e.b; k++) {
-        const tx = e.edge === 'n' || e.edge === 's' ? k : (e.edge === 'w' ? 1 : M.W - 2), ty = e.edge === 'n' ? 1 : (e.edge === 's' ? M.H - 2 : k);
-        const x = snap(tx * TS - cx), y = snap(ty * TS - cy);
-        ctx.fillStyle = '#4A2A14'; ctx.fillRect(x + 2, y + 6, 6, 26); ctx.fillRect(x + 24, y + 6, 6, 26);
-        ctx.fillStyle = '#4A2A14'; ctx.fillRect(x, y + 8, 32, 12);
-        for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? '#F8F8F8' : '#D8574A'; ctx.fillRect(x + 2 + i * 7, y + 10, 7, 8); }
-      } });
+    // (no barricades on shut gates: the unlit lamp post beside the gap says it, review 11 item 6; the lock itself is in collides/barricadeAt)
+    // Glacia's trial, the frost forming (review 11 item 12): while you stand still the water around you rimes over from the edges inward across stillT / STILL_S (opts.frost, 0..1), so the wait is seen; the plate itself comes when it reaches the middle
+    if (M.id === 'gym-glacia' && opts.frost) { const f = Math.max(0, Math.min(1, opts.frost())); if (f > 0.01) { const tx = Math.floor(P.x / TS), ty = Math.floor(P.y / TS), w = Math.round(f * 7) * 2;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = tx + dx, y = ty + dy; if (!M.grid[y] || M.grid[y][x] !== '~') continue; const sx = snap(x * TS - cx), sy = snap(y * TS - cy);
+        ctx.fillStyle = 'rgba(222,240,250,0.92)'; ctx.fillRect(sx, sy, TS, w); ctx.fillRect(sx, sy + TS - w, TS, w); ctx.fillRect(sx, sy, w, TS); ctx.fillRect(sx + TS - w, sy, w, TS);   // the rim, growing inward
+        ctx.fillStyle = 'rgba(255,255,255,0.85)'; for (let i = 0; i < 4; i++) { const h = hash2(x, y, i), len = Math.round(f * (6 + Math.floor(h * 6))) * 2, along = 4 + Math.floor(hash2(x, y, i + 9) * 12) * 2;   // needles reaching in from each side
+          if (i === 0) ctx.fillRect(sx + along, sy + w, 2, len); else if (i === 1) ctx.fillRect(sx + along, sy + TS - w - len, 2, len); else if (i === 2) ctx.fillRect(sx + w, sy + along, len, 2); else ctx.fillRect(sx + TS - w - len, sy + along, len, 2); } } } }
     // ambient scenery critters + weather on the ground (ripples, whitecaps, snow caps), under the entities
     const wk = M.interior ? null : (opts.weather ? opts.weather() : null), todNow = M.interior ? 'day' : (opts.tint ? opts.tint() : 'day');
+    const relitNow = !!(opts.relit && opts.relit()), glows = [];   // halos are drawn after the time-of-day tint (review 05-F7), so a kept light is the brightest thing at night
     const ambEnv = { M: M, TS: TS, wind: lastWind ? lastWind.s : 0, solidAt: (x, y) => solidAt(x, y), tileAt: (x, y) => (M.grid[y] ? M.grid[y][x] : 'T'), player: { x: P.x, y: P.y }, cx: cx, cy: cy, vw: vw, vh: vh, t: tAnim, dt: frameDt, tod: todNow, weather: wk, still: opts.still ? opts.still() : false, on: opts.ambient ? opts.ambient() : true };
     if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'ground', ambEnv);
     if (!ambEnv.still && (wk === 'rain' || wk === 'storm')) waterFx(wk, cx, cy);
@@ -1175,7 +1235,7 @@ const WORLD = (() => {
     list.forEach((it) => {
       if (it.fn) { it.fn(ctx); return; }
       if (it.p) { if (LEAD) drawCritterAt(fol, P.x + (P.ox || 0), P.y + (P.oy || 0), P.moving, cx, cy, snap, true, P.dir); else drawPlayer(pxs - cx, pys - cy); return; }
-      if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy), far = ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50; if (far && o.kind !== 'postlamp') return; const st = opts.objState ? (opts.objState(o) || {}) : {}, art = ADV.ART[o.kind]; if (far) return; /* a post lamp's state eases over time, so it is stepped even off screen (otherwise the lamps ahead light only once they are in view) */ if (art) { ctx.save(); ctx.translate(ox, oy); art(ctx, 0, 0, st, tAnim, o); ctx.restore(); } return; }   // drawn from its own origin: the art snaps to a 2 px grid, which must be relative to the object, not the screen, or it jitters against the ground while the camera moves
+      if (it.o) { const o = it.o, ox = snap(o.x * TS - cx), oy = snap(o.y * TS - cy), far = ox < -40 || ox > vw + 40 || oy < -50 || oy > vh + 50; if (far && o.kind !== 'postlamp') return; const st = Object.assign({}, opts.objState ? (opts.objState(o) || {}) : {}, { hour: todNow, relit: relitNow }), art = ADV.ART[o.kind]; if (far) return; /* a post lamp's state eases over time, so it is stepped even off screen (otherwise the lamps ahead light only once they are in view) */ if (art) { ctx.save(); ctx.translate(ox, oy); art(ctx, 0, 0, st, tAnim, o); ctx.restore(); } if (ADV.GLOW && ADV.GLOW[o.kind]) glows.push([o, ox, oy, st]); return; }   // drawn from its own origin: the art snaps to a 2 px grid, which must be relative to the object, not the screen, or it jitters against the ground while the camera moves
 
       if (it.f && LEAD) { drawPlayer(snap(FOL.x - cx), snap(FOL.y - cy), { x: FOL.x, y: FOL.y, dir: FOL.dir || P.dir, moving: FOL.moving, step: FOL.step || 0 }); return; }
       if (it.f) {
@@ -1214,12 +1274,15 @@ const WORLD = (() => {
       ctx.fillStyle = gr; ctx.fillRect(bx2 - 14, 0, 28, by2); ctx.fillStyle = 'rgba(255,248,200,' + (0.35 * k).toFixed(2) + ')'; ctx.fillRect(bx2 - 5, 0, 10, by2);
       const gl = ctx.createRadialGradient(bx2, by2, 2, bx2, by2, 56); gl.addColorStop(0, 'rgba(255,236,160,0.8)'); gl.addColorStop(1, 'rgba(255,236,160,0)'); ctx.fillStyle = gl; ctx.fillRect(bx2 - 56, by2 - 56, 112, 112);
     };
-    (M.objects || []).forEach((o) => { if (!o.beam || !(opts.objState && (opts.objState(o) || {}).lit)) return; drawBeam(snap(o.beam.x * TS - cx), snap(o.beam.y * TS - cy), 0.6 + 0.4 * Math.sin(tAnim * 3)); });
-    // once the great lamp is lit the land answers: every lighthouse throws a beam inland, day and night
-    if (opts.relit && opts.relit()) (M.props || []).forEach((pr) => { if (pr.id === 'lighthouse') drawBeam(snap((pr.x + pr.w / 2) * TS - cx), snap((pr.y + 0.6) * TS - cy), 0.5 + 0.35 * Math.sin(tAnim * 2.2 + pr.x)); });
-    // home: with three seals the lamp in the window is on, by day as well
-    if (M.id === 'town' && opts.homeLit && opts.homeLit()) { const hp = M.places.find((q) => q.id === 'home'); if (hp) { const roofH = Math.round(hp.h * 32 * 0.5), x = snap(hp.x * TS + 16 - cx), y = snap(hp.y * TS + roofH + 8 - cy), k = 0.85 + 0.15 * Math.sin(tAnim * 1.7);
-      const gr = ctx.createRadialGradient(x + 14, y + 10, 2, x + 14, y + 10, 38); gr.addColorStop(0, 'rgba(255,214,120,' + (0.6 * k).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,214,120,0)'); ctx.fillStyle = gr; ctx.fillRect(x - 28, y - 30, 84, 80); ctx.fillStyle = '#FFD86B'; ctx.fillRect(x, y, 28, 20); } }
+    const lights = () => {   // everything that glows, drawn after the tint (review 05-F7): halos, the beacon's beam, the lighthouses, the kept window
+      glows.forEach(([o, ox, oy, st]) => { ctx.save(); ctx.translate(ox, oy); ADV.GLOW[o.kind](ctx, 0, 0, st, tAnim, o); ctx.restore(); });
+      (M.objects || []).forEach((o) => { if (!o.beam || !(opts.objState && (opts.objState(o) || {}).lit)) return; drawBeam(snap(o.beam.x * TS - cx), snap(o.beam.y * TS - cy), 0.6 + 0.4 * Math.sin(tAnim * 3)); });
+      // once the great lamp is lit the land answers at night, and only on a day the window at Home is lit: the lighthouses follow the keeper (review 11 item 19; the beacon's own beam stays)
+      if (relitNow && opts.homeLit && opts.homeLit() && (todNow === 'night' || todNow === 'dusk')) (M.props || []).forEach((pr) => { if (pr.id === 'lighthouse') drawBeam(snap((pr.x + pr.w / 2) * TS - cx), snap((pr.y + 0.6) * TS - cy), 0.5 + 0.35 * Math.sin(tAnim * 2.2 + pr.x)); });
+      // home: one window, the left one, lit for you at the start and with three seals; after the great lamp, lit only by you each day (review 05-F1); the right window stays painted glass in every state
+      if (M.id === 'town' && opts.homeLit && opts.homeLit()) { const hp = M.places.find((q) => q.id === 'home'); if (hp) { const roofH = Math.round(hp.h * 32 * 0.5), x = snap(hp.x * TS + 16 - cx), y = snap(hp.y * TS + roofH + 8 - cy), k = 0.85 + 0.15 * Math.sin(tAnim * 1.7);
+        const gr = ctx.createRadialGradient(x + 14, y + 10, 2, x + 14, y + 10, 38); gr.addColorStop(0, 'rgba(255,214,120,' + (0.6 * k).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,214,120,0)'); ctx.fillStyle = gr; ctx.fillRect(x - 28, y - 30, 84, 80); ctx.fillStyle = '#FFD86B'; ctx.fillRect(x, y, 28, 20); } }
+    };
     // chimney smoke from the houses that keep a fire (Meaning: a lit home; the puffs lean with the wind): Sproutvale cottages, Cinderport's forge houses and the gym halls' chimneys
     if (!M.interior && !(opts.still && opts.still())) { const arch = (PXW.PAL[M.id] || {}).arch; if (arch === 'cottage' || arch === 'forge') { const ws = lastWind ? lastWind.s : 0;
       M.places.forEach((p) => { if (p.kind && p.kind !== 'house' && p.kind !== 'gym') return; const chx = (p.x + p.w) * TS - (arch === 'forge' ? (p.kind === 'gym' ? 24 : 20) : 26), chy = p.y * TS - (arch === 'forge' ? 26 : 4);
@@ -1239,13 +1302,16 @@ const WORLD = (() => {
     const tod = (M.interior || M.cave) ? 'day' : (opts.tint ? opts.tint() : 'day'); // lamplit rooms and caves: no night tint
     tintNow = tod;
     if (tod !== 'day') {
-      ctx.fillStyle = { night: 'rgba(14,24,70,0.42)', dusk: 'rgba(255,110,50,0.14)', dawn: 'rgba(255,190,140,0.12)' }[tod];
+      ctx.fillStyle = { night: 'rgba(14,24,70,0.42)', dusk: 'rgba(255,120,60,0.24)', dawn: 'rgba(255,205,160,0.2)' }[tod];   // dusk and dawn strong enough to be seen (review 05-F6): the hour is a hint only if seen
       ctx.fillRect(0, 0, vw, vh);
-      if (tod === 'night' || tod === 'dusk') M.places.forEach((p) => { if (p.kind) return; const roofH = Math.round(p.h * 32 * 0.5);
-        [[p.x * TS + 16, p.y * TS + roofH + 8], [p.x * TS + p.w * TS - 44, p.y * TS + roofH + 8]].forEach(([wx, wy]) => { const x = snap(wx - cx), y = snap(wy - cy);
+      if (tod !== 'night') { const gr = ctx.createLinearGradient(0, 0, 0, vh); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, tod === 'dusk' ? 'rgba(30,30,90,0.22)' : 'rgba(120,140,200,0.16)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, vw, vh); }   // the ground cools first at dusk, and is still blue at dawn
+      // windows after dark: the Lab's right window; never Home's (its one window obeys the kept state, drawn in lights(); review 05-F1)
+      if (tod === 'night' || tod === 'dusk') M.places.forEach((p) => { if (p.kind || p.id === 'home') return; const roofH = Math.round(p.h * 32 * 0.5);
+        [[p.x * TS + p.w * TS - 44, p.y * TS + roofH + 8]].forEach(([wx, wy]) => { const x = snap(wx - cx), y = snap(wy - cy);
           const gr = ctx.createRadialGradient(x + 14, y + 10, 2, x + 14, y + 10, 34); gr.addColorStop(0, 'rgba(255,214,120,0.55)'); gr.addColorStop(1, 'rgba(255,214,120,0)'); ctx.fillStyle = gr; ctx.fillRect(x - 24, y - 26, 76, 72);
           ctx.fillStyle = '#FFD86B'; ctx.fillRect(x, y, 28, 20); }); });
     }
+    lights();
     if (typeof AMBIENT !== 'undefined') AMBIENT.draw(ctx, 'glow', ambEnv); // lights (fireflies) shine over the night tint
     if (M.dark) drawDark(cx, cy, pxs, pys);
     // no words over the places or the rare grass (Dan, Nov 2026): a place reads from its shape and its mark, the rare grass from its sparkle; the name comes at the door (the action button)

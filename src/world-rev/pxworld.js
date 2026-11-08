@@ -22,7 +22,8 @@ const PXW = (() => {
   PAL['gym-blaze'] = Object.assign({}, PAL.descent, { g: '#6A4A3A', gd: '#7A5A48', gt: '#4A3028', cw: '#3A2218', cwl: '#5A3A2A', cwd: '#1A0E0A' });
   PAL['gym-coral'] = Object.assign({}, PAL['dg-arch'], { g: '#2A3A4A', gd: '#34465A', gt: '#1E2C3A', cw: '#1A2432', cwl: '#34485E', cwd: '#0C121A' });
   PAL['dg-forge'] = { g: '#4A3A38', gd: '#5A4A46', gt: '#3A2A28', p: '#8A6A5A', ps: '#7A5A4A', pe: '#5A3A2A', w: '#FF6A2B', wl: '#FFC24D', we: '#B83A10', t: '#6A4A38', tb: '#3A2A20', th: '#8A6A50', tree: 'dead', ol: '#1A0E0A', fl: ['#FF8A3D'], cw: '#2A1A1A', cwl: '#6A4A3A', cwd: '#120808' };
-  PAL['route-mf'] = Object.assign({}, PAL.peak, { g: '#97B07E', gd: '#ABC492' }); PAL['route-fc'] = Object.assign({}, PAL.frost, { w: '#3C95DC', wl: '#A8D8FF', we: '#2A6FB0' }); PAL['route-cc'] = Object.assign({}, PAL.tide, { p: '#B08858', ps: '#9A7448', tree: 'palm' });
+  PAL['route-mf'] = Object.assign({}, PAL.peak, { g: '#97B07E', gd: '#ABC492' });
+  PAL.peak = Object.assign({}, PAL.peak, { g: '#E8F0F8', gd: '#FFFFFF', gt: '#B9CCE0', w: '#7FB8E0', wl: '#D8EEFF', we: '#4A88B8', t: '#9CC9D9', tb: '#5E97AE', th: '#C8E8F2', fl: ['#FFFFFF'] });   // Vigil Peak: the still cold above the tree line (review 05-F14), the lilac path kept PAL['route-fc'] = Object.assign({}, PAL.frost, { w: '#3C95DC', wl: '#A8D8FF', we: '#2A6FB0' }); PAL['route-cc'] = Object.assign({}, PAL.tide, { p: '#B08858', ps: '#9A7448', tree: 'palm' });
   PAL['route-cm'] = { g: '#8C9A5E', gd: '#A0AE70', gt: '#6E7A44', p: '#A08A6A', ps: '#8E7858', pe: '#6A5A40', w: '#4F9AD0', wl: '#9CD0F2', we: '#2F70A0', t: '#7E8A3A', tb: '#5E6A22', th: '#A0AE70', tree: 'dead', ol: '#2E2A1A', fl: ['#FF8A3D', '#FFD86B'] };
   function stamp(g, x0, y0, rows, colors) {
     for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y].length; x++) { const ch = rows[y][x]; const col = colors[ch]; if (col) { g.fillStyle = col; g.fillRect(x0 + x, y0 + y, 1, 1); } }
@@ -256,7 +257,7 @@ const PXW = (() => {
       tier(X + 4, Y + 60, Wd - 8, 36, '#8F8BB4', '#B9B5D8', '#6E6A94');
       tier(X + 14, Y + 28, Wd - 28, 32, '#9C98C0', '#C4C0E2', '#77739E');
       tier(X + 26, Y + 4, Wd - 52, 24, '#A8A4CC', '#CFCBEC', '#807CA8');
-      [[X + 3, Y + 58, Wd - 6], [X + 13, Y + 26, Wd - 26], [X + 25, Y + 2, Wd - 50]].forEach(([x, y, w]) => { R(x, y, w, 3, ol); R(x + 1, y, w - 2, 2, '#F5C542'); for (let i = x + 3; i < x + w - 3; i += 6) R(i, y + 2, 2, 2, '#C9962A'); });
+      [[X + 3, Y + 58, Wd - 6], [X + 13, Y + 26, Wd - 26], [X + 25, Y + 2, Wd - 50]].forEach(([x, y, w]) => { R(x, y, w, 3, ol); R(x + 1, y, w - 2, 2, '#6E6A94'); for (let i = x + 3; i < x + w - 3; i += 6) R(i, y + 2, 2, 2, '#4E4A70'); });   // stone courses, not gold battlements (review 05-F13)
       for (let i = 0; i < 22; i++) { const w = Math.max(2, 50 - i * 2.3) | 0; R(cx - w / 2 - 1, Y + 1 - i, w + 2, 1, ol); R(cx - w / 2, Y + 1 - i, w, 1, i % 3 === 0 ? '#7A5CC8' : '#5B3FA8'); if (w > 6) R(cx - w / 2 + 2, Y + 1 - i, 2, 1, '#9C84E0'); }
       R(cx, Y - 33, 1, 13, ol); R(cx + 1, Y - 33, 9, 3, '#FFD86B'); R(cx + 1, Y - 30, 6, 2, '#E0A830');
       const win = (wx, wy) => { R(wx - 1, wy - 1, 8, 11, ol); R(wx, wy + 2, 6, 8, '#FFE08A'); R(wx + 1, wy, 4, 2, '#FFE08A'); R(wx, wy + 5, 6, 1, '#E0A830'); R(wx + 1, wy + 3, 1, 2, '#FFFFFF'); };
@@ -264,7 +265,7 @@ const PXW = (() => {
       const dx0 = p.door[0] * L + L - 8;
       R(dx0 - 1, Y + Hd - 21, 18, 21, ol); R(dx0 + 1, Y + Hd - 23, 14, 2, ol); R(dx0, Y + Hd - 20, 16, 20, '#6B4626'); R(dx0 + 2, Y + Hd - 22, 12, 2, '#6B4626');
       R(dx0 + 2, Y + Hd - 18, 12, 18, '#8A5A34'); R(dx0 + 7, Y + Hd - 18, 2, 18, '#5E3C22'); R(dx0 + 11, Y + Hd - 9, 2, 2, '#FFD86B'); R(dx0 - 2, Y + Hd - 26, 20, 3, '#F5C542'); R(dx0 - 2, Y + Hd - 26, 20, 1, ol);
-      [[X + 26, Y + 62], [X + Wd - 32, Y + 62]].forEach(([bx, by]) => { R(bx - 1, by - 1, 8, 16, ol); R(bx, by, 6, 13, '#D8574A'); R(bx, by + 13, 2, 2, '#D8574A'); R(bx + 4, by + 13, 2, 2, '#D8574A'); R(bx + 2, by + 4, 2, 2, '#FFD86B'); R(bx, by, 6, 1, '#F08070'); });
+      [[X + 26, Y + 62], [X + Wd - 32, Y + 62]].forEach(([bx, by]) => { R(bx + 2, by - 3, 2, 4, ol); R(bx - 4, by + 13, 14, 3, 'rgba(255,214,120,0.22)'); R(bx - 1, by, 8, 13, ol); R(bx, by + 1, 6, 2, '#5A5468'); R(bx, by + 3, 6, 8, '#FFD27A'); R(bx + 2, by + 5, 2, 4, '#FFF6D0'); R(bx + 1, by + 11, 4, 1, '#5A5468'); });   // two hanging lanterns, lit: the lobby's lamps that do not go out, seen from outside (review 05-F13); no banners
       return;
     }
     if (p.kind === 'board') {
