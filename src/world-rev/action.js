@@ -130,7 +130,7 @@ const ACT = (() => {
     E.push({ k: k, s: s, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: rand() * 2, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1 + rand(), tick: 1, img: H.img(k) });
     return true;
   }
-  let stir = 0, stirSpent = false;   // rare grass: stand in a sparkling patch and something stirs; it comes out once per visit
+  let stir = 0, stirSpent = false, stirTick = 0;   // rare grass: stand in a sparkling patch and something stirs; it comes out once per visit
   function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; stir = 0; stirSpent = false; st.atk = null; st.cd = 0; verb = null; st.veil = 0; walls = []; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7);
     if (wildOk(e) && e.M.id === 'town' && H.game().state.caught.length <= 1) spawnOne(e, 0, null, false, [6, 10]); }   // a new game: one wild critter waits in the grass by your door (Meaning: the first thing kept is at home)
   const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
@@ -194,14 +194,14 @@ const ACT = (() => {
     VFX.impact(m.k.element.name, m.k.element.color, m.x, m.y - 14, true); VFX.burst(m.k.element.name, m.k.element.color, m.x, m.y - 14, 16, 0, 0, 1.2);
     E.splice(E.indexOf(m), 1); for (let i = 0; i < 8; i++) FX.push({ k: 'puff', x: m.x, y: m.y - 10, vx: (rand() - 0.5) * 80, vy: -20 - rand() * 50, t: 0, col: m.k.element.color });
     if (m.duel) {   // a trainer's critter: its XP is paid when the duel ends, there is nothing to keep
-      duel.down += 1; duel.koXp[hero.k.seed] = (duel.koXp[hero.k.seed] || 0) + 8 + 2 * (m.k.lv || 1) + 5 * (m.k.stage || 1); if (H.sfx) H.sfx('claim');
+      duel.down += 1; duel.koXp[hero.k.seed] = (duel.koXp[hero.k.seed] || 0) + 8 + 2 * (m.k.lv || 1) + 5 * (m.k.stage || 1);
       if (duel.down >= duel.queue.length) endDuel(true); else duel.next = 1.3;
       return;
     }
     spawnT = Math.min(spawnT, 8);
     if (H.worthy && H.worthy(m.k) && !OFF.some((o) => o.k.seed === m.k.seed)) OFF.push({ id: orbId++, k: m.k, x: m.x, y: m.y, t: 0, life: 30 });   // a catch orb: walk over it to put it in the pouch
     const r = H.onKill ? H.onKill(m.k, hero.k) : null;
-    if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); } if (H.sfx) H.sfx('claim'); }
+    if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); if (H.sfx) H.sfx('level'); } }   // a foe down is heard as the blow; only a level grown adds a sound
   }
   function walk(m, e, vx, vy, dt) { if (m.rooted > 0) return; { const w = wallAt(m.x + vx * dt, m.y + vy * dt); if (w && m.dash > 0) { w.hp -= 1; m.dash = 0; m.kx = -vx * 0.6; m.ky = -vy * 0.6; VFX.impact('Stone', '#A8A29E', w.tx * 32 + 16, w.ty * 32 + 8, true); if (H.sfx) H.sfx('hit'); } } const nx = m.x + vx * dt, ny = m.y + vy * dt; if (tileFree(e, nx, m.y)) m.x = nx; if (tileFree(e, m.x, ny)) m.y = ny; }
   // ---- enemy behaviours: one per element (the old single melee swing is the fallback) ----
@@ -280,7 +280,7 @@ const ACT = (() => {
     for (const r of [2.2, 1.6, 3, 1]) for (let i = 0; i < 8 && !best; i++) { const a = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.5, x = bx + Math.cos(a) * r * e.TS, y = by + Math.sin(a) * r * e.TS; if (tileFree(e, x, y)) best = { x: x, y: y }; }
     if (!best) best = { x: bx, y: by };
     E.push({ k: k, s: s, x: best.x, y: best.y, hx: best.x, hy: best.y, mode: 'chase', t: 0, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1.2, tick: 1, img: H.img(k), duel: true });
-    num(best.x, best.y - 36, d.tr.name + ' sent out ' + k.name + '!', '#FFFFFF'); if (H.sfx) H.sfx('claim');
+    num(best.x, best.y - 36, d.tr.name + ' sent out ' + k.name + '!', '#FFFFFF'); if (H.sfx) { if (!d.tr.tower) H.sfx('claim'); else if (d.idx > 1) H.sfx('knock'); }   // the Watch: a knock at the door, not a trainer's call
   }
   // o = { tr (the same object the battle screen uses), npc, party (Tower: the run's critters), hp (Tower: their HP), surge (Tower twist type) }
   function startDuel(o) {
@@ -288,6 +288,7 @@ const ACT = (() => {
     const e = lastEnv; duel = { tr: o.tr, npc: o.npc || null, queue: o.tr.team.slice(), idx: 0, down: 0, part: {}, koXp: {}, next: 0.9, party: o.party || null, surge: o.surge || null, lastFoe: null,
       night: o.tr.tower ? { len: window.__nightS || (28 + 1.6 * (o.tr.floor || 1) + (o.tr.warden ? 10 : 0)), t: 0 } : null };   // a night of the Watch is kept by lasting it: at dawn the visitors go
     mapId = e.M.id; E = []; PR = []; OFF = []; FX = []; st.calm = 0; st.swapIn = null;
+    if (o.tr.tower && H.sfx) H.sfx('knock');   // the visitor comes in with a knock, before the night's track
     if (o.party) {
       o.party.forEach((sd) => { const k = H.kOf(sd); if (k) { const side = sideFor(k); if (o.hp && o.hp[sd] !== undefined) side.hp = Math.max(0, Math.min(side.max, o.hp[sd])); } });
       const lk = lead(); if (!lk || o.party.indexOf(lk.seed) === -1 || team[lk.seed].side.hp <= 0) { const alive = o.party.find((sd) => team[sd] && team[sd].side.hp > 0); if (alive) H.setLead(alive); }
@@ -361,9 +362,9 @@ const ACT = (() => {
       if (Math.min(Math.hypot(hp1.x - q.x, hp1.y - 12 - q.y), Math.hypot(e.P.x - q.x, e.P.y - 12 - q.y)) < 0.6 * e.TS && hero.hp > 0 && st.down <= 0) { PR.splice(PR.indexOf(q), 1); if (q.m && q.m.s.hp > 0) hurtHero(q.m, q.mul); } });
     // rare grass (Meaning: the rare thing comes to the one who stays): while your critter stands in sparkling grass and no wild critter is near, the patch stirs for about 2.2 s, then a rare one comes out of it; once per visit
     if (!duel && wildOk(e) && !stirSpent) { const o = heroPos(), inZ = (q) => { const x = Math.floor(q.x / e.TS), y = Math.floor(q.y / e.TS), rr = e.M.rare; return (e.M.grid[y] && e.M.grid[y][x] === 'Z') || !!(rr && x >= rr.x && x < rr.x + rr.w && y >= rr.y && y < rr.y + rr.h); }, hz = inZ(o), pz = inZ(e.P), src = hz ? o : e.P, tx = Math.floor(src.x / e.TS), ty = Math.floor(src.y / e.TS), onZ = hz || pz, near = E.some((m) => Math.hypot(m.x - src.x, m.y - src.y) < 4 * e.TS);   // you or your critter in the patch
-      if (onZ && !near) { stir = Math.min(1, stir + dt / 2.2); if (stir >= 1) { stir = 0; stirSpent = true; const cells = []; for (let y = ty - 2; y <= ty + 2; y++) for (let x = tx - 2; x <= tx + 2; x++) if (e.M.grid[y] && e.M.grid[y][x] === 'Z' && (x !== tx || y !== ty)) cells.push([x, y]);
+      if (onZ && !near) { stir = Math.min(1, stir + dt / 2.2); stirTick += dt; if (stirTick >= 0.45 && stir < 1) { stirTick = 0; if (H.sfx) H.sfx('stir', 523 * (1 + 0.5 * stir)); } if (stir >= 1) { stirTick = 0; stir = 0; stirSpent = true; const cells = []; for (let y = ty - 2; y <= ty + 2; y++) for (let x = tx - 2; x <= tx + 2; x++) if (e.M.grid[y] && e.M.grid[y][x] === 'Z' && (x !== tx || y !== ty)) cells.push([x, y]);
           const c = cells.length ? cells[Math.floor(rand() * cells.length)] : [tx, ty], k = H.foe(e.M.types || [], lead(), true);
-          if (k) { const sd = H.game().newBattle(lead(), k, 0).s[1]; sd.label = 'Wild ' + k.name; E.push({ k: k, s: sd, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: 0, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0.6, tele: 0, cd: 1.5, tick: 1, img: H.img ? H.img(k) : null, id: Date.now() % 100000, rare: true, woke: true }); FX.push({ k: 'wake', x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.5) * e.TS, t: 0 }); if (H.sfx) H.sfx('claim'); } } }
+          if (k) { const sd = H.game().newBattle(lead(), k, 0).s[1]; sd.label = 'Wild ' + k.name; E.push({ k: k, s: sd, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: 0, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0.6, tele: 0, cd: 1.5, tick: 1, img: H.img ? H.img(k) : null, id: Date.now() % 100000, rare: true, woke: true }); FX.push({ k: 'wake', x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.5) * e.TS, t: 0 }); if (H.sfx) H.sfx('rare'); } } }
       else stir = Math.max(0, stir - dt * 1.5); }
     // respawns
     spawnT -= dt; if (spawnT <= 0) { spawnT = 6; if (!duel && E.length < 4 && wildOk(e)) spawnOne(e, 8); }

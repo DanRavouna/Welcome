@@ -349,7 +349,9 @@ class Component extends Base {
     };
   }
 
-  sfx(kind, settings) {
+  // Sound effects (Meaning: the acts of keeping are heard, each with its own sound; a pitch of 0 is a rest). `arg` is the second argument some kinds take: Coral's lamp number, a tick's pitch, the rite's order.
+  sfx(kind, arg, settings) {
+    if (arg && typeof arg === 'object' && settings === undefined) { settings = arg; arg = undefined; }   // the older call sfx(kind, settings)
     const cfg = settings || this.state.settings || {};
     if (!cfg.sound) return;
     try {
@@ -358,23 +360,37 @@ class Component extends Base {
       this.ac = this.ac || new AC();
       const ac = this.ac;
       if (ac.state === 'suspended') ac.resume();
-      const seq = {
+      const LAMP_HZ = [523, 587, 659, 784, 880], RITE_HZ = [294, 349, 440];   // Coral's five lamps C5 D5 E5 G5 A5; the rite's fire bowl D4, lamp F4, hull A4 (the Arch's D minor)
+      const S = {
         tap: [[880, 0.04]], roll: [[523, 0.08], [659, 0.1]], rare: [[659, 0.1], [784, 0.1], [988, 0.16]],
         mythic: [[784, 0.1], [988, 0.1], [1175, 0.1], [1568, 0.3]], hit: [[160, 0.07]],
         win: [[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.28]], lose: [[392, 0.16], [311, 0.24]],
-        slash: [[620, 0.03], [420, 0.05]], level: [[523, 0.08], [784, 0.08], [1047, 0.22]], claim: [[784, 0.07], [1047, 0.14]]
-      }[kind];
+        slash: [[620, 0.03], [420, 0.05]], level: [[523, 0.08], [784, 0.08], [1047, 0.22]], claim: [[784, 0.07], [1047, 0.14]],
+        light: arg === 'long' ? [[523, 0.1], [784, 0.14], [1047, 0.9]] : [[523, 0.08], [784, 0.12], [1047, 0.45]],   // the one sound of a light kept: the title, a lamp, the window, the seat, the great lamp (long)
+        tick: [[+arg || 392, 0.08]], tend: [[+arg || 262, 0.08]], stir: [[+arg || 523, 0.12]],   // a stay heard growing: a lamp taking, a bed tended, the rare grass stirring
+        gutter: [[523, 0.08], [392, 0.16]], out: [[196, 0.3]], feed: [[196, 0.05], [294, 0.08], [392, 0.18]], log: [[147, 0.06]],
+        sprout: [[392, 0.1], [523, 0.16]], bloom: [[392, 0.08], [523, 0.08], [659, 0.3]], ice: [[1568, 0.1], [2093, 0.22]], melt: [[784, 0.08], [523, 0.2]],
+        lamp: [[LAMP_HZ[arg | 0] || 523, 0.3]], wrong: [[262, 0.2], [247, 0.3]], right: LAMP_HZ.map((f) => [f, 0.12]),   // Coral's call and answer
+        rite: [[RITE_HZ[arg | 0] || 294, 0.4]], seat: [[587, 0.8]], douse: [[440, 0.08], [349, 0.08], [294, 0.08]],
+        post: [[1047, 0.06], [1319, 0.14]], keep: [[659, 0.08], [880, 0.08], [1319, 0.26]],
+        dawn: [[330, 0.3], [494, 0.4], [659, 0.9]], knock: [[110, 0.05], [0, 0.1], [110, 0.05]], forge: [[98, 0.2], [147, 0.3], [196, 0.8]]
+      }, seq = S[kind];
       if (!seq) return;
+      const GAIN = { tap: 0.04, hit: 0.06, light: arg === 'long' ? 0.09 : 0.08, tick: 0.04, tend: 0.03, stir: 0.04, ice: 0.05, post: 0.04, dawn: 0.06, knock: 0.08 }, SQUARE = { hit: 1, feed: 1, log: 1, out: 1, knock: 1, forge: 1 };
+      const vol = GAIN[kind] || 0.07, wave = SQUARE[kind] ? 'square' : 'triangle';
       let t = ac.currentTime + 0.01;
-      seq.forEach(([f, d]) => {
-        const o = ac.createOscillator(), g = ac.createGain();
-        o.type = kind === 'hit' ? 'square' : 'triangle';
-        o.frequency.value = f;
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(kind === 'hit' ? 0.06 : 0.1, t + 0.012);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-        o.connect(g); g.connect(ac.destination);
-        o.start(t); o.stop(t + d + 0.03);
+      seq.forEach(([f, d], i) => {
+        if (f > 0) {
+          const o = ac.createOscillator(), g = ac.createGain(), last = i === seq.length - 1 && (kind === 'light' || kind === 'seat' || kind === 'dawn');
+          o.type = wave;
+          o.frequency.value = f;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+          if (last) g.gain.setValueAtTime(vol * 0.8, t + d * 0.3);   // the last note of a light decays slowly
+          g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+          o.connect(g); g.connect(ac.destination);
+          o.start(t); o.stop(t + d + 0.03);
+        }
         t += d * 0.9;
       });
     } catch (e) {}

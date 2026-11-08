@@ -4032,7 +4032,7 @@ const ACT = (() => {
     E.push({ k: k, s: s, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: rand() * 2, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1 + rand(), tick: 1, img: H.img(k) });
     return true;
   }
-  let stir = 0, stirSpent = false;   // rare grass: stand in a sparkling patch and something stirs; it comes out once per visit
+  let stir = 0, stirSpent = false, stirTick = 0;   // rare grass: stand in a sparkling patch and something stirs; it comes out once per visit
   function reset(e) { if (duel) abortDuel('You left the duel.'); VFX.clear(); GH = []; E = []; FX = []; PR = []; OFF = []; mapId = e.M.id; spawnT = 3; stir = 0; stirSpent = false; st.atk = null; st.cd = 0; verb = null; st.veil = 0; walls = []; if (wildOk(e)) for (let i = 0; i < 4; i++) spawnOne(e, 7);
     if (wildOk(e) && e.M.id === 'town' && H.game().state.caught.length <= 1) spawnOne(e, 0, null, false, [6, 10]); }   // a new game: one wild critter waits in the grass by your door (Meaning: the first thing kept is at home)
   const wildOk = (e) => e.M.rate > 0 && !e.M.cave && !e.M.interior;
@@ -4096,14 +4096,14 @@ const ACT = (() => {
     VFX.impact(m.k.element.name, m.k.element.color, m.x, m.y - 14, true); VFX.burst(m.k.element.name, m.k.element.color, m.x, m.y - 14, 16, 0, 0, 1.2);
     E.splice(E.indexOf(m), 1); for (let i = 0; i < 8; i++) FX.push({ k: 'puff', x: m.x, y: m.y - 10, vx: (rand() - 0.5) * 80, vy: -20 - rand() * 50, t: 0, col: m.k.element.color });
     if (m.duel) {   // a trainer's critter: its XP is paid when the duel ends, there is nothing to keep
-      duel.down += 1; duel.koXp[hero.k.seed] = (duel.koXp[hero.k.seed] || 0) + 8 + 2 * (m.k.lv || 1) + 5 * (m.k.stage || 1); if (H.sfx) H.sfx('claim');
+      duel.down += 1; duel.koXp[hero.k.seed] = (duel.koXp[hero.k.seed] || 0) + 8 + 2 * (m.k.lv || 1) + 5 * (m.k.stage || 1);
       if (duel.down >= duel.queue.length) endDuel(true); else duel.next = 1.3;
       return;
     }
     spawnT = Math.min(spawnT, 8);
     if (H.worthy && H.worthy(m.k) && !OFF.some((o) => o.k.seed === m.k.seed)) OFF.push({ id: orbId++, k: m.k, x: m.x, y: m.y, t: 0, life: 30 });   // a catch orb: walk over it to put it in the pouch
     const r = H.onKill ? H.onKill(m.k, hero.k) : null;
-    if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); } if (H.sfx) H.sfx('claim'); }
+    if (r) { const o = heroPos(); num(m.x, m.y - 34, '+' + r.xp + ' XP', '#A7F04A'); if (r.ess) num(o.x, o.y - 34, '+' + r.ess + ' essence', '#C9A8FF'); if (r.lv) { num(o.x, o.y - 48, 'Level ' + r.lv + '!', '#FFD86B'); if (H.toast) H.toast(hero.k.name + ' grew to level ' + r.lv + '!'); if (H.sfx) H.sfx('level'); } }   // a foe down is heard as the blow; only a level grown adds a sound
   }
   function walk(m, e, vx, vy, dt) { if (m.rooted > 0) return; { const w = wallAt(m.x + vx * dt, m.y + vy * dt); if (w && m.dash > 0) { w.hp -= 1; m.dash = 0; m.kx = -vx * 0.6; m.ky = -vy * 0.6; VFX.impact('Stone', '#A8A29E', w.tx * 32 + 16, w.ty * 32 + 8, true); if (H.sfx) H.sfx('hit'); } } const nx = m.x + vx * dt, ny = m.y + vy * dt; if (tileFree(e, nx, m.y)) m.x = nx; if (tileFree(e, m.x, ny)) m.y = ny; }
   // ---- enemy behaviours: one per element (the old single melee swing is the fallback) ----
@@ -4182,7 +4182,7 @@ const ACT = (() => {
     for (const r of [2.2, 1.6, 3, 1]) for (let i = 0; i < 8 && !best; i++) { const a = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.5, x = bx + Math.cos(a) * r * e.TS, y = by + Math.sin(a) * r * e.TS; if (tileFree(e, x, y)) best = { x: x, y: y }; }
     if (!best) best = { x: bx, y: by };
     E.push({ k: k, s: s, x: best.x, y: best.y, hx: best.x, hy: best.y, mode: 'chase', t: 0, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0, tele: 0, cd: 1.2, tick: 1, img: H.img(k), duel: true });
-    num(best.x, best.y - 36, d.tr.name + ' sent out ' + k.name + '!', '#FFFFFF'); if (H.sfx) H.sfx('claim');
+    num(best.x, best.y - 36, d.tr.name + ' sent out ' + k.name + '!', '#FFFFFF'); if (H.sfx) { if (!d.tr.tower) H.sfx('claim'); else if (d.idx > 1) H.sfx('knock'); }   // the Watch: a knock at the door, not a trainer's call
   }
   // o = { tr (the same object the battle screen uses), npc, party (Tower: the run's critters), hp (Tower: their HP), surge (Tower twist type) }
   function startDuel(o) {
@@ -4190,6 +4190,7 @@ const ACT = (() => {
     const e = lastEnv; duel = { tr: o.tr, npc: o.npc || null, queue: o.tr.team.slice(), idx: 0, down: 0, part: {}, koXp: {}, next: 0.9, party: o.party || null, surge: o.surge || null, lastFoe: null,
       night: o.tr.tower ? { len: window.__nightS || (28 + 1.6 * (o.tr.floor || 1) + (o.tr.warden ? 10 : 0)), t: 0 } : null };   // a night of the Watch is kept by lasting it: at dawn the visitors go
     mapId = e.M.id; E = []; PR = []; OFF = []; FX = []; st.calm = 0; st.swapIn = null;
+    if (o.tr.tower && H.sfx) H.sfx('knock');   // the visitor comes in with a knock, before the night's track
     if (o.party) {
       o.party.forEach((sd) => { const k = H.kOf(sd); if (k) { const side = sideFor(k); if (o.hp && o.hp[sd] !== undefined) side.hp = Math.max(0, Math.min(side.max, o.hp[sd])); } });
       const lk = lead(); if (!lk || o.party.indexOf(lk.seed) === -1 || team[lk.seed].side.hp <= 0) { const alive = o.party.find((sd) => team[sd] && team[sd].side.hp > 0); if (alive) H.setLead(alive); }
@@ -4263,9 +4264,9 @@ const ACT = (() => {
       if (Math.min(Math.hypot(hp1.x - q.x, hp1.y - 12 - q.y), Math.hypot(e.P.x - q.x, e.P.y - 12 - q.y)) < 0.6 * e.TS && hero.hp > 0 && st.down <= 0) { PR.splice(PR.indexOf(q), 1); if (q.m && q.m.s.hp > 0) hurtHero(q.m, q.mul); } });
     // rare grass (Meaning: the rare thing comes to the one who stays): while your critter stands in sparkling grass and no wild critter is near, the patch stirs for about 2.2 s, then a rare one comes out of it; once per visit
     if (!duel && wildOk(e) && !stirSpent) { const o = heroPos(), inZ = (q) => { const x = Math.floor(q.x / e.TS), y = Math.floor(q.y / e.TS), rr = e.M.rare; return (e.M.grid[y] && e.M.grid[y][x] === 'Z') || !!(rr && x >= rr.x && x < rr.x + rr.w && y >= rr.y && y < rr.y + rr.h); }, hz = inZ(o), pz = inZ(e.P), src = hz ? o : e.P, tx = Math.floor(src.x / e.TS), ty = Math.floor(src.y / e.TS), onZ = hz || pz, near = E.some((m) => Math.hypot(m.x - src.x, m.y - src.y) < 4 * e.TS);   // you or your critter in the patch
-      if (onZ && !near) { stir = Math.min(1, stir + dt / 2.2); if (stir >= 1) { stir = 0; stirSpent = true; const cells = []; for (let y = ty - 2; y <= ty + 2; y++) for (let x = tx - 2; x <= tx + 2; x++) if (e.M.grid[y] && e.M.grid[y][x] === 'Z' && (x !== tx || y !== ty)) cells.push([x, y]);
+      if (onZ && !near) { stir = Math.min(1, stir + dt / 2.2); stirTick += dt; if (stirTick >= 0.45 && stir < 1) { stirTick = 0; if (H.sfx) H.sfx('stir', 523 * (1 + 0.5 * stir)); } if (stir >= 1) { stirTick = 0; stir = 0; stirSpent = true; const cells = []; for (let y = ty - 2; y <= ty + 2; y++) for (let x = tx - 2; x <= tx + 2; x++) if (e.M.grid[y] && e.M.grid[y][x] === 'Z' && (x !== tx || y !== ty)) cells.push([x, y]);
           const c = cells.length ? cells[Math.floor(rand() * cells.length)] : [tx, ty], k = H.foe(e.M.types || [], lead(), true);
-          if (k) { const sd = H.game().newBattle(lead(), k, 0).s[1]; sd.label = 'Wild ' + k.name; E.push({ k: k, s: sd, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: 0, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0.6, tele: 0, cd: 1.5, tick: 1, img: H.img ? H.img(k) : null, id: Date.now() % 100000, rare: true, woke: true }); FX.push({ k: 'wake', x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.5) * e.TS, t: 0 }); if (H.sfx) H.sfx('claim'); } } }
+          if (k) { const sd = H.game().newBattle(lead(), k, 0).s[1]; sd.label = 'Wild ' + k.name; E.push({ k: k, s: sd, x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.8) * e.TS, hx: (c[0] + 0.5) * e.TS, hy: (c[1] + 0.8) * e.TS, mode: 'idle', t: 0, dx: 0, dy: 0, kx: 0, ky: 0, flash: 0.6, tele: 0, cd: 1.5, tick: 1, img: H.img ? H.img(k) : null, id: Date.now() % 100000, rare: true, woke: true }); FX.push({ k: 'wake', x: (c[0] + 0.5) * e.TS, y: (c[1] + 0.5) * e.TS, t: 0 }); if (H.sfx) H.sfx('rare'); } } }
       else stir = Math.max(0, stir - dt * 1.5); }
     // respawns
     spawnT -= dt; if (spawnT <= 0) { spawnT = 6; if (!duel && E.length < 4 && wildOk(e)) spawnOne(e, 8); }
@@ -4614,8 +4615,16 @@ const MUSIC = (() => {
       lead: 'G5 . E5 . C5 . E5 G5 | A5 - - - E5 - C5 - | F5 . A5 . C6 . A5 . | G5 - - - D5 - - . | G5 . E5 . C6 . B5 A5 | A5 - E5 - C5 - E5 - | F5 . D5 . A5 . F5 . | G5 - - - B4 - - .' },
     'dg-arch': { bpm: 70, wave: 'triangle', chords: 'Dm Dm Bb A Dm Gm Bb A', bass: 'R - - - 5 - - -', drums: '. . . . . . . h',
       lead: 'D5 - - - F5 - A5 - | D5 - - - F5 - - . | Bb4 - - - D5 - F5 - | E5 - - - C#5 - - . | A5 - - - F5 - D5 - | G5 - - - Bb5 - D6 - | F5 - - - D5 - Bb4 - | E5 - C#5 - A4 - - .' },
-    'dg-lamp': { bpm: 88, wave: 'triangle', chords: 'G Em C D G Em C D', bass: 'R . 5 . R . 5 .', drums: 'k . h . s . h .',
-      lead: 'G5 - B5 - D6 - B5 - | E5 - G5 - B5 - - . | C5 - E5 - G5 - E5 - | D5 - F#5 - A5 - - . | G5 - B5 - D6 - G6 - | E6 - D6 - B5 - G5 - | C6 - B5 - A5 - G5 - | F#5 - A5 - D6 - - .' },
+    // the Lamp Tower (Meaning: the music is the fourth lamp): the dark form has no drums and half the notes, held low, in the Watch's key (the way home and the long watch share it);
+    // each lamp kept below the great lamp adds a layer (@1 the bass walks, @2 the whole tune comes back an octave down, @3 = @lit the drums and the tune as written)
+    'dg-lamp': { bpm: 66, wave: 'triangle', vol: 0.7, chords: 'Em C G D Em C Am B', bass: 'R - - - - - - -', drums: '. . . . . . . .',
+      lead: 'G4 - - - D5 - - - | E4 - - - B4 - - . | B4 - - - G4 - - - | D5 - - - A4 - - . | G4 - - - D5 - - - | C5 - - - B4 - - - | C5 - - - A4 - - - | B4 - - - - - - .' },
+    'dg-lamp@1': { bpm: 66, wave: 'triangle', vol: 0.8, chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: '. . . . . . . .',
+      lead: 'G4 - - - D5 - - - | E4 - - - B4 - - . | B4 - - - G4 - - - | D5 - - - A4 - - . | G4 - - - D5 - - - | C5 - - - B4 - - - | C5 - - - A4 - - - | B4 - - - - - - .' },
+    'dg-lamp@2': { bpm: 66, wave: 'triangle', vol: 0.9, chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: '. . . . . . . .',
+      lead: 'G4 - B4 - D5 - B4 - | E4 - G4 - B4 - - . | C4 - E4 - G4 - E4 - | D4 - F#4 - A4 - - . | G4 - B4 - D5 - G5 - | E5 - D5 - B4 - G4 - | C5 - B4 - A4 - G4 - | F#4 - A4 - B4 - - .' },
+    'dg-lamp@3': { bpm: 66, wave: 'triangle', chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: 'k . h . s . h .',
+      lead: 'G5 - B5 - D6 - B5 - | E5 - G5 - B5 - - . | C5 - E5 - G5 - E5 - | D5 - F#5 - A5 - - . | G5 - B5 - D6 - G6 - | E6 - D6 - B5 - G5 - | C6 - B5 - A5 - G5 - | F#5 - A5 - B5 - - .' },
     watch: { bpm: 72, wave: 'triangle', vol: 0.72, chords: 'Em C G D Em C Am B', bass: 'R - - - - - - -', drums: '. . . . . . . h',
       lead: 'E5 - - - B5 - - - | G5 - - - - - - . | C6 - - - B5 - - - | D6 - - - - - - . | E5 - - - B5 - - - | G5 - - - E6 - - - | A5 - - - C6 - - - | B5 - - - - - - .' },   // the Watch's lobby: a lamp that does not go out, waiting
     'dg-forge': { bpm: 78, wave: 'square', duty: 0.25, chords: 'Em Em C C Am Am B B', bass: 'R . R . 5 . R .', drums: 'k . . h k . s h',
@@ -4625,8 +4634,26 @@ const MUSIC = (() => {
     battle: { bpm: 150, wave: 'square', duty: 0.25, chords: 'Am F G E Am F D E', bass: 'R R R R 5 R R 5', drums: 'k h s h k k s h',
       lead: 'A5 . E5 A5 C6 . B5 A5 | F5 . C5 F5 A5 . G5 F5 | G5 . D5 G5 B5 . A5 G5 | G#5 - E5 - B5 - G#5 - | A5 . E5 A5 C6 . E6 D6 | C6 . A5 . F5 . A5 . | D6 . A5 . F#5 . A5 D6 | E6 - B5 - G#5 - E5 -' },
     boss: { bpm: 136, wave: 'square', duty: 0.5, chords: 'Cm Ab Bb G Cm Ab Fm G', bass: 'R R 5 R R R 5 5', drums: 'k h s h k k s s',
-      lead: 'C5 - G5 - Eb6 - D6 C6 | Ab5 - - - C6 - Eb6 - | D6 - Bb5 - F5 - Bb5 D6 | B5 - - - G5 - D5 - | C5 - G5 - Eb6 - F6 G6 | Ab6 - G6 - Eb6 - C6 - | F6 - Eb6 - D6 - C6 Ab5 | B5 - D6 - G6 - - -' }
+      lead: 'C5 - G5 - Eb6 - D6 C6 | Ab5 - - - C6 - Eb6 - | D6 - Bb5 - F5 - Bb5 D6 | B5 - - - G5 - D5 - | C5 - G5 - Eb6 - F6 G6 | Ab6 - G6 - Eb6 - C6 - | F6 - Eb6 - D6 - C6 Ab5 | B5 - D6 - G6 - - -' },
+    // a trial (Meaning: a keeper letting go is not an enemy): Frosthold's chords without the A major, so no menace; brisk, but it keeps its feet on the ground
+    trial: { bpm: 128, wave: 'square', duty: 0.25, chords: 'Dm Bb F C Dm Bb Gm C', bass: 'R . 5 . R . 5 R', drums: 'k . s . k h s .',
+      lead: 'D5 . F5 A5 D6 - C6 A5 | Bb5 - F5 - D5 - F5 . | A5 . C6 . F5 . A5 C6 | G5 - E5 - C6 - - . | D5 . F5 A5 D6 - A5 F5 | Bb5 - A5 - F5 - D5 . | G5 . Bb5 . D6 . C6 Bb5 | A5 - - - E5 - - .' },
+    // a night of the Watch (Meaning: the watch thickens, it is not a brawl): the lobby's own tune, a little faster, with a pulse under it; the long nights press harder
+    night: { bpm: 96, wave: 'triangle', chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: '. . h . k . h .',
+      lead: 'E5 - - - B5 - - - | G5 - - - - - - . | C6 - - - B5 - - - | D6 - - - - - - . | E5 - - - B5 - - - | G5 - - - E6 - - - | A5 - - - C6 - - - | B5 - - - - - - .' },
+    'night@long': { bpm: 104, wave: 'square', duty: 0.25, chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: 'k . h . k . h h',
+      lead: 'E5 - - - B5 - - - | G5 - - - - - - . | C6 - - - B5 - - - | D6 - - - - - - . | E5 - - - B5 - - - | G5 - - - E6 - - - | A5 - - - C6 - - - | B5 - - - - - - .' },
+    // the Forge lit (Meaning: heard working): the same tune, faster, a fuller wave, every step drummed
+    'dg-forge@lit': { bpm: 96, wave: 'square', duty: 0.5, chords: 'Em Em C C Am Am B B', bass: 'R . R . 5 . R .', drums: 'k h s h k h s h',
+      lead: 'E5 - - - G5 - B5 - | E5 - - - D5 - - . | C5 - E5 - G5 - E5 - | D5 - C5 - B4 - - . | A4 - C5 - E5 - A5 - | G5 - E5 - C5 - - . | B4 - D#5 - F#5 - B5 - | A5 - F#5 - D#5 - - .' },
+    // the Arch once the seat has answered: the bass on two steps and one kick a bar
+    'dg-arch@seat': { bpm: 70, wave: 'triangle', chords: 'Dm Dm Bb A Dm Gm Bb A', bass: 'R - - - 5 - - -', drums: 'k . . . . . . h',
+      lead: 'D5 - - - F5 - A5 - | D5 - - - F5 - - . | Bb4 - - - D5 - F5 - | E5 - - - C#5 - - . | A5 - - - F5 - D5 - | G5 - - - Bb5 - D6 - | F5 - - - D5 - Bb4 - | E5 - C#5 - A4 - - .' },
+    // Home with the window dark (Meaning: after the beacon the window is lit only by you, each day): the village tune without its tune, until you light it
+    'town@dark': { bpm: 104, wave: 'square', duty: 0.25, chords: 'C G Am F C G F G', bass: 'R . R . 5 . R .', drums: 'k . h . s . h .',
+      lead: '. . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . . | . . . . . . . .' }
   };
+  T['dg-lamp@lit'] = T['dg-lamp@3'];
   const SEMI = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const midi = (n) => { const m = n.match(/^([A-G])([#b]?)(\d)$/); return 12 * (+m[3] + 1) + SEMI[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0); };
   const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
@@ -4657,6 +4684,8 @@ const MUSIC = (() => {
     coralbay: 'G4 - - - E4 - - - | A4 - - - E4 - - . | F4 - - - A4 - C5 - | G4 - - - D4 - - . | G4 - - - E4 - C5 - | A4 - - - E4 - - . | F4 - - - D4 - A4 - | G4 - - - - - - .',
   };   // the day's tune remembered: the same chords, fewer notes, lower and held
   Object.keys(NIGHT_LEAD).forEach((id) => { const t = T[id]; T[id + '@night'] = { bpm: Math.round(t.bpm * 0.78), wave: 'triangle', chords: t.chords, bass: 'R - - - - - - -', drums: '. . . . . . . .', lead: NIGHT_LEAD[id], vol: 0.62 }; });
+  // dusk and dawn (Meaning: the hour is a hint; the sound shifts with the light, before the night does): the night's tune on the day's wave, a little slower, the day's bass, only the hats of the drums
+  Object.keys(NIGHT_LEAD).forEach((id) => { const t = T[id]; T[id + '@dusk'] = { bpm: Math.round(t.bpm * 0.9), wave: t.wave, duty: t.duty, chords: t.chords, bass: t.bass, drums: t.drums.replace(/[ks]/g, '.'), lead: NIGHT_LEAD[id], vol: 0.8 }; });
   Object.keys(T).forEach((k) => { T[k].steps = compile(T[k]); });
 
   let ac = null, master = null, bus = null, noise = null, cur = null, want = null, step = 0, nextT = 0, timer = null, enabled = true, hidden = false, unlocked = false;
@@ -5158,7 +5187,9 @@ class Component extends Base {
     };
   }
 
-  sfx(kind, settings) {
+  // Sound effects (Meaning: the acts of keeping are heard, each with its own sound; a pitch of 0 is a rest). `arg` is the second argument some kinds take: Coral's lamp number, a tick's pitch, the rite's order.
+  sfx(kind, arg, settings) {
+    if (arg && typeof arg === 'object' && settings === undefined) { settings = arg; arg = undefined; }   // the older call sfx(kind, settings)
     const cfg = settings || this.state.settings || {};
     if (!cfg.sound) return;
     try {
@@ -5167,23 +5198,37 @@ class Component extends Base {
       this.ac = this.ac || new AC();
       const ac = this.ac;
       if (ac.state === 'suspended') ac.resume();
-      const seq = {
+      const LAMP_HZ = [523, 587, 659, 784, 880], RITE_HZ = [294, 349, 440];   // Coral's five lamps C5 D5 E5 G5 A5; the rite's fire bowl D4, lamp F4, hull A4 (the Arch's D minor)
+      const S = {
         tap: [[880, 0.04]], roll: [[523, 0.08], [659, 0.1]], rare: [[659, 0.1], [784, 0.1], [988, 0.16]],
         mythic: [[784, 0.1], [988, 0.1], [1175, 0.1], [1568, 0.3]], hit: [[160, 0.07]],
         win: [[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.28]], lose: [[392, 0.16], [311, 0.24]],
-        slash: [[620, 0.03], [420, 0.05]], level: [[523, 0.08], [784, 0.08], [1047, 0.22]], claim: [[784, 0.07], [1047, 0.14]]
-      }[kind];
+        slash: [[620, 0.03], [420, 0.05]], level: [[523, 0.08], [784, 0.08], [1047, 0.22]], claim: [[784, 0.07], [1047, 0.14]],
+        light: arg === 'long' ? [[523, 0.1], [784, 0.14], [1047, 0.9]] : [[523, 0.08], [784, 0.12], [1047, 0.45]],   // the one sound of a light kept: the title, a lamp, the window, the seat, the great lamp (long)
+        tick: [[+arg || 392, 0.08]], tend: [[+arg || 262, 0.08]], stir: [[+arg || 523, 0.12]],   // a stay heard growing: a lamp taking, a bed tended, the rare grass stirring
+        gutter: [[523, 0.08], [392, 0.16]], out: [[196, 0.3]], feed: [[196, 0.05], [294, 0.08], [392, 0.18]], log: [[147, 0.06]],
+        sprout: [[392, 0.1], [523, 0.16]], bloom: [[392, 0.08], [523, 0.08], [659, 0.3]], ice: [[1568, 0.1], [2093, 0.22]], melt: [[784, 0.08], [523, 0.2]],
+        lamp: [[LAMP_HZ[arg | 0] || 523, 0.3]], wrong: [[262, 0.2], [247, 0.3]], right: LAMP_HZ.map((f) => [f, 0.12]),   // Coral's call and answer
+        rite: [[RITE_HZ[arg | 0] || 294, 0.4]], seat: [[587, 0.8]], douse: [[440, 0.08], [349, 0.08], [294, 0.08]],
+        post: [[1047, 0.06], [1319, 0.14]], keep: [[659, 0.08], [880, 0.08], [1319, 0.26]],
+        dawn: [[330, 0.3], [494, 0.4], [659, 0.9]], knock: [[110, 0.05], [0, 0.1], [110, 0.05]], forge: [[98, 0.2], [147, 0.3], [196, 0.8]]
+      }, seq = S[kind];
       if (!seq) return;
+      const GAIN = { tap: 0.04, hit: 0.06, light: arg === 'long' ? 0.09 : 0.08, tick: 0.04, tend: 0.03, stir: 0.04, ice: 0.05, post: 0.04, dawn: 0.06, knock: 0.08 }, SQUARE = { hit: 1, feed: 1, log: 1, out: 1, knock: 1, forge: 1 };
+      const vol = GAIN[kind] || 0.07, wave = SQUARE[kind] ? 'square' : 'triangle';
       let t = ac.currentTime + 0.01;
-      seq.forEach(([f, d]) => {
-        const o = ac.createOscillator(), g = ac.createGain();
-        o.type = kind === 'hit' ? 'square' : 'triangle';
-        o.frequency.value = f;
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(kind === 'hit' ? 0.06 : 0.1, t + 0.012);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-        o.connect(g); g.connect(ac.destination);
-        o.start(t); o.stop(t + d + 0.03);
+      seq.forEach(([f, d], i) => {
+        if (f > 0) {
+          const o = ac.createOscillator(), g = ac.createGain(), last = i === seq.length - 1 && (kind === 'light' || kind === 'seat' || kind === 'dawn');
+          o.type = wave;
+          o.frequency.value = f;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+          if (last) g.gain.setValueAtTime(vol * 0.8, t + d * 0.3);   // the last note of a light decays slowly
+          g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+          o.connect(g); g.connect(ac.destination);
+          o.start(t); o.stop(t + d + 0.03);
+        }
         t += d * 0.9;
       });
     } catch (e) {}
@@ -6327,7 +6372,7 @@ class Game extends Component {
     const s = st.sight && st.sight.day === today ? st.sight : { day: today, n: 0 }, no = this.make(k.seed, 1).speciesNo, seen = (st.seen || []).slice(), events = [{ t: 'keep' }];
     if (no <= 48 && seen.indexOf(no) === -1) { seen.push(no); events.push({ t: 'species' }); }
     this.update({ caught: [{ seed: k.seed, stage: 1 }].concat(st.caught), seen: seen, day: e2.today, used: e2.used + c.cost, sight: { day: today, n: s.n + (c.free ? 1 : 0) }, pouch: (st.pouch || []).filter((x) => x !== k.seed) }, events);
-    this.sfx('claim'); return { ok: true, cost: c.cost, species: events.length > 1 };
+    this.sfx('keep'); return { ok: true, cost: c.cost, species: events.length > 1 };
   }
   // action mode: a defeated wild critter pays the lead critter XP (it can level up) and, for the first ACT_ESS_CAP kills each day, essence like a won wild battle
   actKill(foeK, leadK) {
@@ -6376,7 +6421,7 @@ class Game extends Component {
         }
         nb.log.push({ text: tr.name + ': "' + tr.winLine + '"' });
       }
-      setTimeout(() => this.sfx('win'), 250); this.buzz([40, 30, 40]);
+      setTimeout(() => this.sfx(tr && tr.tower ? 'dawn' : 'win'), 250); this.buzz([40, 30, 40]);   // the Watch: dawn, not a fight won
     } else if (lost) {
       nb.over = true; nb.win = false;
       if (!nb.draw) { events.push({ t: 'loss' }); setTimeout(() => this.sfx('lose'), 250); }
@@ -6930,7 +6975,7 @@ const APP = (() => {
     if (window.__noTitle) { then(); return; }
     $('title').hidden = false; $('hud').hidden = true; WORLD.setPaused(true);
     const btn = $('title-light');
-    btn.onclick = () => { btn.onclick = null; game.sfx('claim'); $('title').classList.add('out'); WORLD.setPaused(false); WORLD.go('town');   // the same crossing as a zone change, under the fading title
+    btn.onclick = () => { btn.onclick = null; game.sfx('light'); $('title').classList.add('out'); WORLD.setPaused(false); WORLD.go('town');   // the same crossing as a zone change, under the fading title
       setTimeout(() => { $('title').hidden = true; $('title').classList.remove('out'); then(); }, window.__noTransition ? 0 : 650); };
   }
   function openStarter() {
@@ -7305,7 +7350,7 @@ const APP = (() => {
     else if (o.always) want = dark ? 1 : 0;
     else if (mine) {
       const f = advOf().flags, key = 'own:' + o.id;
-      if (!f[key] && tr) { const P = WORLD.pos(), px = P.x / 32, py = P.y / 32; let pi = 0, bd = 1e9; tr.cells.forEach((c, i) => { const d = (c[0] - px) * (c[0] - px) + (c[1] - py) * (c[1] - py); if (d < bd) { bd = d; pi = i; } }); if (bd < 36 && pi >= o.trail) advSave((a) => { a.flags[key] = true; }); }
+      if (!f[key] && tr) { const P = WORLD.pos(), px = P.x / 32, py = P.y / 32; let pi = 0, bd = 1e9; tr.cells.forEach((c, i) => { const d = (c[0] - px) * (c[0] - px) + (c[1] - py) * (c[1] - py); if (d < bd) { bd = d; pi = i; } }); if (bd < 36 && pi >= o.trail) { advSave((a) => { a.flags[key] = true; }); game.sfx('post'); } }   // your keeping heard once per post
       want = advOf().flags[key] ? 1 : 0;
     }
     else if (o.wave) want = dark && (Math.floor(now / 1100) % (o.wave.n + 3) === o.wave.i || Math.floor(now / 1100) % (o.wave.n + 3) === o.wave.i + 1) ? 1 : 0;
@@ -7359,11 +7404,11 @@ const APP = (() => {
     const seq = (a.flags.rite || []).slice();
     if (seq.indexOf(o.order) !== -1) { toast('It is already lit.'); return; }
     if (o.order === seq.length) {
-      seq.push(o.order); advSave((x) => { x.flags.rite = seq; }); game.sfx('claim');
-      if (seq.length === 3) { toast('The hull\u2019s lantern catches. The empty seat flares gold, and far to the north stone grinds aside.'); setTimeout(() => { advSave((x) => { x.flags.rubble = true; }); applyDungeon(); game.sfx('claim'); }, 700); }
+      seq.push(o.order); advSave((x) => { x.flags.rite = seq; }); game.sfx('rite', o.order);   // fire bowl D4, lamp F4, hull A4: the Arch's own key
+      if (seq.length === 3) { toast('The hull\u2019s lantern catches. The empty seat flares gold, and far to the north stone grinds aside.'); setTimeout(() => { advSave((x) => { x.flags.rubble = true; }); applyDungeon(); game.sfx('seat'); game.sfx('light'); }, 700); }
       else toast(seq.length === 1 ? 'The fire bowl catches. One light burns.' : 'The lamp wakes. Two lights burn.');
     } else {
-      advSave((x) => { x.flags.rite = []; }); game.sfx('tap');
+      advSave((x) => { x.flags.rite = []; }); game.sfx('douse');
       toast(a.clues.indexOf('camp') !== -1 ? 'The lights gutter out. The camp rhyme: fire first, then lamp, then hull.' : 'The lights gutter out. Maybe the order matters.');
     }
   }
@@ -7382,20 +7427,22 @@ const APP = (() => {
   }
   // ---- the Lamp Tower: levers flip gates (open = an odd number of its levers are ON), the beacon door leads in, the great lamp ends the climb ----
   // the Lamp Tower (Meaning: the way home is lit by you): a gate opens once the lamp of its chamber has been kept; a lamp takes while you stay beside it (about CL_S seconds), and a kept lamp is saved. Lighting the beacon counts every lamp as kept (old saves).
-  const CL_S = 2.4, CL_REACH = 1.9; let clK = {}, clStamp = 0;
+  const CL_S = 2.4, CL_REACH = 1.9; let clK = {}, clStamp = 0, clTick = {}, clPeak = {};
   const lampKept = (id) => !!(advOf().flags['cl:' + id] || advOf().flags.lampLit);
   function applyLamp() { const m = WORLD.MAPS['dg-lamp']; if (!m || !m.gates) return; Object.keys(m.gates).forEach((gid) => WORLD.setGate('dg-lamp', gid, m.gates[gid].every(lampKept))); }
   function chamberlampState(o) {
     if (lampKept(o.id)) return { lit: 1 };
     const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - clStamp) / 1000)); clStamp = now;
     const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)), near = d <= CL_REACH && !WORLD.moving();
-    let k = clK[o.id] || 0; k = near ? Math.min(1, k + dt / CL_S) : Math.max(0, k - dt * 0.8); clK[o.id] = k;
-    if (k >= 1) { advSave((a) => { a.flags['cl:' + o.id] = true; }); applyLamp(); game.sfx('claim'); }
+    const k0 = clK[o.id] || 0; let k = near ? Math.min(1, k0 + dt / CL_S) : Math.max(0, k0 - dt * 0.8); clK[o.id] = k;
+    if (k > k0 && k < 1) { clPeak[o.id] = Math.max(clPeak[o.id] || 0, k); if (now - (clTick[o.id] || 0) >= 600) { clTick[o.id] = now; game.sfx('tick', 392 + 392 * k); } }   // the stay heard growing
+    else if (k < k0) { if (k === 0) { if ((clPeak[o.id] || 0) > 0.3) game.sfx('gutter'); clPeak[o.id] = 0; } clTick[o.id] = 0; }   // the withdrawal felt: a lamp that had taken gutters out
+    if (k >= 1) { advSave((a) => { a.flags['cl:' + o.id] = true; }); applyLamp(); game.sfx('light'); }
     return { lit: k };
   }
   // ---- Wren's Gym: the trial of being tended (Meaning: you grew because someone stayed with you). Press Tend by a seedling, then STAY: it grows about one stage per 2.5 s, two stages to bloom.
   // Step away and it stops, keeping what it grew (a stage is saved the moment it is reached, nothing is ever lost). All four in bloom and the vines draw back. Old saves (Wren beaten, or her seal) find the way open. ----
-  const BED_STAGE_S = 2.5, BED_REACH = 1.9; let tending = null, tendP = 0, tendStamp = 0;
+  const BED_STAGE_S = 2.5, BED_REACH = 1.9; let tending = null, tendP = 0, tendStamp = 0, tendTick = 0;
   function gymOpen(id) { const f = advOf().flags, npc = game.state.npc || {}; return !!f['gym:' + id] || (npc.cleared || []).indexOf(id) !== -1 || (npc.seals || []).indexOf(id) !== -1; }
   function gymWrenOpen() { return gymOpen('wren'); }
   function applyGym() {
@@ -7411,10 +7458,10 @@ const APP = (() => {
     const now = performance.now(), dt = Math.min(0.3, (now - stillStamp) / 1000); stillStamp = now;
     const P = WORLD.pos(), tx = Math.floor(P.x / 32), ty = Math.floor(P.y / 32), near = (c) => Math.max(Math.abs(c[0] - tx), Math.abs(c[1] - ty)) <= 1;
     if (WORLD.moving()) {
-      stillT = 0; const melt = iceCells.filter((c) => !near(c)); if (melt.length) { WORLD.setTiles('gym-glacia', melt, '~'); iceCells = iceCells.filter(near); }
+      stillT = 0; const melt = iceCells.filter((c) => !near(c)); if (melt.length) { WORLD.setTiles('gym-glacia', melt, '~'); iceCells = iceCells.filter(near); game.sfx('melt'); }
     } else {
       stillT += dt;
-      if (stillT >= STILL_S) { const grow = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = tx + dx, y = ty + dy; if (M.grid[y] && M.grid[y][x] === '~') grow.push([x, y]); } if (grow.length) { WORLD.setTiles('gym-glacia', grow, '.'); iceCells = iceCells.concat(grow); game.sfx('tap'); } }
+      if (stillT >= STILL_S) { const grow = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = tx + dx, y = ty + dy; if (M.grid[y] && M.grid[y][x] === '~') grow.push([x, y]); } if (grow.length) { WORLD.setTiles('gym-glacia', grow, '.'); iceCells = iceCells.concat(grow); game.sfx('ice'); } }
     }
     if (ty <= 8 && M.pool && ty < M.pool[1]) gymDone('glacia', 'The pool goes still, and stays.');   // the far shore
   }, 100);
@@ -7423,36 +7470,37 @@ const APP = (() => {
   function brazierState(o) {
     const now = performance.now(), dt = Math.min(0.2, Math.max(0, (now - burnStamp) / 1000)); burnStamp = now;
     if (gymOpen('blaze')) return { burn: 1 };
-    Object.keys(burn).forEach((k) => { burn[k] = Math.max(0, burn[k] - dt / BURN_S); });
+    Object.keys(burn).forEach((k) => { const b0 = burn[k], b = Math.max(0, b0 - dt / BURN_S); burn[k] = b; if (b0 > 0.25 && b <= 0.25) game.sfx('gutter'); else if (b0 > 0 && b === 0) game.sfx('out'); });   // the fire heard dying
     return { burn: burn[o.id] || 0 };
   }
-  function woodUse() { if (carry) { toast('You already carry one.'); return; } carry = true; game.sfx('tap'); toast('You take a log.'); }
+  function woodUse() { if (carry) { toast('You already carry one.'); return; } carry = true; game.sfx('log'); toast('You take a log.'); }
   function brazierUse(o) {
     if (gymOpen('blaze')) { toast('It burns steadily.'); return; }
     if (!carry) { toast((burn[o.id] || 0) > 0 ? 'It is burning down.' : 'It is cold.'); return; }
-    carry = false; burn[o.id] = 1; game.sfx('tap'); toast('The fire takes it.');
+    carry = false; burn[o.id] = 1; game.sfx('feed'); toast('The fire takes it.');
     const M = WORLD.MAPS['gym-blaze']; if ((M.objects || []).filter((q) => q.kind === 'gbrazier').every((q) => (burn[q.id] || 0) > 0)) gymDone('blaze', 'Three fires. The slag cracks.');
   }
   // ---- Coral's Gym: answering across the dark. The lamps light in an order (the call), go out, and you touch them in that order (the answer); three rounds, one lamp longer each time. ----
   const CORAL_SEQ = [[2, 0, 4], [1, 3, 0, 2], [4, 1, 3, 0, 2]], CALL_STEP = 0.7;
-  let coral = { round: 0, phase: 'idle', i: 0, t: 0, lit: {}, answered: [] }, coralStamp = 0;
-  function coralReset() { coral = { round: 0, phase: 'idle', i: 0, t: 0, lit: {}, answered: [] }; }
-  function coralCall() { coral.phase = 'call'; coral.i = 0; coral.t = 0; coral.answered = []; coral.lit = {}; }
+  let coral = { round: 0, phase: 'idle', i: 0, t: 0, lit: {}, answered: [], slow: false }, coralStamp = 0;
+  function coralReset() { coral = { round: 0, phase: 'idle', i: 0, t: 0, lit: {}, answered: [], slow: false }; }
+  function coralCall() { coral.phase = 'call'; coral.i = -1; coral.t = 0; coral.answered = []; coral.lit = {}; }
+  const callStep = () => (coral.slow ? 1.0 : CALL_STEP);   // after a wrong answer the call comes again, slower
   setInterval(() => {
     const M = WORLD.map; if (!M || M.id !== 'gym-coral' || gymOpen('coral')) return;
     const now = performance.now(), dt = Math.min(0.2, (now - coralStamp) / 1000); coralStamp = now; coral.t += dt; const seq = CORAL_SEQ[coral.round];
     if (coral.phase === 'idle' && coral.t > 1.2) coralCall();
-    else if (coral.phase === 'call') { const k = Math.floor(coral.t / CALL_STEP); coral.lit = {}; if (k < seq.length) coral.lit[seq[k]] = (coral.t % CALL_STEP) < CALL_STEP * 0.8 ? 1 : 0; else if (coral.t > seq.length * CALL_STEP + 0.6) { coral.phase = 'listen'; coral.t = 0; coral.lit = {}; } }
+    else if (coral.phase === 'call') { const CS = callStep(), k = Math.floor(coral.t / CS); coral.lit = {}; if (k < seq.length) { coral.lit[seq[k]] = (coral.t % CS) < CS * 0.8 ? 1 : 0; if (k !== coral.i) { coral.i = k; game.sfx('lamp', seq[k]); } } else if (coral.t > seq.length * CS + 0.6) { coral.phase = 'listen'; coral.t = 0; coral.lit = {}; } }   // the call is heard: each lamp has its note
     else if (coral.phase === 'listen') { Object.keys(coral.lit).forEach((k) => { coral.lit[k] = Math.max(0, coral.lit[k] - dt * 2.5); }); if (coral.t > 9 && !coral.answered.length) { coral.phase = 'idle'; coral.t = 0; } }
     else if (coral.phase === 'wrong') { const on = Math.floor(coral.t / 0.3) % 2 === 0 && coral.t < 1.2; coral.lit = { 0: on ? 1 : 0, 1: on ? 1 : 0, 2: on ? 1 : 0, 3: on ? 1 : 0, 4: on ? 1 : 0 }; if (coral.t > 1.8) coralCall(); }
-    else if (coral.phase === 'right') { coral.lit = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1 }; if (coral.t > 1.4) { coral.round += 1; if (coral.round >= CORAL_SEQ.length) { gymDone('coral', 'The lamps stay lit. The chain falls.'); } else coralCall(); } }
+    else if (coral.phase === 'right') { coral.lit = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1 }; if (coral.t > 1.4) { coral.round += 1; coral.slow = false; if (coral.round >= CORAL_SEQ.length) { gymDone('coral', 'The lamps stay lit. The chain falls.'); } else coralCall(); } }
   }, 50);
   function lampUse(o) {
     if (gymOpen('coral')) { toast('It stays lit.'); return; }
     if (coral.phase !== 'listen') { if (coral.phase === 'call') toast('It is still speaking.'); return; }
-    const seq = CORAL_SEQ[coral.round]; coral.lit[o.n] = 1; game.sfx('tap');
-    if (seq[coral.answered.length] === o.n) { coral.answered.push(o.n); coral.t = 0; if (coral.answered.length === seq.length) { coral.phase = 'right'; coral.t = 0; } }
-    else { coral.phase = 'wrong'; coral.t = 0; }
+    const seq = CORAL_SEQ[coral.round]; coral.lit[o.n] = 1; game.sfx('lamp', o.n);   // the answer in the lamp's own note
+    if (seq[coral.answered.length] === o.n) { coral.answered.push(o.n); coral.t = 0; if (coral.answered.length === seq.length) { coral.phase = 'right'; coral.t = 0; setTimeout(() => game.sfx('right'), 300); } }
+    else { coral.phase = 'wrong'; coral.t = 0; coral.slow = true; setTimeout(() => game.sfx('wrong'), 300); }
   }
   function callampState(o2) { return { lit: gymOpen('coral') ? 1 : (coral.lit[o2.n] || 0) }; }
   const bedStage = (o) => (gymWrenOpen() ? 2 : (advOf().flags['wb:' + o.id] | 0));
@@ -7464,9 +7512,10 @@ const APP = (() => {
       if (d > BED_REACH) { tending = null; tendP = 0; }   // you walked away: it stops, quietly
       else {
         tendP += dt / BED_STAGE_S;
-        if (tendP >= 1) { tendP = 0; stage += 1; const key = 'wb:' + o.id; advSave((x) => { x.flags[key] = stage; }); game.sfx('tap');
+        if (now - tendTick >= 800) { tendTick = now; game.sfx('tend', 262 + 130 * tendP); }   // the stay heard growing
+        if (tendP >= 1) { tendP = 0; stage += 1; const key = 'wb:' + o.id; advSave((x) => { x.flags[key] = stage; }); game.sfx(stage >= 2 ? 'bloom' : 'sprout');
           if (stage >= 2) { tending = null; const M = WORLD.MAPS['gym-wren'], all = (M.objects || []).filter((q) => q.kind === 'gbed').every((q) => (advOf().flags['wb:' + q.id] | 0) >= 2);
-            if (all) { advSave((x) => { x.flags['gym:wren'] = true; }); applyGym(); game.sfx('claim'); toast('The vines draw back.'); setTimeout(() => toast('The vines draw back.'), 900); } else toast('It is in bloom.'); } }
+            if (all) { advSave((x) => { x.flags['gym:wren'] = true; }); applyGym(); toast('The vines draw back.'); setTimeout(() => toast('The vines draw back.'), 900); } else toast('It is in bloom.'); } }
         p = tendP;
       }
     }
@@ -7491,7 +7540,7 @@ const APP = (() => {
     if (lit && got) { toast('The great lamp burns steadily. Its light reaches the whole land.'); return; }
     if (lit) { showDialog('The great lamp', ['The glass glows warm under your hand. Something small stirs inside it.', 'A spark slips out of the flame, bright and curious, and lands on your shoulder.'], null, () => grantSecret(SECRET2_SEED)); return; }   // lit before Wickling existed, or by the dev tools
     showDialog('The great lamp', ['You touch the cold glass. A spark answers you.', 'The flame wakes, and a beam of light climbs out of the tower, over the peaks and across the whole land.', 'Far away, in the old arch and the lighthouse, something wakes too.', 'A spark slips out of the flame, bright and curious, and lands on your shoulder.'], null, () => {
-      advSave((x) => { x.flags.lampLit = true; }); WORLD.gust(); game.update({ essence: (game.state.essence || 0) + 30 }); game.sfx('mythic'); game.buzz([30, 40, 30, 40, 30, 40, 160]); toast('The beacon is lit! +30 essence.');
+      hush(1600); advSave((x) => { x.flags.lampLit = true; }); WORLD.gust(); game.update({ essence: (game.state.essence || 0) + 30 }); game.sfx('light', 'long'); game.buzz([20, 60, 120]); toast('The beacon is lit! +30 essence.');   // silence, the light, then dg-lamp@lit from the music loop (package R moves this to the lamp's stay)
       setTimeout(() => grantSecret(SECRET2_SEED), 1800);
     });
   }
@@ -7518,7 +7567,7 @@ const APP = (() => {
     if (lit && got) { toast('The furnace roars quietly. The whole crater glows.'); return; }
     if (lit) { showDialog('The great furnace', ['A coal in the ash shifts and looks up.', 'It climbs out, small and heavy and warm, and settles against your boots.'], null, () => grantSecret(SECRET3_SEED)); return; }   // lit before Slagback existed, or by the dev tools
     showDialog('The great furnace', ['You pull the soot-black door open. A single ember glows in the ash.', 'You blow on it. It brightens, then catches, then roars.', 'Far above, the whole crater lights up, and the old forge wakes for the first time in a very long time.', 'A coal in the ash shifts and looks up. It climbs out, small and heavy and warm.'], null, () => {
-      advSave((x) => { x.flags.forgeLit = true; }); game.update({ essence: (game.state.essence || 0) + 30 }); game.sfx('mythic'); game.buzz([30, 40, 30, 40, 30, 40, 160]); toast('The forge is lit! +30 essence.');
+      hush(1200); advSave((x) => { x.flags.forgeLit = true; }); game.update({ essence: (game.state.essence || 0) + 30 }); game.sfx('forge'); game.buzz([20, 60, 120]); toast('The forge is lit! +30 essence.');   // silence, the forge's sound, then dg-forge@lit from the music loop (package R quietens the ending)
       setTimeout(() => grantSecret(SECRET3_SEED), 1800);
     });
   }
@@ -7531,7 +7580,7 @@ const APP = (() => {
     if (o.id === 'names' && game.ladderStep() >= 5) { toast(o.text + ' The newest is yours.'); return; }   // the rail, once you have climbed
     if (o.kind === 'chamberlamp') { toast(lampKept(o.id) ? 'The lamp burns steadily.' : o.text); return; }
     if (o.clue) { const c = ADV.CLUES.find((q) => q.id === o.clue); showDialog('You look closer', [o.text], null, () => { if (c) gainClue(c); }); return; }
-    if (o.kind === 'windowlamp' && advOf().flags.lampLit && advOf().flags.homeLit !== new Date().toDateString()) { advSave((a) => { a.flags.homeLit = new Date().toDateString(); }); game.sfx('claim'); showDialog('The window', ['You light the lamp in the window. It faces the road.']); return; }   // Meaning: being the keeper is a small daily act
+    if (o.kind === 'windowlamp' && advOf().flags.lampLit && advOf().flags.homeLit !== new Date().toDateString()) { advSave((a) => { a.flags.homeLit = new Date().toDateString(); }); game.sfx('light'); game.buzz([20, 60, 120]); showDialog('The window', ['You light the lamp in the window. It faces the road.']); return; }   // Meaning: being the keeper is a small daily act
     if (o.kind === 'gbed') { gbedUse(o); return; }
     if (o.kind === 'woodpile') { woodUse(); return; }
     if (o.kind === 'gbrazier') { brazierUse(o); return; }
@@ -7743,7 +7792,7 @@ const APP = (() => {
   }
   // an action-mode duel ended: the same follow-ups the battle screen's close() gives
   function duelDone(tr, npc, won, lines) {
-    const g = game; musicLoop();
+    const g = game; if (tr.tower && won) hush(1200); musicLoop();   // dawn: a bar of silence, then the lamp that does not go out
     const grew = (lines || []).filter((l) => /grew to level/.test(l));
     if (tr.tower) { const res = g.state.towerResult; g.setState({ towerResult: null }); if (res) towerAfterClose(res); if (grew.length) setTimeout(() => toast(grew.join(' ')), 600); return; }
     const sealed = g.state.justSealed;
@@ -7849,15 +7898,25 @@ const APP = (() => {
   }
   const ROUTE = { wren: ['Elder Wren', 'Mossbrook', 'west', 'Moss Forest'], glacia: ['Glacia', 'Frosthold', 'north', 'Frost Peaks'], blaze: ['Blaze', 'Cinderport', 'south', 'Ember Fields'], coral: ['Admiral Coral', 'Coralbay', 'east', 'Tide Shore'] };
   const T_HAS = (id) => typeof MUSIC !== 'undefined' && MUSIC.tracks.indexOf(id) !== -1;
+  // silence as a sound (Meaning: a light is lit into quiet, and the music comes back changed): hush(ms) keeps the music off for that long; the loop then plays what the world now wants
+  let hushT = 0;
+  function hush(ms) { hushT = Date.now() + ms; if (typeof MUSIC !== 'undefined') MUSIC.play(null); }
   function musicTrack() {
-    const st = game.state;
+    const st = game.state, f = advOf().flags;
+    if (!$('title').hidden) return null;   // the title is silent until the light is touched (the first sound is one the player causes)
+    if (Date.now() < hushT) return null;
     if (aggroT && !open) { if (dlg || Date.now() - aggroT < 1500) return 'spotted'; aggroT = 0; }
     if (open) aggroT = 0;
-    { const di = ACT.duelInfo(); if (di && !open) return di.boss ? 'boss' : 'battle'; }   // the Watch: only the long nights (5, 10, 15, 20) carry the heavy track; the others are nights, not bosses
-    if (open && st.tab === 'battle') return st.trainer && (st.trainer.warden || st.trainer.leader || st.trainer.boss) ? 'boss' : 'battle';
+    { const di = ACT.duelInfo(); if (di && !open) { if (di.tower) return di.boss ? 'night@long' : 'night'; return di.boss ? 'trial' : 'battle'; } }   // a night of the Watch is a watch, not a fight; a keeper letting go is a trial, not a villain
+    if (open && st.tab === 'battle') return st.trainer && st.trainer.tower ? (st.trainer.warden ? 'night@long' : 'night') : (st.trainer && (st.trainer.warden || st.trainer.leader || st.trainer.boss) ? 'trial' : 'battle');
     if (WORLD.map && WORLD.map.id === 'in-tower') return 'watch';   // the lobby: a lamp that does not go out
-    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : (WORLD.map.base || WORLD.map.id)), alias = { descent: 'ember', ascent: 'frost', arena: 'moss', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide' }[id]; const base = alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
-    return !WORLD.map.interior && !WORLD.map.cave && timeOfDay() === 'night' && T_HAS(base + '@night') ? base + '@night' : base;   // at night the same tune, quieter
+    const id = WORLD.map && (WORLD.map.interior ? WORLD.map.parent : (WORLD.map.base || WORLD.map.id)), alias = { descent: 'ember', ascent: 'frost', arena: 'moss', 'route-mf': 'peak', 'route-cm': 'moss', 'route-fc': 'frost', 'route-cc': 'tide', 'gym-wren': 'mossbrook', 'gym-glacia': 'frosthold', 'gym-blaze': 'cinderport', 'gym-coral': 'coralbay' }[id]; const base = alias || (MUSIC.tracks.indexOf(id) !== -1 ? id : 'town');
+    if (base === 'dg-lamp') { const n = f.lampLit ? 3 : ['L1', 'L2', 'L3'].filter(lampKept).length; return n ? 'dg-lamp@' + n : 'dg-lamp'; }   // the music is the fourth lamp: a layer per lamp kept
+    if (base === 'dg-forge' && f.forgeLit) return 'dg-forge@lit';
+    if (base === 'dg-arch' && f.rubble) return 'dg-arch@seat';
+    if (base === 'town' && f.lampLit && f.homeLit !== new Date().toDateString()) return 'town@dark';   // the window dark: the village without its tune until you light it (Home and its interiors)
+    const tod = timeOfDay(), form = tod === 'night' ? '@night' : (tod === 'dusk' || tod === 'dawn' ? '@dusk' : '');
+    return !WORLD.map.interior && !WORLD.map.cave && form && T_HAS(base + form) ? base + form : base;   // at dusk the sound shifts with the light; at night the same tune, quieter
   }
   function musicLoop() { if (typeof MUSIC === 'undefined' || !game) return; MUSIC.setEnabled(!(game.state.settings && game.state.settings.music === false)); MUSIC.play(musicTrack()); }
   function start2() {
@@ -7899,7 +7958,7 @@ const APP = (() => {
         duelDone: (tr, npc, won, lines) => duelDone(tr, npc, won, lines),
         onKill: (foe, mine) => game.actKill(foe, mine),
         worthy: (k) => game.actWorthy(k), pouchAdd: (sd) => game.actPouchAdd(sd),
-        sfx: (k) => game.sfx(k)
+        sfx: (k, a) => game.sfx(k, a)
       });
       const ctr = () => { const r = ring.getBoundingClientRect(), w = wheel.getBoundingClientRect(); return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top }; };
       function openWheel() {

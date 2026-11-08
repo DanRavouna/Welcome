@@ -265,7 +265,7 @@ class Game extends Component {
     const s = st.sight && st.sight.day === today ? st.sight : { day: today, n: 0 }, no = this.make(k.seed, 1).speciesNo, seen = (st.seen || []).slice(), events = [{ t: 'keep' }];
     if (no <= 48 && seen.indexOf(no) === -1) { seen.push(no); events.push({ t: 'species' }); }
     this.update({ caught: [{ seed: k.seed, stage: 1 }].concat(st.caught), seen: seen, day: e2.today, used: e2.used + c.cost, sight: { day: today, n: s.n + (c.free ? 1 : 0) }, pouch: (st.pouch || []).filter((x) => x !== k.seed) }, events);
-    this.sfx('claim'); return { ok: true, cost: c.cost, species: events.length > 1 };
+    this.sfx('keep'); return { ok: true, cost: c.cost, species: events.length > 1 };
   }
   // action mode: a defeated wild critter pays the lead critter XP (it can level up) and, for the first ACT_ESS_CAP kills each day, essence like a won wild battle
   actKill(foeK, leadK) {
@@ -314,7 +314,7 @@ class Game extends Component {
         }
         nb.log.push({ text: tr.name + ': "' + tr.winLine + '"' });
       }
-      setTimeout(() => this.sfx('win'), 250); this.buzz([40, 30, 40]);
+      setTimeout(() => this.sfx(tr && tr.tower ? 'dawn' : 'win'), 250); this.buzz([40, 30, 40]);   // the Watch: dawn, not a fight won
     } else if (lost) {
       nb.over = true; nb.win = false;
       if (!nb.draw) { events.push({ t: 'loss' }); setTimeout(() => this.sfx('lose'), 250); }

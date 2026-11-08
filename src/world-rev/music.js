@@ -26,11 +26,11 @@ const MUSIC = (() => {
       lead: 'D5 - - - F5 - A5 - | D5 - - - F5 - - . | Bb4 - - - D5 - F5 - | E5 - - - C#5 - - . | A5 - - - F5 - D5 - | G5 - - - Bb5 - D6 - | F5 - - - D5 - Bb4 - | E5 - C#5 - A4 - - .' },
     // the Lamp Tower (Meaning: the music is the fourth lamp): the dark form has no drums and half the notes, held low, in the Watch's key (the way home and the long watch share it);
     // each lamp kept below the great lamp adds a layer (@1 the bass walks, @2 the whole tune comes back an octave down, @3 = @lit the drums and the tune as written)
-    'dg-lamp': { bpm: 66, wave: 'triangle', chords: 'Em C G D Em C Am B', bass: 'R - - - - - - -', drums: '. . . . . . . .',
+    'dg-lamp': { bpm: 66, wave: 'triangle', vol: 0.7, chords: 'Em C G D Em C Am B', bass: 'R - - - - - - -', drums: '. . . . . . . .',
       lead: 'G4 - - - D5 - - - | E4 - - - B4 - - . | B4 - - - G4 - - - | D5 - - - A4 - - . | G4 - - - D5 - - - | C5 - - - B4 - - - | C5 - - - A4 - - - | B4 - - - - - - .' },
-    'dg-lamp@1': { bpm: 66, wave: 'triangle', chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: '. . . . . . . .',
+    'dg-lamp@1': { bpm: 66, wave: 'triangle', vol: 0.8, chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: '. . . . . . . .',
       lead: 'G4 - - - D5 - - - | E4 - - - B4 - - . | B4 - - - G4 - - - | D5 - - - A4 - - . | G4 - - - D5 - - - | C5 - - - B4 - - - | C5 - - - A4 - - - | B4 - - - - - - .' },
-    'dg-lamp@2': { bpm: 66, wave: 'triangle', chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: '. . . . . . . .',
+    'dg-lamp@2': { bpm: 66, wave: 'triangle', vol: 0.9, chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: '. . . . . . . .',
       lead: 'G4 - B4 - D5 - B4 - | E4 - G4 - B4 - - . | C4 - E4 - G4 - E4 - | D4 - F#4 - A4 - - . | G4 - B4 - D5 - G5 - | E5 - D5 - B4 - G4 - | C5 - B4 - A4 - G4 - | F#4 - A4 - B4 - - .' },
     'dg-lamp@3': { bpm: 66, wave: 'triangle', chords: 'Em C G D Em C Am B', bass: 'R - - - 5 - - -', drums: 'k . h . s . h .',
       lead: 'G5 - B5 - D6 - B5 - | E5 - G5 - B5 - - . | C5 - E5 - G5 - E5 - | D5 - F#5 - A5 - - . | G5 - B5 - D6 - G6 - | E6 - D6 - B5 - G5 - | C6 - B5 - A5 - G5 - | F#5 - A5 - B5 - - .' },
