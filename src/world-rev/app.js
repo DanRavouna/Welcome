@@ -597,7 +597,7 @@ const APP = (() => {
       });
     };
     zone('frost', [
-      { lv: 5, id: 'glacia', name: 'Glacia', at: 'leader', kind: 'leader', leader: true, pal: { h: '#DCEBFF', y: '#8FD8EA', Y: '#5E97AE', p: '#2E4A66' }, types: ['Frost', 'Stone'], size: 4, stage: 2, pick: 0.75, firstReward: 25,
+      { lv: 1, id: 'glacia', name: 'Glacia', at: 'leader', kind: 'leader', leader: true, pal: { h: '#DCEBFF', y: '#8FD8EA', Y: '#5E97AE', p: '#2E4A66' }, types: ['Frost', 'Stone'], size: 4, stage: 2, pick: 0.75, firstReward: 25,
         intro: ['I am Glacia, leader of Frost Peaks.', 'My critters were born in the snow. They do not melt easily.'], winLine: 'The cold keeps what it is given. Take the Frost Seal. It will keep.', sealLine: 'The Frost Seal is quiet. Quiet fires last longest. Ember Fields awaits at level 6.', beatenLines: ['Rest by the fire, trainer. We can battle again tomorrow.'] },
       { lv: 9, id: 'bram', name: 'Hiker Bram', at: 'trainer', kind: 'trainer', trainer: true, pal: { cap: true, c: '#C0392B', y: '#8A5A34', Y: '#6B4626' }, types: ['Frost', 'Stone'], size: 4, stage: 2, pick: 0.5,
         intro: ['These peaks make critters tough.', 'Think yours can handle the cold?'], winLine: 'You climbed right over me! Well earned.', beatenLines: ['My critters need a rest. Tomorrow, then!'] },
@@ -606,7 +606,7 @@ const APP = (() => {
         progress: () => 'Still no Stone critter? They live in the tall grass here in Frost Peaks.', thanks: ['A Stone critter! It is even rockier than I imagined.', 'Take these 6 essence, as thanks.'], after: ['I will treasure that picture.'] }
     ]);
     zone('ember', [
-      { lv: 11, id: 'blaze', name: 'Blaze', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#1E1A2A', y: '#FF7A45', Y: '#C2410C' }, types: ['Ember', 'Volt'], size: 4, stage: 3, pick: 0.55, firstReward: 30,
+      { lv: 5, id: 'blaze', name: 'Blaze', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#1E1A2A', y: '#FF7A45', Y: '#C2410C' }, types: ['Ember', 'Volt'], size: 4, stage: 3, pick: 0.55, firstReward: 30,
         intro: ['So you made it to the heart of Ember Fields.', 'I am Blaze. My team burns at full power. Ready?'], winLine: 'You did not put it out. You fed it. Take the Ember Seal.', sealLine: 'This one wants feeding every day. Tide Shore opens at level 9.', beatenLines: ['My flames need to rekindle. Come back tomorrow!'] },
       { lv: 10, id: 'kiki', name: 'Kiki', at: 'trainer', kind: 'trainer', trainer: true, pal: { h: '#F28C28', y: '#D8574A', Y: '#A8382E' }, types: ['Ember', 'Volt'], size: 3, stage: 2, pick: 0.55,
         intro: ['It is hot out here, and so are my critters!', 'Ready to feel the heat?'], winLine: 'Okay, okay, you win. That was electric!', beatenLines: ['My team is still cooling down. Come back tomorrow!'] },
@@ -615,7 +615,7 @@ const APP = (() => {
         progress: () => 'Evolve a critter in the Dex, then come back. Release extra critters to earn essence.', thanks: ['Whoa, look at the size of it!', 'Here, 8 essence. Thanks for showing me.'], after: ['One day I will evolve mine too.'] }
     ]);
     zone('moss', [
-      { lv: 6, id: 'wren', name: 'Elder Wren', at: 'leader', kind: 'leader', leader: true, pal: { h: '#E8E8F0', y: '#4E6B19', Y: '#2E4210', p: '#4A3424' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.6, firstReward: 20,   // lv 6: package M owns the number (first guess, 11 §1 CD-5)
+      { lv: 5, id: 'wren', name: 'Elder Wren', at: 'leader', kind: 'leader', leader: true, pal: { h: '#E8E8F0', y: '#4E6B19', Y: '#2E4210', p: '#4A3424' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.6, firstReward: 20,   // leaders' lv simmed in docs/review/16-balance.md (Wren 5, Glacia 1, Blaze 5, Coral 8)
         intro: ['Welcome, young trainer. I am Elder Wren, leader of Moss Forest.', 'Show me that you and your critters grow together.'], winLine: 'Four in bloom. I did not see you hurry.', sealLine: 'The first fire is the easiest to keep. Frost Peaks opens at level 3.', beatenLines: ['The forest needs rest. Visit me again tomorrow.'] },
       { lv: 4, id: 'ivy', name: 'Ivy', at: 'trainer', kind: 'trainer', trainer: true, pal: { h: '#2E7D32', y: '#F5A3D0', Y: '#D86BA6' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.3,
         intro: ['Shh, the forest is listening.', 'Let us give it a battle worth hearing.'], winLine: 'Beautifully done. The forest approves.', beatenLines: ['Let the forest rest today. Tomorrow we can battle again.'] },
@@ -623,7 +623,7 @@ const APP = (() => {
         lines: ['Every critter has a nature. Brave ones hit harder but bruise easier.', 'Pick the nature that fits how you like to battle.'] }
     ]);
     zone('tide', [
-      { lv: 12, id: 'coral', name: 'Admiral Coral', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#F8F8F8', y: '#1E2A4A', Y: '#0E1A38', p: '#1E2A4A' }, types: ['Tide', 'Dusk'], size: 5, stage: 3, pick: 0.75, firstReward: 35,
+      { lv: 8, id: 'coral', name: 'Admiral Coral', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#F8F8F8', y: '#1E2A4A', Y: '#0E1A38', p: '#1E2A4A' }, types: ['Tide', 'Dusk'], size: 5, stage: 3, pick: 0.75, firstReward: 35,
         intro: ['Admiral Coral, leader of Tide Shore. Five critters, every one a veteran of the storm.', 'Win, and you will have tended every fire in the land.'], winLine: 'The sea gives back what it is given. The Tide Seal is yours.', sealLine: 'Four fires. Someone left a light on for you. Perhaps they still do. The trail north of Sproutvale is open.', beatenLines: ['My fleet is in the harbor. Challenge me again tomorrow.'] },
       { lv: 19, id: 'marlo', name: 'Captain Marlo', at: 'trainer', kind: 'trainer', trainer: true, pal: { cap: true, c: '#1E2A4A', y: '#FFFFFF', Y: '#C9D3E6' }, types: ['Tide', 'Dusk'], size: 4, stage: 3, pick: 0.4,
         intro: ['Ahoy! Four critters, one captain.', 'Can your crew weather all of them?'], winLine: 'You sailed through my whole crew! A fine captain you would make.', beatenLines: ['My crew is resting below deck. Tomorrow, sailor!'] },

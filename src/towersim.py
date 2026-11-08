@@ -29,8 +29,11 @@ JS = """(cfg) => { const g = APP.game; if (cfg.curve) { window.__towerCurve = Ob
     out[name] = { median: med, pClear: { 3: atLeast[3], 5: atLeast[5], 10: atLeast[10], 15: atLeast[15], 20: atLeast[20] }, floorWinPct: floorWin.map((w, i) => floorTry[i] ? Math.round(100 * w / floorTry[i]) : null).slice(1) }; }
   return out; }"""
 cfg.setdefault('n', 300); cfg.setdefault('models', [['A fresh Lv14', 3, 14, 10], ['B mid Lv17', 3, 17, 15], ['C maxed Lv20', 3, 20, 25]])
+import os
+HTML = os.environ.get('SIM_HTML', 'file:///mnt/user-data/outputs/critter-roll-world.html')   # env SIM_HTML=<path or URL> loads another build (e.g. games/critter-roll-review/index.html)
+if '://' not in HTML: HTML = 'file://' + os.path.abspath(HTML)
 with sync_playwright() as p:
-    b = p.chromium.launch(); pg = b.new_page(); pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
+    b = p.chromium.launch(); pg = b.new_page(); pg.goto(HTML); pg.wait_for_timeout(1200)
     r = pg.evaluate(JS, cfg)
     for k, v in r.items(): print(f"{k:14s} median floors cleared {v['median']:2d} | % clearing >=3:{v['pClear']['3']:3d} >=5:{v['pClear']['5']:3d} >=10:{v['pClear']['10']:3d} >=15:{v['pClear']['15']:3d} all20:{v['pClear']['20']:3d}")
     if cfg.get('detail'):
