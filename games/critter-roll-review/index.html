@@ -7478,6 +7478,7 @@ const APP = (() => {
   // ---------- dialogue ----------
   let dlg = null;
   function showDialog(name, lines, choices, onEnd) {
+    if (dlg && dlg.timer) clearInterval(dlg.timer);   // a dialog opened over another: stop the old typewriter (it threw every 28 ms once the old one ended)
     dlg = { name: name, lines: lines, i: 0, shown: 0, choices: choices || null, onEnd: onEnd, timer: null };
     lastOpener = lastOpener || document.activeElement;
     WORLD.setPaused(true); $('hud').hidden = true; $('dlg').hidden = false; $('dlg-name').textContent = name;
