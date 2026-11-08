@@ -1053,7 +1053,7 @@ class Component extends Base {
         const seen = (st.seen || []).slice();
         const events = [{ t: 'keep' }];
         if (seen.indexOf(no) === -1) { seen.push(no); events.push({ t: 'species' }); }
-        this.update({ caught: [{ seed: shownSeed, stage: 1 }].concat(st.caught), seen: seen }, events);
+        this.update({ caught: [{ seed: shownSeed, stage: 1 }].concat(st.caught), seen: seen, returned: (st.returned || []).filter((x) => x !== shownSeed) }, events);   // a critter met again on its shore or on a line leaves the returned pool when kept
         this.sfx('tap');
       },
       release: () => {
@@ -1066,7 +1066,7 @@ class Component extends Base {
           essence: st.essence + releaseGain,
           selected: null, armed: false,
           fighter: st.fighter === entry.seed ? null : st.fighter,
-          battle: b && b.s[0].k.seed === entry.seed ? null : b
+          battle: st.battle && st.battle.s[0].k.seed === entry.seed ? null : st.battle   /* (b was never defined here: Let it go and Evolve threw) */
         }, [{ t: 'release' }]);
       },
       evolve: () => {
@@ -1074,7 +1074,7 @@ class Component extends Base {
         this.update({
           caught: st.caught.map((e) => (e.seed === entry.seed ? Object.assign({}, e, { stage: e.stage + 1 }) : e)),
           essence: st.essence - evolveCost,
-          battle: b && b.s[0].k.seed === entry.seed ? null : b
+          battle: st.battle && st.battle.s[0].k.seed === entry.seed ? null : st.battle   /* (b was never defined here: Let it go and Evolve threw) */
         }, [{ t: 'evolve' }]);
       },
       addEssence: () => this.update({ essence: st.essence + 10 }),
