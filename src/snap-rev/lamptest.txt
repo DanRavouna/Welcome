@@ -1,0 +1,27 @@
+climb graph: {'none': {'n': #, 'top': False, 'lamps': ['L#']}, 'L#': {'n': #, 'top': False, 'lamps': ['L#', 'L#']}, 'L#': {'n': #, 'top': False, 'lamps': ['L#', 'L#', 'L#']}, 'all': {'n': #, 'top': True, 'lamps': ['L#', 'L#', 'L#']}, 'dark': True, 'gates': {'g#': ['L#'], 'g#': ['L#'], 'g#': ['L#']}}
+no lamp kept: the top is out of reach and only L# can be reached: True
+each kept lamp opens the next chamber (L# -> L#, L#+L# -> L#), all three -> the top: True
+nothing closes: reachable cells only grow: True | the climb is dark: True
+door label: Examine the beacon door
+first visit dialogue: The great door is not locked. It never was.
+inside: dg-lamp | open.lamp saved: True
+start: g#:shut g#:shut g#:shut
+after # s by L# (not yet): g#:shut g#:shut g#:shut | kept flag: False
+walk away and back, # s more: fades then takes: g#:open g#:shut g#:shut | kept flag: True
+after L# : g#:open g#:open g#:shut
+after L# : g#:open g#:open g#:open
+with all three lamps kept, reachable (walls of the real map, NPCs solid): {'bex': True, 'odo': True, 'maren': True, 'greatlamp': True, 'chest#': True}
+after a reload the kept lamps stay kept: g#:open g#:open g#:open
+bex {'at': [#...], 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False, 'bonus': #}
+odo {'at': [#...], 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False, 'bonus': #}
+maren {'at': [#...], 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': True, 'bonus': #}
+lamp before the Warden falls: The Warden stands between you and the great lamp.
+Warden down but one lamp below unkept: The glass stays cold.
+lamp dialogue: # lines
+lit: True | essence + # | title: True
+again: New title: Lamplighter (+# essence). Wear it from | essence unchanged: True
+brightness above the beacon lantern: lit # vs unlit # | brighter when lit: True
+journal: ['The Lamp Tower: the great lamp is lit, and its beam crosses ']
+music in the tower: dg-lamp | own track: True
+after reload: gates g#:open g#:open g#:open | flags: {"cl:L#":true,"cl:L#":true,"cl:L#":true,"lampLit":true,"wickling":true,"lv:L#":true}
+errors: none

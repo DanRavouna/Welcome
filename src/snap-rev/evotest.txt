@@ -1,0 +1,5 @@
+stage 1 blobs identical to the golden build (20 seeds): True
+evolved forms clipped by the sprite edge: {'n': 1200, 'bad': 0}
+evolution vs base: {'seeds': 240, 'more parts each stage': 240, 'bigger sprite each stage': 225, 'stage 3 adds wings/gem': 240, 'stats rise per stage': 240}
+type kits complete: True
+errors: none

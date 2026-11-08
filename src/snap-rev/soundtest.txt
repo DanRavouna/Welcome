@@ -1,0 +1,13 @@
+ok a new track starts from a placeholder tune with two channels at the chosen tempo | (#, #)
+ok tapping the grid places notes: C# at step # and G# at step # (octave # at the bottom) | ['C#', '.', '.', '.', 'G#', '.']
+ok hold stretches the note over the next steps | ['C#', '-', '-', '.']
+ok tapping a placed note again clears it
+ok octave up places the same row an octave higher
+ok a channel can be added and becomes the one edited
+ok a noise channel hits on any row
+ok while playing, the synth schedules about four steps a second over real time | rate=# steps/s (ac may be suspended in headless)
+ok stop clears the playing track
+ok a new sound starts from the chosen preset | {'wave': 'square', 'notes': [[#...], [#...], [#...], [#...]]}
+ok a note can be added and its pitch edited
+ok the data round-trips
+ok no page errors through the run | []

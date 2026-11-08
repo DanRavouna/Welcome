@@ -1,0 +1,23 @@
+map cards:
+Sproutvale | Home and the Lab | <weather> | You are here
+Moss Forest | Moss and Bloom critters | #/# species found | Elder Wren: not yet beaten | <weather> | Travel here
+Frost Peaks | Frost and Stone critters | #/# species found | Glacia: not yet beaten | <weather> | Travel here
+Ember Fields | Ember and Volt critters | #/# species found | Blaze: not yet beaten | <weather> | Opens at level #
+Tide Shore | Tide and Dusk critters | #/# species found | Admiral Coral: not yet beaten | <weather> | Opens at level #
+travel button in card: ['frost']
+after travel: frost | Frost Peaks | toast: You travel to Frost Peaks.
+here marker on frost: True | moss travel from frost -> moss
+gates: see map texts
+time of day by hour: {'#': 'night', '#': 'dawn', '#': 'day', '#': 'dusk', '#': 'night'}
+world tint at #h / #h: {'#': 'day', '#': 'night'}
+tint with setting off at #h: day
+encounter types [night+low roll, night+high roll, daytime]: ['Dusk', 'Frost+Stone', 'Frost+Stone']
+code length: # | starts: CRITTER#.eyJ
+fake code -> That does not look like a Critter Roll save code.
+bad checksum -> This code is incomplete or was changed. Copy the whole code and try again.
+tampered -> This code is incomplete or was changed. Copy the whole code and try again.
+valid -> # critters, # species, level #, # seals
+export shows current save: True
+step #: Found a save with # critters, # species, level #, # seals. This replaces your current game. Tap again to confirm. | button: Replace my save
+restored after reload: {'kept': #, 'essence': #, 'seen': #, 'xp': #}
+errors: none

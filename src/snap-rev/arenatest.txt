@@ -1,0 +1,17 @@
+ok five rivals in ladder order | [['juno', #, #, #], ['bastian', #, #, #], ['sable', #, #, #], ['halvard', #, #, #], ['ash', #, #, #]]
+ok step #: Juno waits on the sand, the others by their tents | [['juno', #, #, #], ['bastian', #, #, #], ['sable', #, #, #], ['halvard', #, #, #], ['ash', #, #, #]]
+ok only Juno can be fought first | [['juno', True], ['bastian', False], ['sable', False], ['halvard', False], ['ash', False]]
+ok Bastian out of order: a line, no fight | ['Juno first. That is the order.']
+ok beating Juno: step #, +# essence, cleared | [#, #, True]
+ok after the win the day is spent: Bastian waits until tomorrow
+ok Bastian the same day: one a day | ['One a day. Come back with the sun.']
+ok the Challenger title is earned on the first step
+ok next day: Bastian ready, Juno ready for a rematch, Sable still waits | [['juno', True], ['bastian', True], ['sable', False], ['halvard', False], ['ash', False]]
+ok four steps climbed
+ok beating Ash: step # and Kindlemane joins (a secret, level #, one form) | [[#, #, True], [#...]]
+ok Kindlemane: Ember, Mythic, Standfast, no. # | ['Kindlemane', 'Ember', 'Mythic', 'Standfast', #]
+ok Ring Champion earned
+ok Kindlemane is listed with the secrets in the Dex once the ladder is climbed
+ok after the climb every rival sits by a tent (placed again on entering the Arena) | [['juno', #, #, #], ['bastian', #, #, #], ['sable', #, #, #], ['halvard', #, #, #], ['ash', #, #, #]]
+ok Standfast: below half HP Kindlemane takes less
+ok no page errors | []

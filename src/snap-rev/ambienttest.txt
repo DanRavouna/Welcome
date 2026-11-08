@@ -1,0 +1,48 @@
+per-map ambient (planned -> spawned):
+town # -> # butterfly,bird,firefly,leaf
+peak # -> # glint,bird
+ascent # -> # glint,bird
+descent # -> # bird,ember
+mossbrook # -> # butterfly,bird,firefly,leaf
+frosthold # -> # glint
+cinderport # -> # bird,ember
+coralbay # -> # crab,bird,leaf,spray
+frost # -> # glint
+ember # -> # bird,ember
+moss # -> # butterfly,bird,firefly,leaf
+tide # -> # crab,bird,leaf,spray
+route-mf # -> # butterfly,bird,firefly,glint,leaf
+route-cm # -> # butterfly,bird,firefly,leaf,ember
+route-fc # -> # glint,crab,bird
+route-cc # -> # crab,bird,spray
+route-mf-gate # -> #
+route-mf-hollow # -> #
+route-mf-lookout # -> #
+route-mf-fork # -> #
+route-mf-cliff # -> #
+route-cm-edge # -> #
+route-cm-smoulder # -> #
+route-cm-crossing # -> #
+route-cm-hollow # -> #
+route-fc-shelf # -> #
+route-fc-strand # -> #
+route-fc-landing # -> #
+route-fc-skerry # -> #
+route-cc-pier # -> #
+route-cc-shoals # -> #
+route-cc-steam # -> #
+route-cc-drowned # -> #
+dg-arch # -> #
+dg-lamp # -> #
+dg-forge # -> #
+gym-wren # -> #
+gym-glacia # -> #
+gym-blaze # -> #
+gym-coral # -> #
+indoors ambient count: #
+bird flies off when approached: {'fly': True}
+crabs on sand tiles only: True
+visible ambient (day, clear, moss): {'butterfly': #, 'bird': #}
+visible ambient (rain): #
+visible at night (moss): {'firefly': #, 'leaf': #}
+errors: none

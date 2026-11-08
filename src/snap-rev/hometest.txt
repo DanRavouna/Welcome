@@ -1,0 +1,3 @@
+home: door 'Enter home' -> in-home | resident ok True | device reachable True 'Check your records' opens [True, 'badges'] | exit -> ['town', #, #] (door [#, #])
+lab: door 'Enter lab' -> in-lab | resident ok True | device reachable True 'Open the Dex' opens [True, 'dex'] | exit -> ['town', #, #] (door [#, #])
+errors: none

@@ -1,0 +1,5 @@
+ok every save field comes back as written after a reload | []
+ok seen is rebuilt from the kept critters (species of seeds # and #) | [#...]
+ok the Dex species count matches seen (#/#) | {'toggle': ['My critters (#)', 'Species (#/#)'], 'found': #}
+ok the record on disk holds every field | []
+ok no page errors | []

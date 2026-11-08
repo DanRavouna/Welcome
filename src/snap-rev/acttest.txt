@@ -1,0 +1,22 @@
+no experimental switches in Settings (the seed hook forces test mode on, whose note says "Test mode", so that text is not checked here; p# and devtest run without the hook): True
+without the critter (test hook) the old game is used: no attack button, no enemies: [True, #, False]
+on by default: button shown, enemies spawned: [True, #, True]
+attack button sits above the interact button: True | same side: True
+active while on (random encounters suppressed in world.js): True
+tap with an enemy in front: hp # -> #
+enemy behind and far: unharmed True
+second tap during the cooldown ignored: True | cd fraction >#: True
+hold opens the wheel with the # moves: [True, #] | no attack was fired by the hold: True
+slots on screen: True | none overlap: True
+released on slot #: selected # | label Gloom Wave | wheel closed: True
+released on nothing keeps the move: True
+heavy move hit: # | cooldown total s: True
+guard shield up: True
+enemy hit your critter: hp # -> #
+knocked out: [True, True] | can it attack while down: False
+recovers (stands up again): [False, True]
+kill removes it: # -> # | toast: Your party is knocked out. The
+city (no grass): button hidden True
+dungeon (not in this prototype): button hidden True
+save has no enemy / cooldown fields: True
+errors: none

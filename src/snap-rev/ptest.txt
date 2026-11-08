@@ -1,0 +1,14 @@
+north at Lv1 -> town | toast: Frost Peaks opens at trainer level 3. You are level 1.
+west at Lv1 -> moss
+level-up toast: Frost Peaks is now open! | level 3
+north at Lv3 -> frost
+south (Ember) at Lv3 -> town
+tide sign: sign | East: Tide Shore (Tide and Dusk critters). Follow the boardwalk past the shore to reach Admiral Coral in Coralbay. Opens at trainer level 9.
+wren before Ivy: Welcome to Mossbrook, young trainer. I am Elder Wren, leader of this gym. / Before you challenge me, prove yourself against Ivy in Moss Forest.
+wren win (settle): | essence + 20 | xp + 110 | seals ['wren'] | sealed flag: wren
+same day: The forest needs rest. Visit me again tomorrow.
+rematch (settle): essence + 10 | seals ['wren'] | no second seal flag: True
+title shown: True | seals 4/4: True
+menu seals tile: Seals 4/4 leaders
+after reload seals: 4 | cleared: ['ivy', 'wren']
+errors: none

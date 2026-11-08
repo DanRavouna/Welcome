@@ -1,0 +1,11 @@
+ok Home holds the two chairs (one has always been yours) | ['windowlamp', 'twochairs', 'photo', 'cloakpeg']
+ok before the beacon the window lamp is only something to look at | A lamp on the windowsill, facing the road.
+ok after the beacon, touching the window lamp lights it (you keep it now) | You light the lamp in the window. It faces the road.
+ok the light is remembered for today only | <date>
+ok lit once, the lamp goes back to being something to look at for the rest of the day | A lamp on the windowsill, facing the road.
+ok a new day: the lamp waits to be lit again (the action is offered) | Examine
+ok before the beacon, standing by a road post saves nothing (it is kept for you)
+ok after the beacon, a post you pass is yours and stays lit (saved)
+ok the post further up the road, not passed yet, is still dark
+ok Tide Shore holds the returned things, at least # tiles from the moored knot | [['z-moored', #, #], ['z-returned', #, #]]
+ok no page errors | []

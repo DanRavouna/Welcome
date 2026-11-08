@@ -1,0 +1,15 @@
+Cinderport exits: n->ember w->route-cm-edge e->route-cc-steam s->descent | gate sign: True
+level # at the south gate -> still on cinderport | toast: The Cinder Descent opens at trainer level #. You are level #.
+high level -> on descent at [#, #]
+descent: {'door': True, 'wild': #, 'rare': #, 'lava': #, 'types': ['Ember', 'Stone'], 'rate': #, 'size': [#, #], 'lavaTheme': True}
+kolb {'at': [#, #], 'dir': 'up', 'reach': True, 'trailAt': #, 'lv': #, 'size': #, 'reward': #}
+yara {'at': [#, #], 'dir': 'up', 'reach': True, 'trailAt': #, 'lv': #, 'size': #, 'reward': #}
+brec {'at': [#, #], 'dir': 'up', 'reach': True, 'trailAt': #, 'lv': #, 'size': #, 'reward': #}
+mirel {'at': [#, #], 'dir': 'down', 'reach': True, 'trailAt': '-', 'lv': None, 'size': None, 'reward': None}
+brand {'at': [#, #], 'dir': 'down', 'reach': True, 'trailAt': '-', 'lv': None, 'size': None, 'reward': None}
+trainers see the trail within # tiles: True | all people reachable: True
+north exit -> cinderport at [#, #]
+music wants: ember | weather region: ember | visited: True
+travel map lists it: True
+act label at the door: Enter the forge
+errors: none

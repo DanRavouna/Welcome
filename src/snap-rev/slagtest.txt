@@ -1,0 +1,11 @@
+data: {"name":"Slagback","no":51,"stage":3,"same":true,"stats":[189,162,174,107],"type":"Ember","ability":"Slow Burn","kit":["Magma Nudge","Caldera Slam","Ember Shell","Slow Roast"],"shiny":false,"distinct":true}
+before Hale falls: The Forgemaster stands between you and the great furnace. | has Slagback: False
+first light: dialogue 4 lines | lit: True | essence + 50 | Slagback: True
+detail: ['#051 Slagback · St.3 · Lv 16', 'Slagback', 'Ability · Slow Burn: Each of its hits has a 25% chance to burn the target for 3 turns.']
+release blocked: True
+lit and owned: The furnace roars quietly. The whole crater glows.
+lit earlier, no Slagback: dialogue 2 | now: True
+Dex: ['Bonus species · 1/4', 'Slagback', '#051 · Ember · Slow Burn']
+seen has 51, seen<=48 count: [False, 1]
+after reload: kept True | (secrets stay out of seen, expected False) seen has 51: False
+errors: none

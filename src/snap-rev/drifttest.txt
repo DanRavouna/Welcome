@@ -1,0 +1,10 @@
+ok leaves in Moss Forest when the wind blows | #
+ok no leaves in Moss Forest in still air | #
+ok embers in Ember Fields when the wind blows | #
+ok nothing drifts in Frost Peaks even in a gale
+ok leaves drift east (positive x over one second) | [#...]
+ok smoke moves above a Sproutvale chimney | #
+ok no smoke above a Frosthold longhouse (what is kept cold) | #
+ok smoke above a Cinderport forge house | #
+ok Reduce motion: no smoke | #
+ok no page errors | []

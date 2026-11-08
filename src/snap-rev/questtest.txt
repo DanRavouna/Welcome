@@ -1,0 +1,13 @@
+sorrel reward / first / rematch: [#...]
+daily max essence: old world [#...] (old / new without halving / new with halving + quests)
+mossbrook <quest>
+frosthold <quest>
+cinderport <quest>
+coralbay <quest>
+sightings count for the quest (at least one registered): True
+mossbrook progress: # / # done True
+bryn: You did it! Thank you so much. / Here, take this: +# essence and some trainer experience.
+claimed: essence + # | xp + #
+again: Thanks again for today! I will have a new favor tomorrow.
+after reload claimed: True
+errors: none

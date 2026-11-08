@@ -1,0 +1,7 @@
+320px  new: ok | mid: ok | big: ok
+360px  new: ok | mid: ok | big: ok
+375px  new: ok | mid: ok | big: ok
+390px  new: ok | mid: ok | big: ok
+412px  new: ok | mid: ok | big: ok
+430px  new: ok | mid: ok | big: ok
+TOTAL OVERLAPS: 0

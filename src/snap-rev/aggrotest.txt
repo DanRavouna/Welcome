@@ -1,0 +1,9 @@
+1st sighting -> dialog: Rowan
+after leaving the battle, spotted again? False
+re-entered map -> spotted again (expected): True
+won (settle): True
+beaten trainer spots you after re-entry? False
+next day, spots you? False
+talk: Oh, it is you again! You beat me fair and square last time. / I have been training since. Up for a rematch?
+choices: ['Rematch!', 'Not now']
+errors: none

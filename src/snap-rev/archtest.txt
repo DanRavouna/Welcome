@@ -1,0 +1,5 @@
+ok five regions, five different architectures | ['cottage', 'grove', 'longhouse', 'forge', 'shell']
+ok every region draws its house differently from the others
+ok the four gyms differ by region too
+ok doors are where they always were (collision and entry unchanged) | [['#,#', '#,#', '#,#'], ['#,#', '#,#', '#,#'], ['#,#', '#,#', '#,#'], ['#,#', '#,#', '#,#']]
+ok no page errors | []

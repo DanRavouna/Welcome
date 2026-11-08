@@ -1,0 +1,6 @@
+camps per Ashwood road map: [#, #, #] | camp text: The stones are warm.
+no camps on the bypass or the dead end: True
+shore row visible at day / dawn (items..., chair): [False, False, False, False, True] [True, True, True, True, True]
+lamp patterns seen by day: # | at night more than # distinct patterns: True
+day none lit; night more than one pattern (it travels) and at most two lit at once: True
+errors: none

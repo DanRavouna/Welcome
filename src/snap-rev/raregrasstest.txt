@@ -1,0 +1,8 @@
+ok action mode is on in Moss Forest
+ok Moss Forest has a sparkling patch | {'x': #, 'y': #, 'w': #, 'h': #}
+ok standing in the patch, the stir rises (motes) | [#...]
+ok after about # s a rare critter comes out of the patch (# to # s) | [#...]
+ok the patch is spent for this visit
+ok re-entering the map resets the patch
+ok step out early and the stir fades without anything coming out | [#, #, [#...]]
+ok no page errors | []

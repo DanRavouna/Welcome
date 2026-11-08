@@ -1,0 +1,5 @@
+placed: [['moss', '4,17', 'reachable:true'], ['frost', '8,4', 'reachable:true'], ['ember', '6,23', 'reachable:true'], ['tide', '26,7', 'reachable:true']]
+sprout leaf pixels by stage 0..4: [14, 56, 74, 140, 158] | grows: True
+hearth pixels with 1..3 logs: [376, 388, 400] | grows: True
+skiff lamp warm pixels unlit / lit: [0, 30] | lit only when asked: True
+errors: none

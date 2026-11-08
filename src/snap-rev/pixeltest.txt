@@ -1,0 +1,18 @@
+ok the tiles list shows the two starting tiles and the first is open
+ok a tile with no art gets one blank frame to draw on
+ok the pen writes the chosen colour at the pixel
+ok a drag draws a line of pixels
+ok mirror writes the opposite pixel too
+ok undo takes the last stroke back
+ok fill floods the empty area and stops at the drawn line
+ok pick takes the colour under the finger
+ok duplicate adds a second frame and fps is kept
+ok the preview advances about eight frames a second over real time | steps=# in # ms
+ok the body sprite has idle and walk for four facings, three walk frames each | ['idle-down', 'idle-left', 'idle-right', 'idle-up', 'walk-down', 'walk-left', 'walk-right', 'walk-up']
+ok starting from the placeholder fills pixels, matched to the palette | #
+ok the palette grew with the placeholder colours but stays within # | #
+ok choosing an animation opens its frames
+ok a palette colour can be changed
+ok the map shows the drawn pixel in the changed palette colour | [#...]
+ok the game draws the hero sprite that was made (no placeholder body)
+ok no page errors through the run | []

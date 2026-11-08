@@ -1,0 +1,21 @@
+A first load (fresh, empty cloud): {'status': 'synced', 'text': 'Saved to your account, just now', 'kept': 0, 'xp': 0, 'ess': 0}
+A after progress + 3.6s: cloud has save: True | cloud critters: 2 | synced
+6 rapid changes -> 1 cloud write(s) | cloud essence: 35
+B new phone -> {'status': 'synced', 'text': 'Saved to your account, just now', 'kept': 2, 'xp': 300, 'ess': 35}
+A after B played (A refreshed) -> {'status': 'synced', 'text': 'Saved to your account, just now', 'kept': 3, 'xp': 300, 'ess': 35}
+while offline A status: Could not reach your account. Saved on this device; it will try again.
+A reconnect with only A changed -> synced | cloud essence 500
+B reconnect (both changed) -> conflict | dialog shown: True
+B sees: Level 3 · 3 critters · 3 species · 500 essence · 0 seals / Level 3 · 3 critters · 3 species · 7 essence · 0 seals
+axe on open conflict dialog: none | focus on: cf-keep-cloud
+B keeps its own -> synced | cloud essence now 7
+A (no unsynced changes) loads B's chosen save -> {'status': 'synced', 'text': 'Saved to your account, just now', 'kept': 3, 'xp': 300, 'ess': 7}
+A sees conflict: conflict
+A keeps account save -> {'status': 'synced', 'text': 'Saved to your account, just now', 'kept': 3, 'xp': 300, 'ess': 222}
+signed out -> Sign in to Claude to save to your account. Saved on this device for now. | game works: True
+backup panel status: Saved to your account, just now | download visible: True
+download -> critter-roll-save-2026-11-05.txt | msg: Save file downloaded.
+declined -> Download cancelled.
+load file -> Found a save with 3 critters, 3 species, level 3, 0 seals. This replaces your current game
+errors: none
+no viewer -> Not signed in. Saved on this device only. | download button hidden: True

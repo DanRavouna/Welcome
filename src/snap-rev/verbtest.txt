@@ -1,0 +1,40 @@
+ok the world runs (nothing left it paused) | {'dlg': False, 'tr': False, 'open': ['hud'], 'toast': '', 'stack': None}
+ok a Frost critter leads
+ok pressing the special starts the stillness verb | {'kind': 'frost', 't': #, 'r': #, 'charge': #}
+ok the ring widens over real time while you stand still (monotonic, about # tile per second) | [#...]
+ok no other attack while the ring stands
+ok the first step shatters it
+ok an Ember critter leads
+ok a tap is a puff: it starts and ends a charge of # | None
+ok the flame is fed while the button is held (charge rises over real time)
+ok released fed, the cone hits far harder than the puff and burns | [#, #, [[#...], [#...]]]
+ok a Tide critter leads
+ok it comes back with them: both dragged from about # tiles to about #, soaked (weakened) and hurt | [[#...], [#...]]
+ok a Moss critter leads
+ok the rooted one does not step while the roots hold (it was chasing) | [[#...], [True, False]]
+ok staying beside what the roots hold feeds you back (hp rose) | [#...]
+ok a Volt critter leads
+ok the dash crosses about three tiles in about a third of a second, over real time | [#...]
+ok a Dusk critter leads
+ok the veil falls: the critter is drawn faint
+ok what hunts it has lost it: a bite from a tile away does nothing while veiled | [#...]
+dusk: veiled before the blow True | blow accepted True
+dusk: veiled # ms in True
+dusk: veiled after False | cd #
+ok the first blow out of the dark lands and ends the veil | [#, False]
+ok it lands far harder than the same blow in the open (#x, with the roll of # to # on each) | [#...]
+ok a Stone critter leads
+ok the wall is set on the tile you face | [{'tx': #, 'ty': #, 'hp': #, 't': #}]
+ok a chasing critter cannot pass it: still beyond the wall (more than # tiles) after # s, and you are unhurt | [#...]
+ok a Bloom critter leads
+ok petals bloom around you
+ok you heal while you stand in them (at least #% in # s) | [#...]
+ok the petals fade after about # s
+ok the heavy never misses: five taps, five hits | [#...]
+ok holding the heavy feeds it (the charge rises over real time)
+ok let go fed, it lands about #x the light tap (with the roll on each) | [#, [#...]]
+ok guard is a stance: held while the button is down
+ok let go and it drops
+ok bites while standing firm cost far less than in the open | [#...]
+ok it cannot be held forever: the stance breaks at about # s
+ok no page errors | []

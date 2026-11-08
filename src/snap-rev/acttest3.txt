@@ -1,0 +1,10 @@
+a behaviour for every element: Bloom,Dusk,Ember,Frost,Moss,Stone,Tide,Volt
+Tide: telegraphed before shooting: True | fired a projectile: True | final distance (tiles): # | hurt: True
+shard speed Frost vs Tide: [#, #]
+Ember: telegraphed charge: True | fast frames while charging: True | hit you: True
+Stone ring: hurts up close True | misses at # tiles: True | radius tiles: #
+Dusk: telegraphed blink: True | appears next to you (tiles): #
+Bloom heals an ally: True | hp # -> #
+same hit, guarded vs not: [#, #]
+no bubble left flying after it lands: True
+errors: none

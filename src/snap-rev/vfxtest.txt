@@ -1,0 +1,8 @@
+heavy slash is bigger than quick (Ember): True | last frame sparser than the middle: True
+different elements look different (pixel counts): True
+hit-stop freezes then releases: [True, True, True, False] | shake moves the camera: True | particle cap: True | everything drains: True
+Reduce motion: no hit-stop, no shake, few particles: {'freeze': False, 'shake': {'x': 0, 'y': 0}, 'particles': 3}
+attack spawned effects: True | enemy was hit: True
+effects drain after the blow: True
+shake fades in a city (camera still afterwards): True | shake value: {"x":0,"y":0}
+errors: none

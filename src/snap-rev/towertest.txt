@@ -1,0 +1,10 @@
+the Watch stands on Vigil Peak: The Long Watch | door front walkable: True | footprint solid: True
+near: Enter the Tower
+locked toast: The Long Watch is for those who hold all # Leader Seals. You hold #.
+with seals the door leads into: in-tower
+lobby: Welcome. Twenty nights, one lamp. Each night someone comes to the door. / Your party answers every night in a row. HP carries over between nights. Essence is paid only for nights past your longest watch. / This week: Mild nights. Your party rests #% between nights this week (normally #%). A new longest watch is worth #% less essence. / Watches left today: #. You will bring Kipmonarch, Tibwarden, Nibtitan.
+no screen opens for the night (the Watch is fought on the map; without a follower the lobby says so): True | New title: Fire-keeper. Wear it from your Trainer
+runs left after start: #
+floor# result (settle): {'res': {'kind': 'win', 'floor': #, 'reward': #, 'first': True}, 'tower': {'best': #, 'day': '<date>', 'runs': #, 'clears': #, 'run': {'floor': #, 'party': [#...], 'hp': {'#': #, '#': #, '#': #}}}, 'ess': #}
+after reload run: {"best":#,"day":"<date>","runs":#,"clears":#,"run":{"floor":#,"party":[#,#,#],"hp":{"#":#,"#":#,"#":#}}}
+errors: none

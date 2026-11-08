@@ -1,0 +1,29 @@
+door: Enter the forge
+first visit dialogue: A doorway of dry heat, cut into the crater wall.
+inside: dg-forge | open.forge saved: True | dark radius: #
+at the start, reachable: {'coreA': True, 'coreB': True, 'sockA': True, 'sockB': True, 'dross': True, 'ingot': True, 'hale': False, 'furnace': False, 'chest#': True, 'chest#': False} | north gate: shut
+socket without the core: A socket for the core of flame. It belongs in one of the side halls.
+walk to core A (west hall, past Smith Dross): True object:coreA
+You lift the core of flame. It is warm in your hands. Carry it to the hub. | {"core:A":true}
+walk to socket A: True
+The core of flame settles into its socket. One more. | gate: shut
+walk to core B (east hall, past Smith Ingot): True object:coreB
+You lift the core of stone. It is warm in your hands. Carry it to the hub. | {"core:A":true,"sock:A":true,"core:B":true}
+walk to socket B: True
+Both sockets wake. Far to the north, a slab of black iron grinds aside. | gate: open
+after both sockets, reachable: {'hale': True, 'furnace': True, 'chest#': True}
+walk to the furnace (past the Forgemaster): True object:furnace
+reset: gate shut | cores back on their pedestals: True
+east first, then west -> gate: open | {"core:B":true,"sock:B":true,"core:A":true,"sock:A":true}
+dross {'at': [#...], 'dir': 'right', 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False, 'bonus': #}
+ingot {'at': [#...], 'dir': 'left', 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': False, 'bonus': #}
+hale {'at': [#...], 'dir': 'down', 'sees': True, 'size': #, 'stage': #, 'lv': #, 'reward': #, 'boss': True, 'bonus': #}
+furnace before the Forgemaster falls: The Forgemaster stands between you and the great furnace.
+first light: dialogue # lines | lit: True | essence + # | title: True
+Slagback handed over: True
+again: The furnace roars quietly. The whole crater glows. | unchanged: True
+chest#: You open the chest: # Rare Charm and # essence!
+journal: ['The Forge Below: the great furnace is lit.']
+music in the forge: dg-forge | own track: True
+after reload: gate open | cores hidden: True | sockets lit: {"core:B":true,"sock:B":true,"core:A":true,"sock:A":true,"forgeLit":true,"slagback":true,"chest:chest#":true}
+errors: none

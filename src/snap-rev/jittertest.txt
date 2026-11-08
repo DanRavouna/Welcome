@@ -1,0 +1,7 @@
+bench | camera steps [1, 1, 1, 1, 1, 1, 1] | object left-edge steps [-1, -1, -1, -1, -1, -1, -1] | smooth: True
+stakes | camera steps [1, 1, 1, 1, 1, 1, 1] | object left-edge steps [-1, -1, -1, -1, -1, -1, -1] | smooth: True
+sled | camera steps [1, 1, 1, 1, 1, 1, 1] | object left-edge steps [-1, -1, -1, -1, -1, -1, -1] | smooth: True
+skiff | camera steps [1, 1, 1, 1, 1, 1, 1] | object left-edge steps [-1, -1, -1, -1, -1, -1, -1] | smooth: True
+bell | camera steps [1, 1, 1, 1, 1, 1, 1] | object left-edge steps [-1, -1, -1, -1, -1, -1, -1] | smooth: True
+every object moves exactly with the ground: True
+errors: none

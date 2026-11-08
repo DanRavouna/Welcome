@@ -1,0 +1,7 @@
+every type has an ability: 8 ['Dusk', 'Bloom', 'Frost', 'Ember', 'Tide', 'Moss', 'Volt', 'Stone']
+Moss bark first/second hit: [5, 8]
+Sturdy (hp after huge hit, then after a second): [1, 0]
+Regrow (hp before, after first low hit, flag): [111, 49, True]
+Drizzle heals per round: [80, 83, 159]
+dex card text has ability: True
+errors: none

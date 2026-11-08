@@ -1,0 +1,9 @@
+rotation over 8 weeks: ['Mild nights', 'Nights of one kind', 'Storm nights(Ember)', 'Cold nights', 'Mild nights', 'Nights of one kind', 'Storm nights(Frost)', 'Cold nights']
+same twist all week (Mon..Sun): True
+this week: Mild nights | Your party rests 40% between nights this week (normally 30%). A new longest watch is worth 25% less essence.
+surge {'f5reward': 14, 'healedTo': 81, 'expectHeal': 81, 'floor3types': 'Tide/Frost'}
+iron {'f5reward': 21, 'healedTo': 41, 'expectHeal': 41, 'floor3types': 'Tide/Frost'}
+wind {'f5reward': 11, 'healedTo': 107, 'expectHeal': 107, 'floor3types': 'Tide/Frost'}
+mono {'f5reward': 14, 'healedTo': 81, 'expectHeal': 81, 'floor3types': 'Frost'}
+surge dmg x1.3: [21, 27, '1.29']
+errors: none

@@ -1,0 +1,6 @@
+ok the generator knows eight facings | ['down', 'up', 'right', 'left', 'downright', 'downleft', 'upright', 'upleft']
+ok for every species: all eyes on the front, none on the back, a sliver on the back quarter, one in profile; the profile is # wide and the quarter #; nothing is lost from behind | [#, #, []]
+ok left is the mirror of right in silhouette (within #% of pixels, the rasteriser is not perfectly symmetric; shading stays lit from the top-left on purpose) | [#, #, #, []]
+ok the lead critter is drawn with the facing it moves in | {'up': 'up', 'right': 'right', 'downleft': 'downleft'}
+ok the icon images differ per facing (what the world draws) | [True, True]
+ok no page errors | []

@@ -1,0 +1,14 @@
+ok duel multipliers (tuned with duelsim.py) | [#...]
+ok per-boss duel corrections | {'maren': {'hp': #}, 'keeper': {'hp': #}, 'coral': {'hp': #}}
+ok action rewards: half a KO of XP, # essence a day | [#...]
+ok zone level gates #/#/#/# | {'moss': #, 'frost': #, 'ember': #, 'tide': #}
+ok route gates follow the higher of the two places (#/#/#/#), climbs # and # | {'route-mf': #, 'route-mf-gate': #, 'route-mf-fork': #, 'route-cm': #, 'route-cm-edge': #, 'route-cm-crossing': #, 'route-fc': #, 'route-fc-shelf': #, 'route-fc-landing': #, 'route-cc': #, 'route-cc-pier': #, 'route-cc-steam': #, 'ascent': #, 'descent': #}
+ok the Long Watch: # floors, # climbs a day, #% heal | {'floors': #, 'runsPerDay': #, 'heal': #}
+ok shiny odds # in #, city quest reward #
+ok wren hands over a fire: "It grows because someone stays beside it." | It grows because someone stays beside it. Stay a while. The Moss Seal.
+ok glacia hands over a fire: "The cold keeps what it is given." | The cold keeps what it is given. Take the Frost Seal. It will keep.
+ok blaze hands over a fire: "You did not put it out. You fed it." | You did not put it out. You fed it. Take the Ember Seal.
+ok coral hands over a fire: "The sea gives back what it is given." | The sea gives back what it is given. The Tide Seal is yours.
+ok no conquest wording on any leader | []
+ok Coral ends with the light left on
+ok Vigil Peak / The Long Watch / Fire-keeper / Watchkeeper | ['Vigil Peak', 'The Long Watch', 'Fire-keeper', 'Watchkeeper']

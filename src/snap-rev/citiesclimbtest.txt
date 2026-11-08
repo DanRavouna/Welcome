@@ -1,0 +1,6 @@
+city things: [['mossbrook', '#,#', 'reachable:true'], ['frosthold', '#,#', 'reachable:true'], ['cinderport', '#,#', 'reachable:true'], ['coralbay', '#,#', 'reachable:true']]
+growth post pixels with #..# notches: [#, #, #, #, #] | harbour lamp warm pixels unlit/lit: [#, #]
+ascent lit lamps (in road order) at four points on the climb: ['#', '#', '#', '#'] | grows and never goes out: True
+descent lit lamps (in road order) at four points on the climb: ['#', '#', '#', '#'] | grows and never goes out: True
+after a reload, lit lamps at the foot of the Ascent (all lit by the climb before): #
+errors: none

@@ -1,0 +1,18 @@
+Cold Ascent, gap -> beacon door: {'ok': True, 'steps': 1065, 'stuckAt': None, 'tile': [14, 9], 'near': 'object:beacon-door'}
+Sealed Arch -> chest1: {'ok': True, 'steps': 91, 'stuckAt': None, 'tile': [5, 52], 'near': 'object:chest1'}
+Sealed Arch -> crown: {'ok': True, 'steps': 412, 'stuckAt': None, 'tile': [13, 2], 'near': 'object:crown'}
+standing under the crown, the action button is for: object:crown (must be the crown, not the Keeper)
+Sealed Arch -> chest2: {'ok': True, 'steps': 21, 'stuckAt': None, 'tile': [16, 2], 'near': 'object:chest2'}
+Sealed Arch -> keeper: {'ok': True, 'steps': 28, 'stuckAt': None, 'tile': [13, 3], 'near': 'npc:keeper'}
+tower start: g1:shut g2:shut g3:shut | the way up is shut: True
+kept L1: g1:open g2:shut g3:shut
+walk to L2 (through g1): {'ok': True, 'steps': 176, 'stuckAt': None, 'tile': [5, 31], 'near': 'object:L2'}
+kept L2: g1:open g2:open g3:shut
+walk to L3 (through g2): {'ok': True, 'steps': 162, 'stuckAt': None, 'tile': [16, 19], 'near': 'object:L3'}
+kept L3: g1:open g2:open g3:open
+walk to the great lamp (through g3): {'ok': True, 'steps': 170, 'stuckAt': None, 'tile': [10, 3], 'near': 'object:greatlamp'}
+--- and back out
+nothing closes behind you: g1:open g2:open g3:open
+back to the entrance: {'ok': True, 'steps': 363, 'stuckAt': None, 'tile': [10, 52], 'near': None}
+out through the exit -> ascent
+errors: none

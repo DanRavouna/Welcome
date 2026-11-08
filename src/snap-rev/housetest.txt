@@ -1,0 +1,67 @@
+ok in-house-fennel: the room holds its things | ['kettle', 'armchair', 'jars']
+ok in-house-fennel: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-house-fennel: nothing is a tip, everything is something to look at | The kettle is on. The cups are out, both of them. | The cushion is worn in the shape of someone else. | Jars with dates on the lids. The newest says this week.
+ok in-house-fennel: every thing has a line
+ok in-house-moss: the room holds its things | ['baskets', 'herbs', 'wallmap']
+ok in-house-moss: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-house-moss: nothing is a tip, everything is something to look at | Four baskets by the door, four kinds of mushroom. One for each day so far. | Bunches of herbs drying. The oldest are nearly dust; the newest still smell of rain
+ok in-house-moss: every thing has a line
+ok in-house-bryn: the room holds its things | ['drawings', 'shinyjar', 'smallbed']
+ok in-house-bryn: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-house-bryn: nothing is a tip, everything is something to look at | Crayon critters, pinned in rows. Every one of them has stars drawn around it. | An empty jar on the shelf. The label says: for the shiny one. | A small bed. The
+ok in-house-bryn: every thing has a line
+ok in-fh-a: the room holds its things | ['stool', 'tally', 'lantern', 'cloakpeg']
+ok in-fh-a: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...], [#...]]
+ok in-fh-a: nothing is a tip, everything is something to look at | A stool, right under the window. The seat is polished. | Marks cut into the wall in rows of five. You stop counting at a hundred. | A lantern, trimmed and full,
+ok in-fh-a: every thing has a line
+ok in-fh-b: the room holds its things | ['furs', 'furs', 'ledger', 'kettle']
+ok in-fh-b: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...], [#...]]
+ok in-fh-b: nothing is a tip, everything is something to look at | Furs folded in a stack, each one tagged. The tags say what and when, not how much. | More furs. Counted twice; the second count is underlined. | A ledger, close
+ok in-fh-b: every thing has a line
+ok in-fh-c: the room holds its things | ['souppot', 'bowls', 'armchair']
+ok in-fh-c: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-fh-c: nothing is a tip, everything is something to look at | A pot on the fire. It has not left the fire in years; the hook has worn to fit it. | Bowls stacked for twelve. Two are warm. | A chair by the fire, turned to th
+ok in-fh-c: every thing has a line
+ok in-cp-a: the room holds its things | ['anvil', 'toolwall', 'coals']
+ok in-cp-a: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-cp-a: nothing is a tip, everything is something to look at | An anvil. The top is bright where the hammer lands and dark everywhere else. | Tools on the wall, each above its own outline. None is missing. | Coals banked un
+ok in-cp-a: every thing has a line
+ok in-cp-b: the room holds its things | ['broom', 'ashjar', 'sprouts']
+ok in-cp-b: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-cp-b: nothing is a tip, everything is something to look at | A broom by the door, worn to a slant. | A jar of grey ash on the sill. The label says this week. | Something green in a pot, in a town of ash. It is doing well.
+ok in-cp-b: every thing has a line
+ok in-cp-c: the room holds its things | ['bunks', 'helmets', 'glowrock']
+ok in-cp-c: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-cp-c: nothing is a tip, everything is something to look at | Four bunks. Three made, one slept in this morning. | Four hooks, three helmets. The fourth lamp is lit somewhere under the hill. | A stone that glows from insid
+ok in-cp-c: every thing has a line
+ok in-cb-a: the room holds its things | ['logbook', 'oilcans', 'shiplist']
+ok in-cb-a: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-cb-a: nothing is a tip, everything is something to look at | A logbook, open. Tonight’s line is already written: lamp lit, sea calm. | Oil cans in a row. Enough for the winter, and a little past it. | A list of boats on t
+ok in-cb-a: every thing has a line
+ok in-cb-b: the room holds its things | ['nets', 'network', 'stool']
+ok in-cb-b: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-cb-b: nothing is a tip, everything is something to look at | Nets hung to dry. The mended places are a different colour. | A net spread on the floor, half mended, the needle still in it. | A low stool. The legs are wrappe
+ok in-cb-b: every thing has a line
+ok in-cb-c: the room holds its things | ['shellrows', 'smallbed', 'bucket']
+ok in-cb-c: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...]]
+ok in-cb-c: nothing is a tip, everything is something to look at | Shells on a shelf in rows, each on its own square of cloth. One square is empty. | A small bed. Sand in the blanket. | A bucket by the door, still wet. | Pearl
+ok in-cb-c: every thing has a line
+ok in-home: the room holds its things | ['windowlamp', 'twochairs', 'photo', 'cloakpeg']
+ok in-home: every thing and the resident can be stood next to | [[#...], [#...], [#...], [#...], [#...]]
+ok in-home: nothing is a tip, everything is something to look at | A lamp on the windowsill, facing the road. | Two chairs at the table. One of them has always been yours. | A picture on the wall: two people, one much smaller,
+ok in-home: every thing has a line
+ok in-lab: the room holds its things | ['notes', 'critterbasket']
+ok in-lab: every thing and the resident can be stood next to | [[#...], [#...], [#...]]
+ok in-lab: nothing is a tip, everything is something to look at | Pages in Fern’s hand, pinned in order. The newest ones are about a trainer with your name. | A basket with a folded blanket. Something small slept here, and wil
+ok in-lab: every thing has a line
+ok Clover's door: a kettle whistles, and nobody is said to be absent | [['house-fennel', 'A kettle whistles inside.'], ['house-moss', 'A note on the door: "Out foraging. Back by dusk."'], ['house-bryn', 'Crayon drawings of critters cover the window. Every one has stars around it.']]
+ok Bryn's door: the drawings have stars, like the ones inside
+ok by day Wil is away (hidden) | {'hidden': True, 'x': #, 'y': #}
+ok by day his spot is not a person to talk to | Walk up to a place
+ok by day you can walk through where he stands (he is not there) | #
+ok from dusk Wil is home and you can talk to him | Talk to Forager Wil
+ok and at night
+ok Clover and Bryn's dad are always home
+ok by the armchair the action is Examine | Examine
+ok and it says what you see | The cushion is worn in the shape of someone else.
+ok no page errors | []

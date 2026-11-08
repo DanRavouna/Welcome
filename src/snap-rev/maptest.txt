@@ -1,0 +1,21 @@
+every outdoor map has a place on the overview: True | unknown ids: none | nodes overlapping: none | outside the canvas: none | nodes: #
+new player: lit ['town'] | counts {'lit': #, 'grey': #, 'hidden': #} | lit links: # | hidden are all secret: True | grey are all regular: True
+secret places: ['dg-arch', 'dg-forge', 'dg-lamp', 'route-cc-drowned', 'route-cm-hollow', 'route-fc-skerry', 'route-mf-cliff']
+visits recorded: ['town', 'moss', 'route-mf-gate', 'route-mf']
+the cliff before / after being found (state, link): ['hidden', False] -> ['lit', 'lit']
+a dungeon: hidden until entered: hidden -> lit
+icon colour strength: visited Sproutvale / Moss Forest / Highland Pass: # # # | unvisited Frost Peaks (grey): # | hidden secrets are not drawn or tappable: True
+visited places are coloured, grey ones are not: True
+count line: Explored # of # places. Tap a place to see it and travel.
+tap Sproutvale: Sproutvale | Home and the Lab | <weather> | You are here
+tap Frost Peaks (grey, you are level #): Frost Peaks | Frost and Stone critters | #/# species found | Glacia: not yet beaten | <weather> | Travel here | travel button: True
+tap where an undiscovered dungeon would be: Frost Peaks | Frost and Stone critters | #/# species found | Glacia: not yet beaten | <weather> | Travel here
+a locked zone at level #: Ember Fields | Ember and Volt critters | #/# species found | Blaze: not yet beaten | <weather> | Travel here | travel button: True
+an undiscovered city: Cinderport | Blaze’s gym | <weather> | Travel here | travel button: True
+a route you walked: Highland Pass | A path between places | <weather> | Reach it on foot | travel button: False
+arrow left from Sproutvale selects: Moss Forest
+Enter travels: moss | map closed: True
+Travel button in the card works: town
+visits survive a reload: True
+an older save is inferred from progress (Ivy, Bram, Coral beaten): ['frost', 'moss', 'tide', 'town']
+errors: none

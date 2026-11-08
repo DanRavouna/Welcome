@@ -1,0 +1,11 @@
+town shop: ['Potion', 'Super Potion', 'Rare Charm', 'Roll Ticket']
+mossbrook shop: ['Potion', 'Super Potion', 'Rare Charm', 'Roll Ticket', 'Mossleaf Remedy']
+frosthold shop: ['Potion', 'Super Potion', 'Rare Charm', 'Roll Ticket', 'Frost Ward']
+cinderport shop: ['Potion', 'Super Potion', 'Rare Charm', 'Roll Ticket', 'Whetstone']
+coralbay shop: ['Potion', 'Super Potion', 'Rare Charm', 'Roll Ticket', 'Tide Lure']
+lure set: 1
+encounter happened: True | lured species unkept: True | lure left: 0
+coralbay before any keep: 0 (raw load of 3 critters must not count)
+cinderport keep quest progress: {"city":"cinderport","q":{"k":"beat","id":"elm","n":1,"txt":"beat Woodcutter Elm on Ashwood Trail"},"n":0,"done":false,"claimed":false,"day":"Thu Nov 05 2026"}
+coralbay quest: {"city":"coralbay","q":{"k":"keep","types":["Tide","Dusk"],"n":1,"txt":"keep a Tide or Dusk critter"},"n":0,"done":false,"claimed":false,"day":"Thu Nov 05 2026"}
+errors: none

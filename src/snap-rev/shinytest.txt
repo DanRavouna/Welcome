@@ -1,0 +1,13 @@
+rate_first#k : #%
+pickSeedRareGrass : #%
+firstShiny : #
+name : Velwing ★
+idempotent : True
+body : ['#A#FA#C', '#A#FA#C']
+starters : [False, False, False]
+foeShinies : # of #
+encounter seed shiny: True | sfx: [None, 'tap', 'roll', 'mythic'] | ribbon: # | class: burst
+# rolls shiny keep: {'label': 'Keep (free, shiny!)', 'dis': False, 'rolls': #}
+kept free: True | used still #
+after reload still shiny in dex name: Velling ★
+errors: none

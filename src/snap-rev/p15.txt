@@ -1,0 +1,12 @@
+party after adding #: [#...] | count text: #/# in party | #th disabled: True
+after make-lead #: [#...] fighter #
+remove+re-add #: [#...]
+shop open after Mira: True | # essence
+bag: {'potion': #, 'super': #, 'charm': #, 'ticket': #, 'herb': #, 'ward': #, 'whet': #, 'lure': #} | essence left: # | charm button disabled (not enough): False
+battle screen gone: True
+charm active: # | Rare Charm active: # encounters left.
+ticket in test mode -> Test mode already gives unlimited rolls. Keep the ticket for later.
+ticket real mode: used # -> # | tickets {'day': '<date>', 'count': #}
+charm on # encounters (rare odds?): [True, True, True, False] | charm left: #
+after reload: party [#...] | bag {'potion': #, 'super': #, 'charm': #, 'ticket': #, 'herb': #, 'ward': #, 'whet': #, 'lure': #}
+errors: none
