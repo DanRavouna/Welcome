@@ -85,8 +85,13 @@ const SECRET = SECRETS[SECRET_SEED];
 // developer options (browser-only, never saved or synced): see the Developer tools panel in app.js
 const DEV = { levels: false, safe: false };
 const FREE_SIGHTINGS = 40;
-const KEEP_COST = { Common: 1, Uncommon: 2, Rare: 4, Mythic: 8 };
-const GATES = { moss: 1, frost: 3, ember: 6, tide: 9 };
+// the day's lamp (review copy, 11's item 7): 20 rolls, Common and Uncommon 1, Rare 2, Mythic 4; a critter that woke for you keeps at the Common price; the sightings counter no longer prices a keep
+const KEEP_COST = { Common: 1, Uncommon: 1, Rare: 2, Mythic: 4 };
+// gates by fires (review copy, item 9): a town gate or a route opens once you hold this many seals. The town's north gate opens at Glacia's seal so the Highland Pass is walked first.
+// GATES_LV / ROUTE_GATES_LV are the old trainer-level gates, kept as an alternative (OR) for saves older than this build (state.lvGates), so nobody loses a zone they had.
+const GATES = { moss: 0, frost: 2, ember: 2, tide: 3 };
+const GATES_LV = { moss: 1, frost: 3, ember: 6, tide: 9 };
+const ROUTE_GATES_LV = { 'route-mf': 3, 'route-mf-gate': 3, 'route-mf-fork': 3, 'route-cm': 6, 'route-cm-edge': 6, 'route-cm-crossing': 6, 'route-fc': 9, 'route-fc-shelf': 9, 'route-fc-landing': 9, 'route-cc': 9, 'route-cc-pier': 9, 'route-cc-steam': 9, ascent: 11, descent: 13 };
 const ZONE_NAMES = { moss: 'Moss Forest', frost: 'Frost Peaks', ember: 'Ember Fields', tide: 'Tide Shore' };
 // where an NPC stands now (leaders moved into city gyms) and that map's display name
 const npcHome = (id) => { if (typeof WORLD === 'undefined') return null; const all = WORLD.allNpcs(); for (const k in all) if ((all[k] || []).some((n) => n.id === id)) return k; return null; };
@@ -100,7 +105,7 @@ const CITY_QUESTS = {
   coralbay: { giver: 'pearl', list: [{ k: 'see', map: 'route-cc', n: 5, txt: 'spot 5 wild critters on Reef Causeway' }, { k: 'keep', types: ['Tide', 'Dusk'], n: 1, txt: 'keep a Tide or Dusk critter' }, { k: 'beat', id: 'mako', n: 1, txt: 'beat Diver Mako on Reef Causeway' }] }
 };
 const CQ_REWARD = 4;
-const ROUTE_GATES = { 'route-mf': 3, 'route-mf-gate': 3, 'route-mf-fork': 3, 'route-cm': 6, 'route-cm-edge': 6, 'route-cm-crossing': 6, 'route-fc': 9, 'route-fc-shelf': 9, 'route-fc-landing': 9, 'route-cc': 9, 'route-cc-pier': 9, 'route-cc-steam': 9, ascent: 11, descent: 13 };
+const ROUTE_GATES = { 'route-mf': 1, 'route-mf-gate': 1, 'route-mf-fork': 1, 'route-cm': 2, 'route-cm-edge': 2, 'route-cm-crossing': 2, 'route-fc': 3, 'route-fc-shelf': 3, 'route-fc-landing': 3, 'route-cc': 3, 'route-cc-pier': 3, 'route-cc-steam': 3, ascent: 4, descent: 3 };
 const LEADERS = [
   { id: 'wren', zone: 'moss', name: 'Elder Wren', color: '#4FB06D' },
   { id: 'glacia', zone: 'frost', name: 'Glacia', color: '#8FD8EA' },
@@ -146,7 +151,7 @@ const lvNeed = (lv) => 20 + 10 * (lv - 1);
 
 
 // action mode rewards: XP per kill is half of a battle KO (the old formula 8 + 2 x level + 5 x stage), scaled by how the foe's level compares with yours; essence for the first kills each day only
-const ACT_XP = 0.5, ACT_ESS_CAP = 15;
+const ACT_XP = 0.5, ACT_ESS_CAP = 15, ACT_TXP_CAP = 15;   // ACT_TXP_CAP: once the day's rolls are spent, the first 15 kills of the day pay 1 trainer XP each (the second half of a session still moves something)
 
 // action-mode duels: multipliers on the trainer's critters (HP, damage, and how often they attack: <1 = more often). Tuned with duelsim.py against the turn-based win rates.
 const DUEL_HP = 2.65, DUEL_DMG = 1.48, DUEL_PACE = 0.73;

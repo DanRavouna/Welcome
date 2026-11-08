@@ -6,14 +6,10 @@ const APP = (() => {
   function paint() {
     if (!game || !game.state) return;
     const st = game.state, lv = game.levelInfo(st.xp || 0), en = game.energy();
-    if (lastLevel !== null && lv.level > lastLevel) {
-      const opened = Object.keys(GATES).filter((z) => GATES[z] > lastLevel && GATES[z] <= lv.level);
-      if (opened.length && !game.props.testMode) toast(opened.map((z) => ZONE_NAMES[z]).join(' and ') + (opened.length > 1 ? ' are' : ' is') + ' now open!');
-    }
-    lastLevel = lv.level;
-    $('c-rolls').textContent = (game.props.testMode ? 'Test' : en.left + '/20');
+    lastLevel = lv.level;   // (gates open by fires kept, not by level: nothing is announced here)
+    $('c-rolls').textContent = (game.props.testMode ? 'Test' : String(en.left));   // the day's lamp: the flame and what is left, no '/20'
     { const oil = $('c-oil'); if (oil) { const h = game.props.testMode ? 12 : Math.max(1, Math.round(12 * en.left / 20)); oil.setAttribute('height', h); oil.setAttribute('y', 14 - h); } }   // the day's lamp: its flame goes down as the day is spent
-    $('c-rolls').setAttribute('aria-label', game.props.testMode ? 'Test mode: unlimited rolls' : en.left + ' of 20 rolls left today');
+    $('c-rolls').setAttribute('aria-label', game.props.testMode ? 'Test mode: unlimited rolls' : (en.left === 0 ? 'The day\u2019s lamp is spent' : 'The day\u2019s lamp: ' + en.left + ' left'));
     $('c-ess').textContent = st.essence || 0; $('c-ess').setAttribute('aria-label', (st.essence || 0) + ' essence');
     $('c-lv').textContent = 'Lv ' + lv.level;
     const ready = (game.questsFor(st).items || []).filter((q) => !q.claimed && q.progress >= game.questDefs()[q.key].target).length;
@@ -29,7 +25,7 @@ const APP = (() => {
   let outNotice = 0;
   function encounter(info) {
     if (open || dlg || menuOpen || mapOpen || panel || !$('bk').hidden || !$('cf').hidden || !$('starter').hidden || !$('title').hidden) return;
-    if (game.sightingsLeft() <= 0 && game.energy().left === 0) { if (Date.now() - outNotice > 20000) { outNotice = Date.now(); hintQueue.length = 0; hintBusy = true; toast('The grass rustles. The day\u2019s light is spent; tomorrow brings more. (Your free sightings and rolls are used up for today. Both refill at midnight.'); setTimeout(() => { hintBusy = false; pumpHints(); }, 4600); } return; }
+    if (game.sightingsLeft() <= 0 && game.energy().left === 0) { if (Date.now() - outNotice > 20000) { outNotice = Date.now(); hintQueue.length = 0; hintBusy = true; toast('The grass rustles. The day\u2019s light is spent.'); setTimeout(() => { hintBusy = false; pumpHints(); }, 4600); } return; }
     const calm = game.state.settings && game.state.settings.calm;
     WORLD.setPaused(true); if (!calm) WORLD.flash(); game.sfx('tap');
     lastOpener = document.activeElement;
@@ -174,10 +170,10 @@ const APP = (() => {
     if (id === 'town') { c.name = 'Sproutvale'; c.lines = ['Home and the Lab']; c.travel = true; }
     else if (id === 'arena') { c.name = 'The Arena'; c.lines = ['Five rivals, one a day', 'Off the Ashwood Trail']; if (knownMaps().has('arena')) c.travel = true; else c.status = 'Reach it on foot'; }
     else if (ZONE_NAMES[id]) {
-      const L = LEADERS.find((x) => x.zone === id), open = test || lv >= GATES[id];
+      const L = LEADERS.find((x) => x.zone === id), open = test || game.gateOpen(id);
       const found = ZONE_TYPES[id].reduce((n, t) => { const ti = ZTYPES.indexOf(t); return n + seen.filter((no) => Math.floor((no - 1) / 6) === ti).length; }, 0);
       c.name = ZONE_NAMES[id]; c.lines = [ZONE_TYPES[id].join(' and ') + ' critters', found + '/12 species found', L.name + (seals.indexOf(L.id) !== -1 ? ': seal earned' : ': not yet beaten')];
-      if (open) c.travel = true; else c.status = 'Opens at level ' + GATES[id];
+      if (open) c.travel = true; else c.status = 'The gate is shut';
     } else if (CITY[id]) {
       const v = test || vis.indexOf(id) !== -1;
       if (v) { c.name = CITY[id][0]; c.lines = [CITY[id][2]]; c.travel = true; } else { c.name = 'Undiscovered'; c.lines = ['Somewhere ' + CITY[id][1]]; c.status = 'Find it on foot first'; c.wx = ''; }
@@ -389,7 +385,7 @@ const APP = (() => {
   const sealCount = () => ((game.state.npc && game.state.npc.seals) || []).length;
   const SCAFFOLD = {
     pip: [[1, ['You know all of this already.', 'I just like standing here.']]],
-    mira: [[2, ['Take what you need.']]],
+    mira: [[2, ['Take what you need.']], [4, ['Nothing left on the shelf. There is some at your house.']]],
     fern: [[1, ['You know where to look.']], [3, ['I have been writing about you. Only a little.', 'There is not much left that I can tell you.']]],
     remy: [[1, ['The terminal is where it always was.']], [3, ['Fern is outside less these days.', 'She says she has run out of things to tell the trainers who come through.']]],
     mom: [[2, ['You are home. Good.', 'I stopped tidying the desk. You know where things are.']], [3, ['You did not ask what is for dinner.', 'The lamp in the window is on. I did not light it.']], [4, ['You do not have to tell me where you are going.', 'The door stays open. It always did.']]]
@@ -515,19 +511,27 @@ const APP = (() => {
     }
     renderBag();
   }
+  // help that leaves (item 14): the five battle items cost nothing from two seals (Mira's 'Take what you need' made true); the Roll Ticket is no longer sold (a day holds what it holds; held tickets still work)
+  const HELP_ITEMS = ['potion', 'super', 'herb', 'ward', 'whet'];
+  const priceOf = (id) => (HELP_ITEMS.indexOf(id) !== -1 && sealCount() >= 2 ? 0 : ITEMS[id].price);
   function renderShop() {
     const bag = bagOf(), ess = game.state.essence || 0;
     $('sh-ess').textContent = ess + ' essence';
     const here = WORLD.map && WORLD.map.id, local = CITY_ITEM[here];
-    $('sh-list').innerHTML = Object.keys(ITEMS).filter((id) => !ITEMS[id].city || id === local).map((id) => {
-      const it = ITEMS[id], can = ess >= it.price;
+    $('sh-list').innerHTML = Object.keys(ITEMS).filter((id) => id !== 'ticket' && (!ITEMS[id].city || id === local)).map((id) => {
+      const it = ITEMS[id], price = priceOf(id), can = ess >= price;
       return '<div class="prow"><span class="pn2"><b>' + it.name + '</b><span>' + it.desc + ' You have ' + bag[id] + '.</span></span>' +
-        '<button class="pbtn' + (can ? ' on' : '') + '" data-buy="' + id + '"' + (can ? '' : ' disabled') + ' aria-label="Buy ' + it.name + ' for ' + it.price + ' essence">' + it.price + ' ◆</button></div>';
+        '<button class="pbtn' + (can ? ' on' : '') + '" data-buy="' + id + '"' + (can ? '' : ' disabled') + ' aria-label="' + (price ? 'Buy ' + it.name + ' for ' + price + ' essence' : 'Take a ' + it.name) + '">' + (price ? price + ' ◆' : 'Take') + '</button></div>';
     }).join('');
   }
   function buy(id) {
-    const it = ITEMS[id], ess = game.state.essence || 0; if (!it || ess < it.price) return;
-    const bag = bagOf(); bag[id] += 1; game.update({ bag: bag, essence: ess - it.price }); game.sfx('tap'); renderShop();
+    const it = ITEMS[id], ess = game.state.essence || 0; if (!it || id === 'ticket') return; const price = priceOf(id); if (ess < price) return;
+    const bag = bagOf(); bag[id] += 1; game.update({ bag: bag, essence: ess - price }); game.sfx('tap'); renderShop();
+  }
+  // Home's shelf (item 14): from four seals Mira's stall is bare and the shelf at home holds three Potions each morning (set on the day's first load, never taken away)
+  function shelfTick() {
+    if (!game || sealCount() < 4) return; const today = new Date().toDateString(), f = advOf().flags; if (f.shelfDay === today) return;
+    const bag = bagOf(); bag.potion = Math.max(bag.potion | 0, 3); game.update({ bag: bag }); advSave((a) => { a.flags.shelfDay = today; });
   }
   // ---------- people ----------
   // the Arena's rivals: the one whose step is next waits on the sand (facing the gate); the others sit by their tents in ladder order
@@ -600,7 +604,7 @@ const APP = (() => {
         progress: () => 'Still no Stone critter? They live in the tall grass here in Frost Peaks.', thanks: ['A Stone critter! It is even rockier than I imagined.', 'Take these 6 essence, as thanks.'], after: ['I will treasure that picture.'] }
     ]);
     zone('ember', [
-      { lv: 15, id: 'blaze', name: 'Blaze', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#1E1A2A', y: '#FF7A45', Y: '#C2410C' }, types: ['Ember', 'Volt'], size: 4, stage: 3, pick: 0.55, firstReward: 30, needs: 'kiki',
+      { lv: 11, id: 'blaze', name: 'Blaze', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#1E1A2A', y: '#FF7A45', Y: '#C2410C' }, types: ['Ember', 'Volt'], size: 4, stage: 3, pick: 0.55, firstReward: 30, needs: 'kiki',
         intro: ['So you made it to the heart of Ember Fields.', 'I am Blaze. My team burns at full power. Ready?'], winLine: 'You did not put it out. You fed it. Take the Ember Seal.', sealLine: 'This one wants feeding every day. Tide Shore opens at level 9.', beatenLines: ['My flames need to rekindle. Come back tomorrow!'] },
       { lv: 10, id: 'kiki', name: 'Kiki', at: 'trainer', kind: 'trainer', trainer: true, pal: { h: '#F28C28', y: '#D8574A', Y: '#A8382E' }, types: ['Ember', 'Volt'], size: 3, stage: 2, pick: 0.55,
         intro: ['It is hot out here, and so are my critters!', 'Ready to feel the heat?'], winLine: 'Okay, okay, you win. That was electric!', beatenLines: ['My team is still cooling down. Come back tomorrow!'] },
@@ -609,7 +613,7 @@ const APP = (() => {
         progress: () => 'Evolve a critter in the Dex, then come back. Release extra critters to earn essence.', thanks: ['Whoa, look at the size of it!', 'Here, 8 essence. Thanks for showing me.'], after: ['One day I will evolve mine too.'] }
     ]);
     zone('moss', [
-      { lv: 11, id: 'wren', name: 'Elder Wren', at: 'leader', kind: 'leader', leader: true, pal: { h: '#E8E8F0', y: '#4E6B19', Y: '#2E4210', p: '#4A3424' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.6, firstReward: 20, needs: 'ivy',
+      { lv: 6, id: 'wren', name: 'Elder Wren', at: 'leader', kind: 'leader', leader: true, pal: { h: '#E8E8F0', y: '#4E6B19', Y: '#2E4210', p: '#4A3424' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.6, firstReward: 20, needs: 'ivy',
         intro: ['Welcome, young trainer. I am Elder Wren, leader of Moss Forest.', 'Show me that you and your critters grow together.'], winLine: 'It grows because someone stays beside it. Stay a while. The Moss Seal.', sealLine: 'The first fire is the easiest to keep. Frost Peaks opens at level 3.', beatenLines: ['The forest needs rest. Visit me again tomorrow.'] },
       { lv: 4, id: 'ivy', name: 'Ivy', at: 'trainer', kind: 'trainer', trainer: true, pal: { h: '#2E7D32', y: '#F5A3D0', Y: '#D86BA6' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.3,
         intro: ['Shh, the forest is listening.', 'Let us give it a battle worth hearing.'], winLine: 'Beautifully done. The forest approves.', beatenLines: ['Let the forest rest today. Tomorrow we can battle again.'] },
@@ -617,7 +621,7 @@ const APP = (() => {
         lines: ['Every critter has a nature. Brave ones hit harder but bruise easier.', 'Pick the nature that fits how you like to battle.'] }
     ]);
     zone('tide', [
-      { lv: 14, id: 'coral', name: 'Admiral Coral', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#F8F8F8', y: '#1E2A4A', Y: '#0E1A38', p: '#1E2A4A' }, types: ['Tide', 'Dusk'], size: 5, stage: 3, pick: 0.75, firstReward: 35, needs: 'marlo',
+      { lv: 12, id: 'coral', name: 'Admiral Coral', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#F8F8F8', y: '#1E2A4A', Y: '#0E1A38', p: '#1E2A4A' }, types: ['Tide', 'Dusk'], size: 5, stage: 3, pick: 0.75, firstReward: 35, needs: 'marlo',
         intro: ['Admiral Coral, leader of Tide Shore. Five critters, every one a veteran of the storm.', 'Win, and you will have tended every fire in the land.'], winLine: 'The sea gives back what it is given. The Tide Seal is yours.', sealLine: 'Four fires. Someone left a light on for you. Perhaps they still do. The trail north of Sproutvale is open.', beatenLines: ['My fleet is in the harbor. Challenge me again tomorrow.'] },
       { lv: 19, id: 'marlo', name: 'Captain Marlo', at: 'trainer', kind: 'trainer', trainer: true, pal: { cap: true, c: '#1E2A4A', y: '#FFFFFF', Y: '#C9D3E6' }, types: ['Tide', 'Dusk'], size: 4, stage: 3, pick: 0.4,
         intro: ['Ahoy! Four critters, one captain.', 'Can your crew weather all of them?'], winLine: 'You sailed through my whole crew! A fine captain you would make.', beatenLines: ['My crew is resting below deck. Tomorrow, sailor!'] },
@@ -833,7 +837,7 @@ const APP = (() => {
   }
   // the window at Home: kept lit for you at the very start and once you tend three fires; after the beacon, lit only by you, each day
   function homeLitNow() { const f = advOf().flags; return f.lampLit ? f.homeLit === new Date().toDateString() : (sealCount() >= 3 || game.state.caught.length <= 1); }
-  function objState(o) { const a = advOf(); if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'chamberlamp') return chamberlampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'windowlamp') { const t = timeOfDay(); return { lit: a.flags.lampLit ? a.flags.homeLit === new Date().toDateString() : (sealCount() >= 3 || t === 'night' || t === 'dusk') }; } /* after the beacon the window is lit only by you, each day */ if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'critterbasket') { const fl = APP_FOLLOWER(); return { img: fl ? fl.img : null }; } if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
+  function objState(o) { const a = advOf(); if (o.id === 'names') return { n: game.ladderStep() }; /* the rail: one mark per step climbed */ if (o.kind === 'postlamp') return lampState(o); if (o.kind === 'gbed') return bedState(o); if (o.kind === 'gbrazier') return brazierState(o); if (o.kind === 'callamp') return callampState(o); if (o.kind === 'chamberlamp') return chamberlampState(o); if (o.kind === 'sprouts') return { stage: sealCount() }; if (o.kind === 'windowlamp') { const t = timeOfDay(); return { lit: a.flags.lampLit ? a.flags.homeLit === new Date().toDateString() : (sealCount() >= 3 || t === 'night' || t === 'dusk') }; } /* after the beacon the window is lit only by you, each day */ if (o.kind === 'growthpost') return { n: 1 + sealCount() }; if (o.kind === 'critterbasket') { const fl = APP_FOLLOWER(); return { img: fl ? fl.img : null }; } if (o.kind === 'harborlamp') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'hearth') return { logs: 1 + (Math.floor(Date.now() / 86400000) % 3) }; if (o.kind === 'moored') { const t = timeOfDay(); return { lit: t === 'night' || t === 'dusk' }; } if (o.kind === 'camp') { const t = timeOfDay(); return { dark: t === 'night' || t === 'dusk' }; } if (o.id === 'beacon-door') return { open: true, glow: a.flags.lampLit ? 4 : 2, lit: !!a.flags.lampLit }; if (o.kind === 'plaque') return { open: !!a.open.arch, glow: o.id === 'arch' ? (a.flags.lampLit ? 4 : a.clues.length) : 0 }; if (o.kind === 'chest') return { open: !!a.flags['chest:' + o.id] }; if (o.order !== undefined) return { lit: (a.flags.rite || []).indexOf(o.order) !== -1 }; if (o.kind === 'lever') return { on: !!a.flags['lv:' + o.id] }; if (o.kind === 'greatlamp') return { lit: !!a.flags.lampLit }; if (o.kind === 'socket') return { on: !!a.flags['sock:' + o.core] }; if (o.kind === 'furnace') return { lit: !!a.flags.forgeLit }; return {}; }
   function gainClue(c) {
     if (advOf().clues.indexOf(c.id) !== -1) return;
     advSave((a) => { a.clues.push(c.id); }); game.sfx('claim');
@@ -856,7 +860,7 @@ const APP = (() => {
   function chestUse(o) {
     const key = 'chest:' + o.id; if (advOf().flags[key]) { toast('The chest is empty.'); return; }
     const r = o.reward || {}, bag = Object.assign({}, game.state.bag), parts = [];
-    Object.keys(r).forEach((k) => { if (k === 'essence') parts.push(r[k] + ' essence'); else { bag[k] = (bag[k] | 0) + r[k]; parts.push(r[k] + ' ' + ({ potion: 'Potion', super: 'Super Potion', charm: 'Rare Charm', ticket: 'Roll Ticket' }[k] || k) + (r[k] > 1 ? 's' : '')); } });
+    Object.keys(r).forEach((k) => { if (k === 'ticket') return; if (k === 'essence') parts.push(r[k] + ' essence'); else { bag[k] = (bag[k] | 0) + r[k]; parts.push(r[k] + ' ' + ({ potion: 'Potion', super: 'Super Potion', charm: 'Rare Charm', ticket: 'Roll Ticket' }[k] || k) + (r[k] > 1 ? 's' : '')); } });
     advSave((a) => { a.flags[key] = true; }); game.update({ bag: bag, essence: (game.state.essence || 0) + (r.essence | 0) }); game.sfx('claim');
     toast('You open the chest: ' + parts.join(' and ') + '!');
   }
@@ -912,7 +916,7 @@ const APP = (() => {
   }
   function gymDone(id, line) { advSave((x) => { x.flags['gym:' + id] = true; }); applyGym(); game.sfx('claim'); toast(line); setTimeout(() => toast(line), 900); }
   // ---- Glacia's Gym: the trial of stillness. Ice forms on the water around you only while you stand still; what you leave behind melts when you move on; the plate under you never melts. ----
-  const STILL_S = 0.8; let iceCells = [], stillT = 0, stillStamp = 0;
+  const STILL_S = 1.2; let iceCells = [], stillT = 0, stillStamp = 0;   // 1.2 s of standing still before the ice takes (review copy; 1.6 if Dan's thumb says it still stutters). APP.stillK() is the forming ratio for the drawing.
   setInterval(() => {
     const M = WORLD.map; if (!M || M.id !== 'gym-glacia' || gymOpen('glacia')) return;
     const now = performance.now(), dt = Math.min(0.3, (now - stillStamp) / 1000); stillStamp = now;
@@ -926,7 +930,7 @@ const APP = (() => {
     if (ty <= 8 && M.pool && ty < M.pool[1]) gymDone('glacia', 'The pool goes still, and stays.');   // the far shore
   }, 100);
   // ---- Blaze's Gym: the fire that has to be fed. Carry one log at a time from the woodpile; a brazier burns down in BURN_S seconds; all three alight at once opens the way. ----
-  const BURN_S = 14; let carry = false, burn = {}, burnStamp = 0;
+  const BURN_S = 18; let carry = false, burn = {}, burnStamp = 0;   // a brazier burns down in 18 s (review copy: feeding is not hurrying)
   function brazierState(o) {
     const now = performance.now(), dt = Math.min(0.2, Math.max(0, (now - burnStamp) / 1000)); burnStamp = now;
     if (gymOpen('blaze')) return { burn: 1 };
@@ -1126,7 +1130,7 @@ const APP = (() => {
       if (clue) { showDialog(n.name, lines.concat(clue.lines)); return; }   // the four people only point at what is in front of them; looking at it is what teaches you
       showDialog(n.name, lines); return;
     }
-    if (n.kind === 'shop') { showDialog(n.name, n.lines, null, () => openPanel('shop')); return; } // shops stay quick: no weather remark
+    if (n.kind === 'shop') { if (n.id === 'mira' && sealCount() >= 4) { showDialog(n.name, n.lines); return; } showDialog(n.name, n.lines, null, () => openPanel('shop')); return; } // shops stay quick: no weather remark; at four seals Mira's stall is bare (the shelf at home is kept)
     if (n.kind === 'request') {
       if (done.indexOf(n.id) !== -1) { showDialog(n.name, n.after); return; }
       if (NEEDS[n.need](g)) {
@@ -1174,7 +1178,7 @@ const APP = (() => {
     const reward = n.leader ? (seals.indexOf(n.id) === -1 ? n.firstReward : n.reward) : (cleared.indexOf(n.id) === -1 ? n.reward + (n.bonus || 0) : Math.ceil(n.reward / 2));
     const tr = { id: n.id, name: n.name, team: team, stage: n.stage, lv: n.lv || 1, reward: reward, winLine: n.winLine, leader: !!n.leader, boss: !!n.boss, ladder: n.ladder || 0 };
     if (!ACT.canDuel()) { resumeWorld(); toast('Your lead critter is not ready to fight here.'); return; }
-    if (n.ladder && n.ladder === game.ladderStep() + 1) game.update({ arena: Object.assign({ step: 0 }, game.state.arena, { day: new Date().toDateString() }) });   // the ladder: one fight a day, win or lose
+    // the ladder's day is stamped on a WON step in settleBattle, so a lost ladder fight can be tried again today
     if (ACT.startDuel({ tr: tr, npc: n })) { n.declined = true; resumeWorld(); return; }   // every fight is a duel on the map (the dialog that led here left the world paused)
     resumeWorld();
   }
@@ -1227,7 +1231,7 @@ const APP = (() => {
     } else if (res.kind === 'top') {
       setTimeout(() => showDialog(KEEPER, ['Morning. You kept the whole watch.' + (res.reward ? ' +' + res.reward + ' essence.' : ''), res.first ? 'Nobody in Sproutvale has kept it longer. The lamp was yours all night.' : 'Kept to morning again: ' + t.clears + ' times now.']), 60);
     } else {
-      setTimeout(() => showDialog(KEEPER, ['The lamp went out on night ' + res.floor + '.', 'Longest watch: ' + Math.max(t.best, 0) + ' nights of ' + TOWER.floors + '. Watches left today: ' + (g.props.testMode ? 'unlimited' : g.towerRunsLeft()) + '.']), 60);
+      setTimeout(() => showDialog(KEEPER, ['The lamp went out on night ' + res.floor + '.', 'The watch waits on night ' + res.floor + '. Your party rests: ' + partyLine() + '.']), 60);   // a night not kept does not unmake the watch
     }
   }
   // ---------- the catch pouch (action mode): critters that dropped an orb wait here until you decide ----------
@@ -1236,6 +1240,13 @@ const APP = (() => {
     game.update({ seed: p[0], previewSeed: null, reveal: (game.state.reveal || 0) + 1 });
     game.setState({ tab: 'roll', selected: null, armed: false, encounter: 'pouch', pouchCard: true });
     return true;
+  }
+  // keep by staying: the critter was kept beside you; the same card opens, already kept (nothing to decide)
+  function showKeptCard(seed) {
+    if (open || dlg || menuOpen || mapOpen || panel) return;
+    lastOpener = document.activeElement; game.update({ seed: seed, previewSeed: null, reveal: (game.state.reveal || 0) + 1 });
+    game.setState({ tab: 'roll', selected: null, armed: false, encounter: 'kept', pouchCard: false });
+    open = true; $('screen').hidden = false; $('hud').hidden = true; WORLD.setPaused(true); renderScreen();
   }
   function openPouch() {
     if (open || dlg || menuOpen || mapOpen || panel) return;
@@ -1298,7 +1309,7 @@ const APP = (() => {
     if (!n) return;
     if (n.kind === 'sign') {
       const to = n.sign.to, lv = game.levelInfo(game.state.xp || 0).level;
-      toast(n.sign.text + (to && lv < GATES[to] ? (game.props.noGates ? ' Normally opens at level ' + GATES[to] + ' (open now in test mode).' : ' Opens at trainer level ' + GATES[to] + '.') : ''));
+      toast(n.sign.text);   // the sign names the place; a shut gate is seen, not read (gates by fires)
       return;
     }
     if (n.kind === 'water') { fish(n); return; }
@@ -1350,7 +1361,8 @@ const APP = (() => {
       fishing = setTimeout(() => {
         fishing = null; WORLD.setFish(null); WORLD.setPaused(false);
         const local = (M.types || []).filter((t) => t !== 'Tide'), types = Math.random() < 0.7 || !local.length ? ['Tide'] : local;
-        encounter({ types: types, zone: M.name, rare: false, fishing: true });
+        const back = (game.state.returned || []).filter((sd) => !game.state.caught.some((c) => c.seed === sd));   // the water gives back what you let go: one cast in three (item 15)
+        encounter(Object.assign({ types: types, zone: M.name, rare: false, fishing: true }, back.length && Math.random() < 1 / 3 ? { seed: back[Math.floor(Math.random() * back.length)] } : {}));
       }, 650);
     }, wait);
   }
@@ -1374,10 +1386,13 @@ const APP = (() => {
     let ruleState = {}; const applyRules = () => { if (!game || !WORLD.map) return; const id = WORLD.map.id, rules = WILD_RULES[id]; if (!rules) { ruleState = {}; return; } const t = timeOfDay(); rules.forEach((r) => { const gone = !!r[1](t); if (ruleState[id + r[0]] !== gone) { ruleState[id + r[0]] = gone; WORLD.setGate(id, r[0], gone); } }); };
     // people who keep hours: a `late` resident is away by day and home from dusk
     const applyHours = () => { const all = WORLD.allNpcs(), t = timeOfDay(), home = t === 'dusk' || t === 'night'; Object.keys(all).forEach((k) => all[k].forEach((n) => { if (n.late) n.hidden = !home; })); if (!ACT.dueling()) placeRivals(all.arena); };   // the Arena's rivals keep their places by the ladder's step (not mid-duel)
-    setInterval(() => { applyRules(); applyHours(); }, 500); applyHours();
+    const applyHelp = () => { if (!game) return; const all = WORLD.allNpcs(); (all.town || []).forEach((n) => { if (n.id === 'pip') n.hidden = sealCount() >= 1; }); shelfTick(); };   // help that leaves: Pip has gone from the square once you hold a seal
+    setInterval(() => { applyRules(); applyHours(); applyHelp(); }, 500); applyHours(); applyHelp();
     // action mode (prototype): the lead critter fights live; Attack = tap to use the chosen move, hold to open the wheel
     {
-      let leadCache = { key: '', k: null }; const foePool = {}, benchCache = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring');
+      let leadCache = { key: '', k: null }; const foePool = {}, benchCache = {}, imgs = {}, atk = $('atk'), wheel = $('wheel'), ring = atk.querySelector('.ring'), seenToday = {};
+      const ZONE_OF = { Frost: 'frost', Stone: 'frost', Ember: 'ember', Volt: 'ember', Moss: 'moss', Bloom: 'moss', Tide: 'tide', Dusk: 'tide' };
+      const returnedHere = () => { const M = WORLD.map; if (!M) return []; const zone = M.base || M.id, own = new Set(game.state.caught.map((c) => c.seed)); return (game.state.returned || []).filter((sd) => !own.has(sd) && ZONE_OF[game.make(sd, 1).element.name] === zone); };
       let holdT = null, wheelOn = false, hover = -1, slots = [];
       ACT.bind({
         game: () => game, toast: toast, calm: () => !!(game && game.state.settings && game.state.settings.calm),
@@ -1389,6 +1404,7 @@ const APP = (() => {
           return leadCache.k;
         },
         foe: (types, lead, rare) => {
+          if (!rare && Math.random() < 1 / 3) { const back = returnedHere(); if (back.length) { const sd = back[Math.floor(Math.random() * back.length)]; return game.make(sd, lead.stage || 1, Math.max(1, (lead.lv || 1) + Math.floor(Math.random() * 3) - 1)); } }   // one spawn in three on its home zone: a critter you let go (item 15)
           const key = types.join(',') + (rare ? '+rare' : ''), pool = foePool[key] || (foePool[key] = []);
           if (pool.length < 30) for (let i = 0; i < (rare ? 600 : 150) && pool.length < 30; i++) { const sd = 1 + Math.floor(Math.random() * 999998), k = game.make(sd, 1); if ((!types.length || types.indexOf(k.element.name) !== -1) && (!rare || k.rarity === 'Rare' || k.rarity === 'Mythic')) pool.push(sd); }
           if (!pool.length) return null;
@@ -1406,6 +1422,9 @@ const APP = (() => {
         duelDone: (tr, npc, won, lines) => duelDone(tr, npc, won, lines),
         onKill: (foe, mine) => game.actKill(foe, mine),
         worthy: (k) => game.actWorthy(k), pouchAdd: (sd) => game.actPouchAdd(sd),
+        keep: (k, woke) => { const r = game.actKeep(k, woke); if (r.ok) showKeptCard(k.seed); return r; },   // keep by staying: the same card afterwards
+        see: (map, no) => { const key = new Date().toDateString() + '|' + map + '|' + no; if (no !== null) { if (seenToday[key]) return; seenToday[key] = true; } game.questTick('see', map); },   // a city favour: the first sighting of a species per map per day, and every kill
+        bag: () => bagOf(), useBag: (id) => { const b = bagOf(); if (!(b[id] > 0)) return false; b[id] -= 1; game.update({ bag: b }); return true; },
         sfx: (k) => game.sfx(k)
       });
       const ctr = () => { const r = ring.getBoundingClientRect(), w = wheel.getBoundingClientRect(); return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top }; };
@@ -1466,11 +1485,11 @@ const APP = (() => {
       onInteract: interact, onNear: setNear, onEncounter: encounter, npcs: npcList(),
       tint: () => (game.state.settings && game.state.settings.daynight === false) ? 'day' : timeOfDay(),
       objState: objState, carry: () => carry, relit: () => !!advOf().flags.lampLit, homeLit: homeLitNow, weather: () => weatherAt(WORLD.map.id), still: stillMotion, ambient: () => !(game.state.settings && game.state.settings.ambient === false),
-      exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] && WORLD.map.id.indexOf('route-') !== 0 ? game.levelInfo(game.state.xp || 0).level < ROUTE_GATES[e.to] : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : game.levelInfo(game.state.xp || 0).level < GATES[e.to]),
+      exitLocked: (e) => !game.props.noGates && ROUTE_GATES[e.to] !== undefined && WORLD.map.id.indexOf('route-') !== 0 ? !game.gateOpen(e.to) : WORLD.map.id === 'town' && e.to !== 'town' && !game.props.noGates && (e.to === 'peak' ? ((game.state.npc && game.state.npc.seals) || []).length < 4 : !game.gateOpen(e.to)),   // gates by fires (seal counts), with the old level rule kept for older saves
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       critterLead: () => !!(game && game.state.caught.length && !window.__noFollower),   // you steer the critter; the human walks behind it
       follower: APP_FOLLOWER,
-      onLocked: (e) => ROUTE_GATES[e.to] ? toast(mapName(e.to) + ' opens at trainer level ' + ROUTE_GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.') : e.to === 'peak' ? toast("The trail to Vigil Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.') : toast(ZONE_NAMES[e.to] + ' opens at trainer level ' + GATES[e.to] + '. You are level ' + game.levelInfo(game.state.xp || 0).level + '.'),
+      onLocked: (e) => { if (e.to === 'peak') toast("The trail to Vigil Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.'); },   // a shut gate says nothing: its lamp is unlit (item 6, the drawing is package W's)
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1 && game.ladderReady(n),
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
@@ -1580,6 +1599,6 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { homeLitNow: homeLitNow, placeRivals: placeRivals, tending: () => tending, carry: () => carry, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { homeLitNow: homeLitNow, placeRivals: placeRivals, tending: () => tending, carry: () => carry, stillT: () => stillT, stillK: () => Math.min(1, stillT / STILL_S), STILL_S: STILL_S, BURN_S: BURN_S, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
