@@ -1,5 +1,6 @@
 # A play-through with real randomness (repeat before calling a failure a regression): reveal, keep, battle rounds.
 from playwright.sync_api import sync_playwright
+from chk import check, done
 errors=[]
 def go(pg, pid):
     if pg.evaluate("!!WORLD.map.interior"): pg.evaluate("WORLD.enter(WORLD.map.parent)"); pg.wait_for_timeout(100)   # step back outside first (Home and the Lab are rooms)
@@ -10,6 +11,7 @@ with sync_playwright() as p:
     pg=ctx.new_page(); pg.on('pageerror', lambda e: errors.append(str(e)))
     pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
     pg.evaluate('0')
+    REV=pg.evaluate("APP.build")=='review'   # the review copy (src/world-rev): the #tip is gone from the first minute (11's item 2)
     # a kept critter comes from the grass now (the shrine is gone): keep one through an encounter
     pg.evaluate("APP.encounter({types:['Moss','Bloom'], zone:'Moss Forest', rare:false})"); pg.wait_for_timeout(400)
     pg.get_by_role('button', name='Keep').first.click(); pg.wait_for_timeout(200)
@@ -20,8 +22,10 @@ with sync_playwright() as p:
     pg.click('#close-screen'); pg.wait_for_timeout(1300)
     pos=pg.evaluate("WORLD.pos()")
     pg.reload(); pg.wait_for_timeout(1300)
-    after=pg.evaluate("({kept:APP.game.state.caught.length, wins:APP.game.state.wins, pos:WORLD.pos(), tip:document.getElementById('tip').hidden})")
+    after=pg.evaluate("({kept:APP.game.state.caught.length, wins:APP.game.state.wins, pos:WORLD.pos(), tip:(()=>{const t=document.getElementById('tip'); return !t || t.hidden;})()})")
     print('after reload:', after, '| position before:', pos)
     pg.screenshot(path='/tmp/p_world.png')
+    if REV: check('review copy: no #tip in the page (the first minute stops talking)', pg.evaluate("!document.getElementById('tip')"))
     print('page errors:', errors if errors else 'none')
     b.close()
+done()

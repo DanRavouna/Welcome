@@ -5,6 +5,7 @@ errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_function("typeof APP!=='undefined' && APP.game")
+  REV=pg.evaluate("APP.build")=='review'
   pg.evaluate("APP.game.update({hints:['party','shop','evolve','weather','zone','grass','keep','battle','online'],caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,settings:Object.assign({},APP.game.state.settings,{test:false}),npc:{done:[],beaten:{},cleared:[],seals:[]}}); DEV.safe=true; window.__noTransition=true; window.__noFollower=true; window.__tod='day'; document.getElementById('starter').hidden=true")
   def at_door(m,pid): pg.evaluate("([m,pid])=>{WORLD.enter(m);WORLD.setPaused(false);const p=WORLD.map.places.find(q=>q.id===pid);WORLD.setPos((p.door[0]+0.9)*32,(p.door[1]+(p.door[1]===p.y&&p.h>1?-0.6:1.4))*32);WORLD.step(1/60)}",[m,pid]); pg.wait_for_timeout(150)   # a door on the top row is reached from above
   def press(): pg.evaluate("document.getElementById('act').click()"); pg.wait_for_timeout(250)
@@ -26,7 +27,13 @@ with sync_playwright() as p:
   check('town rooms: no line is a tip', not any(w in pg.evaluate("['in-house-pip','in-house-mira'].map(id=>WORLD.MAPS[id].objects.map(o=>o.text).join(' | ')).join(' | ')").lower() for w in tipwords))
   # the Long Watch
   at_door('peak','tower'); check('tower door: Enter the Tower', pg.inner_text('#act-label')==('Go in' if pg.evaluate("APP.build||''")=='review' else 'Enter the Tower')); press()   # the review copy's label is "Go in" (02-F33)
-  check('without four seals the door refuses and you stay outside', pg.evaluate("WORLD.map.id")=='peak' and 'is for those who hold all 4' in pg.inner_text('#toast'), pg.inner_text('#toast'))
+  if REV:   # the review copy (11's item 23): the door is shut without a word of rule; a save that has already kept a night keeps it open
+    check('without four seals the door refuses and you stay outside', pg.evaluate("WORLD.map.id")=='peak' and 'The door is shut' in pg.inner_text('#toast') and 'seal' not in pg.inner_text('#toast').lower(), pg.inner_text('#toast'))
+    pg.evaluate("APP.game.update({tower:Object.assign({},APP.game.state.tower,{best:3})})"); press()
+    check('review copy: a save that kept a night (tower.best 3, no seals) goes in', pg.evaluate("WORLD.map.id")=='in-tower', pg.evaluate("WORLD.map.id"))
+    pg.evaluate("APP.game.update({tower:{best:0,day:'',runs:0,clears:0,run:null}})"); at_door('peak','tower')
+  else:
+    check('without four seals the door refuses and you stay outside', pg.evaluate("WORLD.map.id")=='peak' and 'is for those who hold all 4' in pg.inner_text('#toast'), pg.inner_text('#toast'))
   pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{seals:['wren','glacia','blaze','coral']})})"); press()
   check('with four seals it leads into the lobby of the Watch', pg.evaluate("WORLD.map.id")=='in-tower')
   check('the lobby: two lamps that stay lit, a bench with a blanket, the book of nights', sorted(pg.evaluate("WORLD.map.objects.map(o=>o.kind)"))==['blanketbench','logbook','walllamp','walllamp'])

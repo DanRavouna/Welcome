@@ -7730,7 +7730,7 @@ const APP = (() => {
     const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - tendStamp) / 1000)); if (tending === o.id) tendStamp = now;
     let stage = bedStage(o), p = 0;
     if (tending === null && stage < 2 && !gymWrenOpen()) {   // the stay begins by itself after BED_WAIT_S beside the bed
-      const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)), dt2 = Math.min(0.1, Math.max(0, (now - (bedNear.stamp || now)) / 1000)); bedNear.stamp = now;
+      const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)), dt2 = Math.min(0.1, Math.max(0, (now - (bedNear['@' + o.id] || now)) / 1000)); bedNear['@' + o.id] = now;   /* one clock per bed: a shared stamp gave every bed drawn after another in the same frame a dt of 0, so the stay never began by the bed drawn last (bed1 at 390 px wide) */
       if (d <= BED_REACH && !WORLD.moving()) { bedNear[o.id] = (bedNear[o.id] || 0) + dt2; if (bedNear[o.id] >= BED_WAIT_S) { bedNear[o.id] = 0; tending = o.id; tendP = 0; tendStamp = now; } } else bedNear[o.id] = 0;
     }
     if (tending === o.id && stage < 2) {

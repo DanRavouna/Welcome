@@ -5,6 +5,8 @@ errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_function("typeof APP!=='undefined' && APP.game")
+  REV=pg.evaluate("APP.build")=='review'   # the review copy (11's item 5): no Tend button; the stay begins by itself after BED_WAIT_S (0.6 s) in reach; the seal is the kept bed
+  W=600 if REV else 0   # ms the review copy waits in reach before the tending begins
   pg.evaluate("APP.game.update({hints:['party','shop','evolve','weather','zone','grass','keep','battle','online'],caught:[{seed:2,stage:3,lv:15}],party:[2],fighter:2,intro:true,xp:99999,npc:{done:[],beaten:{},cleared:[],seals:[]},adv:{clues:[],open:{},flags:{}}}); DEV.safe=true; window.__noTransition=true; window.__noFollower=true; window.__tod='day'; document.getElementById('starter').hidden=true")
   check('Wren no longer stands in the plaza', pg.evaluate("!(WORLD.allNpcs().mossbrook||[]).some(n=>n.id==='wren')"))
   check('she waits in the gym hall', pg.evaluate("(WORLD.allNpcs()['gym-wren']||[]).map(n=>n.id)")==['wren'])
@@ -20,25 +22,33 @@ with sync_playwright() as p:
   def press(): pg.evaluate("document.getElementById('act').click()"); pg.wait_for_timeout(100)
   stage=lambda i: pg.evaluate("(i)=>APP.game.state.adv.flags['wb:bed'+i]|0",i)
   # 1. the first bed, the one by the way in: press Tend and stay. Growth is logged against the clock.
-  goto_bed(1); check('the action by a seedling is Tend', pg.inner_text('#act-label')=='Tend', pg.inner_text('#act-label')); press()
-  check('pressing Tend kneels you by the bed', pg.evaluate("APP.tending()")=='bed1' and 'kneel' in pg.inner_text('#toast'), pg.inner_text('#toast'))
+  if REV:
+    pg.evaluate("window.__sfx=[]; const g=APP.game, o=g.sfx.bind(g); g.sfx=(...a)=>{window.__sfx.push(a[0]); return o(...a);}")
+    goto_bed(1); check('review copy: no Tend button by a seedling', pg.inner_text('#act-label')!='Tend', pg.inner_text('#act-label'))
+  else:
+    goto_bed(1); check('the action by a seedling is Tend', pg.inner_text('#act-label')=='Tend', pg.inner_text('#act-label')); press()
+    check('pressing Tend kneels you by the bed', pg.evaluate("APP.tending()")=='bed1' and 'kneel' in pg.inner_text('#toast'), pg.inner_text('#toast'))
   log=pg.evaluate("""()=>new Promise(res=>{const out=[];const t0=performance.now();const tick=()=>{out.push([Math.round(performance.now()-t0),APP.game.state.adv.flags['wb:bed1']|0]);if(performance.now()-t0<6500)requestAnimationFrame(tick);else res(out)};tick()})""")
   first=[t for t,s in log if s>=1]; second=[t for t,s in log if s>=2]
-  check('it grows a stage after about 2.5 s of staying (not before 2 s, not after 3.5 s)', first and 2000<=first[0]<=3500, first[:1])
-  check('and blooms after about 5 s', second and 4400<=second[0]<=6400, second[:1])
+  if REV:
+    check('review copy: standing in reach, the bed is tended without a press (nothing kneels, no toast)', 'kneel' not in pg.inner_text('#toast').lower(), pg.inner_text('#toast'))
+  check('it grows a stage after about 2.5 s of staying (not before 2 s, not after 3.5 s)', first and 2000+W<=first[0]<=3500+W, first[:1])
+  check('and blooms after about 5 s', second and 4400+W<=second[0]<=6400+W, second[:1])
+  if REV: check('review copy: the stay is heard growing (tend sounds), then sprout and bloom', 'tend' in pg.evaluate("window.__sfx") and 'sprout' in pg.evaluate("window.__sfx") and 'bloom' in pg.evaluate("window.__sfx"), sorted(set(x for x in pg.evaluate("window.__sfx") if x)))
   check('in bloom it is no longer being tended', pg.evaluate("APP.tending()") is None)
   # 2. walking away mid-way stops it and keeps what grew
-  goto_bed(2); press(); pg.wait_for_timeout(3000); s1=stage(2); check('bed2 grew one stage while you stayed 3 s', s1==1, s1)
+  goto_bed(2); REV or press(); pg.wait_for_timeout(3000+W); s1=stage(2); check('bed2 grew one stage while you stayed 3 s', s1==1, s1)
   pg.wait_for_timeout(600); pg.evaluate("WORLD.setPos(12.5*32,16.5*32)"); pg.wait_for_timeout(300)
   check('walking away ends the tending', pg.evaluate("APP.tending()") is None)
   pg.wait_for_timeout(3000); check('nothing grows while you are away, and nothing is lost', stage(2)==1, stage(2))
-  check('coming back and tending again continues from where it was', (goto_bed(2), press(), pg.wait_for_timeout(3000), stage(2))[-1]==2)
+  check('coming back and tending again continues from where it was', (goto_bed(2), REV or press(), pg.wait_for_timeout(3000+W), stage(2))[-1]==2)
   check('Wren is still out of reach with two beds done', not reach())
   # 3. the other two
-  for i in (3,4): goto_bed(i); press(); pg.wait_for_timeout(5800)
+  for i in (3,4): goto_bed(i); REV or press(); pg.wait_for_timeout(5800+W)
   check('all four in bloom', [stage(i) for i in (1,2,3,4)]==[2,2,2,2], [stage(i) for i in (1,2,3,4)])
   check('the vines drew back and the flag is saved', pg.evaluate("WORLD.map.objects.filter(o=>o.kind==='vines').every(o=>o.hidden) && !!APP.game.state.adv.flags['gym:wren']"))
   check('Wren can be reached now', reach())
+  if REV: check('review copy: the Moss Seal is held the moment the beds bloom, before any duel', pg.evaluate("APP.game.state.npc.seals")==['wren'] and not pg.evaluate("Object.keys(APP.game.state.npc.beaten||{}).length"), pg.evaluate("APP.game.state.npc"))
   pg.evaluate("APP.talk(WORLD.allNpcs()['gym-wren'][0])"); pg.wait_for_timeout(150)
   check('Wren speaks', pg.evaluate("APP.dialog && APP.dialog.name")=='Elder Wren')
   for _ in range(12):

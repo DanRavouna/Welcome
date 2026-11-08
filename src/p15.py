@@ -1,5 +1,6 @@
 # Party screen: add up to 4, make lead, remove and re-add, counts.
 from playwright.sync_api import sync_playwright
+from chk import check, done
 errors=[]
 with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(viewport={'width':390,'height':844}, device_scale_factor=2, has_touch=True)
@@ -8,6 +9,7 @@ with sync_playwright() as p:
     pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1100); pg.evaluate('0')
     pg.evaluate("APP.game.update({settings:Object.assign({},APP.game.state.settings,{follow:false})})")   # these suites test the turn-based battle screen, which is what the game uses when Critter follows you is off
     pg.evaluate("window.__r=Math.random; Math.random=()=>0.999")
+    REV=pg.evaluate("APP.build")=='review'   # the review copy no longer sells the Roll Ticket (11's item 7: a day holds what it holds); held tickets still work
     pg.evaluate("APP.game.update({caught:[{seed:12,stage:1},{seed:30,stage:2},{seed:45,stage:1},{seed:77,stage:1}], essence:40})")
     # party overlay
     pg.click('#b-menu'); pg.click('[data-tile="party"]'); pg.wait_for_timeout(200)
@@ -22,7 +24,12 @@ with sync_playwright() as p:
     # shop via Mira
     pg.evaluate("APP.talk(WORLD.npcs.find(n=>n.id==='mira'))"); pg.wait_for_timeout(100); pg.evaluate("APP.advance(); APP.advance()"); pg.wait_for_timeout(200)
     print('shop open after Mira:', not pg.evaluate("document.getElementById('shop').hidden"), '|', pg.inner_text('#sh-ess'))
-    for it in ['potion','potion','super','charm','ticket']: pg.click(f'[data-buy="{it}"]'); pg.wait_for_timeout(40)
+    if REV:
+        check('review copy: the shop sells no Roll Ticket', pg.locator('[data-buy="ticket"]').count()==0, pg.locator('[data-buy]').evaluate_all("els=>els.map(e=>e.dataset.buy)"))
+        for it in ['potion','potion','super','charm']: pg.click(f'[data-buy="{it}"]'); pg.wait_for_timeout(40)
+        pg.evaluate("APP.game.update({bag:Object.assign({},APP.game.state.bag,{ticket:(APP.game.state.bag.ticket|0)+1})})")   # a ticket held from before still works
+    else:
+        for it in ['potion','potion','super','charm','ticket']: pg.click(f'[data-buy="{it}"]'); pg.wait_for_timeout(40)
     print('bag:', pg.evaluate("APP.game.state.bag"), '| essence left:', pg.evaluate("APP.game.state.essence"), '| charm button disabled (not enough):', pg.locator('[data-buy="charm"]').is_disabled())
     pg.screenshot(path='/tmp/s_shop.png'); pg.click('#shop-close')
     # (the turn-based battle screen with its switch and bag buttons is gone, Nov 2026: the party fights live on the map; acttest and acttest5 cover it)
@@ -43,3 +50,4 @@ with sync_playwright() as p:
     print('after reload: party', pg.evaluate("APP.game.state.party"), '| bag', pg.evaluate("APP.game.state.bag"))
     b.close()
 print('errors:', errors if errors else 'none')
+done()
