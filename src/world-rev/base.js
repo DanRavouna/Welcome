@@ -55,7 +55,9 @@ class Component extends Base {
       title: typeof d.title === 'string' ? d.title : '',
       shinies: Array.isArray(d.shinies) ? d.shinies.filter((n) => Number.isInteger(n)) : [],
       pouch: Array.isArray(d.pouch) ? d.pouch.filter((n) => Number.isInteger(n)).slice(0, 8) : [],
-      act: { day: d.act && typeof d.act.day === 'string' ? d.act.day : '', n: d.act ? Math.max(0, d.act.n | 0) : 0 },
+      act: { day: d.act && typeof d.act.day === 'string' ? d.act.day : '', n: d.act ? Math.max(0, d.act.n | 0) : 0, tx: d.act ? Math.max(0, d.act.tx | 0) : 0 },
+      returned: Array.isArray(d.returned) ? d.returned.filter((n) => Number.isInteger(n)).slice(-40) : [],   // critters you let go: met again on their own shore (item 15); default empty
+      lvGates: d.lvGates === true || (d.lvGates === undefined && Array.isArray(d.caught) && d.caught.length > 0),   // a save older than the gates-by-fires build keeps the trainer-level gates as an alternative
       tower: (() => {
         const t = d.tower && typeof d.tower === 'object' ? d.tower : {};
         const r = t.run && typeof t.run === 'object' && Array.isArray(t.run.party) ? { floor: Math.max(1, t.run.floor | 0), party: t.run.party.filter((n) => Number.isInteger(n)).slice(0, 3), hp: t.run.hp && typeof t.run.hp === 'object' ? t.run.hp : {} } : null;
@@ -91,7 +93,7 @@ class Component extends Base {
     try {
       // keep fields this build does not know (written by a newer build or another device): merge them under our own fields instead of dropping them
       let keep = {}; try { const old = JSON.parse(window.localStorage.getItem('critter-roll:v2') || '{}'); if (old && typeof old === 'object') keep = old; } catch (e2) {}
-      window.localStorage.setItem('critter-roll:v2', JSON.stringify(Object.assign({}, keep, { caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, act: s.act, pouch: s.pouch, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv })));
+      window.localStorage.setItem('critter-roll:v2', JSON.stringify(Object.assign({}, keep, { caught: s.caught, essence: s.essence, wins: s.wins, day: s.day, used: s.used, earned: earned, seed: s.seed, xp: s.xp, quests: s.quests, seen: s.seen, settings: s.settings, npc: s.npc, party: s.party, bag: s.bag, charm: s.charm, lure: s.lure, cq: s.cq, tickets: s.tickets, intro: s.intro, hints: s.hints, dev: s.dev, sight: s.sight, tower: s.tower, act: s.act, pouch: s.pouch, titles: s.titles, title: s.title, shinies: s.shinies, stats: s.stats, visited: s.visited, adv: s.adv, returned: s.returned, lvGates: s.lvGates })));
     } catch (e) {}
   }
 
@@ -577,7 +579,7 @@ class Component extends Base {
 
   makeQuests(day, salt) {
     const r = this.rng(this.hashStr(day + '#' + salt));
-    const pool = ['roll', 'keep', 'win', 'adv', 'type', 'evolve', 'special', 'release', 'species'];
+    const pool = ['keep', 'win', 'adv', 'type', 'evolve', 'species'];   // kinds the day can keep: 'roll' and 'special' never progress in action mode, 'release' is not asked for (letting go is return, item 15); their defs stay so old saves still read
     const items = [];
     while (items.length < 3) {
       const key = pool.splice(Math.floor(r() * pool.length), 1)[0];
@@ -1014,7 +1016,7 @@ class Component extends Base {
       showTestTools: tab === 'badges' && testMode,
       seedInput: st.seedInput,
       loadError: st.loadError,
-      releaseLabel: detail && SECRETS[entry.seed] ? 'Cannot be released' : (st.armed ? 'Tap to confirm' : 'Release (+' + releaseGain + ')'),
+      releaseLabel: detail && SECRETS[entry.seed] ? 'It stays with you' : (st.armed ? 'Tap to confirm' : 'Let it go' + (releaseGain ? ' (+' + releaseGain + ')' : '')),
       releaseBg: st.armed ? 'rgba(150,40,30,0.85)' : 'rgba(14,26,56,0.78)',
       cannotEvolve: !canEvolve,
       evolveLabel: detail && entry.stage === 3 ? 'Fully evolved' : 'Evolve (−' + evolveCost + ')',
@@ -1067,7 +1069,7 @@ class Component extends Base {
         const seen = (st.seen || []).slice();
         const events = [{ t: 'keep' }];
         if (seen.indexOf(no) === -1) { seen.push(no); events.push({ t: 'species' }); }
-        this.update({ caught: [{ seed: shownSeed, stage: 1 }].concat(st.caught), seen: seen }, events);
+        this.update({ caught: [{ seed: shownSeed, stage: 1 }].concat(st.caught), seen: seen, returned: (st.returned || []).filter((x) => x !== shownSeed) }, events);   // a critter met again on its shore or on a line leaves the returned pool when kept
         this.sfx('tap');
       },
       release: () => {
@@ -1076,10 +1078,11 @@ class Component extends Base {
         if (!st.armed) { this.setState({ armed: true }); return; }
         this.update({
           caught: st.caught.filter((e) => e.seed !== entry.seed),
+          returned: (st.returned || []).filter((x) => x !== entry.seed).concat([entry.seed]).slice(-40),   // it goes back: met again on its own shore, or on a line
           essence: st.essence + releaseGain,
           selected: null, armed: false,
           fighter: st.fighter === entry.seed ? null : st.fighter,
-          battle: b && b.s[0].k.seed === entry.seed ? null : b
+          battle: st.battle && st.battle.s[0].k.seed === entry.seed ? null : st.battle   /* (b was never defined here: Let it go and Evolve threw) */
         }, [{ t: 'release' }]);
       },
       evolve: () => {
@@ -1087,7 +1090,7 @@ class Component extends Base {
         this.update({
           caught: st.caught.map((e) => (e.seed === entry.seed ? Object.assign({}, e, { stage: e.stage + 1 }) : e)),
           essence: st.essence - evolveCost,
-          battle: b && b.s[0].k.seed === entry.seed ? null : b
+          battle: st.battle && st.battle.s[0].k.seed === entry.seed ? null : st.battle   /* (b was never defined here: Let it go and Evolve threw) */
         }, [{ t: 'evolve' }]);
       },
       addEssence: () => this.update({ essence: st.essence + 10 }),

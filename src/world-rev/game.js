@@ -179,6 +179,21 @@ class Game extends Component {
     if (it === 'whet') return !(P.boost > 1);
     return false;
   }
+  // gates by fires (review copy, item 9): a town gate or a route is open once you hold enough seals (GATES / ROUTE_GATES as seal counts); a save older than this build
+  // (state.lvGates) also keeps the old trainer-level rule as an alternative, and a save that has walked the Cold Ascent keeps the climb.
+  gateOpen(id) {
+    const need = ROUTE_GATES[id] !== undefined ? ROUTE_GATES[id] : GATES[id]; if (need === undefined) return true;
+    const seals = ((this.state.npc && this.state.npc.seals) || []).length; if (seals >= need) return true;
+    if (id === 'ascent' && (this.state.visited || []).indexOf('ascent') !== -1) return true;
+    if (this.state.lvGates) { const old = ROUTE_GATES_LV[id] !== undefined ? ROUTE_GATES_LV[id] : GATES_LV[id]; if (old !== undefined && this.levelInfo(this.state.xp || 0).level >= old) return true; }
+    return false;
+  }
+  // quests the day can keep (item 7): a saved quest of a kind that can no longer progress in action mode is regenerated once with salt + 1 on load
+  componentDidMount() {
+    super.componentDidMount();
+    const q = this.state.quests, dead = ['roll', 'special', 'release'];
+    if (q && q.day === new Date().toDateString() && Array.isArray(q.items) && q.items.some((it) => dead.indexOf(it.key) !== -1)) this.update({ quests: this.makeQuests(q.day, (q.salt || 0) + 1) });
+  }
   towerTwist(date) {
     if (typeof window !== 'undefined' && window.__twist) return window.__twist;
     const d = date || new Date(), week = Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000 + 3) / 7); // weeks start on Monday
@@ -257,29 +272,32 @@ class Game extends Component {
   actWorthy(k) { const st = this.state; return !st.caught.some((e) => e.seed === k.seed) && (st.pouch || []).indexOf(k.seed) === -1; }
   // put a collected orb in the pouch (8 at most); returns true, or 'full'
   actPouchAdd(seed) { const p = (this.state.pouch || []).slice(); if (p.indexOf(seed) !== -1) return true; if (p.length >= 8) return 'full'; p.push(seed); this.update({ pouch: p }); return true; }
-  actKeepCost(k) { const free = this.sightingsLeft() > 0; return { cost: (k.shiny ? 0 : (KEEP_COST[k.rarity] || 1)) + (free ? 0 : 1), free: free }; }
-  actKeep(k) {
+  // the price of a keep in rolls (the day's lamp): shiny free; a critter that woke for you in the rare grass (woke) keeps at the Common price. The sightings counter no longer adds to it.
+  actKeepCost(k, woke) { return { cost: k.shiny ? 0 : (woke ? KEEP_COST.Common : (KEEP_COST[k.rarity] || 1)), free: true }; }
+  actKeep(k, woke) {
     const st = this.state; if (st.caught.some((e) => e.seed === k.seed)) return { ok: false, why: 'owned' };
-    const e2 = this.energy(), today = new Date().toDateString(), c = this.actKeepCost(k);
-    if (e2.left < c.cost) return { ok: false, why: 'rolls', cost: c.cost };
-    const s = st.sight && st.sight.day === today ? st.sight : { day: today, n: 0 }, no = this.make(k.seed, 1).speciesNo, seen = (st.seen || []).slice(), events = [{ t: 'keep' }];
+    const e2 = this.energy(), c = this.actKeepCost(k, woke);
+    if (e2.left < c.cost) return { ok: false, why: 'rolls', cost: c.cost, left: e2.left };
+    const no = this.make(k.seed, 1).speciesNo, seen = (st.seen || []).slice(), events = [{ t: 'keep' }];
     if (no <= 48 && seen.indexOf(no) === -1) { seen.push(no); events.push({ t: 'species' }); }
-    this.update({ caught: [{ seed: k.seed, stage: 1 }].concat(st.caught), seen: seen, day: e2.today, used: e2.used + c.cost, sight: { day: today, n: s.n + (c.free ? 1 : 0) }, pouch: (st.pouch || []).filter((x) => x !== k.seed) }, events);
+    this.update({ caught: [{ seed: k.seed, stage: 1 }].concat(st.caught), seen: seen, day: e2.today, used: e2.used + c.cost, pouch: (st.pouch || []).filter((x) => x !== k.seed), returned: (st.returned || []).filter((x) => x !== k.seed) }, events);
     this.sfx('keep'); return { ok: true, cost: c.cost, species: events.length > 1 };
   }
   // action mode: a defeated wild critter pays the lead critter XP (it can level up) and, for the first ACT_ESS_CAP kills each day, essence like a won wild battle
   actKill(foeK, leadK) {
-    const st = this.state, today = new Date().toDateString(), a = st.act && st.act.day === today ? st.act : { day: today, n: 0 };
+    const st = this.state, today = new Date().toDateString(), a = st.act && st.act.day === today ? st.act : { day: today, n: 0, tx: 0 };
     const caught = st.caught.map((e) => Object.assign({}, e)), e = caught.find((x) => x.seed === leadK.seed);
+    const tx = a.tx | 0, txp = this.energy().left <= 0 && tx < ACT_TXP_CAP ? 1 : 0;   // the day's lamp spent: the first ACT_TXP_CAP kills still move the trainer, by one
     const ratio = Math.max(0.5, Math.min(1.5, (foeK.lv || 1) / Math.max(1, leadK.lv || 1)));
     const xpGain = Math.max(1, Math.round((8 + 2 * (foeK.lv || 1) + 5 * (foeK.stage || 1)) * ACT_XP * ratio));
     let lv0 = 0, lv1 = 0;
     if (e) { lv0 = lv1 = e.lv || 1; let xp = (e.xp || 0) + xpGain; while (lv1 < MAX_LV && xp >= lvNeed(lv1)) { xp -= lvNeed(lv1); lv1 += 1; } if (lv1 >= MAX_LV) xp = 0; e.lv = lv1; e.xp = xp; }
     let ess = 0;
     if (a.n < ACT_ESS_CAP) { ess = 1 + (foeK.rarity === 'Rare' ? 1 : 0) + (foeK.rarity === 'Mythic' ? 2 : 0) + (this.beats()[leadK.element.name].indexOf(foeK.element.name) !== -1 ? 1 : 0); }
-    this.update({ caught: caught, essence: st.essence + ess, act: { day: today, n: a.n + 1 } });
+    const patch = { caught: caught, essence: st.essence + ess, act: { day: today, n: a.n + 1, tx: tx + txp } }; if (txp) patch.xp = (st.xp || 0) + txp;
+    this.update(patch);
     if (lv1 > lv0) setTimeout(() => this.sfx('level'), 150);
-    return { xp: xpGain, ess: ess, lv: lv1 > lv0 ? lv1 : 0, capped: a.n + 1 >= ACT_ESS_CAP };
+    return { xp: xpGain, ess: ess, txp: txp, lv: lv1 > lv0 ? lv1 : 0, capped: a.n + 1 >= ACT_ESS_CAP };
   }
   awardXp(nb, won, patch) {
     const caught = (patch.caught || this.state.caught).map((e) => Object.assign({}, e));
@@ -309,7 +327,7 @@ class Game extends Component {
         if (tr.leader && (npc.seals || []).indexOf(tr.id) === -1) { npc.seals = (npc.seals || []).concat([tr.id]); patch.justSealed = tr.id; events.push({ t: 'leader' }); }
         patch.npc = npc;
         if (tr.ladder) {   // the Arena ladder: the step climbed; the top step keeps Kindlemane for whoever climbs it
-          const ar = Object.assign({ step: 0, day: '' }, this.state.arena); ar.step = Math.max(ar.step, tr.ladder); patch.arena = ar;
+          const ar = Object.assign({ step: 0, day: '' }, this.state.arena); if (tr.ladder === ar.step + 1) ar.day = new Date().toDateString(); ar.step = Math.max(ar.step, tr.ladder); patch.arena = ar;   // the day is stamped on a WON ladder fight (a lost one can be tried again today)
           if (tr.ladder >= 5 && !(patch.caught || this.state.caught).some((e) => e.seed === SECRET4_SEED)) { patch.caught = (patch.caught || this.state.caught).concat([{ seed: SECRET4_SEED, stage: 3, lv: SECRETS[SECRET4_SEED].lv }]); patch.kindled = true; }
         }
         nb.log.push({ text: tr.name + ': "' + tr.winLine + '"' });
@@ -348,7 +366,7 @@ class Game extends Component {
         const heal = this.towerTwist().heal; run.party.forEach((sd) => { const max = this.maxHp(sd); run.hp[sd] = Math.min(max, (run.hp[sd] === undefined ? max : run.hp[sd]) + Math.round(max * heal)); });
         patch.towerResult = { kind: 'win', floor: f, reward: nb.reward, first: t.best < f };
       }
-    } else if (lost) { nt.run = null; patch.towerResult = { kind: 'loss', floor: f, best: t.best }; }
+    } else if (lost) { run.party.forEach((sd) => { run.hp[sd] = Math.round(this.maxHp(sd) * TOWER.heal); }); patch.towerResult = { kind: 'loss', floor: f, best: t.best }; }   // a night not kept does not unmake the watch: the run waits on the same night, the party at 30% (best unchanged)
     patch.tower = nt;
   }
   renderVals() {
@@ -368,7 +386,7 @@ class Game extends Component {
     const pouchMode = !!this.state.pouchCard && enc === 'pouch';
     if (v.showRoll && v.c && !v.kept && !this.state.previewSeed) {
       const cost = pouchMode ? this.actKeepCost(v.c).cost : (v.c.shiny ? 0 : (KEEP_COST[v.c.rarity] || 1)), en = this.energy(), can = en.left >= cost, baseKeep = v.keep;
-      v.keepLabel = cost === 0 ? 'Keep (free, shiny!)' : (can ? 'Keep (' + cost + (cost === 1 ? ' roll)' : ' rolls)') : 'Needs ' + cost + ' rolls');
+      v.keepLabel = cost === 0 ? 'Keep (free, shiny!)' : (can ? 'Keep (' + cost + (cost === 1 ? ' roll)' : ' rolls)') : 'Needs ' + cost + (cost === 1 ? ' roll' : ' rolls'));
       v.keepDisabled = !can;
       v.keep = () => {
         if (pouchMode) { const r = this.actKeep(v.c); if (r.ok) this.setState({ reveal: 0 }); return; }
@@ -379,24 +397,24 @@ class Game extends Component {
     }
     v.showEncounterBar = v.showRoll && !!enc;
     const sl = this.sightingsLeft();
-    v.encounterNote = enc ? 'Found in the tall grass of ' + enc + '. ' + (this.state.encounterPaid ? 'Your free sightings are used up, so this one cost a roll.' : 'Free sighting: ' + Math.max(0, sl) + ' left today.') : '';
+    v.encounterNote = enc && enc !== 'kept' ? 'Found in the tall grass of ' + enc + '. ' + (this.state.encounterPaid ? 'Your free sightings are used up, so this one cost a roll.' : 'Free sighting: ' + Math.max(0, sl) + ' left today.') : '';
+    if (enc === 'kept') v.showEncounterBar = false;   // kept by staying beside it: the card shows the critter, nothing to explain
     v.leaveLabel = v.kept ? 'Back to exploring' : 'Let it go';
     v.leaveGo = v.closeScreen;
     if (pouchMode && v.c) {
       const more = (this.state.pouch || []).filter((x) => x !== v.c.seed).length, kc = this.actKeepCost(v.c);
       v.leaveLabel = v.kept ? (more ? 'Next critter (' + more + ')' : 'Back to exploring') : (more ? 'Let it go, next (' + more + ')' : 'Let it go');
       v.leaveGo = () => APP.pouchNext(v.c.seed, !!v.kept);
-      v.encounterNote = 'Dropped by a defeated wild critter (it joins at level 1). ' + (kc.free ? 'Keeping uses one of today\u2019s free sightings.' : 'Your free sightings are used up, so keeping costs one extra roll.') + ' It stays in your pouch until you decide.';
+      v.encounterNote = '';   // the pouch card without its paragraph (04-P1): the critter and the price
     }
     v.encKeepBg = v.kept ? 'rgba(40,110,60,0.85)' : (v.keepDisabled ? 'rgba(14,26,56,0.6)' : v.primaryBg);
     v.encKeepFg = v.kept ? '#FFFFFF' : (v.keepDisabled ? '#9FB0D0' : '#2A1B00');
     v.encKeepShadow = v.kept || v.keepDisabled ? 'none' : '0 4px 14px rgba(245,185,58,0.45)';
     const seals = (this.state.npc && this.state.npc.seals) || [];
-    const lvNow = this.levelInfo(this.state.xp || 0).level;
     v.seals = LEADERS.map((L) => {
-      const got = seals.indexOf(L.id) !== -1, open = lvNow >= GATES[L.zone] || this.props.noGates;
+      const got = seals.indexOf(L.id) !== -1, open = this.gateOpen(L.zone) || this.props.noGates;
       return { name: L.name, zone: ZONE_NAMES[L.zone], got: got, notGot: !got, color: got ? L.color : '#AEBBD6', ring: got ? '#F5C542' : '#8C9BBD', glow: got ? '0 0 12px rgba(245,197,66,0.7)' : 'none',
-        status: got ? 'Seal earned' : (open ? 'Waiting in ' + mapName(npcHome(L.id) || L.zone) : 'Opens at level ' + GATES[L.zone]), aria: L.name + ', ' + (got ? 'seal earned' : 'seal not earned') };
+        status: got ? 'Seal earned' : (open ? 'Waiting in ' + mapName(npcHome(L.id) || L.zone) : 'Behind a shut gate'), aria: L.name + ', ' + (got ? 'seal earned' : 'seal not earned') };
     });
     v.sealCount = seals.length;
     {
