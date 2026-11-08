@@ -85,7 +85,7 @@ const ADV = (() => {
     rect(10, 18, 11, 20, '=');               // the way in
     rect(9, 6, 12, 6, '=');                  // the way north (icicles hang across it)
     [9, 10, 11, 12].forEach((x) => objects.push({ id: 'ice' + x, kind: 'icicles', gate: 'glacia', x: x, y: 6, text: 'Icicles, thick as arms.' }));
-    [[3, 17], [18, 17], [7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'glb' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. The flame is thin and straight.' }));
+    [[3, 17], [18, 17], [7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'glb' + i, kind: 'brazier', still: true, x: x, y: y, text: 'A brazier. The flame is thin and straight.' }));   // still: a fixed flame, no spark (review 05-F3): the fires are as still as the pool
     objects.push({ id: 'gstone', kind: 'ringstones', x: 17, y: 8, text: 'Stones on the far shore. Someone sat here a long time.' });
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
     return { name: 'Glacia\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'frosthold' }, types: [], rate: 0, spots: { glacia: [10, 3] }, pool: [3, 9, 18, 14] };
@@ -143,7 +143,7 @@ const ADV = (() => {
     objects.push({ id: 'L1', kind: 'chamberlamp', x: 16, y: 44, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' }, { id: 'L2', kind: 'chamberlamp', x: 5, y: 30, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' }, { id: 'L3', kind: 'chamberlamp', x: 16, y: 18, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' });
     objects.push({ id: 'tab1', kind: 'plaque', x: 6, y: 47, label: 'Read the tablet', text: 'Carved in the stone: "The way up is lit by the one who climbs it."' });
     objects.push({ id: 'chest1', kind: 'chest', x: 16, y: 27, reward: { super: 2, essence: 6 }, text: 'A frosty chest.' }, { id: 'chest2', kind: 'chest', x: 16, y: 3, reward: { charm: 1, essence: 12 }, text: 'The Warden’s chest.' });
-    [[5, 38], [16, 38]].forEach(([x, y], i) => objects.push({ id: 'tr' + i, kind: 'brazier', x: x, y: y, text: 'A torch by the door. Someone lit it for whoever comes.' }));   // only the entrance is lit for you; the rest you light
+    [[5, 46], [16, 46]].forEach(([x, y], i) => objects.push({ id: 'tr' + i, kind: 'brazier', x: x, y: y, text: 'A torch by the door. Someone lit it for whoever comes.' }));   // only the entrance is lit for you; the rest you light (by the door at the bottom of the first chamber, review 03-F17)
     objects.push({ id: 'greatlamp', kind: 'greatlamp', x: 10, y: 2, text: 'The great lamp.' });
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
     return { name: 'The Lamp Tower', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'ascent' },
@@ -177,7 +177,8 @@ const ADV = (() => {
   // ---- pixel art (screen pixels, 32 px per tile, drawn on 2 px steps); x, y = the tile's top-left; st = object state from the app ----
   const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, w, h); };
   const OL = '#14101E';
-  const flame = (g, x, y, t, ph, big) => { // a flickering flame standing on (x, y)
+  const flame = (g, x, y, t, ph, big, still) => { // a flickering flame standing on (x, y); `still` (Glacia's hall) is a fixed, thin, straight flame in the icelamp's colours, with no spark
+    if (still) { const h1 = 14, w1 = 6; R(g, x - w1 / 2 - 2, y - h1 - 2, w1 + 4, h1 + 2, 'rgba(255,160,58,0.3)'); R(g, x - w1 / 2, y - h1, w1, h1, '#FFA03A'); R(g, x - w1 / 2 + 2, y - h1 + 3, w1 - 4, h1 - 3, '#FFD27A'); R(g, x - 1, y - h1 / 2 - 1, 2, h1 / 2, '#FFF6D0'); return; }
     const f = Math.sin(t * 9 + ph), h1 = (big ? 20 : 12) + Math.round(f * 3) * 2, w1 = big ? 14 : 8;
     R(g, x - w1 / 2 - 2, y - h1 - 2, w1 + 4, h1 + 2, 'rgba(255,120,40,0.35)');
     R(g, x - w1 / 2, y - h1, w1, h1, '#E8552A'); R(g, x - w1 / 2 + 2, y - h1 + 4, w1 - 4, h1 - 4, '#FFA03A'); R(g, x - 2, y - h1 / 2, 4, h1 / 2, '#FFE08A');
@@ -197,7 +198,8 @@ const ADV = (() => {
     // a row of stakes with ribbons; the ribbons move though nothing else does
     stakes(g, x, y, st, t) {
       R(g, x + 2, y + 28, 28, 3, 'rgba(0,0,0,0.2)');
-      [[6, '#C0503A'], [13, '#E8C07A'], [20, '#8E5BC8'], [26, '#FFFFFF']].forEach(([a, c], i) => { R(g, x + a, y + 8, 2, 20, '#6E5030'); const w = Math.round(Math.sin(t * 3 + i * 1.7) * 2); R(g, x + a + 2, y + 9, 5 + w, 3, c); R(g, x + a + 2, y + 12, 3 + w, 2, c); });
+      const moving = !!(st && st.hour === 'dusk');   // the thing stands at every hour; its state is the hour (review 03-F11): the ribbons hang by day and stream at dusk
+      [[6, '#C0503A'], [13, '#E8C07A'], [20, '#8E5BC8'], [26, '#FFFFFF']].forEach(([a, c], i) => { R(g, x + a, y + 8, 2, 20, '#6E5030'); if (moving) { const w = Math.round(Math.sin(t * 3 + i * 1.7) * 2); R(g, x + a + 2, y + 9, 5 + w, 3, c); R(g, x + a + 2, y + 12, 3 + w, 2, c); } else { R(g, x + a + 2, y + 9, 3, 2, c); R(g, x + a + 2, y + 11, 2, 7, c); } });
     },
     // an overturned sled, half in the snow
     sled(g, x, y) {
@@ -205,9 +207,10 @@ const ADV = (() => {
       R(g, x + 3, y + 22, 6, 2, OL); R(g, x + 23, y + 22, 6, 2, OL); R(g, x + 2, y + 27, 28, 2, '#F4F6FA');
     },
     // a small boat pulled up on the shore
-    skiff(g, x, y) {
+    skiff(g, x, y, st) {
       R(g, x + 1, y + 26, 30, 4, 'rgba(0,0,0,0.2)'); R(g, x + 2, y + 17, 28, 9, OL); R(g, x + 3, y + 18, 26, 6, '#8A5A32'); R(g, x + 3, y + 18, 26, 2, '#B07A46'); R(g, x + 2, y + 17, 3, 3, OL); R(g, x + 27, y + 17, 3, 3, OL);
-      R(g, x + 6, y + 24, 20, 2, 'rgba(120,170,220,0.55)'); R(g, x + 4, y + 27, 24, 2, 'rgba(120,170,220,0.4)');
+      if (st && st.hour === 'dawn') { R(g, x + 6, y + 24, 20, 2, 'rgba(120,170,220,0.55)'); R(g, x + 4, y + 27, 24, 2, 'rgba(120,170,220,0.4)'); R(g, x + 8, y + 20, 6, 1, 'rgba(200,230,255,0.7)'); }   // wet at dawn: the tide was here
+      else { R(g, x + 5, y + 27, 22, 1, 'rgba(255,255,255,0.35)'); R(g, x + 6, y + 19, 20, 1, 'rgba(0,0,0,0.18)'); }   // dry by day, a tide line left on the planks
     },
     // a chair set out facing the water, with nobody in it
     chair(g, x, y) {
@@ -216,29 +219,26 @@ const ADV = (() => {
     },
     // water that is lit from below
     tidelight(g, x, y, st, t, o) {
-      const f = 0.5 + 0.5 * Math.sin(t * 2 + o.x); R(g, x + 3, y + 14, 26, 14, OL); R(g, x + 4, y + 15, 24, 12, '#2A6FB0');
-      const gl = g.createRadialGradient(x + 16, y + 21, 1, x + 16, y + 21, 22); gl.addColorStop(0, 'rgba(160,240,255,' + (0.55 + 0.2 * f) + ')'); gl.addColorStop(1, 'rgba(160,240,255,0)'); g.fillStyle = gl; g.fillRect(x - 6, y + 4, 44, 34);
+      R(g, x + 3, y + 14, 26, 14, OL); R(g, x + 4, y + 15, 24, 12, '#2A6FB0');
       R(g, x + 8, y + 19, 6, 2, 'rgba(255,255,255,0.7)'); R(g, x + 17, y + 22, 7, 2, 'rgba(255,255,255,0.5)');
     },
     // a lantern on a leaning post: lit, warm, and nobody near it
     lantern(g, x, y, st, t, o) {
       R(g, x + 8, y + 28, 16, 3, 'rgba(0,0,0,0.22)'); R(g, x + 15, y + 8, 3, 21, '#5A4A38'); R(g, x + 15, y + 8, 1, 21, '#7A664C'); R(g, x + 15, y + 8, 10, 3, '#5A4A38');
-      const f = 0.5 + 0.5 * Math.sin(t * 7 + o.x), gl = g.createRadialGradient(x + 23, y + 17, 1, x + 23, y + 17, 26 + f * 4); gl.addColorStop(0, 'rgba(255,214,120,0.55)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 6, y - 8, 58, 52);
       R(g, x + 20, y + 11, 8, 11, OL); R(g, x + 21, y + 12, 6, 9, '#FFD27A'); R(g, x + 23, y + 14, 2, 5, '#FFF6D0'); R(g, x + 20, y + 10, 8, 2, OL);
     },
     // a lantern on a post along a road; st.k (0 to 1) is how lit it is (the app eases it, so a lamp warms up as if someone had just lit it)
     postlamp(g, x, y, st, t, o) {
       const k = st.k || 0;
       R(g, x + 10, y + 28, 12, 3, 'rgba(0,0,0,0.22)'); R(g, x + 15, y + 8, 3, 21, '#5A4A38'); R(g, x + 15, y + 8, 1, 21, '#7A664C'); R(g, x + 12, y + 8, 12, 3, '#5A4A38');
-      if (k > 0.02) { const f = 0.5 + 0.5 * Math.sin(t * 6 + o.x), gl = g.createRadialGradient(x + 17, y + 17, 1, x + 17, y + 17, (22 + f * 3) * (0.4 + 0.6 * k)); gl.addColorStop(0, 'rgba(255,214,120,' + (0.6 * k).toFixed(2) + ')'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 10, y - 10, 56, 56); }
-      R(g, x + 14, y + 11, 8, 11, OL); R(g, x + 15, y + 12, 6, 9, k > 0.5 ? '#FFD27A' : '#3A3340'); if (k > 0.5) R(g, x + 17, y + 14, 2, 5, '#FFF6D0'); R(g, x + 14, y + 10, 8, 2, OL);
+      // the glass: lit, burning low (the day post ahead, review 03-F14) or unlit in a cold grey that still reads as a lantern at dusk (review 05-F15); the halo is drawn after the tint (GLOW.postlamp)
+      R(g, x + 14, y + 11, 8, 11, OL); R(g, x + 15, y + 12, 6, 9, k > 0.5 ? '#FFD27A' : (k > 0.1 ? '#B88A48' : '#6A6478')); if (k > 0.5) R(g, x + 17, y + 14, 2, 5, '#FFF6D0'); else if (k > 0.1) R(g, x + 17, y + 16, 2, 3, '#FFE08A'); R(g, x + 14, y + 10, 8, 2, OL);
     },
     // a camp fire on stones with a stack of split logs: nobody here, the stones are warm
     camp(g, x, y, st, t, o) {
       const dark = !!st.dark, f = Math.round(Math.sin(t * 8 + o.x) * 2) * 2;
       R(g, x + 3, y + 27, 26, 3, 'rgba(0,0,0,0.22)'); R(g, x + 4, y + 18, 24, 10, OL); R(g, x + 5, y + 19, 22, 8, '#8E8A86'); R(g, x + 9, y + 21, 14, 5, '#3A3330');
       R(g, x + 22, y + 10, 8, 10, OL); R(g, x + 23, y + 11, 6, 8, '#A87A48'); R(g, x + 23, y + 14, 6, 1, '#7A5230'); R(g, x + 23, y + 17, 6, 1, '#7A5230');
-      const gl = g.createRadialGradient(x + 14, y + 18, 1, x + 14, y + 18, dark ? 30 : 16); gl.addColorStop(0, 'rgba(255,150,60,' + (dark ? 0.5 : 0.22) + ')'); gl.addColorStop(1, 'rgba(255,150,60,0)'); g.fillStyle = gl; g.fillRect(x - 18, y - 12, 64, 56);
       R(g, x + 10, y + 12 - f / 2, 8, 10 + f / 2, '#E8552A'); R(g, x + 12, y + 14 - f / 2, 4, 8 + f / 2, '#FFB03A'); R(g, x + 13, y + 18, 2, 4, '#FFE08A');
     },
     // things set down in a neat row on the shore: a sandal, a cup, a toy boat, a comb
@@ -272,7 +272,7 @@ const ADV = (() => {
     moored(g, x, y, st, t, o) {
       R(g, x + 1, y + 26, 30, 4, 'rgba(0,0,0,0.2)'); R(g, x + 2, y + 17, 28, 9, OL); R(g, x + 3, y + 18, 26, 6, '#8A5A32'); R(g, x + 3, y + 18, 26, 2, '#B07A46'); R(g, x + 2, y + 15, 3, 4, OL);
       R(g, x + 6, y + 24, 20, 2, 'rgba(120,170,220,0.55)'); R(g, x + 4, y + 10, 2, 8, '#5A4A38');
-      if (st.lit) { const gl = g.createRadialGradient(x + 5, y + 10, 1, x + 5, y + 10, 24); gl.addColorStop(0, 'rgba(255,214,120,0.6)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 20, y - 14, 50, 48); R(g, x + 2, y + 6, 6, 6, '#FFD27A'); } else R(g, x + 2, y + 6, 6, 6, '#3A3340');
+      R(g, x + 2, y + 6, 6, 6, st.lit ? '#FFD27A' : '#6A6478');
       R(g, x + 1, y + 5, 8, 1, OL);
     },
     // a post with notches cut at growing heights, one more for each seal you hold (st.n 1 to 5)
@@ -296,8 +296,7 @@ const ADV = (() => {
     // a lamp left on at the harbour, lit at dusk and night (st.lit)
     harborlamp(g, x, y, st, t, o) {
       R(g, x + 9, y + 28, 14, 3, 'rgba(0,0,0,0.22)'); R(g, x + 14, y + 6, 4, 22, '#4A5878'); R(g, x + 11, y + 4, 10, 3, '#4A5878'); R(g, x + 11, y + 6, 10, 10, OL);
-      if (st.lit) { const gl = g.createRadialGradient(x + 16, y + 11, 1, x + 16, y + 11, 26); gl.addColorStop(0, 'rgba(255,214,120,0.6)'); gl.addColorStop(1, 'rgba(255,214,120,0)'); g.fillStyle = gl; g.fillRect(x - 12, y - 14, 56, 52); }
-      R(g, x + 12, y + 7, 8, 8, st.lit ? '#FFD27A' : '#3A3340');
+      R(g, x + 12, y + 7, 8, 8, st.lit ? '#FFD27A' : '#6A6478');
     },
     // a seedling in a raised planter box: st.stage 0 (a two-leaf seedling), 1 (leafy), 2 (in bloom); st.p is the growth under way (0..1) so you SEE it rise while you stay; st.tending draws the care (green motes rising)
     gbed(g, x, y, st, t, o) {
@@ -449,8 +448,9 @@ const ADV = (() => {
     },
     // a ring of small stones set by someone who was not in a hurry
     ringstones(g, x, y) {
-      R(g, x + 2, y + 18, 28, 12, 'rgba(60,140,70,0.35)');
-      [[6, 20], [11, 17], [18, 17], [24, 20], [24, 26], [18, 29], [11, 29], [6, 26]].forEach(([a, b], i) => { R(g, x + a, y + b - 3, 5, 5, OL); R(g, x + a + 1, y + b - 2, 3, 3, i % 2 ? '#A8B2C6' : '#C9D0DE'); });
+      R(g, x + 2, y + 16, 28, 10, 'rgba(60,140,70,0.35)');
+      // nine places around the ring, eight stones: the place nearest the viewer (bottom centre) is bare ground, room for one more (the seat, hinted before it is played; review 03-F15)
+      [[10, 27], [6, 23], [7, 18], [13, 15], [19, 15], [25, 18], [26, 23], [22, 27]].forEach(([a, b], i) => { R(g, x + a, y + b - 3, 5, 5, OL); R(g, x + a + 1, y + b - 2, 3, 3, i % 2 ? '#A8B2C6' : '#C9D0DE'); });
     },
     // a door standing alone, with nothing behind it
     doorframe(g, x, y) {
@@ -467,7 +467,7 @@ const ADV = (() => {
     brazier(g, x, y, st, t, o) {
       R(g, x + 6, y + 28, 20, 3, 'rgba(0,0,0,0.25)');
       R(g, x + 12, y + 20, 8, 10, OL); R(g, x + 14, y + 20, 4, 9, '#6A6478'); R(g, x + 6, y + 14, 20, 8, OL); R(g, x + 8, y + 16, 16, 5, '#8A8498'); R(g, x + 8, y + 16, 16, 2, '#B4AEC4');
-      flame(g, x + 16, y + 16, t, (o.x * 3 + o.y) % 7, false);
+      flame(g, x + 16, y + 16, t, (o.x * 3 + o.y) % 7, false, !!o.still);
     },
     fire(g, x, y, st, t, o) {
       R(g, x + 2, y + 26, 28, 5, 'rgba(0,0,0,0.25)');
@@ -574,6 +574,20 @@ const ADV = (() => {
       for (let i = 0; i < 4; i++) { const on = i < n; g.save(); g.globalAlpha = on ? (st.open ? 1 : 0.6 + 0.4 * k) : 1; R(g, x + 12, y + 11 + i * 4, 8, 2, on ? '#FFD86B' : '#4A4860'); g.restore(); }
     }
   };
+  // GLOW[kind](g, x, y, st, t, o): the halo of a thing that glows, drawn by the world AFTER the time-of-day tint (review 05-F7), so at night a kept light is brighter than the sky; the thing itself is in ART
+  const halo = (g, cx, cy, r, rgb, a) => { const gl = g.createRadialGradient(cx, cy, 1, cx, cy, r); gl.addColorStop(0, 'rgba(' + rgb + ',' + a.toFixed(2) + ')'); gl.addColorStop(1, 'rgba(' + rgb + ',0)'); g.fillStyle = gl; g.fillRect(cx - r, cy - r, r * 2, r * 2); };
+  const GLOW = {
+    postlamp(g, x, y, st, t, o) {
+      const k = st.k || 0, dark = st.hour === 'dusk' || st.hour === 'night';
+      if (k > 0.02) { const f = 0.5 + 0.5 * Math.sin(t * 6 + o.x); halo(g, x + 17, y + 17, (22 + f * 3) * (0.4 + 0.6 * k), '255,214,120', 0.6 * k); }
+      else if (dark && !st.relit) halo(g, x + 17, y + 17, 14, '255,214,120', 0.12);   // a faint bead on every post at dusk and night, so the road reads as a line of posts (review 05-F15); after the great lamp a post glows only once you have passed it
+    },
+    lantern(g, x, y, st, t, o) { const f = 0.5 + 0.5 * Math.sin(t * 7 + o.x); halo(g, x + 23, y + 17, 26 + f * 4, '255,214,120', 0.55); },
+    camp(g, x, y, st) { const dark = !!st.dark; halo(g, x + 14, y + 18, dark ? 30 : 16, '255,150,60', dark ? 0.5 : 0.22); },
+    moored(g, x, y, st) { if (st.lit) halo(g, x + 5, y + 10, 24, '255,214,120', 0.6); },
+    harborlamp(g, x, y, st) { if (st.lit) halo(g, x + 16, y + 11, 26, '255,214,120', 0.6); },
+    tidelight(g, x, y, st, t, o) { const f = 0.5 + 0.5 * Math.sin(t * 2 + o.x); halo(g, x + 16, y + 21, 22, '160,240,255', 0.55 + 0.2 * f); }
+  };
   const LIGHT = { chamberlamp: (o, st) => (st && st.lit > 0.02 ? 1.4 + 2.8 * st.lit : 0.5), gbrazier: (o, st) => (st && st.burn > 0 ? 1.6 + 2.4 * st.burn : 0.6), callamp: (o, st) => (st && st.lit > 0.02 ? 1.2 + 2.6 * st.lit : 0.5), furnace: (o, st) => (st && st.lit ? 4.5 : 2), core: (o, st) => 2.6, socket: (o, st) => (st && st.on ? 2.6 : 0), greatlamp: (o, st) => (st && st.lit ? 4 : 0), fire: () => 3.8, brazier: () => 2.4, pyre: (o, st) => (st && st.lit ? 3.2 : 0), lamp: (o, st) => (st && st.lit ? 3.2 : 0), hull: (o, st) => (st && st.lit ? 3.0 : 0), crown: () => 1.6 };   // radius in tiles lit around an object
-  return { CLUES, DUNGEONS, ART, LIGHT, TCOL, TYPES };
+  return { CLUES, DUNGEONS, ART, GLOW, LIGHT, TCOL, TYPES };
 })();

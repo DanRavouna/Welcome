@@ -70,11 +70,11 @@ const AMBIENT = (() => {
   // [def, count] per climate (WEATHER.region) and per-map overrides
   const BY_REGION = {
     town: [['butterfly', 8], ['bird', 4], ['firefly', 12], ['leaf', 6]], moss: [['butterfly', 10], ['bird', 4], ['firefly', 20], ['leaf', 14]],
-    frost: [['glint', 12]], peak: [['glint', 8], ['bird', 2]], ember: [['bird', 2], ['ember', 14]], tide: [['crab', 5], ['bird', 4], ['leaf', 4], ['spray', 10]]
+    frost: [['glint', 12]], peak: [['glint', 8]], ember: [['bird', 2], ['ember', 14]], tide: [['crab', 5], ['bird', 4], ['leaf', 4], ['spray', 10]]
   };
   const MAP_LIST = {
     'route-mf': [['butterfly', 6], ['bird', 3], ['firefly', 12], ['glint', 6], ['leaf', 8]], 'route-cm': [['butterfly', 7], ['bird', 2], ['firefly', 12], ['leaf', 8], ['ember', 6]],
-    'route-fc': [['glint', 8], ['crab', 3], ['bird', 2]], 'route-cc': [['crab', 5], ['bird', 3], ['spray', 6]]
+    'route-fc': [['glint', 8]], 'route-cc': [['crab', 5], ['bird', 3], ['spray', 6]]
   };
   const SPAWN = {}; let spawnFor = null, list = [];
   const rng = (s) => () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
