@@ -53,8 +53,9 @@ with sync_playwright() as p:
     # champion
     pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{seals:['wren','glacia','blaze','coral']})})")
     pg.evaluate("APP.open('badges')"); pg.wait_for_timeout(300)
-    txt=pg.locator('#screen').inner_text(); print('title shown:', 'Keeper of Four Fires' in txt, '| seals 4/4:', '4/4 earned' in txt)
-    pg.evaluate("""() => { const el=[...document.querySelectorAll('#screen span')].find(s=>s.textContent.trim()==='Leader seals'); el.scrollIntoView(); }"""); pg.wait_for_timeout(200); pg.screenshot(path='/tmp/p_seals.png')
+    rev=pg.evaluate("APP.build||''")=='review'   # the review copy names the card "The four fires", the banner "Fire-keeper" (docs/review/02-words.md F7)
+    txt=pg.locator('#screen').inner_text(); print('title shown:', ('Fire-keeper\n' if rev else 'Keeper of Four Fires') in txt, '| seals 4/4:', ('4/4 kept' if rev else '4/4 earned') in txt)
+    pg.evaluate("""() => { const el=[...document.querySelectorAll('#screen span')].find(s=>['Leader seals','The four fires'].includes(s.textContent.trim())); el.scrollIntoView(); }"""); pg.wait_for_timeout(200); pg.screenshot(path='/tmp/p_seals.png')
     pg.click('#close-screen'); pg.click('#b-menu'); pg.wait_for_timeout(200); print('menu seals tile:', pg.locator('[data-tile="seals"]').inner_text().replace('\n',' '))
     pg.wait_for_timeout(1200); pg.reload(); pg.wait_for_timeout(1100)
     print('after reload seals:', pg.evaluate("APP.game.state.npc.seals.length"), '| cleared:', pg.evaluate("APP.game.state.npc.cleared"))

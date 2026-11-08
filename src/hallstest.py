@@ -25,7 +25,7 @@ with sync_playwright() as p:
   at_door('town','house-mira'); press(); check("Mira's room: the shelf, the ledger, the kettle", pg.evaluate("WORLD.map.id")=='in-house-mira' and sorted(pg.evaluate("WORLD.map.objects.map(o=>o.kind)"))==['jars','kettle','ledger'])
   check('town rooms: no line is a tip', not any(w in pg.evaluate("['in-house-pip','in-house-mira'].map(id=>WORLD.MAPS[id].objects.map(o=>o.text).join(' | ')).join(' | ')").lower() for w in tipwords))
   # the Long Watch
-  at_door('peak','tower'); check('tower door: Enter the Tower', pg.inner_text('#act-label')=='Enter the Tower'); press()
+  at_door('peak','tower'); check('tower door: Enter the Tower', pg.inner_text('#act-label')==('Go in' if pg.evaluate("APP.build||''")=='review' else 'Enter the Tower')); press()   # the review copy's label is "Go in" (02-F33)
   check('without four seals the door refuses and you stay outside', pg.evaluate("WORLD.map.id")=='peak' and 'is for those who hold all 4' in pg.inner_text('#toast'), pg.inner_text('#toast'))
   pg.evaluate("APP.game.update({npc:Object.assign({},APP.game.state.npc,{seals:['wren','glacia','blaze','coral']})})"); press()
   check('with four seals it leads into the lobby of the Watch', pg.evaluate("WORLD.map.id")=='in-tower')

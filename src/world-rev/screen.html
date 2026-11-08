@@ -298,11 +298,11 @@
 
         <div style="border-radius: 20px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.62); border: 1.5px solid rgba(255,255,255,0.95); box-shadow: 0 4px 12px rgba(40,70,140,0.12)">
           <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px">
-            <span style="font-size: 17px; font-weight: 900; color: #1E2A4A">Leader seals</span>
-            <span style="font-size: 12px; font-weight: 800; color: #3A4868">{{sealCount}}/4 earned</span>
+            <span style="font-size: 17px; font-weight: 900; color: #1E2A4A">The four fires</span>
+            <span style="font-size: 12px; font-weight: 800; color: #3A4868">{{sealCount}}/4 kept</span>
           </div>
           <sc-if value="{{champion}}" hint-placeholder-val="{{ false }}">
-            <p style="margin: 0 4px; padding: 8px 12px; border-radius: 12px; background: linear-gradient(180deg, #FFE69A, #F5B93A); font-size: 14px; font-weight: 900; color: #2A1B00">Keeper of Four Fires</p>
+            <p style="margin: 0 4px; padding: 8px 12px; border-radius: 12px; background: linear-gradient(180deg, #FFE69A, #F5B93A); font-size: 14px; font-weight: 900; color: #2A1B00">Fire-keeper</p>
           </sc-if>
           <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
             <sc-for list="{{seals}}" as="sl" hint-placeholder-count="4">

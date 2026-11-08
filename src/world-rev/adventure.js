@@ -42,7 +42,7 @@ const ADV = (() => {
     }
     objects.push({ id: 'rite0', kind: 'pyre', order: 0, x: 5, y: 48, text: 'A cold stone fire bowl.' }, { id: 'rite1', kind: 'lamp', order: 1, x: 21, y: 48, text: 'A lamp on a post, long unlit.' }, { id: 'rite2', kind: 'hull', order: 2, x: 19, y: 54, text: 'The prow of an old boat, set into the stone. A lantern hangs from it.' });
     objects.push({ id: 'chest1', kind: 'chest', x: 5, y: 51, reward: { potion: 2, essence: 5 }, text: 'A dusty chest.' });
-    [[10, 54], [16, 54], [5, 22], [20, 22], [5, 9], [20, 9], [7, 1], [18, 1]].forEach(([x, y], i) => objects.push({ id: 'br' + (i + 1), kind: 'brazier', x: x, y: y, text: 'A brazier. Somebody keeps it lit.' }));
+    [[10, 54], [16, 54], [5, 22], [20, 22], [5, 9], [20, 9], [7, 1], [18, 1]].forEach(([x, y], i) => objects.push({ id: 'br' + (i + 1), kind: 'brazier', x: x, y: y, text: 'A brazier. No soot above it.' }));
     objects.push({ id: 'rb1', kind: 'rubble', x: 12, y: 41, rubble: true, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' }, { id: 'rb2', kind: 'rubble', x: 13, y: 41, rubble: true, text: 'Rubble blocks the passage north. Something heavy fell here long ago.' });
     objects.push({ id: 'chest2', kind: 'chest', x: 17, y: 2, reward: { charm: 1, essence: 12 }, text: 'The Keeper’s chest.' }, { id: 'crown', kind: 'crown', x: 13, y: 1, text: 'A small gold crown. Nobody has moved it.' });   // the crown is not taken: the act is sitting in the ninth seat (app.js seatState)
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
@@ -69,7 +69,7 @@ const ADV = (() => {
     [9, 10, 11, 12].forEach((x) => objects.push({ id: 'vines' + x, kind: 'vines', gate: 'wren', x: x, y: 6, text: 'Vines hang across the way.' }));
     [[3, 16], [18, 16], [7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'gbr' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. The coals are warm.' }));
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
-    return { name: 'Wren\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'mossbrook' }, types: [], rate: 0, spots: { wren: [10, 3] } };
+    return { name: 'Wren\u2019s Garden', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'mossbrook' }, types: [], rate: 0, spots: { wren: [10, 3] } };
   }
   // ---- Glacia's Gym (Frosthold): the trial of stillness. Black water lies between the door and Glacia. Ice forms on the water around you only while you STAND STILL (about 0.8 s),
   // and the ice you leave behind melts the moment you move on; the plate under your feet never melts. You cross by stopping, waiting, stepping, stopping. Reach the far shore and the whole pool
@@ -88,7 +88,7 @@ const ADV = (() => {
     [[3, 17], [18, 17], [7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'glb' + i, kind: 'brazier', still: true, x: x, y: y, text: 'A brazier. The flame is thin and straight.' }));   // still: a fixed flame, no spark (review 05-F3): the fires are as still as the pool
     objects.push({ id: 'gstone', kind: 'ringstones', x: 17, y: 8, text: 'Stones on the far shore. Someone sat here a long time.' });
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
-    return { name: 'Glacia\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'frosthold' }, types: [], rate: 0, spots: { glacia: [10, 3] }, pool: [3, 9, 18, 14] };
+    return { name: 'Glacia\u2019s Pool', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'frosthold' }, types: [], rate: 0, spots: { glacia: [10, 3] }, pool: [3, 9, 18, 14] };
   }
   // ---- Blaze's Gym (Cinderport): the trial of the fire that has to be fed. Three braziers between the door and Blaze, a woodpile by the door. A brazier burns down in about 14 s and goes dark.
   // You carry one log at a time: take one, feed a fire, go back. The way opens the moment all three burn at once (Meaning: this one wants feeding every day; the fire is kept by someone who keeps coming back). ----
@@ -102,11 +102,11 @@ const ADV = (() => {
     rect(10, 16, 11, 18, '=');               // the way in
     rect(9, 6, 12, 6, '=');                  // the way north (a slab of cold slag)
     [[4, 10], [11, 8], [17, 10]].forEach(([x, y], i) => objects.push({ id: 'fire' + (i + 1), kind: 'gbrazier', x: x, y: y, text: 'A great brazier. The iron is warm.' }));
-    objects.push({ id: 'wood', kind: 'woodpile', x: 10, y: 15, text: 'Split logs, stacked by someone who stacks logs every day.' });
+    objects.push({ id: 'wood', kind: 'woodpile', x: 10, y: 15, text: 'Split logs, stacked. The bark is still wet.' });
     [9, 10, 11, 12].forEach((x) => objects.push({ id: 'slag' + x, kind: 'slagwall', gate: 'blaze', x: x, y: 6, text: 'Cold slag, poured across the way.' }));
-    [[7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'blb' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. Somebody keeps it lit.' }));
+    [[7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'blb' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. Ash a hand deep under it.' }));
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
-    return { name: 'Blaze\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'cinderport' }, types: [], rate: 0, spots: { blaze: [10, 3] } };
+    return { name: 'Blaze\u2019s Hearth', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'cinderport' }, types: [], rate: 0, spots: { blaze: [10, 3] } };
   }
   // ---- Coral's Gym (Coralbay): the trial of answering across the dark. The hall is dark; five lamps stand in it. They light one after another (the call), then go out; you touch them in the same
   // order (the answer). Three rounds, each one lamp longer. A wrong touch makes them all blink and the call comes again; nothing is lost. When the third answer is right the lamps stay lit and the
@@ -122,9 +122,9 @@ const ADV = (() => {
     rect(9, 6, 12, 6, '=');                  // the way north (a chain across it)
     [[4, 9], [8, 12], [11, 8], [14, 12], [18, 9]].forEach(([x, y], i) => objects.push({ id: 'lamp' + i, kind: 'callamp', n: i, x: x, y: y, text: 'A lamp on a post. The glass is warm.' }));
     [9, 10, 11, 12].forEach((x) => objects.push({ id: 'chain' + x, kind: 'chain', gate: 'coral', x: x, y: 6, text: 'A chain across the way, wet from the sea.' }));
-    [[7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'clb' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. Somebody keeps it lit.' }));
+    [[7, 3], [14, 3]].forEach(([x, y], i) => objects.push({ id: 'clb' + i, kind: 'brazier', x: x, y: y, text: 'A brazier. Salt on the iron.' }));
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x]));
-    return { name: 'Coral\u2019s Gym', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'coralbay' }, types: [], rate: 0, spots: { coral: [10, 3] }, dark: { r: 3.2 } };
+    return { name: 'Coral\u2019s Lamp Hall', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'coralbay' }, types: [], rate: 0, spots: { coral: [10, 3] }, dark: { r: 3.2 } };
   }
   // ---- the Lamp Tower (Meaning: the way home is lit by you). A dark climb through four chambers. Each chamber has a lamp on a stand: stay beside it until it takes, and the gate above opens;
   // the great lamp at the top lights only from the three you kept below it. Guards in chambers 2 and 3, the Warden and the great lamp at the top. Nothing ever closes behind you. ----
@@ -142,7 +142,7 @@ const ADV = (() => {
     gate('g1', 35, ['L1']); gate('g2', 23, ['L2']); gate('g3', 11, ['L3']);
     objects.push({ id: 'L1', kind: 'chamberlamp', x: 16, y: 44, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' }, { id: 'L2', kind: 'chamberlamp', x: 5, y: 30, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' }, { id: 'L3', kind: 'chamberlamp', x: 16, y: 18, reach: 1.9, text: 'A lamp on a stand. The wick is dry, but not gone.' });
     objects.push({ id: 'chest1', kind: 'chest', x: 16, y: 27, reward: { super: 2, essence: 6 }, text: 'A frosty chest.' }, { id: 'chest2', kind: 'chest', x: 16, y: 3, reward: { charm: 1, essence: 12 }, text: 'The Warden’s chest.' });
-    [[5, 46], [16, 46]].forEach(([x, y], i) => objects.push({ id: 'tr' + i, kind: 'brazier', x: x, y: y, text: 'A torch by the door. Someone lit it for whoever comes.' }));   // only the entrance is lit for you; the rest you light (by the door at the bottom of the first chamber, review 03-F17)
+    [[5, 46], [16, 46]].forEach(([x, y], i) => objects.push({ id: 'tr' + i, kind: 'brazier', x: x, y: y, text: 'A torch by the door, lit.' }));   // only the entrance is lit for you; the rest you light (by the door at the bottom of the first chamber, review 03-F17)
     objects.push({ id: 'GL', kind: 'chamberlamp', cl: 6, x: 10, y: 2, reach: 1.9, text: 'The great lamp. The glass is cold.' });   // the last act: a chamber lamp with the longest stay of the game (cl: 6 s, package M owns the number), lit only from the three below. ART: package W may draw GL as the great glass (ART.greatlamp is the old drawing)
     objects.forEach((o) => set(o.x, o.y, rows[o.y][o.x] === '=' ? '=' : '.'));
     return { name: 'The Lamp Tower', W: W, H: H, rows: rows.map((r) => r.join('')), objects: objects, spawn: [10.9, H - 1.4], exit: { edge: 's', a: 10, b: 11, to: 'ascent' },

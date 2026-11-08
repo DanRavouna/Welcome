@@ -14,10 +14,12 @@ with sync_playwright() as p:
   # the seals are handed over as fires to tend, never conceded (Meaning section of the handoff)
   L=pg.evaluate("(()=>{const all=WORLD.allNpcs(),o={};for(const k in all)all[k].forEach(n=>{if(n.leader)o[n.id]=[n.winLine,n.sealLine,(n.intro||[]).join(' ')]});return o})()")
   want={'wren':'It grows because someone stays beside it.','glacia':'The cold keeps what it is given.','blaze':'You did not put it out. You fed it.','coral':'The sea gives back what it is given.'}
+  rev=pg.evaluate("APP.build||''")=='review'   # the review copy: the leaders say what they see, not what the trial meant (docs/review/02-words.md F3)
+  if rev: want={'wren':'Four in bloom.','glacia':'The pool is still.','blaze':'All three at once.','coral':'Every lamp answered.'}
   for k,w in want.items(): check('%s hands over a fire: "%s"'%(k,w), k in L and w in L[k][0], L.get(k,['?'])[0])
   bad=['fallen to you','beat me','Champion','put out every flame','thawed','hold every seal']
   check('no conquest wording on any leader', not any(any(s.lower() in ' '.join(x).lower() for s in bad) for x in L.values()), [x for x in L.values() if any(s.lower() in ' '.join(x).lower() for s in bad)])
-  check('Coral ends with the light left on', 'Someone left a light on for you' in L.get('coral',['','',''])[1])
+  check('Coral ends with the light left on', ('The harbour lamp was already lit' if rev else 'Someone left a light on for you') in L.get('coral',['','',''])[1])
   names=pg.evaluate("[WORLD.MAPS.peak.name, WORLD.MAPS.peak.places[0].name, TITLES.find(t=>t.id==='champion').name, TITLES.find(t=>t.id==='summit').name]")
   check('Vigil Peak / The Long Watch / Fire-keeper / Watchkeeper', names==['Vigil Peak','The Long Watch','Fire-keeper','Watchkeeper'], names)
   b.close()
