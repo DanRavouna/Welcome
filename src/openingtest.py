@@ -55,7 +55,7 @@ with sync_playwright() as p:
     while c: out.append(c); c=prev[c]
     return out[::-1]
   t0=time.time(); tNear=None; tOrb=None; tKeep=None; stuck=0
-  def foe(): return pg.evaluate("(()=>{const p=WORLD.pos();const f=ACT.foes().map(m=>({x:m.x,y:m.y,d:Math.hypot(m.x-p.x,m.y-p.y)/32})).sort((a,b)=>a.d-b.d);return f[0]||null})()")
+  def foe(): return pg.evaluate("(()=>{const p=WORLD.pos();const f=ACT.foes().map(m=>({x:m.x,y:m.y,mode:m.mode,d:Math.hypot(m.x-p.x,m.y-p.y)/32})).sort((a,b)=>a.d-b.d);return f[0]||null})()")
   while time.time()-t0<60 and tKeep is None:
     if pg.evaluate("APP.game.state.pouch.length>0"):
       if tOrb is None: tOrb=time.time()-t0
@@ -68,7 +68,11 @@ with sync_playwright() as p:
     tgt = {'x':orb[0],'y':orb[1],'d':9} if orb else f
     if not tgt: pg.wait_for_timeout(150); continue
     if tNear is None and f and f['d']<6: tNear=time.time()-t0
-    if tgt['d']<=1.15 and not orb:
+    if tgt['d']<=1.0 and not orb and tgt.get('mode')=='down':   # keep by staying (the review copy): a critter at 0 HP sits down; stand beside it until it is kept
+      pg.evaluate("WORLD.input.jx=0;WORLD.input.jy=0"); pg.wait_for_timeout(250)
+      if pg.evaluate("APP.game.state.caught.length")>=2: tKeep=time.time()-t0; pg.wait_for_timeout(300); pg.evaluate("APP.close && APP.close()"); pg.wait_for_timeout(300); pg.evaluate("WORLD.setPaused(false)")
+      continue
+    if tgt['d']<=1.15 and not orb and tgt.get('mode')!='down':
       pg.evaluate("WORLD.input.jx=0;WORLD.input.jy=0;ACT.attack()"); pg.wait_for_timeout(380); continue
     pos=pg.evaluate("WORLD.pos()"); a=(int(pos['x']//32),int(pos['y']//32)); bt=(int(tgt['x']//32),int(tgt['y']//32))
     pth=path(a,bt)
