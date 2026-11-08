@@ -5,12 +5,12 @@ const WEATHER = (() => {
   const TILT = 0.2;  // chance that a wild encounter is swapped to the weather's type (like the night Dusk rule)
   const KINDS = {
     clear: { label: 'Clear', type: null },
-    sun: { label: 'Sunny', type: 'Bloom', note: 'Bloom critters bask in the sun' },
-    rain: { label: 'Rain', type: 'Tide', note: 'Tide critters come out in the rain' },
-    storm: { label: 'Thunderstorm', type: 'Volt', note: 'Volt critters ride the storm' },
-    snow: { label: 'Snow', type: 'Frost', note: 'Frost critters roam in the snow' },
-    fog: { label: 'Fog', type: 'Dusk', note: 'Dusk critters hide in the fog' },
-    ash: { label: 'Ashfall', type: 'Stone', note: 'Stone critters dig out of the ash' }
+    sun: { label: 'Sunny', type: 'Bloom' },
+    rain: { label: 'Rain', type: 'Tide' },
+    storm: { label: 'Thunderstorm', type: 'Volt' },
+    snow: { label: 'Snow', type: 'Frost' },
+    fog: { label: 'Fog', type: 'Dusk' },
+    ash: { label: 'Ashfall', type: 'Stone' }
   };
   // weights out of 100 per climate
   const CLIMATE = {

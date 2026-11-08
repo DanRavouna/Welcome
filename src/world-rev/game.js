@@ -414,7 +414,7 @@ class Game extends Component {
     v.seals = LEADERS.map((L) => {
       const got = seals.indexOf(L.id) !== -1, open = this.gateOpen(L.zone) || this.props.noGates;
       return { name: L.name, zone: ZONE_NAMES[L.zone], got: got, notGot: !got, color: got ? L.color : '#AEBBD6', ring: got ? '#F5C542' : '#8C9BBD', glow: got ? '0 0 12px rgba(245,197,66,0.7)' : 'none',
-        status: got ? 'Seal earned' : (open ? 'Waiting in ' + mapName(npcHome(L.id) || L.zone) : 'Behind a shut gate'), aria: L.name + ', ' + (got ? 'seal earned' : 'seal not earned') };
+        status: got ? 'Kept' : (open ? 'Waiting in ' + mapName(npcHome(L.id) || L.zone) : 'Behind a shut gate'), aria: L.name + ', ' + (got ? 'fire kept' : 'fire not yet kept') };
     });
     v.sealCount = seals.length;
     {

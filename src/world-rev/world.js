@@ -80,19 +80,19 @@ const WORLD = (() => {
       const v = r(); if (!near && v < 0.06) set(x, y, 'T'); else if (!near && v < 0.075) set(x, y, 'R'); else if (v < 0.2) set(x, y, ',');
     }
     const signs = [
-      { x: 19, y: 2, to: 'frost', text: 'North: Frost Peaks (Frost and Stone critters). Beyond the peaks lies Frosthold, where Glacia keeps her gym.' },
-      { x: 24, y: 31, to: 'ember', text: 'South: Ember Fields (Ember and Volt critters). Past the fields, Blaze runs the forge gym of Cinderport.' },
-      { x: 2, y: 14, to: 'moss', text: 'West: Moss Forest (Moss and Bloom critters). Elder Wren waits in Mossbrook, on the far side of the forest.' },
-      { x: 41, y: 19, to: 'tide', text: 'East: Tide Shore (Tide and Dusk critters). Follow the boardwalk past the shore to reach Admiral Coral in Coralbay.' }
+      { x: 19, y: 2, to: 'frost', text: 'North: Frost Peaks, then Frosthold.' },
+      { x: 24, y: 31, to: 'ember', text: 'South: Ember Fields, then Cinderport.' },
+      { x: 2, y: 14, to: 'moss', text: 'West: Moss Forest, then Mossbrook.' },
+      { x: 41, y: 19, to: 'tide', text: 'East: Tide Shore, then Coralbay.' }
     ];
     signs.forEach((s) => set(s.x, s.y, 'G'));
     // the opening (Meaning: being kept is the first thing played): a patch of tall grass beside Home's path, and a lamp lit by day on the one open gate
   [[5, 9], [6, 9], [5, 10], [6, 10], [5, 11], [6, 11]].forEach(([x, y]) => { if (['.', ','].indexOf(m[y][x]) !== -1) m[y][x] = 'W'; });
-  m[15][3] = 'O'; const openingObjects = [{ id: 'gate-lamp', kind: 'postlamp', day: true, x: 3, y: 15, reach: 1.7, text: 'A lamp on a post by the gate. Lit, in daylight. Someone keeps it that way.' }];
+  m[15][3] = 'O'; const openingObjects = [{ id: 'gate-lamp', kind: 'postlamp', day: true, x: 3, y: 15, reach: 1.7, text: 'A lamp on a post by the gate. Lit, in daylight.' }];
   // trail north to Vigil Peak: stamped after the decor pass so the seeded scatter (and every other tile) is unchanged
     for (let y = 0; y <= 11; y++) { set(26, y, '='); set(27, y, '='); }
     signs.forEach((s) => [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([a, c]) => { if (m[s.y + c] && (m[s.y + c][s.x + a] === 'T' || m[s.y + c][s.x + a] === 'R')) set(s.x + a, s.y + c, '.'); }));   // every sign can be read: no tree or rock on its four sides
-    set(28, 10, 'G'); signs.push({ x: 28, y: 10, to: 'peak', text: "North: Vigil Peak. The trail opens to trainers holding all 4 Leader Seals." });
+    set(28, 10, 'G'); signs.push({ x: 28, y: 10, to: 'peak', text: 'North: Vigil Peak.' });
     places.forEach((p) => { const [dx, dy] = p.door; [[dx, dy + 1], [dx + 1, dy + 1]].forEach(([x, y]) => set(x, y, '=')); });
     return {
       id: 'town', name: 'Sproutvale', theme: THEMES.town, grid: m, W, H, places, signs, objects: openingObjects, types: ALL_TYPES, rate: 0.08,
@@ -162,7 +162,7 @@ const WORLD = (() => {
     const arriveAt = { s: [ex + 0.9, H - 1.4], n: [ex + 0.9, 1.4], w: [1.4, ey + 1.2], e: [W - 1.4, ey + 1.2] }[back];
     return {
       id, name: z.name, theme: th, grid: m, W, H, places: [],
-      signs: [{ x: sx, y: sy, text: z.name + ': ' + z.types.join(' and ') + ' critters hide in the tall grass. Sparkling grass hides rarer finds.' }],
+      signs: [{ x: sx, y: sy, text: z.name + '.' }],
       types: z.types, rate: 0.12,
       rare: { x: rx, y: ry, w: 3, h: 3 },
       exits: [{ edge: back, a: a, b: a + 1, to: 'town' }],
@@ -186,7 +186,7 @@ const WORLD = (() => {
     set(15, 20, 'G');
     return {
       id: 'peak', name: "Vigil Peak", theme: THEMES.peak, grid: m, W, H, places: [tower],
-      signs: [{ x: 15, y: 20, text: "Vigil Peak. The Long Watch stands at the summit. Twenty nights, one lamp." }],
+      signs: [{ x: 15, y: 20, text: 'Vigil Peak.' }],
       types: [], rate: 0,
       exits: [{ edge: 's', a: 12, b: 13, to: 'town' }],
       arrive: { s: [12.9, H - 1.4] }, spawn: [12.9, H - 1.4]
@@ -246,7 +246,7 @@ const WORLD = (() => {
     path(4, 13, W - 1, 14);                         // main street from the east gate
     path(14, 10, 21, 17);                           // village green
     const places = [
-      { id: 'gym-wren', name: "Wren's Gym", x: 13, y: 2, w: 10, h: 6, kind: 'gym', door: [17, 7], open: 'gym', leader: 'wren', color: '#4FB06D', roof: '#4E8A3A' },
+      { id: 'gym-wren', name: "Wren's Garden", x: 13, y: 2, w: 10, h: 6, kind: 'gym', door: [17, 7], open: 'gym', leader: 'wren', color: '#4FB06D', roof: '#4E8A3A' },
       { id: 'herbs', name: 'Herb Hut', x: 4, y: 6, w: 5, h: 4, kind: 'house', door: [6, 9], open: 'shop', roof: '#8E5BC8', wall: '#E8D7B0' },
       { id: 'house-fennel', name: "Fennel's House", x: 26, y: 5, w: 5, h: 4, kind: 'house', door: [28, 8], open: 'house', roof: '#C0503A', wall: '#E8D7B0', text: 'A kettle whistles inside.' },
       { id: 'house-moss', name: 'Mosscap Cottage', x: 6, y: 18, w: 5, h: 4, kind: 'house', door: [8, 21], open: 'house', roof: '#5E8E3A', wall: '#D9C29A', text: 'A note on the door: "Out foraging. Back by dusk."' },
@@ -262,7 +262,7 @@ const WORLD = (() => {
     }
     places.forEach((p) => { const [dx, dy] = p.door; set(dx, dy + 1, '='); set(dx + 1, dy + 1, '='); });
     for (let k = 0; k < 4; k++) { set(W - 1 - k, 13, '='); set(W - 1 - k, 14, '='); }
-    const signs = [{ x: W - 5, y: 11, text: "Mossbrook: a village under the old trees. Elder Wren's gym stands at the north end." }];
+    const signs = [{ x: W - 5, y: 11, text: 'Mossbrook: a village under the old trees.' }];
     signs.forEach((sg) => set(sg.x, sg.y, 'G'));
     return {
       id: 'mossbrook', name: 'Mossbrook', city: true, theme: THEMES.mossbrook, grid: m, W, H, places, signs, types: [], rate: 0,
@@ -318,24 +318,24 @@ const WORLD = (() => {
       layout: { // terraces: an avenue climbs to the gym; two terraces split by a rocky ledge
         paths: [[17, 8, 18, 27], [5, 10, 30, 11], [5, 19, 30, 20], [14, 21, 21, 24]],
         shop: { x: 4, y: 6, door: [6, 9] }, houses: [{ x: 25, y: 6, door: [27, 9] }, { x: 5, y: 15, door: [7, 18] }, { x: 26, y: 15, door: [28, 18] }],
-        rocks: [[3, 12, 14, 12], [21, 12, 32, 12]] }, leader: 'glacia', color: '#8FD8EA', gymName: "Glacia's Gym", gymRoof: '#5E97AE', shopName: 'Quartermaster', shopRoof: '#4A6A9A', wall: '#DCE2EE', palisade: true, trees: 0.07, rocks: 0.04,
+        rocks: [[3, 12, 14, 12], [21, 12, 32, 12]] }, leader: 'glacia', color: '#8FD8EA', gymName: "Glacia's Pool", gymRoof: '#5E97AE', shopName: 'Quartermaster', shopRoof: '#4A6A9A', wall: '#DCE2EE', palisade: true, trees: 0.07, rocks: 0.04,
       houses: [{ id: 'fh-a', name: 'Watch House', roof: '#3E6E8E', text: 'A stool scrapes inside. Somebody is awake after all.' }, { id: 'fh-b', name: 'Fur Trader', roof: '#7A5A8E', text: 'A sign says: "Closed for the blizzard season."' }, { id: 'fh-c', name: 'Stone Cottage', roof: '#4E7E9A', text: 'Warm light and the smell of soup. Someone hums inside.' }],
-      signs: [{ x: 20, y: 24, text: "Frosthold: the fort at the edge of the peaks. Glacia's gym stands behind the plaza." }] },
+      signs: [{ x: 20, y: 24, text: 'Frosthold: the fort at the edge of the peaks.' }] },
     cinderport: { id: 'cinderport', name: 'Cinderport', from: 'ember', entry: 'n', seed: 7373,
       layout: { // market square in front of the forge gym; lava pool to the west
         paths: [[10, 9, 25, 19], [17, 8, 18, 8], [26, 13, 33, 14]], northRoadTo: 14,
         shop: { x: 4, y: 9, door: [6, 12] }, houses: [{ x: 24, y: 3, door: [26, 6] }, { x: 5, y: 20, door: [7, 23] }, { x: 27, y: 20, door: [29, 23] }],
-        after: [[6, 13, 9, 14], [26, 7, 27, 12], [10, 20, 11, 25], [7, 24, 11, 25], [25, 20, 26, 25], [26, 24, 30, 25]] }, leader: 'blaze', color: '#FF7A45', gymName: "Blaze's Forge Gym", gymRoof: '#6A3A2A', shopName: 'Forge Market', shopRoof: '#8A4A2A', wall: '#D9C2A8', pool: [5, 16, 2.6, 1.4], trees: 0.05, rocks: 0.06,
+        after: [[6, 13, 9, 14], [26, 7, 27, 12], [10, 20, 11, 25], [7, 24, 11, 25], [25, 20, 26, 25], [26, 24, 30, 25]] }, leader: 'blaze', color: '#FF7A45', gymName: "Blaze's Hearth", gymRoof: '#6A3A2A', shopName: 'Forge Market', shopRoof: '#8A4A2A', wall: '#D9C2A8', pool: [5, 16, 2.6, 1.4], trees: 0.05, rocks: 0.06,
       houses: [{ id: 'cp-a', name: 'Smithy', roof: '#5A4A4A', text: 'Clang! Clang! Someone is hammering hot metal inside.' }, { id: 'cp-b', name: 'Ash House', roof: '#9A5A3A', text: 'The door is warm to the touch.' }, { id: 'cp-c', name: 'Miner Lodge', roof: '#6A6A6A', text: 'Muddy boots line the step. The miners are still underground.' }],
-      signs: [{ x: 30, y: 3, text: "Cinderport: forge town of the south. Blaze's gym burns at the north end of the plaza." }] },
+      signs: [{ x: 30, y: 3, text: 'Cinderport: forge town of the south.' }] },
     coralbay: { id: 'coralbay', name: 'Coralbay', from: 'tide', entry: 'w', seed: 8484,
       layout: { // a boardwalk runs along the shore with two piers; houses face it
         paths: [[0, 13, 29, 14], [28, 2, 29, 25], [17, 8, 18, 12]],
         shop: { x: 4, y: 7, door: [6, 10] }, houses: [{ x: 22, y: 4, door: [24, 7] }, { x: 8, y: 18, door: [10, 21] }, { x: 22, y: 17, door: [24, 20] }],
         after: [[6, 11, 7, 12], [24, 8, 27, 9], [24, 21, 27, 22], [13, 15, 14, 23], [10, 22, 14, 23]],
-        piers: [[6, 30, 34], [21, 30, 34]] }, leader: 'coral', color: '#3E8EF7', gymName: "Coral's Harbor Gym", gymRoof: '#2A5A9A', shopName: 'Harbor Market', shopRoof: '#3A8A8A', wall: '#F4EAD6', sea: true, pool: [6, 24, 3, 1.3], trees: 0.05, rocks: 0.02,
+        piers: [[6, 30, 34], [21, 30, 34]] }, leader: 'coral', color: '#3E8EF7', gymName: "Coral's Lamp Hall", gymRoof: '#2A5A9A', shopName: 'Harbor Market', shopRoof: '#3A8A8A', wall: '#F4EAD6', sea: true, pool: [6, 24, 3, 1.3], trees: 0.05, rocks: 0.02,
       houses: [{ id: 'cb-a', name: 'Lighthouse Keeper', roof: '#D8574A', text: 'Charts and spyglasses fill the window.' }, { id: 'cb-b', name: 'Net Mender', roof: '#4A9A8A', text: 'Fishing nets hang drying over the door.' }, { id: 'cb-c', name: 'Shell House', roof: '#E0A0B8', text: 'Seashells spell out "Welcome" on the doorstep.' }],
-      signs: [{ x: 3, y: 11, text: "Coralbay harbor. Admiral Coral's gym looks out over the plaza." }] }
+      signs: [{ x: 3, y: 11, text: 'Coralbay harbor.' }] }
   };
   // carve a trail from a zone's edge inward until it meets an existing path, then add the exit (after the zone's own scatter)
   function linkEdge(M, edge, a, to, arrive) {
@@ -351,10 +351,10 @@ const WORLD = (() => {
   const MAPS = { town: buildTown(), peak: buildPeak(), arena: buildArena(), ascent: buildAscent(), descent: buildDescent(), mossbrook: buildMossbrook(), frosthold: buildCity(CITY_CFG.frosthold), cinderport: buildCity(CITY_CFG.cinderport), coralbay: buildCity(CITY_CFG.coralbay), frost: buildZone('frost'), ember: buildZone('ember'), moss: buildZone('moss'), tide: buildZone('tide'),
     'route-mf': buildZone('route-mf'), 'route-cm': buildZone('route-cm'), 'route-fc': buildZone('route-fc'), 'route-cc': buildZone('route-cc') };
   linkEdge(MAPS.moss, 'w', 14, 'mossbrook', [1.2, 15.2]);
-  MAPS.moss.grid[12][3] = 'G'; MAPS.moss.signs.push({ x: 3, y: 12, to: 'mossbrook', text: 'West: Mossbrook village, home of Elder Wren.' });
-  linkEdge(MAPS.frost, 'n', 17, 'frosthold', [17.9, 1.2]); MAPS.frost.grid[3][20] = 'G'; MAPS.frost.signs.push({ x: 20, y: 3, to: 'frosthold', text: "North: Frosthold, the fort town. Glacia's gym is there." });
-  linkEdge(MAPS.ember, 's', 17, 'cinderport', [17.9, MAPS.ember.H - 1.4]); MAPS.ember.grid[MAPS.ember.H - 4][20] = 'G'; MAPS.ember.signs.push({ x: 20, y: MAPS.ember.H - 4, to: 'cinderport', text: "South: Cinderport, the forge town. Blaze's gym is there." });
-  linkEdge(MAPS.tide, 'e', 14, 'coralbay', [MAPS.tide.W - 1.4, 15.2]); MAPS.tide.grid[12][24] = 'G'; MAPS.tide.signs.push({ x: 24, y: 12, to: 'coralbay', text: "East, along the boardwalk: Coralbay harbor. Admiral Coral's gym is there." });
+  MAPS.moss.grid[12][3] = 'G'; MAPS.moss.signs.push({ x: 3, y: 12, to: 'mossbrook', text: 'West: Mossbrook village.' });
+  linkEdge(MAPS.frost, 'n', 17, 'frosthold', [17.9, 1.2]); MAPS.frost.grid[3][20] = 'G'; MAPS.frost.signs.push({ x: 20, y: 3, to: 'frosthold', text: 'North: Frosthold, the fort town.' });
+  linkEdge(MAPS.ember, 's', 17, 'cinderport', [17.9, MAPS.ember.H - 1.4]); MAPS.ember.grid[MAPS.ember.H - 4][20] = 'G'; MAPS.ember.signs.push({ x: 20, y: MAPS.ember.H - 4, to: 'cinderport', text: 'South: Cinderport, the forge town.' });
+  linkEdge(MAPS.tide, 'e', 14, 'coralbay', [MAPS.tide.W - 1.4, 15.2]); MAPS.tide.grid[12][24] = 'G'; MAPS.tide.signs.push({ x: 24, y: 12, to: 'coralbay', text: 'East, along the boardwalk: Coralbay harbor.' });
   // ---------- props: reusable landmarks (defs in landmarks.js) ----------
   // addProp(map, id, [x, y], text?) puts a landmark near the hint spot: the nearest legal place (clear ground, off paths, grass and water,
   // away from the borders and the reserved rectangle) gets the solid footprint, plus a signpost with the lore line just below it.
@@ -375,8 +375,8 @@ const WORLD = (() => {
   }
   // which landmarks stand on which map (hint spot, optional lore override). Future routes and cities: just add rows.
   const PROPS = {
-    descent: [['camp', [6, 7]], ['cairn', [24, 15], ''], ['cairn', [6, 19], ''], ['cairn', [24, 27], ''], ['cairn', [6, 35], ''], ['cairn', [24, 43], '']],
-    ascent: [['camp', [6, 57]], ['cairn', [24, 50], ''], ['cairn', [6, 46], ''], ['cairn', [24, 38], ''], ['cairn', [6, 30], ''], ['cairn', [24, 22], '']],
+    descent: [['camp', [6, 7], 'A traveller\u2019s camp. The stew is still warm, but nobody is here. A note says: "Gone down. Keep the stew warm."'], ['cairn', [24, 15], ''], ['cairn', [6, 19], ''], ['cairn', [24, 27], ''], ['cairn', [6, 35], ''], ['cairn', [24, 43], '']],
+    ascent: [['camp', [6, 57], 'A traveller\u2019s camp. The stew is still warm, but nobody is here. A note says: "Gone up. The stew is for whoever comes down."'], ['cairn', [24, 50], ''], ['cairn', [6, 46], ''], ['cairn', [24, 38], ''], ['cairn', [6, 30], ''], ['cairn', [24, 22], '']],
     'route-mf': [['ruin', [14, 20]], ['cairn', [26, 9]], ['cairn', [7, 11], '']],   // the ruin beside the road, in the arrival view from the Highland Gate (review 03-F16)
     'route-cm': [['camp', [25, 18]], ['well', [8, 9]], ['cairn', [27, 7]]],
     'route-fc': [['lighthouse', [27, 8]], ['cairn', [8, 18]]],
@@ -558,7 +558,7 @@ const WORLD = (() => {
       ['route-mf-lookout', 's', 24, 'route-mf-fork', 'n', 24], ['route-mf', 'e', 13, 'route-mf-fork', 'w', 13], ['route-mf', 'w', 20, 'route-mf-cliff', 'e', 20], ['route-mf-fork', 'e', 13, 'frosthold', 'w', 13, null, [1.4, 14.2]]],
     props: [['route-mf-gate', 'cairn', [25, 10], 'Notches in the stone. They were not all cut by the same hand.'], ['route-mf-hollow', 'well', [20, 8], 'A moss-furred well. The rope is new.'],
       ['route-mf-lookout', 'cairn', [10, 9], 'From here the pass lies below you like an open hand. You count the roads twice.'], ['route-mf-cliff', 'cairn', [14, 10], 'A new stone on the top. It is still dark from the rain.']],
-    posts: [['mossbrook', 'n', 32, 'North: the Highland Pass (Moss and Frost critters), the road to Frosthold.'], ['frosthold', 'w', 13, 'West: the Highland Pass (Moss and Frost critters), the road to Mossbrook.']] });
+    posts: [['mossbrook', 'n', 32, 'North: Highland Pass, to Frosthold.'], ['frosthold', 'w', 13, 'West: Highland Pass, to Mossbrook.']] });
   // ---- Ashwood Trail: Cinderport -> Cinder Edge -> the trail proper (Elm, the camp) -> Mossroot Crossing -> Mossbrook; a bypass through Smoulder Wood; Charred Hollow is a dead end south of the trail
   NETS.push({ base: 'route-cm', main: 'route-cm', cityA: 'cinderport', cityB: 'mossbrook', spawnFrom: 'route-cm-edge', trail: [['route-cm-edge', 'e', 'w', { kind: 'camp', step: 14, start: 9, text: 'The stones are warm.' }], ['route-cm', 'e', 'n', { kind: 'camp', step: 14, start: 9, text: 'The stones are warm.' }], ['route-cm-crossing', 's', 'n', { kind: 'camp', step: 14, start: 9, text: 'The stones are warm.' }]],
     maps: [
@@ -573,7 +573,7 @@ const WORLD = (() => {
     links: [['cinderport', 'w', 13, 'route-cm-edge', 'e', 13, [1.4, 14.2]], ['route-cm-edge', 'w', 13, 'route-cm', 'e', 14], ['route-cm-edge', 'n', 14, 'route-cm-smoulder', 's', 14], ['route-cm-smoulder', 'e', 12, 'route-cm-crossing', 'w', 12],
       ['route-cm', 'n', 16, 'route-cm-crossing', 's', 16], ['route-cm', 's', 17, 'route-cm-hollow', 'n', 17], ['route-cm-crossing', 'n', 22, 'mossbrook', 's', 22, null, [22.9, 26.6]]],
     props: [['route-cm-edge', 'cairn', [24, 8], 'Soot on one side only.'], ['route-cm-smoulder', 'well', [18, 8], 'A well with no bucket and no rope.'], ['route-cm-crossing', 'cairn', [8, 20], 'Stones balanced so lightly that the wind should have won.'], ['route-cm-hollow', 'cairn', [22, 18], 'Ash, and one footprint pressed into it that has not filled in.']],
-    posts: [['cinderport', 'w', 13, 'West: the Ashwood Trail (Ember and Moss critters), the road to Mossbrook.'], ['mossbrook', 's', 22, 'South: the Ashwood Trail (Ember and Moss critters), the road to Cinderport.']] });
+    posts: [['cinderport', 'w', 13, 'West: Ashwood Trail, to Mossbrook.'], ['mossbrook', 's', 22, 'South: Ashwood Trail, to Cinderport.']] });
   // ---- Glacier Coast: Frosthold -> Frozen Shelf -> the coast proper (Signe, the lighthouse) -> Gull Landing -> Coralbay; a bypass along Rime Strand; the Skerry is a dead end off the coast
   NETS.push({ base: 'route-fc', main: 'route-fc', cityA: 'frosthold', cityB: 'coralbay', spawnFrom: 'route-fc-shelf', shore: 'route-fc', coast: [['route-fc', 2, 4]],
     maps: [
@@ -587,7 +587,7 @@ const WORLD = (() => {
     links: [['frosthold', 'e', 13, 'route-fc-shelf', 'w', 13, [34.6, 14.2]], ['route-fc-shelf', 'e', 13, 'route-fc', 'w', 14], ['route-fc-shelf', 's', 12, 'route-fc-strand', 'n', 12], ['route-fc-strand', 'e', 12, 'route-fc-landing', 'w', 12],
       ['route-fc', 's', 16, 'route-fc-landing', 'n', 16], ['route-fc', 'e', 12, 'route-fc-skerry', 'w', 12], ['route-fc-landing', 's', 28, 'coralbay', 'n', 28, null, [28.9, 1.4]]],
     props: [['route-fc-shelf', 'cairn', [24, 8], 'Frost on the south face. Dry on the north.'], ['route-fc-shelf', 'wreck', [10, 17], 'A hull, turned over and whole. Someone dragged it clear of the ice.'], ['route-fc-strand', 'cairn', [20, 9], 'Shells set in a line, smallest to largest. The last place is empty.'], ['route-fc-landing', 'campfire', [20, 18], 'A ring of stones, the ash raked flat.'], ['route-fc-skerry', 'cairn', [12, 8], 'Something was weighed against these stones and taken away.']],
-    posts: [['frosthold', 'e', 13, 'East: the Glacier Coast (Frost and Tide critters), the road to Coralbay.'], ['coralbay', 'n', 28, 'North: the Glacier Coast (Frost and Tide critters), the road to Frosthold.']] });
+    posts: [['frosthold', 'e', 13, 'East: Glacier Coast, to Coralbay.'], ['coralbay', 'n', 28, 'North: Glacier Coast, to Frosthold.']] });
   // ---- Reef Causeway: Coralbay -> Pier Road -> the causeway proper (Mako, the wreck) -> Steamvent Flats -> Cinderport; a bypass over the Low Shoals; the Drowned Orchard is a dead end south of the causeway
   NETS.push({ base: 'route-cc', main: 'route-cc', cityA: 'coralbay', cityB: 'cinderport', spawnFrom: 'route-cc-pier', causeway: [['route-cc', 11, 2, 15, 5], ['route-cc', 3, 7, 6, 12], ['route-cc-pier', 5, 9, 9, 11], ['route-cc-pier', 14, 7, 18, 12], ['route-cc-steam', 19, 7, 23, 11], ['route-cc-steam', 7, 15, 21, 18]], trail: [['route-cc-pier', 'n', 's', { wave: true, step: 6, start: 5 }], ['route-cc', 'n', 'w', { wave: true, step: 6, start: 5 }], ['route-cc-steam', 'e', 'w', { wave: true, step: 6, start: 5 }]],
     maps: [
@@ -601,14 +601,14 @@ const WORLD = (() => {
     links: [['coralbay', 's', 28, 'route-cc-pier', 'n', 16, [28.9, 26.6]], ['route-cc-pier', 's', 16, 'route-cc', 'n', 17], ['route-cc-pier', 'e', 12, 'route-cc-shoals', 'w', 12], ['route-cc-shoals', 's', 20, 'route-cc-steam', 'n', 20],
       ['route-cc', 'w', 13, 'route-cc-steam', 'e', 13], ['route-cc', 's', 17, 'route-cc-drowned', 'n', 17], ['route-cc-steam', 'w', 13, 'cinderport', 'e', 13, null, [34.6, 14.2]]],
     props: [['route-cc-pier', 'cairn', [24, 9], 'Shells in a spiral. Someone counted.'], ['route-cc-shoals', 'cairn', [10, 9], 'The tide line is higher on this side than it should be.'], ['route-cc-steam', 'cairn', [10, 20], 'Warm to the touch, in the middle of a cold hour.'], ['route-cc-drowned', 'cairn', [22, 9], 'Fruit trees, standing in the water. They are in blossom.']],
-    posts: [['coralbay', 's', 28, 'South: the Reef Causeway (Tide and Ember critters), the road to Cinderport.'], ['cinderport', 'e', 13, 'East: the Reef Causeway (Tide and Ember critters), the road to Coralbay.']] });
+    posts: [['coralbay', 's', 28, 'South: Reef Causeway, to Cinderport.'], ['cinderport', 'e', 13, 'East: Reef Causeway, to Coralbay.']] });
   NETS.forEach(buildNet);
-  addProp(MAPS.town, 'well', [33, 25], 'A well. The bucket is up, and full. Someone drew it before you came.');
+  addProp(MAPS.town, 'well', [33, 25], 'A well. The bucket is up, and full.');
   connect(MAPS['route-cm'], 'w', 20, MAPS.arena, 'e', 13);   // the Arena: a clearing west of the Ashwood Trail (mid game: the trail opens at level 6)
   if (PXW.PAL['route-cm']) PXW.PAL.arena = PXW.PAL['route-cm'];
   [[4, 3], [7, 3], [4, 7], [7, 7], [4, 11]].forEach((h) => addProp(MAPS.arena, 'tent', h)); addProp(MAPS.arena, 'campfire', [7, 12]);   // the rivals' camp: five tents and one fire
-  addTrail(MAPS.ascent, 's', [14, 10], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
-  addTrail(MAPS.descent, 'n', [14, 62], { step: 18, start: 10, own: true, text: 'A lantern on a post. It is lit.' });
+  addTrail(MAPS.ascent, 's', [14, 10], { step: 18, start: 10, own: true, text: 'A lantern on a post.' });
+  addTrail(MAPS.descent, 'n', [14, 62], { step: 18, start: 10, own: true, text: 'A lantern on a post.' });
   addSpot(MAPS.mossbrook, { id: 'c-growth', kind: 'growthpost', text: 'Notches, each a little higher than the last.' }, 19, 9, false);
   addSpot(MAPS.frosthold, { id: 'c-kettle', kind: 'kettle', text: 'The kettle is hot. Two cups.' }, 19, 22, false);
   addSpot(MAPS.cinderport, { id: 'c-bench', kind: 'workbench', text: 'Tools, laid out for the morning.' }, 21, 11, false);
@@ -692,20 +692,20 @@ const WORLD = (() => {
   (() => {   // Cinderport's southern gate (the gap in its tree line, columns 19-20) onto the Cinder Descent
     const C = MAPS.cinderport, D = MAPS.descent;
     for (let y = 20; y <= 27; y++) { C.grid[y][19] = '='; C.grid[y][20] = '='; }
-    C.grid[24][21] = 'G'; C.signs.push({ x: 21, y: 24, to: 'descent', text: 'South: the Cinder Descent. A trail winds down into the volcano to an old forge (Ember and Stone critters). Climbers should be at least level 13.' });
+    C.grid[24][21] = 'G'; C.signs.push({ x: 21, y: 24, to: 'descent', text: 'South: the Cinder Descent.' });
     C.exits.push({ edge: 's', a: 19, b: 20, to: 'descent' }); C.arriveFrom = Object.assign({}, C.arriveFrom, { descent: [19.9, C.H - 1.4] });
     D.arriveFrom = { cinderport: D.spawn, 'dg-forge': [14.5, 62.6] };
     D.objects[0].glow = true;
-    D.grid[3][12] = 'G'; D.signs.push({ x: 12, y: 3, text: 'The Cinder Descent. Five ledges down into the caldera. Wild Ember and Stone critters hide in the ash tufts. The heat is real, so do not hurry back up.' });
+    D.grid[3][12] = 'G'; D.signs.push({ x: 12, y: 3, text: 'The Cinder Descent. Five ledges down into the caldera.' });
   })();
   (() => {
     const F = MAPS.frosthold, A = MAPS.ascent;
     for (let y = 0; y <= 11; y++) { F.grid[y][31] = '='; F.grid[y][32] = '='; }
-    F.grid[4][30] = 'G'; F.signs.push({ x: 30, y: 4, to: 'ascent', text: 'North: the Cold Ascent. A trail climbs into the peaks (Frost and Stone critters). Climbers should be at least level 11.' });   // the place is named, not the lamp (the level sentence: packages W and M)
+    F.grid[4][30] = 'G'; F.signs.push({ x: 30, y: 4, to: 'ascent', text: 'North: the Cold Ascent.' });   // the place is named, not the lamp (the level sentence: packages W and M)
     F.exits.push({ edge: 'n', a: 31, b: 32, to: 'ascent' }); F.arriveFrom = Object.assign({}, F.arriveFrom, { ascent: [31.9, 1.4] });
     A.arriveFrom = { frosthold: A.spawn, 'dg-lamp': [14.5, 14.7] };
     A.objects[0].beam = { x: 14.5, y: 8.75 };   // the beacon's lantern: a light shaft rises from it once the lamp is relit
-    A.grid[60][12] = 'G'; A.signs.push({ x: 12, y: 60, text: 'The Cold Ascent. Five ledges up into the peaks. Wild Frost and Stone critters hide in the snow tufts. Turn back if the weather turns.' });
+    A.grid[60][12] = 'G'; A.signs.push({ x: 12, y: 60, text: 'The Cold Ascent. Five ledges up into the peaks.' });
     A.grid[16][3] = 'C';
   })();
   // The Sealed Arch's door: the ruin's signpost tile becomes the "arch" object (a rune stone). With four clues the app opens it (see archUse in app.js).

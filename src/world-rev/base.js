@@ -966,11 +966,11 @@ class Component extends Base {
         ['sound', 'Sound effects', 'Chimes for rolls, battles and level-ups.'],
         ['vibrate', 'Vibration', 'Buzz on Mythic rolls, wins and level-ups (Android).'],
         ['calm', 'Reduce motion', 'Skip the roll reveal and hit shakes.'],
-        ['daynight', 'Day and night', 'Tint the world by your local time. Dusk critters come out at night.'],
+        ['daynight', 'Day and night', 'Tint the world by your local time.'],
         ['bigtext', 'Larger text', 'Menus, screens and dialogue are 25% bigger. The map HUD stays the same.'],
         ['contrast', 'High contrast', 'Solid dark panels, brighter text and stronger outlines.'],
         ['ambient', 'Wildlife', 'Butterflies, birds, crabs and fireflies that wander the world. Looks only.'],
-        ['weather', 'Weather', 'Rain, snow, fog and sun that change every 6 hours and bring out other critters.'],
+        ['weather', 'Weather', 'Rain, snow, fog and sun, changing through the day.'],
         ['test', 'Test mode (developer)', 'Unlimited rolls and all trails open. Turning it on skips the real progression.']
       ].filter((r) => r[0] !== 'test' || st.dev || (st.settings && st.settings.test)).map((r) => {
         const cfg = st.settings || {}, on = !!cfg[r[0]];

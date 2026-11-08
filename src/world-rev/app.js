@@ -72,7 +72,7 @@ const APP = (() => {
       { id: 'settings', label: 'Settings', sub: 'Sound, motion', icon: I.settings },
       { id: 'map', label: 'Map', sub: 'Travel anywhere open', icon: 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14' },
       { id: 'backup', label: 'Save', sub: 'Online, backup', icon: 'M12 3v12M7 10l5 5 5-5M5 21h14' },
-      { id: 'seals', label: 'Seals', sub: ((st.npc && st.npc.seals) || []).length + '/4 leaders', icon: 'M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 16.6 6.5 19.5l1-6.3L3 8.9 9 8z' },
+      { id: 'seals', label: 'Fires', sub: ((st.npc && st.npc.seals) || []).length + '/4 kept', icon: 'M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 16.6 6.5 19.5l1-6.3L3 8.9 9 8z' },
       { id: 'bag', label: 'Bag', sub: (Object.values(bagOf()).reduce((x, y) => x + y, 0)) + ' items', icon: 'M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2' },
       { id: 'party', label: 'Party', sub: game.partySeeds().length + '/3 critters', icon: 'M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3 3-5 6-5s6 2 6 5M12 20c0-3 3-5 6-5s4 1 4 3' }
     ];
@@ -124,7 +124,7 @@ const APP = (() => {
     closeMenu(true);
     if (id === 'dex') openScreen('dex');
     else if (id === 'species') { openScreen('dex'); game.setState({ dexView: 'species' }); }
-    else { openScreen('badges'); scrollToHeading({ quests: 'Daily quests', badges: 'Badges', settings: 'Settings', seals: 'Leader seals' }[id] || 'Trainer'); }
+    else { openScreen('badges'); scrollToHeading({ quests: 'Daily quests', badges: 'Badges', settings: 'Settings', seals: 'The four fires' }[id] || 'Trainer'); }
   }
   function plank(name) {
     $('loc-name').textContent = name;
@@ -141,7 +141,7 @@ const APP = (() => {
     return typeof window.__weather === 'string' ? window.__weather : WEATHER.at(id);
   }
   function stillMotion() { return !!((game && game.state.settings && game.state.settings.calm) || (reduceMQ && reduceMQ.matches)); }
-  function weatherText(k) { const K = WEATHER.KINDS[k]; return K ? K.label + (K.type ? ': more ' + K.type + ' critters' : '') : ''; }
+  function weatherText(k) { const K = WEATHER.KINDS[k]; return K ? K.label : ''; }   // the weather is its name; what it brings out is met, not read (02-F25)
   // accessibility: Settings "Larger text" and "High contrast" become classes on <html> (CSS in shell.html)
   function applyA11y() { const s = (game && game.state.settings) || {}, h = document.documentElement; h.classList.toggle('bigtext', s.bigtext === true); h.classList.toggle('hc', s.contrast === true); }
   let wxShown = null;
@@ -160,7 +160,7 @@ const APP = (() => {
   let mapOpen = false, mapSel = null;
   const ZTYPES = ['Ember', 'Tide', 'Moss', 'Volt', 'Frost', 'Dusk', 'Stone', 'Bloom'];
   const ZONE_TYPES = { frost: ['Frost', 'Stone'], ember: ['Ember', 'Volt'], moss: ['Moss', 'Bloom'], tide: ['Tide', 'Dusk'] };
-  const CITY = { mossbrook: ['Mossbrook', 'past Moss Forest, to the west', 'Elder Wren’s gym'], frosthold: ['Frosthold', 'past Frost Peaks, to the north', 'Glacia’s gym'], cinderport: ['Cinderport', 'past Ember Fields, to the south', 'Blaze’s gym'], coralbay: ['Coralbay', 'past Tide Shore, to the east', 'Admiral Coral’s gym'], peak: ["Vigil Peak", 'up the trail north of the plaza', 'The Tower'], ascent: ['The Cold Ascent', 'through the north gate of Frosthold', 'A climb into the peaks'], descent: ['The Cinder Descent', 'through the south gate of Cinderport', 'A descent to a buried forge'] };
+  const CITY = { mossbrook: ['Mossbrook', 'past Moss Forest, to the west', 'Wren’s Garden'], frosthold: ['Frosthold', 'past Frost Peaks, to the north', 'Glacia’s Pool'], cinderport: ['Cinderport', 'past Ember Fields, to the south', 'Blaze’s Hearth'], coralbay: ['Coralbay', 'past Tide Shore, to the east', 'Coral’s Lamp Hall'], peak: ["Vigil Peak", 'north of the plaza', 'The Long Watch'], ascent: ['The Cold Ascent', 'through the north gate of Frosthold', 'A climb into the peaks'], descent: ['The Cinder Descent', 'through the south gate of Cinderport', 'A descent to a buried forge'] };
   // what the card under the map says about a place, and whether you can fast travel there
   function placeCard(id) {
     const st = game.state, lv = game.levelInfo(st.xp || 0).level, here = WORLD.map && WORLD.map.id, test = game.props.noGates, vis = st.visited || [];
@@ -171,7 +171,7 @@ const APP = (() => {
     else if (ZONE_NAMES[id]) {
       const L = LEADERS.find((x) => x.zone === id), open = test || game.gateOpen(id);
       const found = ZONE_TYPES[id].reduce((n, t) => { const ti = ZTYPES.indexOf(t); return n + seen.filter((no) => Math.floor((no - 1) / 6) === ti).length; }, 0);
-      c.name = ZONE_NAMES[id]; c.lines = [ZONE_TYPES[id].join(' and ') + ' critters', found + '/12 species found', L.name + (seals.indexOf(L.id) !== -1 ? ': seal earned' : ': not yet beaten')];
+      c.name = ZONE_NAMES[id]; c.lines = [found + '/12 species found', L.name + (seals.indexOf(L.id) !== -1 ? '\u2019s fire: kept' : '\u2019s fire: not yet kept')];
       if (open) c.travel = true; else c.status = 'The gate is shut';
     } else if (CITY[id]) {
       const v = test || vis.indexOf(id) !== -1;
@@ -192,7 +192,7 @@ const APP = (() => {
   function renderMap() {
     const here = WORLD.map && WORLD.map.id; if (!mapSel || !MAP_LAYOUT[mapSel]) mapSel = MAP_LAYOUT[here] ? here : 'town';
     renderLayout(); renderCard();
-    $('wm-tod').textContent = { night: 'Night: Dusk critters roam every zone.', dawn: 'Dawn', dusk: 'Dusk', day: 'Daytime' }[timeOfDay()] + (weatherAt('town') ? ' The weather changes at ' + String(WEATHER.nextChange().getHours()).padStart(2, '0') + ':00.' : '');
+    $('wm-tod').textContent = { night: 'Night.', dawn: 'Dawn.', dusk: 'Dusk.', day: 'Daytime.' }[timeOfDay()] + (weatherAt('town') ? ' The weather changes at ' + String(WEATHER.nextChange().getHours()).padStart(2, '0') + ':00.' : '');
   }
   // ---------- the overview: every regular place greyed out until you have been there; secret places only appear once found ----------
   // which maps count as visited: the ones recorded, plus what the save implies for older saves (Sproutvale, and a zone whose trainer or leader you have beaten)
@@ -382,6 +382,22 @@ const APP = (() => {
   const hintQueue = []; let hintBusy = false;
   // the help that leaves as you grow (Meaning: you no longer need it kept for you). Each seal you hold retires one kind of help: the first quiets the tips, the second changes Mira's welcome, the third and fourth change what Mom says. Words only; no price, reward or rule changes.
   const sealCount = () => ((game.state.npc && game.state.npc.seals) || []).length;
+  // the scripted lines (review words pass): one table, so telltest reads every line a scene says (APP.words())
+  const SAY = {
+    fern: ['Someone has the lamp on the west gate lit already. They do, most mornings.'], fernGo: ['Go on, then.'],
+    archCold: ['Eight critters sit around one fire. A ninth seat is carved empty.', 'The stone stays cold.'], archOpen: ['The stone warms.'],
+    door: ['The great door is not locked.', 'The handle is worn bright.'], greatLamp: ['The glass is warm.'],
+    seat: ['Something that has been kept here a very long time opens its eyes.', 'It looks at the empty seat, and then it chooses you instead.'],
+    window: ['Something small is asleep on the sill, curled against the warm glass.', 'It opens one eye.'],
+    forgeDoor: ['A doorway of dry heat, cut into the crater wall.', 'The forge has been quiet for a long time. Something inside is still warm.'],
+    furnace: ['You pull the soot-black door open. A single ember glows in the ash.', 'You blow on it. It brightens, then catches, then roars.'], furnaceLit: ['A coal in the ash shifts and looks up.', 'It climbs out, small and heavy and warm, and settles against your boots.'],
+    watchLit: 'They come most nights now. You are the one they come to.', watchBack: 'Back again.', watchFirst: 'Someone comes to the door most nights.', watchEnough: 'Enough for today. The bench is yours until morning.',
+    watchTop: ['Morning. You kept the whole watch.'], watchTopFirst: 'The lamp was yours all night.', watchTopAgain: 'Kept to morning again.', watchLoss: 'The bench is there. The watch is still yours.',
+    cityDone: ['Thank you.', 'That is today\u2019s. Tomorrow there is another.'], cityAgain: 'That was today\u2019s. Tomorrow there is another.',
+    socketCold: 'A socket, cold.', socketWarm: 'A socket, warm.', postCold: 'A lantern on a post. Cold.', postAhead: 'Lit before you got here.', postMine: 'It stays lit.'
+  };
+  // after the great lamp, the four city shops and Rowan say one thing that has changed (02-F30); the LETGO table above them stays as it is
+  const LIT_LINES = { juniper: ['The lamp over the stall was on when I opened. I had not lit it.'], tove: ['The lamp over the stall was on when I opened. I had not lit it.'], bea: ['The lamp over the stall was on when I opened. I had not lit it.'], marina: ['The lamp over the stall was on when I opened. I had not lit it.'], rowan: ['I saw a light go over the roofs last night. I did not get up.'] };
   const SCAFFOLD = {
     pip: [[1, ['You know all of this already.', 'I just like standing here.']]],
     mira: [[2, ['Take what you need.']], [4, ['Nothing left on the shelf. There is some at your house.']]],
@@ -425,7 +441,7 @@ const APP = (() => {
     if (game.state.intro || game.state.caught.length) return;
     await Promise.race([CLOUD.ready, new Promise((r) => setTimeout(r, 12000))]);
     if (game.state.intro || game.state.caught.length) return;
-    showTitle(() => showDialog('Professor Fern', ['Someone has the lamp on the west gate lit already. They do, most mornings.'], null, openStarter));
+    showTitle(() => showDialog('Professor Fern', SAY.fern, null, openStarter));
   }
   // the title screen (Meaning: the introduction to everything: one lit window in the dark, kept before you did anything; the game begins when you touch that light)
   function showTitle(then) {
@@ -450,7 +466,7 @@ const APP = (() => {
     game.sfx('claim');
     $('starter').hidden = true;
     fernHome();
-    showDialog('Professor Fern', ['Go on, then.'], null);
+    showDialog('Professor Fern', SAY.fernGo, null);
   }
   // Fern stands beside Home's path for the first minute (while !intro) and goes back to the Lab door once you have a partner
   function fernHome() { const f = (WORLD.allNpcs().town || []).find((n) => n.id === 'fern'); if (f) { f.x = 37; f.y = 11; f.dir = 'down'; } }
@@ -546,17 +562,17 @@ const APP = (() => {
     const M = WORLD.MAPS, out = { town: [
       Object.assign({ id: 'fern', name: 'Professor Fern', x: 37, y: 11, kind: 'request', pal: { h: '#E8E8F0', y: '#F4F7FB', Y: '#C9D3E6', p: '#4A5878' } }, game && game.state && !game.state.intro ? { x: 7, y: 13, dir: 'up' } : {}, {
         need: 'species5', reward: 10,
-        ask: ['Ah, a new trainer! I am Professor Fern. I study critters here at the Lab.', 'Could you help my research? Discover 5 different species and come back. I will make it worth your while.'],
-        progress: (g) => 'You have found ' + (g.state.seen || []).length + ' of 5 species so far. The tall grass outside town is a good start.',
-        thanks: ['Five species already? Wonderful work!', 'Here are 10 essence for your trouble.'],
-        after: ['Keep exploring. The Species page in your Dex shows where each type lives.'] }),
+        ask: ['Ah, a new trainer. I am Professor Fern. I study critters here at the Lab.', 'Five kinds, and I will have a page to write.'],
+        progress: (g) => 'The page has ' + (g.state.seen || []).length + ' on it so far.',
+        thanks: ['Five already. I will start the page tonight.'],
+        after: ['The pages are filling up.'] }),
       { id: 'pip', name: 'Pip', x: 25, y: 14, kind: 'talk', pal: { h: '#8A5A34', y: '#7CD957', Y: '#4FA83A' },
-        lines: ['Did you know? Sparkling grass hides rarer critters.', 'Trainers stand still and watch. If they see you, get ready to battle!'] },
+        lines: ['The patch past the gate sparkles in the morning. I have never caught it starting.', 'Rowan has stood in the same spot since breakfast.'] },
       { id: 'mira', name: 'Mira', x: 6, y: 15, kind: 'shop', pal: { h: '#C0392B', y: '#F59ACB', Y: '#D86BA6' },
-        lines: ['Welcome to my stall! Potions for battles, charms for rare finds, tickets for one more roll.'] },
+        lines: ['Potions and charms. Take what you need.'] },
       { lv: 1, id: 'rowan', name: 'Rowan', x: 13, y: 20, dir: 'up', kind: 'trainer', trainer: true, pal: { cap: true, c: '#3C6FE0', y: '#3C6FE0', Y: '#28509E' },
         types: ['Moss', 'Ember'], size: 2, stage: 1,
-        intro: ['Hey, you look new around here!', 'Let me see what your critters can do.'], winLine: 'Wow, you are good! Here is your reward.', beatenLines: ['That was a great battle. Come back tomorrow for a rematch!'] }
+        intro: ['Hey, you look new around here!', 'Let me see what your critters can do.'], winLine: 'Wow, you are good!', beatenLines: ['That was a great battle. Come back tomorrow for a rematch!'] }
     ], arena: [
       // the ladder: five named rivals in a fixed order (ladder 1..5). The one whose turn it is waits on the sand; the others keep to their tents (placeRivals)
       { lv: 8, id: 'juno', name: 'Juno', ladder: 1, kind: 'trainer', trainer: true, pal: { cap: true, c: '#F5C542', y: '#F5C542', Y: '#C9962A' }, types: ['Volt', 'Ember'], size: 3, stage: 2, pick: 0.5, reward: 14,
@@ -598,53 +614,53 @@ const APP = (() => {
     };
     zone('frost', [
       { lv: 5, id: 'glacia', name: 'Glacia', at: 'leader', kind: 'leader', leader: true, pal: { h: '#DCEBFF', y: '#8FD8EA', Y: '#5E97AE', p: '#2E4A66' }, types: ['Frost', 'Stone'], size: 4, stage: 2, pick: 0.75, firstReward: 25,
-        intro: ['I am Glacia, leader of Frost Peaks.', 'My critters were born in the snow. They do not melt easily.'], winLine: 'The cold keeps what it is given. Take the Frost Seal. It will keep.', sealLine: 'The Frost Seal is quiet. Quiet fires last longest. Ember Fields awaits at level 6.', beatenLines: ['Rest by the fire, trainer. We can battle again tomorrow.'] },
+        intro: ['I am Glacia. This is my pool.', 'My critters were born in the snow. They do not melt easily.'], winLine: 'The pool is still. It will stay that way now.', sealLine: 'Nothing up here has moved since you came in.', beatenLines: ['Rest by the fire, trainer. We can battle again tomorrow.'] },
       { lv: 9, id: 'bram', name: 'Hiker Bram', at: 'trainer', kind: 'trainer', trainer: true, pal: { cap: true, c: '#C0392B', y: '#8A5A34', Y: '#6B4626' }, types: ['Frost', 'Stone'], size: 4, stage: 2, pick: 0.5,
         intro: ['These peaks make critters tough.', 'Think yours can handle the cold?'], winLine: 'You climbed right over me! Well earned.', beatenLines: ['My critters need a rest. Tomorrow, then!'] },
       { id: 'sola', name: 'Sola', at: 'entrance', kind: 'request', pal: { h: '#F5D36A', y: '#9CC9D9', Y: '#5E97AE' }, need: 'stone', reward: 6,
-        ask: ['I collect pictures of Stone critters, but they hide so well up here.', 'Could you show me one? Keep a Stone critter and come back.'],
-        progress: () => 'Still no Stone critter? They live in the tall grass here in Frost Peaks.', thanks: ['A Stone critter! It is even rockier than I imagined.', 'Take these 6 essence, as thanks.'], after: ['I will treasure that picture.'] }
+        ask: ['I collect pictures of Stone critters, but they hide so well up here.', 'I draw them. The Stone ones never hold still long enough.'],
+        progress: () => 'They do not come when called. They come when you stop.', thanks: ['A Stone critter! It is even rockier than I imagined.'], after: ['I will treasure that picture.'] }
     ]);
     zone('ember', [
       { lv: 11, id: 'blaze', name: 'Blaze', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#1E1A2A', y: '#FF7A45', Y: '#C2410C' }, types: ['Ember', 'Volt'], size: 4, stage: 3, pick: 0.55, firstReward: 30,
-        intro: ['So you made it to the heart of Ember Fields.', 'I am Blaze. My team burns at full power. Ready?'], winLine: 'You did not put it out. You fed it. Take the Ember Seal.', sealLine: 'This one wants feeding every day. Tide Shore opens at level 9.', beatenLines: ['My flames need to rekindle. Come back tomorrow!'] },
+        intro: ['I am Blaze. This is my hearth.', 'My team burns at full power. Ready?'], winLine: 'All three at once. The woodpile is lower than it was.', sealLine: 'Someone will stack it again tonight. It is never me.', beatenLines: ['My flames need to rekindle. Come back tomorrow!'] },
       { lv: 10, id: 'kiki', name: 'Kiki', at: 'trainer', kind: 'trainer', trainer: true, pal: { h: '#F28C28', y: '#D8574A', Y: '#A8382E' }, types: ['Ember', 'Volt'], size: 3, stage: 2, pick: 0.55,
         intro: ['It is hot out here, and so are my critters!', 'Ready to feel the heat?'], winLine: 'Okay, okay, you win. That was electric!', beatenLines: ['My team is still cooling down. Come back tomorrow!'] },
       { id: 'dax', name: 'Dax', at: 'entrance', kind: 'request', pal: { cap: true, c: '#F5C542', y: '#4A5878', Y: '#2B3555' }, need: 'evolved', reward: 8,
         ask: ['I heard critters can evolve if you give them essence.', 'I have never seen one! Show me a critter at stage 2 or higher?'],
-        progress: () => 'Evolve a critter in the Dex, then come back. Release extra critters to earn essence.', thanks: ['Whoa, look at the size of it!', 'Here, 8 essence. Thanks for showing me.'], after: ['One day I will evolve mine too.'] }
+        progress: () => 'Pip grew a hand\u2019s width over the summer and I did not notice until it had happened.', thanks: ['Whoa, look at the size of it!', 'Thanks for showing me.'], after: ['One day I will evolve mine too.'] }
     ]);
     zone('moss', [
       { lv: 6, id: 'wren', name: 'Elder Wren', at: 'leader', kind: 'leader', leader: true, pal: { h: '#E8E8F0', y: '#4E6B19', Y: '#2E4210', p: '#4A3424' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.6, firstReward: 20,   // lv 6: package M owns the number (first guess, 11 §1 CD-5)
-        intro: ['Welcome, young trainer. I am Elder Wren, leader of Moss Forest.', 'Show me that you and your critters grow together.'], winLine: 'Four in bloom. I did not see you hurry.', sealLine: 'The first fire is the easiest to keep. Frost Peaks opens at level 3.', beatenLines: ['The forest needs rest. Visit me again tomorrow.'] },
+        intro: ['I am Wren. This is my garden.', 'The beds take their time.'], winLine: 'Four in bloom. I did not see you hurry.', sealLine: 'The beds will want you back. They always want someone.', beatenLines: ['The forest needs rest. Visit me again tomorrow.'] },
       { lv: 4, id: 'ivy', name: 'Ivy', at: 'trainer', kind: 'trainer', trainer: true, pal: { h: '#2E7D32', y: '#F5A3D0', Y: '#D86BA6' }, types: ['Moss', 'Bloom'], size: 3, stage: 2, pick: 0.3,
         intro: ['Shh, the forest is listening.', 'Let us give it a battle worth hearing.'], winLine: 'Beautifully done. The forest approves.', beatenLines: ['Let the forest rest today. Tomorrow we can battle again.'] },
       { id: 'oak', name: 'Old Oak', at: 'talk', kind: 'talk', pal: { h: '#BDBDBD', y: '#6B8E23', Y: '#4E6B19' },
-        lines: ['Every critter has a nature. Brave ones hit harder but bruise easier.', 'Pick the nature that fits how you like to battle.'] }
+        lines: ['The brave ones in this forest come home bruised.', 'They go out again first.'] }
     ]);
     zone('tide', [
       { lv: 12, id: 'coral', name: 'Admiral Coral', at: 'leader', kind: 'leader', leader: true, pal: { cap: true, c: '#F8F8F8', y: '#1E2A4A', Y: '#0E1A38', p: '#1E2A4A' }, types: ['Tide', 'Dusk'], size: 5, stage: 3, pick: 0.75, firstReward: 35,
-        intro: ['Admiral Coral, leader of Tide Shore. Five critters, every one a veteran of the storm.', 'Win, and you will have tended every fire in the land.'], winLine: 'The sea gives back what it is given. The Tide Seal is yours.', sealLine: 'Four fires. Someone left a light on for you. Perhaps they still do. The trail north of Sproutvale is open.', beatenLines: ['My fleet is in the harbor. Challenge me again tomorrow.'] },
+        intro: ['I am Coral. This is my lamp hall.', 'Five critters, every one of them came back from a storm.'], winLine: 'Every lamp answered. The chain is down.', sealLine: 'The harbour lamp was already lit when I came down this morning. Nobody here will say who.', beatenLines: ['My fleet is in the harbor. Challenge me again tomorrow.'] },
       { lv: 19, id: 'marlo', name: 'Captain Marlo', at: 'trainer', kind: 'trainer', trainer: true, pal: { cap: true, c: '#1E2A4A', y: '#FFFFFF', Y: '#C9D3E6' }, types: ['Tide', 'Dusk'], size: 4, stage: 3, pick: 0.4,
         intro: ['Ahoy! Four critters, one captain.', 'Can your crew weather all of them?'], winLine: 'You sailed through my whole crew! A fine captain you would make.', beatenLines: ['My crew is resting below deck. Tomorrow, sailor!'] },
       { id: 'nell', name: 'Nell', at: 'entrance', kind: 'request', pal: { h: '#6B3E1E', y: '#3C95DC', Y: '#2A6FB0' }, need: 'rare', reward: 8,
-        ask: ['The waves sometimes wash up rare critters.', 'Have you found a Rare one yet? I would love to see it.'],
-        progress: () => 'Sparkling grass is the best place to find Rare critters.', thanks: ['A Rare critter! It practically glows.', 'Please, take 8 essence.'], after: ['I will keep watching the waves.'] }
+        ask: ['The waves sometimes wash up something rare.', 'Have you found a Rare one yet? I would love to see it.'],
+        progress: () => 'Nothing rare in the row this morning. The sea takes its time.', thanks: ['A Rare critter! It practically glows.'], after: ['I will keep watching the waves.'] }
     ]);
     // Mossbrook (city): Elder Wren moves into her gym; Moss Forest keeps Ivy and Old Oak
     const wren = out.moss.find((n) => n.id === 'wren');
     out.moss = out.moss.filter((n) => n.id !== 'wren');
-    Object.assign(wren, { x: 10, y: 3, dir: 'down', city: 'mossbrook', intro: ['Welcome to Mossbrook, young trainer. I am Elder Wren, leader of this gym.', 'Show me that you and your critters grow together.'] });
+    Object.assign(wren, { x: 10, y: 3, dir: 'down', city: 'mossbrook', intro: ['I am Wren. This is my garden.', 'The beds take their time.'] });
     out['gym-wren'] = [wren];   // the leader waits inside the gym, behind the vines
     out.mossbrook = [
       { id: 'juniper', name: 'Herbalist Juniper', x: 8, y: 10, kind: 'shop', pal: { h: '#6B3FA0', y: '#8E5BC8', Y: '#6B3FA0' },
-        lines: ['Welcome to the Herb Hut! Same remedies as Mira in Sproutvale, brewed with Mossbrook leaves.'] },
+        lines: ['The shelf is full again. It is, every morning.'] },
       { lv: 3, id: 'sorrel', name: 'Forager Sorrel', x: 11, y: 11, dir: 'down', kind: 'trainer', trainer: true, pal: { cap: true, c: '#6B8E23', y: '#C9A26A', Y: '#8A6A44' }, types: ['Bloom', 'Volt'], size: 3, stage: 2, pick: 0.5,
-        intro: ['Hold on, traveler! Mossbrook greets newcomers with a battle.', 'My critters grew up on forest berries. Ready?'], winLine: 'Ha! You earned your welcome. Here is your reward.', beatenLines: ['Rest up and come back tomorrow. The berries will be ripe again.'] },
+        intro: ['Hold on, traveler! Mossbrook greets newcomers with a battle.', 'My critters grew up on forest berries. Ready?'], winLine: 'Ha! You earned your welcome.', beatenLines: ['Tomorrow. The berries will be ripe again.'] },
       { id: 'fennel', name: 'Fennel', x: 24, y: 15, kind: 'talk', pal: { h: '#E8E8F0', y: '#C0503A', Y: '#8A3A28' },
-        lines: ['Mossbrook was built around the old trees, not the other way around.', 'Elder Wren says a critter that rests well battles well.', 'Travellers come back from the Pass with the same story and different endings.'] },
+        lines: ['Mossbrook was built around the old trees, not the other way around.', 'Wren sleeps in the garden some nights. The beds do better for it.', 'Travellers come back from the Pass with the same story and different endings.'] },
       { id: 'bryn', name: 'Bryn', x: 16, y: 16, kind: 'talk', pal: { h: '#8A5A34', y: '#FFD86B', Y: '#E0A830' },
-        lines: ['I saw a shiny critter once! It sparkled like the sun on the pond.', 'My mom says you can go your whole life and not see one. I am still looking!', 'My uncle walked the Ashwood twice and came out two different ways. He says it was the same way.'] }
+        lines: ['I saw a shiny critter once! It sparkled like the sun on the pond.', 'My dad keeps a jar for when I find one. Not if. When.', 'My uncle walked the Ashwood twice and came out two different ways. He says it was the same way.'] }
     ];
     // Frosthold, Cinderport, Coralbay (cities): leaders move into their gyms
     const city = (zoneId, cityId, leaderId, intro0, people) => {
@@ -653,35 +669,35 @@ const APP = (() => {
       Object.assign(L, { x: 19, y: 8, dir: 'down', city: cityId, intro: [intro0].concat(L.intro.slice(1)) });
       out[cityId] = [L].concat(people);
     };
-    city('frost', 'frosthold', 'glacia', 'Welcome to Frosthold. I am Glacia, leader of this gym.', [
-      { id: 'tove', name: 'Quartermaster Tove', x: 8, y: 10, kind: 'shop', pal: { h: '#E8E8F0', y: '#4A6A9A', Y: '#2E4A66' }, lines: ['Supplies for the cold road. Same goods as Sproutvale, packed for the snow.'] },
+    city('frost', 'frosthold', 'glacia', 'I am Glacia. This is my pool.', [
+      { id: 'tove', name: 'Quartermaster Tove', x: 8, y: 10, kind: 'shop', pal: { h: '#E8E8F0', y: '#4A6A9A', Y: '#2E4A66' }, lines: ['Packed for the snow. Counted twice.'] },
       { lv: 8, id: 'pike', name: 'Skier Pike', x: 15, y: 19, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' }, types: ['Frost', 'Tide'], size: 4, stage: 2, pick: 0.6,
-        intro: ['Halt! Nobody enters Frosthold without a snowball fight.', 'Well, a critter battle. Same thing up here.'], winLine: 'Brr, you are tough. Here is your reward.', beatenLines: ['My critters need to thaw out. Tomorrow, rematch!'] },
+        intro: ['Halt! Nobody enters Frosthold without a snowball fight.', 'Well, a critter battle. Same thing up here.'], winLine: 'Brr, you are tough.', beatenLines: ['My critters need to thaw out. Tomorrow, rematch!'] },
       { id: 'hilde', name: 'Hilde', x: 24, y: 15, kind: 'talk', pal: { h: '#E8C07A', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The palisade keeps out the wind, not the critters. They come and go as they like.', 'Some nights there is a light in the pass that is nobody\u2019s.', 'Glacia trains on the ice every morning. Her critters do not slip.'] },
-      { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['They say a tower stands on Vigil Peak, up the trail north of Sproutvale\u2019s plaza.', 'Only those with all four Leader Seals go up. They say every night up there, someone comes to the door.', 'Before first light the shore gives back things the sea took.'] }
+      { id: 'olaf', name: 'Old Olaf', x: 16, y: 16, kind: 'talk', pal: { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }, lines: ['Every night up on the Peak, they say, someone comes to the door.', 'Before first light the shore gives back things the sea took.'] }
     ]);
-    city('ember', 'cinderport', 'blaze', 'Welcome to Cinderport. I am Blaze, and this forge is my gym.', [
-      { id: 'bea', name: 'Bellows Bea', x: 8, y: 10, kind: 'shop', pal: { h: '#3A2A1A', y: '#8A4A2A', Y: '#6A3A2A' }, lines: ['Forge Market! Same remedies as Mira\u2019s, kept warm by the furnace.'] },
+    city('ember', 'cinderport', 'blaze', 'I am Blaze. This is my hearth.', [
+      { id: 'bea', name: 'Bellows Bea', x: 8, y: 10, kind: 'shop', pal: { h: '#3A2A1A', y: '#8A4A2A', Y: '#6A3A2A' }, lines: ['Nothing on this shelf has ever gone cold.'] },
       { lv: 12, id: 'tamsin', name: 'Smith Tamsin', x: 30, y: 6, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#5A4A4A', y: '#FF7A45', Y: '#B83A10' }, types: ['Ember', 'Stone'], size: 4, stage: 2, pick: 0.5,
-        intro: ['You walked down the forge road. That means you face my anvil first!', 'Let us see if your critters are tempered.'], winLine: 'Forged in fire! You earned this reward.', beatenLines: ['The forge needs to cool. Come back tomorrow.'] },
-      { id: 'cole', name: 'Cole', x: 24, y: 15, kind: 'talk', pal: { h: '#2A1A10', y: '#C0503A', Y: '#8A3A28' }, lines: ['Do not touch the lava pool. Ember critters swim in it. You cannot.', 'Blaze says a burn wears down even the toughest critter.', 'The woods west of here are never quiet at dusk, and never loud either.'] },
-      { id: 'ruby', name: 'Ruby', x: 16, y: 16, kind: 'talk', pal: { h: '#C0392B', y: '#FFD86B', Y: '#E0A830' }, lines: ['The miners found a shiny rock critter last week! Shinies are rare, but they show up anywhere.', 'Admiral Coral\u2019s harbor is east, past Tide Shore. The boardwalk starts by the water.'] }
+        intro: ['You walked down the forge road. That means you face my anvil first!', 'Let us see if your critters are tempered.'], winLine: 'Forged in fire!', beatenLines: ['The forge needs to cool. Come back tomorrow.'] },
+      { id: 'cole', name: 'Cole', x: 24, y: 15, kind: 'talk', pal: { h: '#2A1A10', y: '#C0503A', Y: '#8A3A28' }, lines: ['The lava pool has a crust on it some mornings. Not today.', 'Blaze\u2019s hall is the one chimney in town that never smokes. The fire is inside.', 'The woods west of here are never quiet at dusk, and never loud either.'] },
+      { id: 'ruby', name: 'Ruby', x: 16, y: 16, kind: 'talk', pal: { h: '#C0392B', y: '#FFD86B', Y: '#E0A830' }, lines: ['The miners found a shiny rock critter last week! Petra has not stopped talking.'] }
     ]);
-    city('tide', 'coralbay', 'coral', 'Welcome aboard in Coralbay. I am Admiral Coral, leader of this gym.', [
-      { id: 'marina', name: 'Marina', x: 8, y: 10, kind: 'shop', pal: { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, lines: ['Harbor Market! Same goods as Sproutvale, shipped in fresh.'] },
+    city('tide', 'coralbay', 'coral', 'I am Coral. This is my lamp hall.', [
+      { id: 'marina', name: 'Marina', x: 8, y: 10, kind: 'shop', pal: { h: '#E8C07A', y: '#3A8A8A', Y: '#2A6A6A' }, lines: ['The crate comes back half full with every tide. It always does.'] },
       { lv: 15, id: 'rafe', name: 'Deckhand Rafe', x: 27, y: 6, dir: 'right', kind: 'trainer', trainer: true, pal: { cap: true, c: '#2A5A9A', y: '#FFFFFF', Y: '#C9D3E6' }, types: ['Tide', 'Volt'], size: 4, stage: 3, pick: 0.55,
-        intro: ['Ahoy! Nobody walks my pier without a battle.', 'Storm-tested critters, ready to sail.'], winLine: 'Blow me down! A fine battle. Here is your reward.', beatenLines: ['My crew needs a rest. Come back with tomorrow\u2019s tide.'] },
-      { id: 'finn', name: 'Finn', x: 24, y: 15, kind: 'talk', pal: { h: '#8A5A34', y: '#4A9A8A', Y: '#2A6A6A' }, lines: ['Coral was the youngest admiral the harbor ever had. Her critters never lose their footing.', 'Count the waves on the causeway at night. Everyone gets a different number.', 'After her seal, climb the Tower. It is up the trail north of Sproutvale.'] },
+        intro: ['Ahoy! Nobody walks my pier without a battle.', 'Storm-tested critters, ready to sail.'], winLine: 'Blow me down! A fine battle.', beatenLines: ['My crew needs a rest. Come back with tomorrow\u2019s tide.'] },
+      { id: 'finn', name: 'Finn', x: 24, y: 15, kind: 'talk', pal: { h: '#8A5A34', y: '#4A9A8A', Y: '#2A6A6A' }, lines: ['Coral was the youngest admiral the harbor ever had. Her critters never lose their footing.', 'Count the waves on the causeway at night. Everyone gets a different number.', 'Coral trims the harbour lamp herself. She says the one on the Peak is the only lamp she has never seen lit.'] },
       { id: 'pearl', name: 'Pearl', x: 16, y: 16, kind: 'talk', pal: { h: '#F4EAD6', y: '#E0A0B8', Y: '#C07898' }, lines: ['I collect shells. My brother collects critter species. He has all 48!', 'Well, he says he does.'] }
     ]);
     // the three other leaders wait inside their trial halls, like Wren
     [['glacia', 'frosthold'], ['blaze', 'cinderport'], ['coral', 'coralbay']].forEach(([id, cid]) => { const L = out[cid].find((n) => n.id === id); out[cid] = out[cid].filter((n) => n.id !== id); Object.assign(L, { x: 10, y: 3, dir: 'down' }); out['gym-' + id] = [L]; });
     // route trainers (one per route; tuned with lbal5.py against the gate's party model)
     const rt = (id, name, x, y, dir, types, size, stage, lv, pick, intro, winLine, pal) => ({ id, name, x, y, dir, kind: 'trainer', trainer: true, types, size, stage, lv, pick, pal, intro, winLine, beatenLines: ['That was a good battle. Come back tomorrow for another.'] });
-    out['route-mf'] = [rt('kai', 'Mountaineer Kai', 16, 7, 'up', ['Moss', 'Frost'], 4, 2, 11, 0.55, ['The pass is steep, and so is my challenge!', 'Highland critters are tough. Prove yours are tougher.'], 'You climbed right over me. Here is your reward.', { cap: true, c: '#4E8A3A', y: '#E8E8F0', Y: '#A8B2C8' })];
-    out['route-cm'] = [rt('elm', 'Woodcutter Elm', 16, 7, 'up', ['Ember', 'Moss'], 4, 2, 11, 0.5, ['Careful, the Ashwood still smoulders.', 'My critters grew up between the embers and the moss. Battle!'], 'You chopped right through my team. Here is your reward.', { cap: true, c: '#8A4A2A', y: '#C9A26A', Y: '#8A6A44' })];
-    out['route-fc'] = [rt('signe', 'Ice Fisher Signe', 16, 7, 'up', ['Frost', 'Tide'], 4, 3, 18, 0.5, ['Shh, you will scare the fish. Unless you want a battle?', 'Of course you do. Everyone on this coast does.'], 'Hooked and landed. You win this one. Here is your reward.', { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' })];
-    out['route-cc'] = [rt('mako', 'Diver Mako', 16, 7, 'up', ['Tide', 'Ember'], 4, 3, 18, 0.5, ['I just surfaced from the reef. My critters are warmed up!', 'Steam and spray. Let us battle.'], 'You out-swam me! Here is your reward.', { cap: true, c: '#2A6A6A', y: '#FF7A45', Y: '#B83A10' })];
+    out['route-mf'] = [rt('kai', 'Mountaineer Kai', 16, 7, 'up', ['Moss', 'Frost'], 4, 2, 11, 0.55, ['The pass is steep, and so is my challenge!', 'Highland critters are tough. Prove yours are tougher.'], 'You climbed right over me.', { cap: true, c: '#4E8A3A', y: '#E8E8F0', Y: '#A8B2C8' })];
+    out['route-cm'] = [rt('elm', 'Woodcutter Elm', 16, 7, 'up', ['Ember', 'Moss'], 4, 2, 11, 0.5, ['Careful, the Ashwood still smoulders.', 'My critters grew up between the embers and the moss. Battle!'], 'You chopped right through my team.', { cap: true, c: '#8A4A2A', y: '#C9A26A', Y: '#8A6A44' })];
+    out['route-fc'] = [rt('signe', 'Ice Fisher Signe', 16, 7, 'up', ['Frost', 'Tide'], 4, 3, 18, 0.5, ['Shh, you will scare the fish. Unless you want a battle?', 'Of course you do. Everyone on this coast does.'], 'Hooked and landed. You win this one.', { cap: true, c: '#3E8EF7', y: '#DCEBFF', Y: '#8FB0D6' })];
+    out['route-cc'] = [rt('mako', 'Diver Mako', 16, 7, 'up', ['Tide', 'Ember'], 4, 3, 18, 0.5, ['I just surfaced from the reef. My critters are warmed up!', 'Steam and spray. Let us battle.'], 'You out-swam me!', { cap: true, c: '#2A6A6A', y: '#FF7A45', Y: '#B83A10' })];
     // new people beside the route landmarks and in town (positions are found at load: the free walkable tile nearest the hint)
     const spot = (mapId, hx, hy, taken) => {
       const Mp = M[mapId], at = (x, y) => Mp.grid[y] && ['.', ','].indexOf(Mp.grid[y][x]) !== -1, busy = (x, y) => (out[mapId] || []).some((o) => o.x === x && o.y === y) || (taken || []).some((t) => t[0] === x && t[1] === y);
@@ -691,7 +707,7 @@ const APP = (() => {
     };
     const near = (mapId, propId, dx, dy) => { const p = (M[mapId].props || []).find((q) => q.id === propId); return p ? spot(mapId, p.x + dx, p.y + dy) : spot(mapId, 10, 10); };
     const pers = (id, name, mapId, pos, pal, lines) => { (out[mapId] = out[mapId] || []).push({ id, name, x: pos[0], y: pos[1], dir: 'down', kind: 'talk', pal, lines }); };
-    pers('edda', 'Scholar Edda', 'route-mf', near('route-mf', 'ruin', 5, 1), { h: '#3A2A1A', y: '#8E5BC8', Y: '#6B3FA0' }, ['These carvings show a critter of each type around one fire. I count eight.', 'Highland Pass joins Mossbrook and Frosthold. The arch is older than both.']);
+    pers('edda', 'Scholar Edda', 'route-mf', near('route-mf', 'ruin', 5, 1), { h: '#3A2A1A', y: '#8E5BC8', Y: '#6B3FA0' }, ['These carvings show a critter of each type around one fire. I count eight.', 'The arch is older than both towns. They grew at the two ends of its road.']);
     pers('hob', 'Charcoal Burner Hob', 'route-cm-crossing', spot('route-cm-crossing', 24, 22), { h: '#2A2A2A', y: '#6A5A48', Y: '#4A3A2A' }, ['The fire does what it likes. I only keep it company.', 'People ask whether the wood is dying. I ask whether they are.']);
     pers('isla', 'Net Mender Isla', 'route-fc-skerry', spot('route-fc-skerry', 22, 22), { h: '#C9D0DE', y: '#3A6A9A', Y: '#2A4A7A' }, ['I mend the same net every winter. It has never held a fish. It holds other things.', 'Do not mind the chair. It is not mine.']);
     pers('orrin', 'Tide Reader Orrin', 'route-cc-drowned', spot('route-cc-drowned', 11, 18), { h: '#6A5A3A', y: '#3A8A8A', Y: '#2A6A6A' }, ['I count the waves. Last night I lost count at a number I had not reached.', 'The blossoms are early this year. Or the sea is late.']);
@@ -703,7 +719,7 @@ const APP = (() => {
     // the Forge Below: two smiths guard the cores in the side halls (west one faces east, east one faces west), the Forgemaster waits north of the hub
     const fsp = M['dg-forge'].spots;
     out['dg-forge'] = [
-      rt('dross', 'Smith Dross', fsp.guard1[0], fsp.guard1[1], 'right', ['Stone', 'Ember'], 5, 3, 16, 0.5, ['The west hall belongs to the forge, and so does the core on that pedestal.', 'Win it from me, if you can.'], 'Take the core. The forge chose you before I did.', { h: '#3A2A1A', y: '#8A8498', Y: '#5A566A' }),
+      rt('dross', 'Smith Dross', fsp.guard1[0], fsp.guard1[1], 'right', ['Stone', 'Ember'], 5, 3, 16, 0.5, ['The west hall belongs to the forge, and so does the core on that pedestal.', 'Win it from me, if you can.'], 'The core is yours. The forge chose you before I did.', { h: '#3A2A1A', y: '#8A8498', Y: '#5A566A' }),
       rt('ingot', 'Smith Ingot', fsp.guard2[0], fsp.guard2[1], 'left', ['Ember', 'Volt'], 5, 3, 16, 0.5, ['East hall. One core, one smith, one battle.', 'The hammer is warmed up!'], 'A fine strike. The core is yours.', { h: '#C0392B', y: '#F5C518', Y: '#C99A00' }),
       Object.assign(rt('hale', 'Forgemaster Hale', fsp.hale[0], fsp.hale[1], 'down', ['Ember', 'Stone'], 5, 3, 18, 0.6, ['Two cores. I heard them go in.', 'My master left the hammer where it is. I never moved it.'], 'Both sockets are warm. I had not noticed.', { h: '#E8E8F0', y: '#FF8A3D', Y: '#C0503A' }), { boss: true, bonus: 10, afterLines: ['The hammer is where it was.'] })
     ];
@@ -719,7 +735,7 @@ const APP = (() => {
       rt('kolb', 'Smelter Kolb', 14, 23, 'up', ['Ember', 'Stone'], 3, 3, 18, 0.5, ['The second ledge is mine, climber. Or should I say descender?', 'The heat sharpens my critters. Let us see yours!'], 'Cool as slag. Go on down.', { h: '#2A1A10', y: '#D8574A', Y: '#8A3A28' }),
       rt('yara', 'Cinder Runner Yara', 17, 39, 'up', ['Ember', 'Volt'], 5, 3, 18, 0.5, ['I run this trail every morning before the vents wake up!', 'Race me, in a battle!'], 'Fast and tough. Mind the lava.', { h: '#C0392B', y: '#FFD86B', Y: '#E0A830' }),
       rt('brec', 'Slag Hauler Brec', 18, 47, 'up', ['Stone', 'Ember'], 5, 3, 18, 0.5, ['The forge is just below. Nobody walks past my wagon without a battle.', 'I have been hauling slag all day and I need some fun.'], 'Hm. The forge is yours to look at.', { h: '#8A5A34', y: '#6A6A86', Y: '#3E3E58' }),
-      { id: 'mirel', name: 'Cook Mirel', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#E8C07A', y: '#FF8A3D', Y: '#C0503A' }, lines: ['Welcome to the rim camp! The trail zig-zags down five ledges to the crater floor. The vents get hot, but the camp never does.', 'The climbers down there sit where they can see the trail. The ash moves when nobody is walking on it.'] },
+      { id: 'mirel', name: 'Cook Mirel', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#E8C07A', y: '#FF8A3D', Y: '#C0503A' }, lines: ['The climbers down there sit where they can see the trail. The ash moves when nobody is walking on it.'] },
       { id: 'brand', name: 'Old Brand', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#BDBDBD', y: '#8A5A34', Y: '#5E3C22' }, lines: ['That bridge crosses a river of real lava. It was built before anyone here was born, and it has never burned.', 'Below the crater there is a forge. They say it made every blade in the land, and then it went quiet.'] }
     ];
     out.descent[3].x = near('descent', 'camp', 4, 1)[0]; out.descent[3].y = near('descent', 'camp', 4, 1)[1]; const bs = spot('descent', 11, 27); out.descent[4].x = bs[0]; out.descent[4].y = bs[1];
@@ -728,8 +744,8 @@ const APP = (() => {
       rt('reka', 'Climber Reka', 14, 42, 'down', ['Frost', 'Stone'], 3, 3, 18, 0.5, ['The second ledge is mine. Everybody crosses it, and everybody battles me.', 'Rope up, trainer!'], 'Good footing. Go on up.', { h: '#C0503A', y: '#5E97AE', Y: '#3E6E8E' }),
       rt('joran', 'Skier Joran', 17, 26, 'down', ['Frost', 'Dusk'], 4, 3, 18, 0.5, ['I came down this slope in nine seconds once. Think you can climb it in ten minutes?', 'Show me what you have!'], 'You climb as well as you battle.', { h: '#2A1A10', y: '#E8E8F0', Y: '#9AA3B5' }),
       rt('dag', 'Ice Climber Dag', 18, 18, 'down', ['Stone', 'Volt'], 5, 3, 18, 0.5, ['The summit is right above us. Nobody passes the last ledge without a battle.', 'My critters have been waiting in the cold all day.'], 'Fine, fine. The summit is right there.', { h: '#8A5A34', y: '#4A4A7A', Y: '#2E2E58' }),
-      { id: 'ansel', name: 'Guide Ansel', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#BDBDBD', y: '#D8574A', Y: '#8A3A28' }, lines: ['Welcome to base camp! Five ledges lead up to the summit, and the trail zig-zags so the wind cannot find you.', 'The climbers sit where they can see the trail. The snow moves when nobody is walking on it. Near the top, it sparkles.'] },
-      { id: 'marta', name: 'Old Marta', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#E8E8F0', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The glacier river does not freeze, whatever the climbers say. The log bridge is older than my grandmother.', 'They say the beacon above once lit every road in the land. Four fires and one lamp, and the whole country knew where home was.'] }
+      { id: 'ansel', name: 'Guide Ansel', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#BDBDBD', y: '#D8574A', Y: '#8A3A28' }, lines: ['The climbers sit where they can see the trail. The snow moves when nobody is walking on it.'] },
+      { id: 'marta', name: 'Old Marta', x: 0, y: 0, dir: 'down', kind: 'talk', pal: { h: '#E8E8F0', y: '#8E5BC8', Y: '#6B3FA0' }, lines: ['The glacier river does not freeze, whatever the climbers say. The log bridge is older than my grandmother.', 'They say the beacon above once lit every road in the land. My grandmother could see it from her kitchen. She never drew the curtain.'] }
     ];
     out.ascent[3].x = near('ascent', 'camp', 4, 1)[0]; out.ascent[3].y = near('ascent', 'camp', 4, 1)[1]; const ms = spot('ascent', 11, 38); out.ascent[4].x = ms[0]; out.ascent[4].y = ms[1];
     // the Sealed Arch's guards and the Keeper (the Keeper is a boss: bonus essence on the first win, boss music)
@@ -737,7 +753,7 @@ const APP = (() => {
     out['dg-arch'] = [
       rt('pell', 'Delver Pell', dsp.guard1[0], dsp.guard1[1], 'down', ['Dusk', 'Moss'], 4, 2, 14, 0.5, ['Halt. Nobody crosses the glowing moss without a battle.', 'The seat is kept. So are its rules.'], 'You are stronger than you look. Go on.', { h: '#3A2A1A', y: '#6A6A86', Y: '#3E3E58' }),
       rt('ione', 'Delver Ione', dsp.guard2[0], dsp.guard2[1], 'down', ['Stone', 'Frost'], 4, 2, 14, 0.5, ['The lamp hall is mine. The Keeper is beyond me.', 'Show me you can hold your own first.'], 'Hm. Fair enough. The Keeper is waiting.', { h: '#BDBDBD', y: '#5E97AE', Y: '#3E6E8E' }),
-      Object.assign(rt('keeper', 'Keeper Orlen', dsp.keeper[0], dsp.keeper[1], 'down', ['Dusk', 'Stone'], 5, 3, 17, 0.6, ['You found your way in. Few remember the rhyme.', 'Eight critters were enough for the world, they said. The ninth was kept here, asleep.', 'Prove you can be trusted with the seat.'], 'The seat is yours to approach. It has waited a very long time.', { h: '#E8E8F0', y: '#33226E', Y: '#1E1448' }), { boss: true, bonus: 10, afterLines: ['The seat is quiet now. Go and see it.'] })
+      Object.assign(rt('keeper', 'Keeper Orlen', dsp.keeper[0], dsp.keeper[1], 'down', ['Dusk', 'Stone'], 5, 3, 17, 0.6, ['You found your way in. Few remember the rhyme.', 'Eight seats are warm. One is not.'], 'The fire has not moved. Everything else has.', { h: '#E8E8F0', y: '#33226E', Y: '#1E1448' }), { boss: true, bonus: 10, afterLines: ['I am still here. So is the seat.'] })
     ];
     // residents of the house interiors
     const RES = {
@@ -755,7 +771,7 @@ const APP = (() => {
       'cb-c': ['Pearl\u2019s Mum', ['Pearl is out on the shore again.', 'Every shell on that shelf came back from somewhere. The gap is for the next one.']]
     };
     out['in-home'] = [{ id: 'mom', name: 'Mom', x: 6, y: 4, dir: 'down', kind: 'talk', pal: { h: '#8A5A34', y: '#D8574A', Y: '#A8382E' }, lines: ['Welcome home, sweetie! Did you eat?', 'Your trainer records are on the desk. I keep them tidy for you.'] }];
-    out['in-lab'] = [{ id: 'remy', name: 'Lab Aide Remy', x: 3, y: 5, dir: 'down', kind: 'talk', pal: { h: '#3A2A1A', y: '#E8EEF8', Y: '#9AA3B5' }, lines: ['Professor Fern is usually just outside, greeting new trainers.', 'The Dex terminal records every species you keep. Use it any time.'] }];
+    out['in-lab'] = [{ id: 'remy', name: 'Lab Aide Remy', x: 3, y: 5, dir: 'down', kind: 'talk', pal: { h: '#3A2A1A', y: '#E8EEF8', Y: '#9AA3B5' }, lines: ['Professor Fern is usually just outside, greeting new trainers.', 'The terminal keeps every name. It has never lost one.'] }];
     const RPAL = [{ h: '#8A5A34', y: '#C0503A', Y: '#8A3A28' }, { h: '#E8E8F0', y: '#4A6A9A', Y: '#2E4A66' }, { h: '#3A2A1A', y: '#4FB06D', Y: '#2E6A2C' }, { h: '#C0392B', y: '#E0A0B8', Y: '#C07898' }];
     Object.keys(RES).forEach((pid, i) => { out['in-' + pid] = [Object.assign({ id: 'res-' + pid, name: RES[pid][0], x: 7, y: 3, dir: 'down', kind: 'talk', pal: RPAL[i % RPAL.length], lines: RES[pid][1] }, pid === 'house-moss' ? { x: 4, y: 5, late: true } : {})]; });   // Wil is home only from dusk (the note on the door): `late` is read by the 500 ms rules
     Object.values(out).forEach((list) => list.forEach((n) => { if (n.trainer) n.reward = 3 + 2 * n.size + (n.stage - 1) * 2; if (n.leader) n.reward = 10; }));
@@ -865,16 +881,16 @@ const APP = (() => {
   function journal() {
     const have = advOf().clues, lines = ['Clues about the Sealed Arch: ' + have.length + ' of ' + ADV.CLUES.length + '.'];
     ADV.CLUES.forEach((c) => lines.push(have.indexOf(c.id) !== -1 ? c.note : 'Something on ' + c.where + ' you have not looked at closely.'));
-    if (advOf().open.arch) { const f = advOf().flags; lines.push('The Sealed Arch: ' + (f.rubble ? 'the way north is clear.' : 'rubble blocks the way north. The empty seat, a fire bowl, a lamp and a hull lantern must mean something.') + (((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 ? ' You have beaten the Keeper.' : '') + (advOf().flags.secret ? ' The ninth seat has answered.' : '')); }
-    if (advOf().open.forge) { const f = advOf().flags; lines.push('The Forge Below: ' + (f.forgeLit ? 'the great furnace is lit.' : 'the north gate opens when both hub sockets hold a core (' + ((f['sock:A'] ? 1 : 0) + (f['sock:B'] ? 1 : 0)) + '/2). One core lies in each side hall.')); } else if ((game.state.visited || []).indexOf('descent') !== -1) lines.push('The Cinder Descent leads down to a buried forge.');
-    if (advOf().open.lamp) lines.push('The Lamp Tower: ' + (advOf().flags.lampLit ? 'the great lamp is lit.' : 'dark chambers, a lamp on a stand in each.')); else if ((game.state.visited || []).indexOf('ascent') !== -1) lines.push('The Cold Ascent climbs north from Frosthold.'); else if (have.length === ADV.CLUES.length) lines.push('You have every clue. The arch in Highland Pass should answer now.');
+    if (advOf().open.arch) { const f = advOf().flags; lines.push('The Sealed Arch: ' + (f.rubble ? 'the way north is clear.' : 'rubble blocks the way north.') + (((game.state.npc && game.state.npc.cleared) || []).indexOf('keeper') !== -1 ? ' You have beaten the Keeper.' : '') + (advOf().flags.secret ? ' The ninth seat has answered.' : '')); }
+    if (advOf().open.forge) { const f = advOf().flags; lines.push('The Forge Below: ' + (f.forgeLit ? 'the great furnace is lit.' : 'the north gate is shut.')); } else if ((game.state.visited || []).indexOf('descent') !== -1) lines.push('The Cinder Descent leads down to a buried forge.');
+    if (advOf().open.lamp) lines.push('The Lamp Tower: ' + (advOf().flags.lampLit ? 'the great lamp is lit.' : 'dark chambers, a lamp on a stand in each.')); else if ((game.state.visited || []).indexOf('ascent') !== -1) lines.push('The Cold Ascent climbs north from Frosthold.');
     showDialog('Journal', lines);
   }
   function archUse() {
     const a = advOf();
     if (a.open.arch) { game.sfx('tap'); WORLD.go('dg-arch'); return; }
-    if (a.clues.length < ADV.CLUES.length) { const ruin = ADV.CLUES.find((c) => c.id === 'ruin'); showDialog('The old arch', ['Eight critters sit around one fire. A ninth seat is carved empty.', 'The stone stays cold.'], null, () => gainClue(ruin)); return; }   // looking at the carvings is the first clue
-    showDialog('The old arch', ['The carved flame between the pillars begins to glow...', 'A passage opens in the old arch.'], null, () => { advSave((x) => { x.open.arch = true; }); game.sfx('claim'); setTimeout(() => { game.sfx('claim'); WORLD.go('dg-arch'); }, 200); });
+    if (a.clues.length < ADV.CLUES.length) { const ruin = ADV.CLUES.find((c) => c.id === 'ruin'); showDialog('The old arch', SAY.archCold, null, () => gainClue(ruin)); return; }   // looking at the carvings is the first clue
+    showDialog('The old arch', SAY.archOpen, null, () => { advSave((x) => { x.open.arch = true; }); game.sfx('claim'); setTimeout(() => { game.sfx('claim'); WORLD.go('dg-arch'); }, 200); });
   }
   function chestUse(o) {
     const key = 'chest:' + o.id; if (advOf().flags[key]) { toast('The chest is empty.'); return; }
@@ -909,7 +925,7 @@ const APP = (() => {
     const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - seatStamp) / 1000)); seatStamp = now;
     const P = WORLD.pos(), d = Math.hypot(P.x / 32 - (o.x + 0.5), P.y / 32 - (o.y + 0.5)), near = beaten && d <= CL_REACH && !WORLD.moving();
     seatK = near ? Math.min(1, seatK + dt / CL_S) : Math.max(0, seatK - dt * 0.8); seatLit = Math.floor(seatK * 8);
-    if (seatK >= 1) { seatK = 0; showDialog('The ninth seat', ['Something that has been kept here a very long time opens its eyes.', 'It looks at the empty seat, and then it chooses you instead.'], null, () => grantSecret(SECRET_SEED)); }
+    if (seatK >= 1) { seatK = 0; showDialog('The ninth seat', SAY.seat, null, () => grantSecret(SECRET_SEED)); }
     return { k: seatK, lit: seatLit, done: false };
   }
   // a secret critter joins you (level by SECRETS); quiet = nothing said or played (Slagback stays, unannounced; the dev tools)
@@ -934,7 +950,7 @@ const APP = (() => {
   function greatLampLit() {
     advSave((a) => { a.flags.lampLit = true; a.flags['cl:GL'] = true; a.flags.litOn = today(); a.flags.dayAt = today(); });   // litOn: the title "The lamp was lit" appears the next morning; dayAt: tomorrow's first load begins at Home
     WORLD.gust(); hushUntil = performance.now() + 2400; if (typeof MUSIC !== 'undefined') MUSIC.play(null); game.sfx('light');   // silence, `light`, then `dg-lamp@lit` from musicTrack: package S
-    setTimeout(() => { if (!dlg) showDialog('The great lamp', ['The glass is warm.']); }, 700);
+    setTimeout(() => { if (!dlg) showDialog('The great lamp', SAY.greatLamp); }, 700);
   }
   function applyLamp() { const m = WORLD.MAPS['dg-lamp']; if (!m || !m.gates) return; Object.keys(m.gates).forEach((gid) => WORLD.setGate('dg-lamp', gid, m.gates[gid].every(lampKept))); }
   function chamberlampState(o) {
@@ -1043,31 +1059,31 @@ const APP = (() => {
   function gbedUse(o) { if (bedStage(o) >= 2) toast(o.text || 'It is in bloom.'); }   // no press: the bed is tended by staying (bedState)
   function beaconDoorUse() {
     if (advOf().open.lamp) { game.sfx('tap'); WORLD.go('dg-lamp'); return; }
-    showDialog('The door', ['The great door is not locked.', 'The handle is worn bright.'], null, () => { advSave((x) => { x.open.lamp = true; }); game.sfx('claim'); setTimeout(() => WORLD.go('dg-lamp'), 200); });
+    showDialog('The door', SAY.door, null, () => { advSave((x) => { x.open.lamp = true; }); game.sfx('claim'); setTimeout(() => WORLD.go('dg-lamp'), 200); });
   }
   // ---- the Forge Below: cores from the two halls go into the hub sockets (either order); both sockets open the north gate; the furnace ends the run ----
   const CORE_NAME = { A: 'flame', B: 'stone' };
   function applyForge() { const m = WORLD.MAPS['dg-forge']; if (!m) return; const f = advOf().flags; Object.keys(m.pickups || {}).forEach((g) => WORLD.setGate('dg-forge', g, !!f[m.pickups[g]])); Object.keys(m.rules || {}).forEach((g) => WORLD.setGate('dg-forge', g, m.rules[g].every((k) => f[k]))); }
   function forgeDoorUse() {
     if (advOf().open.forge) { game.sfx('tap'); WORLD.go('dg-forge'); return; }
-    showDialog('The forge door', ['A doorway of dry heat, cut into the crater wall.', 'The forge has been quiet for a long time. Something inside is still warm.'], null, () => { advSave((x) => { x.open.forge = true; }); game.sfx('claim'); setTimeout(() => WORLD.go('dg-forge'), 200); });
+    showDialog('The forge door', SAY.forgeDoor, null, () => { advSave((x) => { x.open.forge = true; }); game.sfx('claim'); setTimeout(() => WORLD.go('dg-forge'), 200); });
   }
-  function coreUse(o) { const f = advOf().flags; if (f['core:' + o.core]) return; advSave((x) => { x.flags['core:' + o.core] = true; }); applyForge(); game.sfx('claim'); toast('You lift the core of ' + CORE_NAME[o.core] + '. It is warm in your hands. Carry it to the hub.'); }
+  function coreUse(o) { const f = advOf().flags; if (f['core:' + o.core]) return; advSave((x) => { x.flags['core:' + o.core] = true; }); applyForge(); game.sfx('claim'); toast('You lift the core of ' + CORE_NAME[o.core] + '. It is warm in your hands.'); }
   function socketUse(o) {
     const f = advOf().flags, c = o.core;
-    if (f['sock:' + c]) { toast('The socket glows steadily.'); return; }
-    if (!f['core:' + c]) { toast('A socket for the core of ' + CORE_NAME[c] + '. It belongs in one of the side halls.'); return; }
+    if (f['sock:' + c]) { toast(SAY.socketWarm); return; }
+    if (!f['core:' + c]) { toast(SAY.socketCold); return; }
     advSave((x) => { x.flags['sock:' + c] = true; }); applyForge(); game.sfx('claim');
     const both = advOf().flags['sock:A'] && advOf().flags['sock:B'];
-    toast(both ? 'Both sockets wake. Far to the north, a slab of black iron grinds aside.' : 'The core of ' + CORE_NAME[c] + ' settles into its socket. One more.');
+    toast(both ? 'Both sockets wake. Far to the north, a slab of black iron grinds aside.' : 'The core of ' + CORE_NAME[c] + ' settles into its socket.');
   }
   function furnaceUse() {
     const beaten = ((game.state.npc && game.state.npc.cleared) || []).indexOf('hale') !== -1;
     if (!beaten) { toast('The furnace door is shut. The Forgemaster is watching it.'); return; }
     const lit = advOf().flags.forgeLit, got = game.state.caught.some((e) => e.seed === SECRET3_SEED);
     if (lit && got) { toast('The furnace roars quietly.'); return; }
-    if (lit) { showDialog('The great furnace', ['A coal in the ash shifts and looks up.', 'It climbs out, small and heavy and warm, and settles against your boots.'], null, () => grantSecret(SECRET3_SEED, true)); return; }   // lit before Slagback existed, or by the dev tools
-    showDialog('The great furnace', ['You pull the soot-black door open. A single ember glows in the ash.', 'You blow on it. It brightens, then catches, then roars.'], null, () => {
+    if (lit) { showDialog('The great furnace', SAY.furnaceLit, null, () => grantSecret(SECRET3_SEED, true)); return; }   // lit before Slagback existed, or by the dev tools
+    showDialog('The great furnace', SAY.furnace, null, () => {
       advSave((x) => { x.flags.forgeLit = true; }); hushUntil = performance.now() + 2400; hush(1200); game.sfx('forge');   // no essence, no toast, no jingle: silence, then `dg-forge@lit` (package S)
       setTimeout(() => grantSecret(SECRET3_SEED, true), 1800);   // Slagback stays, unannounced
     });
@@ -1079,11 +1095,12 @@ const APP = (() => {
     if (o.kind === 'furnace') { furnaceUse(); return; }
     if (o.kind === 'plaque') { if (o.id === 'arch') archUse(); else if (o.id === 'beacon-door') beaconDoorUse(); else toast(o.text || 'Nothing happens.'); return; }
     if (o.id === 'names' && game.ladderStep() >= 5) { toast(o.text + ' The newest is yours.'); return; }   // the rail, once you have climbed
+    if (o.kind === 'postlamp' && !o.day) { const f = advOf().flags, mine = o.own || (!o.wave && !o.always && !!f.lampLit); toast(mine && f['own:' + o.id] ? SAY.postMine : (lampK[o.id] || 0) > 0.3 ? SAY.postAhead : SAY.postCold); return; }   // the post says what it is now (02-F8): cold, lit before you came, or kept by you
     if (o.kind === 'chamberlamp') { toast(lampKept(o.id) ? (o.id === 'GL' ? 'The glass is warm.' : 'The lamp burns steadily.') : (o.id === 'GL' && !glReady() ? 'The glass is cold.' : o.text)); return; }
     if (o.kind === 'gate') { const gl = WORLD.map.gates && WORLD.map.gates[o.gate]; toast(gl && gl.every(lampKept) ? 'Warm.' : o.text); return; }
     if (o.id === 'wlog') { const t = game.towerState(); toast(t.best ? 'A book of names and floors, one line a night. The last line is yours: night ' + t.best + '.' : o.text); return; }   // the logbook carries your count
     if (o.clue) { const c = ADV.CLUES.find((q) => q.id === o.clue); showDialog('You look closer', [o.text], null, () => { if (c) gainClue(c); }); return; }
-    if (o.kind === 'windowlamp') { const f = advOf().flags; if (f.lampLit && f.homeLit === today() && !hasWick()) { showDialog('The window', ['Something small is asleep on the sill, curled against the warm glass.', 'It opens one eye.'], null, () => grantSecret(SECRET2_SEED)); return; } toast(o.text); return; }   // the window is lit by staying (windowlampState); the first lit morning after the lamp, Wickling is on the sill
+    if (o.kind === 'windowlamp') { const f = advOf().flags; if (f.lampLit && f.homeLit === today() && !hasWick()) { showDialog('The window', SAY.window, null, () => grantSecret(SECRET2_SEED)); return; } toast(o.text); return; }   // the window is lit by staying (windowlampState); the first lit morning after the lamp, Wickling is on the sill
     if (o.kind === 'gbed') { gbedUse(o); return; }
     if (o.kind === 'woodpile') { woodUse(); return; }
     if (o.kind === 'gbrazier') { brazierUse(o); return; }
@@ -1152,14 +1169,15 @@ const APP = (() => {
   function talk(n) {
     WORLD.facePlayer(n);
     const dk = darkLines(n), sc = letGoLines(n) || dk || scaffoldLines(n); if (sc) n = Object.assign({}, n, { lines: sc, afterLines: letGoLines(n) ? sc : n.afterLines, after: n.after ? sc : n.after });
+    if (LIT_LINES[n.id] && advOf().flags.lampLit) { const L = LIT_LINES[n.id]; n = Object.assign({}, n, n.trainer ? { intro: L.concat(n.intro.slice(1)), beatenLines: L, afterLines: L } : { lines: L }); }   // after the lamp (02-F30)
     if (dk) advSave((a) => { a.flags.momDark = true; });
     const g = game, done = (g.state.npc && g.state.npc.done) || [];
     const qcity = Object.keys(CITY_QUESTS).find((c) => CITY_QUESTS[c].giver === n.id);
     if (qcity) {
       const Q = game.cityQuest(qcity);
-      if (Q.claimed) { showDialog(n.name, n.lines.concat(['Thanks again for today! I will have a new favor tomorrow.'])); return; }
-      if (Q.done) { game.claimCityQuest(qcity); game.sfx('claim'); showDialog(n.name, ['You did it! Thank you so much.', 'Here, take this: +' + CQ_REWARD + ' essence and some trainer experience.']); return; }
-      showDialog(n.name, [n.lines[0], 'Could you do me a favor today? Please ' + Q.q.txt + '.', 'Progress: ' + Q.n + '/' + Q.q.n + '. Come back to me when it is done. I have a new favor every day.']); return;
+      if (Q.claimed) { showDialog(n.name, n.lines.concat([SAY.cityAgain])); return; }
+      if (Q.done) { game.claimCityQuest(qcity); game.sfx('claim'); showDialog(n.name, SAY.cityDone); return; }   // the essence and the experience are paid; the counters move (02-F18, 04-W13)
+      showDialog(n.name, [n.lines[0], 'Today it is this: ' + Q.q.txt + '.']); return;   // the progress is on the Quests card, not in her mouth
     }
     if (n.kind === 'talk') {
       const fl = n.id === 'pip' ? null : flavorLine(n), lines = fl ? [fl].concat(n.lines) : n.lines, clue = ADV.CLUES.find((c) => c.npc === n.id && advOf().clues.indexOf(c.id) === -1);   // once you have looked, they stop pointing
@@ -1243,8 +1261,8 @@ const APP = (() => {
     }
     const left = g.towerRunsLeft(), party = (g.partySeeds().length ? g.partySeeds() : [g.state.caught[0].seed]).map((sd) => g.make(sd, g.state.caught.find((e) => e.seed === sd).stage).name);
     const tw = g.towerTwist(), lit = !!advOf().flags.lampLit;   // the Keeper observes; the rules are in the weather past the door and in the logbook, never in his mouth. His lines change at lampLit: now they come to you
-    const intro = [lit ? 'They come most nights now. You are the one they come to.' : (t.best ? 'Back again.' : 'Someone comes to the door most nights.'), WATCH_LINES[tw.id] || tw.name + '.'];
-    if (!left) { showDialog(KEEPER, [intro[0], 'Enough for today. The bench is yours until morning.']); return; }
+    const intro = [lit ? SAY.watchLit : (t.best ? SAY.watchBack : SAY.watchFirst), WATCH_LINES[tw.id] || tw.name + '.'];
+    if (!left) { showDialog(KEEPER, [intro[0], SAY.watchEnough]); return; }
     showDialog(KEEPER, intro.concat(['You will bring ' + party.join(', ') + '.']), [
       { label: 'Begin the watch', fn: () => { g.startTowerRun(); endDialog(towerFloorStart); } },
       { label: 'Not now', fn: () => endDialog() }
@@ -1260,9 +1278,9 @@ const APP = (() => {
         { label: 'Rest', fn: () => { endDialog(); } }
       ]), 60);
     } else if (res.kind === 'top') {
-      setTimeout(() => showDialog(KEEPER, ['Morning. You kept the whole watch.', res.first ? 'The lamp was yours all night.' : 'Kept to morning again.']), 60);
+      setTimeout(() => showDialog(KEEPER, SAY.watchTop.concat([res.first ? SAY.watchTopFirst : SAY.watchTopAgain])), 60);
     } else {
-      setTimeout(() => showDialog(KEEPER, ['The lamp went out on night ' + res.floor + '.', 'The bench is there. The watch is still yours.']), 60);   // a loss keeps the floor: package M (towerAfter)
+      setTimeout(() => showDialog(KEEPER, ['The lamp went out on night ' + res.floor + '.', SAY.watchLoss]), 60);   // a loss keeps the floor: package M (towerAfter)
     }
   }
   // ---------- the catch pouch (action mode): critters that dropped an orb wait here until you decide ----------
@@ -1299,11 +1317,10 @@ const APP = (() => {
     if (sealed) {
       g.setState({ justSealed: null });
       const n = Object.values(WORLD.allNpcs()).flat().find((x) => x.id === sealed) || npc, count = ((g.state.npc && g.state.npc.seals) || []).length;
-      const ls = [n.sealLine, 'You now hold ' + count + ' of 4 Leader Seals.'];
-      if (count === 4) ls.push('You have tended every fire in the land. Nobody in Sproutvale has tended so many.');
+      const ls = [n.sealLine];   // the count is on the Seals card; nobody says it (02-F2, 01-F20)
       setTimeout(() => showDialog(n.name, [tr.winLine].concat(ls)), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 4200); return;
     }
-    if (won) { setTimeout(() => showDialog(tr.name, [tr.winLine, 'You earned ' + tr.reward + ' essence.'].filter((x) => x && !/^You earned 0 /.test(x))), 400); if (grew.length) setTimeout(() => toast(grew.join(' ')), 3500); }
+    if (won) { setTimeout(() => showDialog(tr.name, [tr.winLine].concat(tr.leader && npc && npc.sealLine ? [npc.sealLine] : []).filter((x) => x)), 400); /* the essence is paid and the counter moves; nobody says the number (02-F7, F18); a leader's second line is what she sees after the trial */ if (grew.length) setTimeout(() => toast(grew.join(' ')), 3500); }
     if (tr.ladder) { placeRivals(WORLD.allNpcs().arena); if (g.state.kindled) { g.setState({ kindled: false }); advSave((a) => { a.flags.kindlemane = true; }); setTimeout(() => toast(SECRETS[SECRET4_SEED].name + ' joined you!'), 3000); } }
     else toast('Your party was knocked out. ' + tr.name + ' wins this round. No penalty; you can try again.');
   }
@@ -1321,8 +1338,7 @@ const APP = (() => {
     if (sealed) {
       const n = Object.values(WORLD.allNpcs()).flat().find((x) => x.id === sealed);
       const count = ((game.state.npc && game.state.npc.seals) || []).length;
-      const lines = [n.sealLine, 'You now hold ' + count + ' of 4 Leader Seals.'];
-      if (count === 4) lines.push('You have tended every fire in the land. Nobody in Sproutvale has tended so many.');
+      const lines = [n.sealLine];
       open = false; $('screen').hidden = true;
       setTimeout(() => showDialog(n.name, lines), 60);
       return;
@@ -1367,7 +1383,7 @@ const APP = (() => {
     const b = $('act');
     if (!n) { b.disabled = true; $('act-label').textContent = 'Walk up to a place'; return; }
     b.disabled = false;
-    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || stayLabel(n.obj) || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', arena: 'Enter the arena', board: 'Read quests', tower: 'Enter the Tower', desk: 'Check your records', dexpc: 'Open the Dex', bell: 'Ring the bell', stair: 'Climb the stair' })[n.place.id] || ({ gym: 'Enter the gym', house: 'Go inside', shop: 'Browse' })[n.place.open];
+    $('act-label').textContent = n.kind === 'object' ? (n.obj.label || stayLabel(n.obj) || { chest: 'Open the chest', plaque: advOf().open.arch ? 'Enter the arch' : 'Examine the arch', trough: 'Look', woodpile: 'Take a log', gbrazier: 'Feed the fire', callamp: 'Touch the lamp', core: 'Take the core', socket: 'Use the socket', furnace: 'Touch the furnace' }[n.obj.kind] || 'Examine') : n.kind === 'water' ? 'Fish' : n.kind === 'npc' ? (n.npc.trainer ? 'Talk to ' + n.npc.name : 'Talk to ' + n.npc.name) : n.kind === 'sign' ? 'Read sign' : ({ home: 'Enter home', lab: 'Enter lab', arena: 'Enter the arena', board: 'Read quests', tower: 'Go in', desk: 'Check your records', dexpc: 'Open the Dex', bell: 'Ring the bell', stair: 'Climb the stair' })[n.place.id] || ({ gym: 'Go in', house: 'Go inside', shop: 'Browse' })[n.place.open];
   }
   function stick() {
     const zone = $('stick'), knob = $('knob'); let id = null, ox = 0, oy = 0;
@@ -1543,7 +1559,7 @@ const APP = (() => {
       onAlert: () => { aggroT = Date.now(); musicLoop(); },
       critterLead: () => !!(game && game.state.caught.length && !window.__noFollower),   // you steer the critter; the human walks behind it
       follower: APP_FOLLOWER,
-      onLocked: (e) => { if (e.to === 'peak') toast("The trail to Vigil Peak opens with all 4 Leader Seals. You hold " + ((game.state.npc && game.state.npc.seals) || []).length + '.'); },   // a shut gate says nothing: its lamp is unlit (item 6, the drawing is package W's)
+      onLocked: (e) => { if (e.to === 'peak') toast('Lashed shut.'); },   // a shut gate says nothing: its lamp is unlit (item 6, the drawing is package W's)
       // sight challenges: only trainers you have never beaten (beaten ones wait for you to talk to them)
       canChallenge: (n) => !DEV.safe && !ACT.dueling() && !dlg && !open && !menuOpen && game.state.caught.length > 0 && !game.beatenToday(n.id) && ((game.state.npc && game.state.npc.cleared) || []).indexOf(n.id) === -1 && game.ladderReady(n),
       onSpotted: (n) => { if (!dlg && !open && !menuOpen) challenge(n); else WORLD.setPaused(open || menuOpen || !!dlg); },
@@ -1651,6 +1667,6 @@ const APP = (() => {
     intro();
     CLOUD.init({ onStatus: cloudStatus, onAccount: cloudStatus, onConflict: showConflict, onAdopt: () => { window.__saveFrozen = true; try { sessionStorage.setItem('critter-roll:adopted', '1'); } catch (e) {} location.reload(); } });
   }
-  return { build: 'review', homeLitNow: homeLitNow, keptDark: keptDark, objState: objState, watchOpen: watchOpen, placeRivals: placeRivals, tending: () => tending, carry: () => carry, stillT: () => stillT, stillK: () => Math.min(1, stillT / STILL_S), STILL_S: STILL_S, BURN_S: BURN_S, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
+  return { build: 'review', words: () => { const t = (o) => { const r = {}; Object.keys(o).forEach((k) => { r[k] = [].concat(...o[k].map((x) => (Array.isArray(x) ? x.filter((y) => typeof y !== 'number') : (typeof x === 'string' ? [x] : [])))).flat(); }); return r; }; return { scaffold: t(SCAFFOLD), letgo: t(LETGO), say: SAY, lit: LIT_LINES, watch: WATCH_LINES }; }, homeLitNow: homeLitNow, keptDark: keptDark, objState: objState, watchOpen: watchOpen, placeRivals: placeRivals, tending: () => tending, carry: () => carry, stillT: () => stillT, stillK: () => Math.min(1, stillT / STILL_S), STILL_S: STILL_S, BURN_S: BURN_S, burn: () => Object.assign({}, burn), coral: () => JSON.parse(JSON.stringify(coral)), coralSeq: CORAL_SEQ, ice: () => iceCells.slice(), lampLevels: () => Object.assign({}, lampK), layoutInfo, mapSelect, placeCard, openPouch, pouchNext, towerFloorStart, weatherAt, start, schedule, close, open: openScreen, encounter, chooseStarter, hint, openPanel, closePanel, buy, useItem, setParty, openMenu, closeMenu, talk, advance, startTrainer, openMap, closeMap, travel, openBackup, exportCode, readCode, timeOfDay, get dialog() { return dlg; }, get game() { return game; }, toast };
 })();
 window.addEventListener('DOMContentLoaded', APP.start);
