@@ -6,6 +6,7 @@ errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_function("typeof APP!=='undefined' && APP.game")
+  REV=pg.evaluate("APP.build")=='review'   # the review copy (11's item 25): the day is stamped on the WIN, so a lost ladder fight can be tried again today; the day's rival sits and says nothing
   pg.evaluate("APP.game.update({caught:[{seed:2,stage:2,lv:12},{seed:7,stage:2,lv:12}],party:[2,7],intro:true,hints:['party','shop','evolve','weather','zone','grass','keep','battle'],essence:0}); document.getElementById('tip')&&(document.getElementById('tip').hidden=true)")
   pg.evaluate("WORLD.enter('arena')"); pg.wait_for_timeout(200)
   rivals=lambda: pg.evaluate("WORLD.allNpcs().arena.filter(n=>n.ladder).map(n=>[n.id,n.ladder,n.x,n.y])")
@@ -18,16 +19,23 @@ with sync_playwright() as p:
   check('Bastian out of order: a line, no fight', pg.evaluate("APP.dialog && APP.dialog.lines.join(' ')")=='Juno first. That is the order.' and not pg.evaluate("ACT.dueling()"), pg.evaluate("APP.dialog && APP.dialog.lines"))
   pg.evaluate("APP.advance(); APP.advance()"); pg.wait_for_timeout(100)
   # a ladder win, through the same settle path a duel uses
-  def win(id, ladder, reward):
-    return pg.evaluate("""([id,ladder,reward])=>{const g=APP.game; const me=g.make(2,2,12), foe=g.make(31,2,10); const nb=g.newBattle(me, foe, 0); const lead=nb.s[0], f=nb.s[1]; f.hp=0;
-      const lines=g.actDuelEnd({id:id, name:id, reward:reward, winLine:'x', ladder:ladder}, true, {lead:lead, foe:f, bench:[], part:{2:true}, koXp:{}});
-      APP.game.update({arena:Object.assign({step:0},g.state.arena,{day:new Date().toDateString()})});   // what startTrainer stamps when the fight begins
-      return [g.ladderStep(), g.state.essence, ((g.state.npc||{}).cleared||[]).indexOf(id)!==-1];}""",[id,ladder,reward])
+  def win(id, ladder, reward, won=True):
+    return pg.evaluate("""([id,ladder,reward,won,rev])=>{const g=APP.game; const me=g.make(2,2,12), foe=g.make(31,2,10); const nb=g.newBattle(me, foe, 0); const lead=nb.s[0], f=nb.s[1]; if(won) f.hp=0; else lead.hp=0;
+      const lines=g.actDuelEnd({id:id, name:id, reward:reward, winLine:'x', ladder:ladder}, won, {lead:lead, foe:f, bench:[], part:{2:true}, koXp:{}});
+      if(!rev) APP.game.update({arena:Object.assign({step:0},g.state.arena,{day:new Date().toDateString()})});   // what startTrainer stamps when the fight begins (the review copy stamps the win itself)
+      return [g.ladderStep(), g.state.essence, ((g.state.npc||{}).cleared||[]).indexOf(id)!==-1];}""",[id,ladder,reward,won,REV])
+  if REV:   # a loss first: the day is not spent, Juno can be tried again today
+    r=win('juno',1,14,False)
+    check('review copy: losing to Juno spends nothing: step 0, no essence, the day not stamped, Juno ready again today', r==[0,0,False] and not pg.evaluate("APP.game.ladderFoughtToday()") and dict(ready())['juno']==True, [r, ready()])
   r=win('juno',1,14); check('beating Juno: step 1, +14 essence, cleared', r==[1,14,True], r)
   pg.evaluate("APP.placeRivals ? APP.placeRivals(WORLD.allNpcs().arena) : null")
   check('after the win the day is spent: Bastian waits until tomorrow', dict(ready())['bastian']==False and pg.evaluate("APP.game.ladderFoughtToday()"))
   pg.evaluate("(()=>{const n=WORLD.allNpcs().arena.find(x=>x.id==='bastian'); APP.talk(n);})()"); pg.wait_for_timeout(120)
-  check('Bastian the same day: one a day', pg.evaluate("APP.dialog && APP.dialog.lines.join(' ')")=='One a day. Come back with the sun.', pg.evaluate("APP.dialog && APP.dialog.lines")); pg.evaluate("APP.advance(); APP.advance()")
+  if REV:
+    check('review copy: the win stamped the day by itself (nothing stamped at the start of a fight)', pg.evaluate("APP.game.ladderFoughtToday()"))
+    check('Bastian the same day: one a day (review copy: he sits by the fire and says nothing; no fight)', not pg.evaluate("!!APP.dialog") and not pg.evaluate("ACT.dueling()") and pg.evaluate("(()=>{const n=WORLD.allNpcs().arena.find(x=>x.id==='bastian');return [n.x,n.y]})()")==[9,13], [pg.evaluate("APP.dialog && APP.dialog.lines"), pg.evaluate("(()=>{const n=WORLD.allNpcs().arena.find(x=>x.id==='bastian');return [n.x,n.y]})()")])
+  else:
+    check('Bastian the same day: one a day', pg.evaluate("APP.dialog && APP.dialog.lines.join(' ')")=='One a day. Come back with the sun.', pg.evaluate("APP.dialog && APP.dialog.lines")); pg.evaluate("APP.advance(); APP.advance()")
   check('the Challenger title is earned on the first step', 'challenger' in pg.evaluate("APP.game.state.titles||[]"))
   # a new day: Bastian is ready, Juno can be fought again (a rematch, like any trainer)
   pg.evaluate("APP.game.update({arena:Object.assign({},APP.game.state.arena,{day:'yesterday'})})")

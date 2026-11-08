@@ -27,7 +27,11 @@ with sync_playwright() as p:
   check('the ring widens over real time while you stand still (monotonic, about 1 tile per second)', len(rs)>=10 and all(rs[i]>=rs[i-1] for i in range(1,len(rs))) and 1.6<=rs[-1]<=2.3, [rs[0], rs[-1]])
   placed=lambda: pg.evaluate("ACT.foes().filter(f=>f.max===600)")   # the two placed ones; a wild respawn may wander in
   check('what it touches is held (both placed critters frozen) and chilled (hp down)', len(placed())==2 and all(f['frozen'] and f['hp']<600 for f in placed()), placed())
-  check('no other attack while the ring stands', not pg.evaluate("ACT.setSel(0), ACT.attack()"))
+  if pg.evaluate("APP.build")=='review':   # the review copy (11's item 13): a verb keeps its own cooldown (st.vcd) and never costs the quick slash
+    cd0=pg.evaluate("ACT.cd()"); hit=pg.evaluate("ACT.setSel(0), ACT.attack()")
+    check('review copy: the quick slash fires while the ring stands (the verb never set its cooldown), and the ring stays', cd0==0 and hit and (pg.evaluate("ACT.verb()") or {}).get('kind')=='frost', [cd0, hit, pg.evaluate("ACT.verb()")])
+  else:
+    check('no other attack while the ring stands', not pg.evaluate("ACT.setSel(0), ACT.attack()"))
   pg.evaluate("ACT.setSel(3); WORLD.input.jx=1"); pg.wait_for_timeout(250); pg.evaluate("WORLD.input.jx=0")
   check('the first step shatters it', pg.evaluate("ACT.verb()") is None)
   # ---- Ember ----
