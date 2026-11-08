@@ -10,15 +10,28 @@ with sync_playwright() as p:
   pg.click('#title-light'); pg.wait_for_timeout(80)
   check('touching the light crosses into the game like a zone change', pg.evaluate("WORLD.transitioning && document.getElementById('title').classList.contains('out')"))
   pg.wait_for_timeout(1000)
+  REV=pg.evaluate("APP.build")=='review'   # the review copy (11's items 2 and 3): Fern has a body by Home's door and two lines; the starter cards carry name and picture only
+  FERN="(()=>{const f=(WORLD.allNpcs().town||[]).find(n=>n.id==='fern'),P=WORLD.pos();return {f:f?[f.x,f.y]:null,p:[P.x/32,P.y/32]}})()"
+  fpos=pg.evaluate(FERN)
   fern=[]
   for _ in range(6):
     if not pg.evaluate("!!APP.dialog"): break
     fern.append(pg.evaluate("APP.dialog.lines[APP.dialog.i]")); pg.evaluate("APP.advance()"); pg.wait_for_timeout(60)
-  pg.wait_for_timeout(300); pg.click('.scard button'); pg.wait_for_timeout(300)
+  pg.wait_for_timeout(300)
+  if REV: cards=pg.inner_text('#starter')
+  pg.click('.scard button'); pg.wait_for_timeout(300)
   for _ in range(6):
     if not pg.evaluate("!!APP.dialog"): break
     fern.append(pg.evaluate("APP.dialog.lines[APP.dialog.i]")); pg.evaluate("APP.advance()"); pg.wait_for_timeout(60)
-  check('Fern points at what you can see (the gate with the lamp, the grass by your door)', any('gate with the lamp' in l and 'by your door' in l for l in fern), fern[-1:])
+  if REV:
+    check('review copy: Fern says her two lines (the lamp on the west gate, then go on)', [l for i,l in enumerate(fern) if i==0 or l!=fern[i-1]]==['Someone has the lamp on the west gate lit already. They do, most mornings.','Go on, then.'], fern)   # (a line read twice while it types is one line)
+    check('review copy: during her lines Fern stands by Home\'s door, within 5 tiles of you (on screen)', fpos['f'] and abs(fpos['f'][0]+0.5-fpos['p'][0])<=5 and abs(fpos['f'][1]+0.5-fpos['p'][1])<=5, fpos)
+    check('review copy: the starter cards name no Power (name and picture only)', 'Power' not in cards and 'HP' not in cards, cards[:200])
+    pg.wait_for_timeout(600)
+    check('review copy: after her lines Fern goes back to the Lab (37, 11)', pg.evaluate(FERN)['f']==[37,11], pg.evaluate(FERN))
+    check('review copy: no #tip in the page', pg.evaluate("!document.getElementById('tip')"))
+  else:
+    check('Fern points at what you can see (the gate with the lamp, the grass by your door)', any('gate with the lamp' in l and 'by your door' in l for l in fern), fern[-1:])
   r=pg.evaluate("""()=>{const M=WORLD.map,P=WORLD.pos(),h=M.places.find(p=>p.id==='home');return {map:M.id,pos:[P.x/32,P.y/32],door:h.door,g:M.grid.map(r=>r.join('')),W:M.W,H:M.H,lamp:(M.objects||[]).find(o=>o.id==='gate-lamp'),levels:APP.lampLevels?APP.lampLevels():null}}""")
   check('you start at the door of Home', r['map']=='town' and abs(r['pos'][0]-(r['door'][0]+0.9))<0.2 and abs(r['pos'][1]-(r['door'][1]+1.4))<0.2, [r['pos'], r['door']])
   SOL=set('TXFGOR~'); g=r['g']; sx,sy=int(r['pos'][0]),int(r['pos'][1]); dist={(sx,sy):0}; q=deque([(sx,sy)])

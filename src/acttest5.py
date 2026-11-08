@@ -1,9 +1,11 @@
 # Action mode phase 5: trainers, leaders, dungeon bosses and the Tower fought live on the map; rewards go through the same settle code as the battle screen.
 from playwright.sync_api import sync_playwright
+from chk import check, done
 errs=[]
 with sync_playwright() as p:
   b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':780}); pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.goto('file:///mnt/user-data/outputs/critter-roll-world.html'); pg.wait_for_timeout(1200)
+  REV=pg.evaluate("APP.build")=='review'   # the review copy: the seal is the kept trial, not the duel (11's item 5); a lost night keeps the watch (item 23)
   pg.evaluate("APP.game.update({caught:[{seed:2,stage:3,lv:15,xp:0},{seed:9,stage:3,lv:12,xp:0}],party:[2,9],fighter:2,intro:true,xp:99999,essence:50,settings:Object.assign({},APP.game.state.settings,{arpg:true,follow:true,weather:false,ambient:false})}); document.getElementById('tip')&&(document.getElementById('tip').hidden=true); DEV.safe=true")
   def finish():
     for _ in range(60):
@@ -56,6 +58,7 @@ with sync_playwright() as p:
   start('rowan'); duelFoe(); pg.evaluate("WORLD.enter('moss'); WORLD.setPaused(false)"); pg.wait_for_timeout(600); print('leaving the map ends it:', not pg.evaluate("ACT.dueling()"))
   # 4) a gym leader in a city: seal dialog
   go('frosthold'); a=S(); start('glacia'); n=win(); pg.wait_for_timeout(1500); c=S()
+  if REV: check('review copy: beating Glacia in a duel does not hand over the seal (the trial does)', 'glacia' not in c['seals'], c['seals'])
   print('Glacia beaten after', n, 'critters | seal:', 'glacia' in c['seals'], '| essence +', c['ess']-a['ess'], '| seal dialog:', pg.evaluate("APP.dialog&&APP.dialog.lines.slice(0,3).join(' / ')")[:140], '| justSealed cleared:', pg.evaluate("APP.game.state.justSealed===null||APP.game.state.justSealed===undefined"))
   finish()
   # 5) a dungeon boss in a cave
@@ -65,15 +68,26 @@ with sync_playwright() as p:
   hp0=pg.evaluate("APP.game.towerParty().map(x=>x.hp+'/'+x.max)"); pg.evaluate("APP.towerFloorStart()"); pg.wait_for_timeout(300)
   print('Tower floor 1 as a live duel:', pg.evaluate("[ACT.dueling(), ACT.duelInfo()&&ACT.duelInfo().tower, ACT.duelInfo()&&ACT.duelInfo().floor, APP.game.state.trainer]"), '| party hp', hp0)
   n=win(); pg.wait_for_timeout(1200); t=pg.evaluate("APP.game.state.tower"); print('floor 1 cleared after', n, '| run floor', t['run']['floor'] if t['run'] else None, '| best', t['best'], '| hp now', pg.evaluate("APP.game.towerParty().map(x=>x.hp+'/'+x.max)"), '| dialog:', pg.evaluate("APP.dialog&&APP.dialog.lines[0]"))
-  finish(); pg.wait_for_timeout(300); pg.locator('#dlg button', has_text='Rest outside').click(); pg.wait_for_timeout(400); pg.evaluate("WORLD.setPaused(false)")
+  finish(); pg.wait_for_timeout(300); (pg.locator('#dlg-choices button', has_text='Rest') if REV else pg.locator('#dlg button', has_text='Rest outside')).click(); pg.wait_for_timeout(400); pg.evaluate("WORLD.setPaused(false)")
   pg.evaluate("APP.towerFloorStart()"); pg.wait_for_timeout(300); pg.evaluate("ACT.hero.hp=100"); pg.click('#duel button'); pg.wait_for_timeout(300)
   print('giving up a Tower floor keeps the HP in the run:', pg.evaluate("APP.game.towerParty().map(x=>x.hp)"), '| run still on floor', pg.evaluate("APP.game.state.tower.run.floor"))
   pg.evaluate("APP.towerFloorStart()"); pg.wait_for_timeout(300); print('and the next try starts from that HP:', pg.evaluate("ACT.hero.hp"))
+  t_before=pg.evaluate("APP.game.state.tower")   # the run before the night is lost
   pg.evaluate("window.__lowAll=setInterval(()=>{ACT.hero.hp=Math.min(ACT.hero.hp,1)},50)")
   for _ in range(60):
     pg.wait_for_timeout(150)
     if not pg.evaluate("ACT.dueling()"): break
     pg.evaluate("(()=>{const p=WORLD.pos(),m=ACT.enemies.find(x=>x.duel);if(m){m.x=p.x+4;m.y=p.y+10;m.cd=0;if(m.tele<=0){m.kind='melee';m.aim={x:p.x,y:p.y};m.tele=0.02}}})()")
-  pg.evaluate("clearInterval(window.__lowAll)"); pg.wait_for_timeout(800); print('Tower loss ends the run:', pg.evaluate("APP.game.state.tower.run===null"), '| dialog:', pg.evaluate("APP.dialog&&APP.dialog.lines[0]"))
+  if REV:   # a night not kept does not unmake the watch: the run waits on the same night, the party at 30%, best unchanged
+    t0=t_before
+    pg.evaluate("clearInterval(window.__lowAll)"); pg.wait_for_timeout(800); t=pg.evaluate("APP.game.state.tower")
+    print('Tower loss keeps the run:', t['run'] is not None, '| dialog:', pg.evaluate("APP.dialog&&APP.dialog.lines[0]"))
+    hp=pg.evaluate("APP.game.towerParty().map(x=>[x.hp,x.max])")
+    check('review copy: a lost night keeps the run on the same night, best unchanged', t['run'] is not None and t['run']['floor']==t0['run']['floor'] and t['best']==t0['best'], [t0, t])
+    check('review copy: the party waits at 30% HP', all(abs(h-round(m*0.3))<=1 for h,m in hp), hp)
+    check('review copy: no "Rest outside" choice after a loss', pg.locator('#dlg button', has_text='Rest outside').count()==0)
+  else:
+    pg.evaluate("clearInterval(window.__lowAll)"); pg.wait_for_timeout(800); print('Tower loss ends the run:', pg.evaluate("APP.game.state.tower.run===null"), '| dialog:', pg.evaluate("APP.dialog&&APP.dialog.lines[0]"))
   s=pg.evaluate("localStorage.getItem('critter-roll:v2')"); print('save has no duel/enemy fields:', 'lastFoe' not in s and 'koXp' not in s)
   print('errors:', errs or 'none'); b.close()
+done()

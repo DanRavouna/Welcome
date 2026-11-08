@@ -112,7 +112,7 @@ with sync_playwright() as p:
   foes_at(1.0, 'Tide'); pg.evaluate("ACT.enemies.splice(1); ACT.setSel(1)"); pg.wait_for_function("ACT.cdFrac()===0", timeout=8000)
   taps=[]
   for i in range(5):
-    pg.evaluate("(()=>{const o=WORLD.pos();ACT.enemies.forEach(m=>{m.x=o.x+32;m.y=o.y-20;m.hx=m.x;m.hy=m.y;m.kx=0;m.ky=0;});})()"); pg.wait_for_timeout(100)
+    pg.evaluate("(()=>{const o=WORLD.pos();ACT.enemies.splice(1);ACT.enemies.forEach(m=>{m.x=o.x+32;m.y=o.y-20;m.hx=m.x;m.hy=m.y;m.kx=0;m.ky=0;});})()"); pg.wait_for_timeout(100)   # (a wild Bloom critter that wandered in heals the target: only the placed one stays)
     h=pg.evaluate("ACT.foes()[0].hp"); pg.evaluate("ACT.attack()"); pg.wait_for_timeout(420); taps.append(h-pg.evaluate("ACT.foes()[0].hp")); pg.wait_for_function("ACT.cdFrac()===0", timeout=8000)
   check('the heavy never misses: five taps, five hits', all(t>0 for t in taps), taps)
   pg.evaluate("(()=>{const o=WORLD.pos();ACT.enemies.forEach(m=>{m.x=o.x+32;m.y=o.y-20;m.hx=m.x;m.hy=m.y;m.kx=0;m.ky=0;});})()"); pg.wait_for_timeout(100)
