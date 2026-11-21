@@ -296,7 +296,7 @@
     <div class="bezel"><div class="lcd">SETTINGS · GROUPS</div></div>
   </div>
   <p class="setHelp" id="setHelp">Tap an app, then tap the group to move it into.</p>
-  <p class="setHelp" id="buildTag" style="opacity:.5;font-size:11px">SCREEN 2026-11-21 · 4</p>
+  <p class="setHelp" id="buildTag" style="opacity:.5;font-size:11px">SCREEN 2026-11-21 · 5</p>
   <div id="groupList"></div>
   <div id="setFoot">
     <button class="chromeBtn" id="resetGroups">Reset</button>
@@ -407,7 +407,11 @@
   let clockTaps = [];
   document.getElementById('clock').addEventListener('click', () => {
     const now = Date.now(); clockTaps = clockTaps.filter(t => now - t < 700); clockTaps.push(now);
-    if (clockTaps.length >= 3) { clockTaps = []; location.reload(); }
+    if (clockTaps.length >= 3) {                     // reload, asking for a fresh copy (a new address skips GitHub's 10-minute cache)
+      clockTaps = [];
+      if (location.protocol === 'https:' && location.hostname.endsWith('github.io')) location.replace(location.pathname + '?v=' + Date.now());
+      else location.reload();
+    }
   });
 
   if (!window.THREE) { document.getElementById('err').style.display = 'flex'; return; }

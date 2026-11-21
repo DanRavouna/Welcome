@@ -179,7 +179,7 @@ class MainActivity : ComponentActivity() {
             sendInsets()
             insets
         }
-        web.loadUrl(LIVE_URL)
+        web.loadUrl("$LIVE_URL?v=${System.currentTimeMillis()}")   // new address each start: skips GitHub's 10-minute cache
 
         // Back: let the page close whatever is open (keyboard, group, settings...). A launcher never exits on Back.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
