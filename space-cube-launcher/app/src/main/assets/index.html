@@ -1204,6 +1204,7 @@
   const easeOutBack = x => { const k = 1.6, p = x - 1; return 1 + (k + 1) * p * p * p + k * p * p; };
   function playArrival() {
     arrivalT = 0;
+    if (typeof requestCoverHide === 'function') requestCoverHide();
     document.body.classList.add('arriving');          // tuck the clock, buttons and console away instantly...
     void document.body.offsetWidth;
     requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('arriving')));   // ...then slide them in
@@ -2175,7 +2176,8 @@
     c.halo.material.opacity = (0.18 + ge * (0.67 + Math.sin(t * 4.2) * 0.15)) * a;   // glow pulses in step with the cube
   }
 
-  let oneFrame = false;
+  let oneFrame = false, coverPending = 0;
+  function requestCoverHide() { coverPending = 2; }   // wait 2 drawn frames so the frame is really on screen
   function drawOneFrame() { oneFrame = true; try { tick(); } finally { oneFrame = false; } }
   function tick() {
     const t = clock.getElapsedTime();
@@ -2228,6 +2230,9 @@
     const settingsOpen = settingsEl.classList.contains('show');
     updateHud(opening || settingsOpen ? 0 : 1 - (1 - CFG.tagOpacityWithCubes) * appFade);
     renderer.render(scene, camera);
+    if (coverPending > 0 && !oneFrame && --coverPending === 0) {
+      try { if (window.Launcher && window.Launcher.hideCover) window.Launcher.hideCover(); } catch (e) {}
+    }
     if (!paused && !oneFrame) requestAnimationFrame(tick);
   }
   let paused = false;
@@ -2271,6 +2276,7 @@
     if (!arrivalHeld) return;
     arrivalHeld = false;
     prev = performance.now();
+    requestCoverHide();
     requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('arriving')));
   }
   window.onUnlock = () => { if (arrivalHeld) releaseArrival(); else playArrival(); };

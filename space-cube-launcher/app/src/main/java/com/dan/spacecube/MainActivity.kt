@@ -6,6 +6,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.View
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -39,6 +44,23 @@ class MainActivity : ComponentActivity() {
     private lateinit var web: WebView
     private lateinit var bridge: LauncherBridge
 
+    // A native picture of empty space laid over the page. It's up whenever the page can't be trusted to
+    // be on screen yet (starting up, screen off, unlocking), so Android's unlock snapshot and the moment
+    // the page needs to redraw both show empty space instead of the old UI or a black frame.
+    private lateinit var cover: ImageView
+    private val handler = Handler(Looper.getMainLooper())
+    private val coverFailsafe = Runnable { hideCover() }
+
+    fun showCover() = runOnUiThread {
+        cover.animate().cancel(); cover.alpha = 1f; cover.visibility = View.VISIBLE
+    }
+    /** Called by the page once it has drawn the first frame of the fly-in. */
+    fun hideCover() = runOnUiThread {
+        handler.removeCallbacks(coverFailsafe)
+        if (cover.visibility != View.VISIBLE) return@runOnUiThread
+        cover.animate().alpha(0f).setDuration(220).withEndAction { cover.visibility = View.GONE }.start()
+    }
+
     // Re-sends the app list to the page whenever an app is installed, removed or updated.
     private val packageReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -51,7 +73,7 @@ class MainActivity : ComponentActivity() {
     private val unlockReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                Intent.ACTION_SCREEN_OFF -> js("window.onScreenOff && window.onScreenOff()")
+                Intent.ACTION_SCREEN_OFF -> { showCover(); js("window.onScreenOff && window.onScreenOff()") }
                 Intent.ACTION_USER_PRESENT -> js("window.onUnlock && window.onUnlock()")
             }
         }
@@ -99,7 +121,16 @@ class MainActivity : ComponentActivity() {
         }
         bridge = LauncherBridge(this)
         web.addJavascriptInterface(bridge, "Launcher")
-        setContentView(web)
+        cover = ImageView(this).apply {
+            setImageResource(R.drawable.space_cover)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setBackgroundColor(android.graphics.Color.BLACK)
+        }
+        setContentView(FrameLayout(this).apply {
+            addView(web, FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+            addView(cover, FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        })
+        handler.postDelayed(coverFailsafe, 6000)      // never leave the cover up if the page stays silent
         web.loadUrl(LIVE_URL)
 
         // Back: let the page close whatever is open (keyboard, group, settings...). A launcher never exits on Back.
@@ -134,6 +165,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (cover.visibility == View.VISIBLE) { handler.removeCallbacks(coverFailsafe); handler.postDelayed(coverFailsafe, 3000) }
         web.onResume()
         js("window.setPaused && window.setPaused(false)")
     }
