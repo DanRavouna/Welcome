@@ -47,6 +47,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Phone unlocked: play the fly-in.
+    private val unlockReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            js("window.onUnlock && window.onUnlock()")
+        }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,6 +79,11 @@ class MainActivity : ComponentActivity() {
                 // Never leave the launcher page by following a link inside it.
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
                     request.url.host != "appassets.androidplatform.net" && request.url.host != LIVE_HOST
+
+                // Tell the page this build sends a real unlock signal (so it doesn't guess).
+                override fun onPageFinished(view: WebView, url: String) {
+                    view.evaluateJavascript("window.__hasUnlockHook = true", null)
+                }
 
                 // Website unreachable (offline...): fall back to the copy inside the app.
                 override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
@@ -102,6 +114,7 @@ class MainActivity : ComponentActivity() {
             addDataScheme("package")
         }
         ContextCompat.registerReceiver(this, packageReceiver, filter, ContextCompat.RECEIVER_EXPORTED)
+        ContextCompat.registerReceiver(this, unlockReceiver, IntentFilter(Intent.ACTION_USER_PRESENT), ContextCompat.RECEIVER_EXPORTED)
     }
 
     // Pressing Home while the launcher is already showing: go back to the main group view.
@@ -126,6 +139,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         unregisterReceiver(packageReceiver)
+        unregisterReceiver(unlockReceiver)
         web.destroy()
         super.onDestroy()
     }

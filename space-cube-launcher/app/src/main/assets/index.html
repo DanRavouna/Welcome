@@ -224,7 +224,14 @@
     text-shadow: 0 0 8px rgba(90,255,190,.7); opacity: 0; transition: opacity .25s; }
   #searchStatus.show { opacity: 1; }
   /* ---- Custom on-screen keyboard (chrome keys, cyan GO) ---- */
-  #console { transition: transform .28s cubic-bezier(.2,.8,.2,1); }
+  #console { transition: transform .28s cubic-bezier(.2,.8,.2,1), bottom .75s cubic-bezier(.2,.9,.3,1.05) .55s; }
+  #clock { transition: top .75s cubic-bezier(.2,.9,.3,1.15) .45s; }
+  .roundBtn { transition: opacity .5s ease .8s; }
+  /* arrival (unlock fly-in): everything starts tucked away, then slides into place */
+  body.arriving #console { bottom: -175px; transition: none; }
+  body.arriving #clock { top: -95px; transition: none; }
+  body.arriving .roundBtn { opacity: 0; transition: none; }
+  body.arriving #hud { opacity: 0 !important; }
   #kbd {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 7; padding: 10px 5px 14px;
     background: linear-gradient(180deg, #2a3346 0%, #141a28 30%, #0a0e18 100%);
@@ -760,7 +767,7 @@
   // is converted into the rig's own coordinates.
   const flyDir = new THREE.Vector3(), flyU = new THREE.Vector3(), flyV = new THREE.Vector3();
   const invRig = new THREE.Quaternion(), helper = new THREE.Vector3();
-  let bornDirty = false;
+  let bornDirty = false, warp = 1;
   function updateField(t, dt) {
     invRig.copy(spaceRig.quaternion).invert();
     flyDir.set(0, 0, 1).applyQuaternion(invRig);                 // toward the camera, in rig space
@@ -770,7 +777,7 @@
     const p = fPos;
     for (let i = 0; i < FIELD_N; i++) {
       const k = i * 3;
-      const sp = fSpeed[i] * CFG.dotSpeed * dt;
+      const sp = fSpeed[i] * CFG.dotSpeed * warp * dt;
       const swU = Math.sin(t * 0.3 + fPhase[i]) * fSway[i] * CFG.dotSway * dt;  // gentle individual sway
       const swV = Math.cos(t * 0.25 + fPhase[i]) * fSway[i] * CFG.dotSway * dt;
       p[k]   += flyDir.x * sp + flyU.x * swU + flyV.x * swV;
@@ -1190,6 +1197,17 @@
   }
 
   // Grid layout: 2 columns in portrait, 3 in landscape. Camera fits a 6-cube grid.
+  // ---- Arrival: the fly-in played on unlock (and when the launcher first starts) ----
+  let camBaseZ = 0, arrivalT = 1;                  // arrivalT: 0 -> 1 over the fly-in; 1 = done
+  const ARRIVAL_S = 1.7;
+  const easeOutCubic = x => 1 - Math.pow(1 - x, 3);
+  const easeOutBack = x => { const k = 1.6, p = x - 1; return 1 + (k + 1) * p * p * p + k * p * p; };
+  function playArrival() {
+    arrivalT = 0;
+    document.body.classList.add('arriving');          // tuck the clock, buttons and console away instantly...
+    void document.body.offsetWidth;
+    requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('arriving')));   // ...then slide them in
+  }
   const CLOCK_SPACE = 1.4;
   const CONSOLE_SPACE = 2.2;   // empty band kept at the bottom for the Saturn-style console (coming next)
   function gridPositions(items) {
@@ -1207,6 +1225,7 @@
     items.forEach((c, i) => {
       const row = Math.floor(i / cols), inRow = Math.min(cols, n - row * cols), col = i % cols;
       c.sizeMul = c.inGroup ? size : (c.sizeMul || 1);
+      c.arrIdx = i;
       if (big) c.base.set((col - (inRow - 1) / 2) * gx, topY - row * gy, 0);
       else c.base.set((col - (inRow - 1) / 2) * gx, ((usedRows - 1) / 2 - row) * gy + topY - ((rows6 - 1) / 2) * 1.75, 0);
     });
@@ -1227,6 +1246,7 @@
     const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     camera.position.set(0, 0, Math.max(h / (2 * tanH), w / (2 * tanH * aspect)) + 0.6);
     spaceRig.position.copy(camera.position);
+    camBaseZ = camera.position.z;
     gridPositions(groupItems);
     appItemsByGroup.forEach(list => gridPositions(list));
   }
@@ -2133,6 +2153,11 @@
       tmp.lerp(c.dragPos, b);
       s *= 1 - 0.25 * b;            // a bit smaller while carried
     }
+    if (arrivalT < 1) {                               // arrival: cubes rise and pop into place one after another
+      const local = Math.max(0, Math.min(1, (arrivalT - 0.3 - (c.arrIdx || 0) * 0.06) / 0.4));
+      s *= Math.max(0, easeOutBack(local));
+      tmp.y -= (1 - easeOutCubic(local)) * 1.2;
+    }
     if (c.regrow !== undefined && c.regrow < 1) {   // after a drop into an egg: grow back from nothing
       c.regrow = Math.min(1, c.regrow + dt / 0.7);
       const g = c.regrow * c.regrow * (3 - 2 * c.regrow);
@@ -2152,6 +2177,13 @@
 
   function tick() {
     const t = clock.getElapsedTime();
+    if (arrivalT < 1) {
+      arrivalT = Math.min(1, arrivalT + Math.min((performance.now() - prev) / 1000, 0.05) / ARRIVAL_S);
+      const e = easeOutCubic(arrivalT);
+      camera.position.z = camBaseZ + (1 - e) * 9;      // start further back, glide forward to the ship
+      spaceRig.position.copy(camera.position);
+      warp = 1 + Math.pow(1 - e, 2) * 28;              // dots rush past at the start, then calm down
+    } else warp = 1;
     const now = performance.now();
     const dt = Math.min((now - prev) / 1000, 0.05); prev = now;
     const f = Math.pow(Math.pow(CFG.cubeSpinCoast, 60), dt);
@@ -2197,6 +2229,7 @@
     if (!paused) requestAnimationFrame(tick);
   }
   let paused = false;
+  playArrival();                                    // fly in when the launcher starts
 
   // =========================================================
   //  PHONE HOOKS (called by the Android app)
@@ -2222,7 +2255,13 @@
   // Home pressed while already home: back to the groups
   window.goHome = () => { closeEverything(); appsVisible = true; };
   // Another app is in front: stop drawing (saves battery). Back home: start again.
+  // Unlock: the Android app calls this when the phone is unlocked (newer app builds).
+  window.onUnlock = () => playArrival();
+  let pausedAt = 0;
   window.setPaused = p => {
+    if (p) pausedAt = Date.now();
+    // older app builds have no unlock signal: treat "back after 20 s or more away" as an unlock
+    else if (!window.__hasUnlockHook && pausedAt && Date.now() - pausedAt > 20000) playArrival();
     if (p === paused) return;
     paused = p;
     if (!p) { prev = performance.now(); requestAnimationFrame(tick); }
