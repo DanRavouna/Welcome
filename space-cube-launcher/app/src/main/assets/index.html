@@ -9,8 +9,9 @@
   html, body { margin: 0; height: 100%; background: #02030a; overflow: hidden; }
   body { touch-action: none; -webkit-user-select: none; user-select: none; font-family: system-ui, sans-serif; }
   canvas { display: block; }
+  :root { --inset-top: 0px; --inset-bottom: 0px; }   /* filled in by the Android app (status bar / gesture bar) */
   .roundBtn {
-    position: fixed; top: 16px; height: 44px; min-width: 44px; border-radius: 22px; padding: 0 12px;
+    position: fixed; top: calc(16px + var(--inset-top)); height: 44px; min-width: 44px; border-radius: 22px; padding: 0 12px;
     border: 1px solid rgba(150,200,255,.45); background: rgba(20,30,60,.45); color: #cfe2ff;
     font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer;
     z-index: 6; transition: opacity .3s;
@@ -27,7 +28,7 @@
   #hud .minor path, #hud .minor circle { stroke-opacity: .65; }
   #hud .minor text { fill-opacity: .75; font-size: 9px; }
   #groupTitle {
-    position: fixed; left: 0; right: 0; top: 96px; text-align: center; z-index: 4;
+    position: fixed; left: 0; right: 0; top: calc(96px + var(--inset-top)); text-align: center; z-index: 4;
     color: #e8f1ff; font: italic 800 15px/1 system-ui, sans-serif; letter-spacing: .25em;
     text-shadow: 0 0 12px rgba(80,160,255,.9); opacity: 0; transition: opacity .4s; pointer-events: none;
   }
@@ -41,12 +42,12 @@
   #appName { font-size: 34px; font-weight: 700; letter-spacing: .04em; }
   #appScreen p { margin: 0 24px; opacity: .8; font-size: 14px; text-align: center; }
   #backBtn {
-    position: absolute; left: 16px; top: 16px; padding: 10px 16px; border-radius: 20px;
+    position: absolute; left: 16px; top: calc(16px + var(--inset-top)); padding: 10px 16px; border-radius: 20px;
     border: 1px solid rgba(255,255,255,.6); background: rgba(0,0,0,.2); color: #fff; font-size: 15px;
   }
   /* ---- Floating clock: backlit cyan display in a chrome bezel (retro console style) ---- */
   #clock {
-    position: fixed; top: 14px; left: 50%; width: min(64vw, 280px);
+    position: fixed; top: calc(14px + var(--inset-top)); left: 50%; width: min(64vw, 280px);
     transform: translateX(-50%); z-index: 5; pointer-events: auto;
     animation: clockFloat 4.5s ease-in-out infinite;
   }
@@ -84,7 +85,7 @@
     color: #e8f1ff; opacity: 0; pointer-events: none; transition: opacity .3s; touch-action: pan-y;
   }
   #settings.show { opacity: 1; pointer-events: auto; }
-  .setHead { padding: 16px 16px 8px; display: flex; align-items: center; gap: 10px; }
+  .setHead { padding: calc(16px + var(--inset-top)) 16px 8px; display: flex; align-items: center; gap: 10px; }
   .setHead .bezel { flex: 1; padding: 4px; border-radius: 18px;
     background: linear-gradient(180deg,#f4f7fb 0%,#9aa3b2 38%,#eef2f8 55%,#6d7686 100%); }
   .setHead .lcd { border-radius: 14px; padding: 8px 14px; color: #13337a;
@@ -117,12 +118,12 @@
   .uNote { font-size: 12px; color: rgba(200,220,255,.5); margin: -4px 0 8px; }
   .empty { font-size: 13px; color: rgba(200,220,255,.45); padding: 6px 2px; }
   #addGroup { display: block; margin: 14px auto 0; }
-  #setFoot { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px 20px; display: flex; gap: 10px;
+  #setFoot { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px calc(20px + var(--inset-bottom)); display: flex; gap: 10px;
     background: linear-gradient(0deg, rgba(4,8,24,.95) 60%, transparent); }
   #setFoot .chromeBtn { flex: 1; }
   /* ---- Bottom console: chrome deck with two pods and a cyan search display ---- */
   #console {
-    position: fixed; left: 0; right: 0; bottom: 0; height: 150px; z-index: 6; pointer-events: none;
+    position: fixed; left: 0; right: 0; bottom: 0; height: calc(150px + var(--inset-bottom)); z-index: 6; pointer-events: none;
   }
   #console .deck {
     position: absolute; left: -10%; right: -10%; bottom: -60px; height: 170px; border-radius: 50% 50% 0 0 / 70px 70px 0 0;
@@ -135,7 +136,7 @@
   }
   /* ---- Side sockets: chrome arms built into the shell, each holding a hollow
          glass egg with a small cube floating inside ---- */
-  #console .socket { position: absolute; bottom: 0; width: 104px; height: 150px; }
+  #console .socket { position: absolute; bottom: var(--inset-bottom); width: 104px; height: 150px; }
   #console .socket.l { left: -6px; }
   #console .socket.r { right: -6px; transform: scaleX(-1); }      /* mirror of the left one */
   #console .socket svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
@@ -165,7 +166,7 @@
   #favPicker { position: fixed; inset: 0; z-index: 22; display: flex; flex-direction: column; justify-content: flex-end;
     background: rgba(2,4,12,.55); opacity: 0; pointer-events: none; transition: opacity .25s; }
   #favPicker.show { opacity: 1; pointer-events: auto; }
-  #favPicker .sheet { background: rgba(6,10,26,.96); border-top: 2px solid rgba(95,227,242,.6); padding: 12px 14px 22px;
+  #favPicker .sheet { background: rgba(6,10,26,.96); border-top: 2px solid rgba(95,227,242,.6); padding: 12px 14px calc(22px + var(--inset-bottom));
     max-height: 62vh; display: flex; flex-direction: column; transform: translateY(30px); transition: transform .25s; }
   #favPicker.show .sheet { transform: none; }
   #favPicker .fTitle { font: 800 12px 'Orbitron', system-ui, sans-serif; letter-spacing: .18em; color: #7fe9ff; margin: 2px 2px 10px; }
@@ -199,7 +200,7 @@
   @keyframes eggSpin { from { transform: rotateX(-24deg) rotateY(0deg); } to { transform: rotateX(-24deg) rotateY(360deg); } }
   @keyframes eggFloat { 0%,100% { transform: translateY(-4px); } 50% { transform: translateY(4px); } }
   #searchWrap {
-    position: absolute; left: 100px; right: 100px; bottom: 50px; pointer-events: auto;
+    position: absolute; left: 100px; right: 100px; bottom: calc(50px + var(--inset-bottom)); pointer-events: auto;
     padding: 4px; border-radius: 22px;
     background: linear-gradient(180deg, #f4f7fb 0%, #9aa3b2 38%, #eef2f8 55%, #6d7686 100%);
     box-shadow: 0 6px 18px rgba(0,0,0,.6), 0 0 22px rgba(80,200,255,.25);
@@ -219,7 +220,7 @@
   #searchClear { border: none; background: rgba(19,51,122,.15); color: #13337a; width: 24px; height: 24px;
     border-radius: 12px; font: 700 13px system-ui; display: none; }
   #searchClear.show { display: block; }
-  #searchStatus { position: absolute; left: 0; right: 0; bottom: 22px; text-align: center; pointer-events: none;
+  #searchStatus { position: absolute; left: 0; right: 0; bottom: calc(22px + var(--inset-bottom)); text-align: center; pointer-events: none;
     font: 600 10px 'Orbitron', system-ui, sans-serif; letter-spacing: .2em; color: #a6ffd9;
     text-shadow: 0 0 8px rgba(90,255,190,.7); opacity: 0; transition: opacity .25s; }
   #searchStatus.show { opacity: 1; }
@@ -228,12 +229,12 @@
   #clock { transition: top .75s cubic-bezier(.2,.9,.3,1.15) .45s; }
   .roundBtn { transition: opacity .5s ease .8s; }
   /* arrival (unlock fly-in): everything starts tucked away, then slides into place */
-  body.arriving #console { bottom: -175px; transition: none; }
-  body.arriving #clock { top: -95px; transition: none; }
+  body.arriving #console { bottom: calc(-175px - var(--inset-bottom)); transition: none; }
+  body.arriving #clock { top: calc(-95px - var(--inset-top)); transition: none; }
   body.arriving .roundBtn { opacity: 0; transition: none; }
   body.arriving #hud { opacity: 0 !important; }
   #kbd {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 7; padding: 10px 5px 14px;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 7; padding: 10px 5px calc(14px + var(--inset-bottom));
     background: linear-gradient(180deg, #2a3346 0%, #141a28 30%, #0a0e18 100%);
     border-top: 2px solid rgba(95,227,242,.6); box-shadow: 0 -8px 24px rgba(0,0,0,.6);
     transform: translateY(105%); transition: transform .28s cubic-bezier(.2,.8,.2,1);
@@ -1209,8 +1210,12 @@
     void document.body.offsetWidth;
     requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('arriving')));   // ...then slide them in
   }
-  const CLOCK_SPACE = 1.4;
-  const CONSOLE_SPACE = 2.2;   // empty band kept at the bottom for the Saturn-style console (coming next)
+  // system bars (Android app only): CSS px covered by the status bar / gesture bar
+  const INSETS = { top: 0, bottom: 0 };
+  const CLOCK_BASE = 1.4;
+  let CLOCK_SPACE = CLOCK_BASE;
+  const CONSOLE_BASE = 2.2;
+  let CONSOLE_SPACE = CONSOLE_BASE;   // empty band kept at the bottom for the Saturn-style console (coming next)
   function gridPositions(items) {
     const aspect = innerWidth / innerHeight;
     const cols6 = aspect < 1 ? 2 : 3;
@@ -1243,9 +1248,19 @@
     camera.aspect = aspect; camera.updateProjectionMatrix();
     const most = 6;                                  // fixed zoom; big groups scroll instead
     const cols = aspect < 1 ? 2 : 3, rows = Math.ceil(most / cols);
-    const w = (cols - 1) * 1.7 + 1.8, h = (rows - 1) * 1.75 + 2.2 + CLOCK_SPACE + CONSOLE_SPACE;
     const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-    camera.position.set(0, 0, Math.max(h / (2 * tanH), w / (2 * tanH * aspect)) + 0.6);
+    // fit the grid, then widen the top/bottom reserves by the system bars and fit again
+    const fitZ = () => {
+      const w = (cols - 1) * 1.7 + 1.8, h = (rows - 1) * 1.75 + 2.2 + CLOCK_SPACE + CONSOLE_SPACE;
+      return Math.max(h / (2 * tanH), w / (2 * tanH * aspect)) + 0.6;
+    };
+    CLOCK_SPACE = CLOCK_BASE; CONSOLE_SPACE = CONSOLE_BASE;
+    for (let k = 0; k < 2; k++) {
+      const wpp = 2 * tanH * fitZ() / innerHeight;    // world units per screen pixel
+      CLOCK_SPACE = CLOCK_BASE + INSETS.top * wpp;
+      CONSOLE_SPACE = CONSOLE_BASE + INSETS.bottom * wpp;
+    }
+    camera.position.set(0, 0, fitZ());
     spaceRig.position.copy(camera.position);
     camBaseZ = camera.position.z;
     gridPositions(groupItems);
@@ -1709,7 +1724,7 @@
     const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     const halfH = tanH * camera.position.z, halfW = halfH * camera.aspect;
     const H = innerHeight, toWorldY = py => halfH * (1 - 2 * py / H), pxPerUnit = H / (2 * halfH);
-    const consoleTop = H - 150 - kbdLift();                          // top of the console on screen
+    const consoleTop = H - 150 - INSETS.bottom - kbdLift();          // top of the console on screen
     const cols = 4, gx = Math.min(1.25, (2 * halfW - 0.3) / cols), gy = 1.3;
     const bottomRowPy = consoleTop - 0.95 * pxPerUnit;               // leaves room for the names
     const col = i % cols, row = Math.floor(i / cols), rows = Math.min(2, Math.ceil(resultsCount / cols));
@@ -1742,7 +1757,7 @@
     }
     const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     const halfH0 = tanH * camera.position.z;
-    const emerge = new THREE.Vector3(0, halfH0 * (1 - 2 * (innerHeight - 75 - kbdLift()) / innerHeight), 0.5);   // cubes rise out of the search bar
+    const emerge = new THREE.Vector3(0, halfH0 * (1 - 2 * (innerHeight - 75 - INSETS.bottom - kbdLift()) / innerHeight), 0.5);   // cubes rise out of the search bar
     const next = found.map(resultItemFor);
     resultsCount = next.length;
     resultItems.forEach(it => { if (!next.includes(it)) { it.visTarget = 0; if (selected === it) selected = null; } });
@@ -2262,6 +2277,13 @@
   // Home pressed while already home: back to the groups
   window.goHome = () => { closeEverything(); appsVisible = true; };
   // Another app is in front: stop drawing (saves battery). Back home: start again.
+  window.setInsets = (top, bottom) => {
+    INSETS.top = top || 0; INSETS.bottom = bottom || 0;
+    document.documentElement.style.setProperty('--inset-top', INSETS.top + 'px');
+    document.documentElement.style.setProperty('--inset-bottom', INSETS.bottom + 'px');
+    layout(); resultItems.forEach((it, i) => resultSpot(i, it.targetBase)); placeConsole();
+  };
+  if (window.__pendingInsets) window.setInsets(...window.__pendingInsets);
   // Unlock: the Android app calls this when the phone is unlocked (newer app builds).
   // Screen turned off: get the fly-in's starting pose ready NOW (empty space, everything tucked away)
   // and draw it, so the first thing you see after unlocking is the start of the fly-in, not the old screen.

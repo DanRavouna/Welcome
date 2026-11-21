@@ -20,6 +20,10 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.WebViewAssetLoader
 
 /**
@@ -40,6 +44,10 @@ class MainActivity : ComponentActivity() {
         const val LOCAL_URL = "https://appassets.androidplatform.net/assets/index.html"
     }
     private var usingLocal = false
+    // status bar / gesture bar sizes in CSS pixels, sent to the page so it keeps its UI clear of them
+    private var insetTopCss = 0f
+    private var insetBottomCss = 0f
+    private fun sendInsets(): Unit = js("window.setInsets && window.setInsets($insetTopCss, $insetBottomCss)")
 
     private lateinit var web: WebView
     private lateinit var bridge: LauncherBridge
@@ -94,6 +102,24 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Draw space edge to edge: under the status bar and the gesture/navigation bar (both transparent).
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            window.isNavigationBarContrastEnforced = false     // no grey scrim behind the gesture handle
+            window.isStatusBarContrastEnforced = false
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            window.attributes = window.attributes.apply {
+                layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false                 // white status icons on dark space
+            isAppearanceLightNavigationBars = false
+        }
+
         // Serve assets from https://appassets.androidplatform.net/assets/... (a safe, local-only address)
         val assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
@@ -119,6 +145,7 @@ class MainActivity : ComponentActivity() {
                 // Tell the page this build sends a real unlock signal (so it doesn't guess).
                 override fun onPageFinished(view: WebView, url: String) {
                     view.evaluateJavascript("window.__hasUnlockHook = true", null)
+                    sendInsets()
                 }
 
                 // Website unreachable (offline...): fall back to the copy inside the app.
@@ -142,6 +169,16 @@ class MainActivity : ComponentActivity() {
             addView(cover, FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
         })
         handler.postDelayed(coverFailsafe, 6000)      // never leave the cover up if the page stays silent
+
+        // Measure the system bars and tell the page (in CSS px = device px / density)
+        ViewCompat.setOnApplyWindowInsetsListener(web) { _, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            val d = resources.displayMetrics.density
+            insetTopCss = bars.top / d
+            insetBottomCss = bars.bottom / d
+            sendInsets()
+            insets
+        }
         web.loadUrl(LIVE_URL)
 
         // Back: let the page close whatever is open (keyboard, group, settings...). A launcher never exits on Back.
@@ -193,5 +230,5 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    fun js(code: String) = runOnUiThread { web.evaluateJavascript(code, null) }
+    fun js(code: String): Unit = runOnUiThread { web.evaluateJavascript(code, null) }
 }
