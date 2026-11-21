@@ -296,7 +296,7 @@
     <div class="bezel"><div class="lcd">SETTINGS · GROUPS</div></div>
   </div>
   <p class="setHelp" id="setHelp">Tap an app, then tap the group to move it into.</p>
-  <p class="setHelp" id="buildTag" style="opacity:.5;font-size:11px">SCREEN 2026-11-21 · 3</p>
+  <p class="setHelp" id="buildTag" style="opacity:.5;font-size:11px">SCREEN 2026-11-21 · 4</p>
   <div id="groupList"></div>
   <div id="setFoot">
     <button class="chromeBtn" id="resetGroups">Reset</button>
@@ -2004,10 +2004,10 @@
 
   // launching straight from an egg: flash the egg, then show the app
   let eggLaunched = false;
-  // Egg tap: the app's cube rises out of the egg to its slot on the home screen, then opens like any cube
+  // Egg tap: the app's cube flies straight out of the egg into the screen (opens); its slot is waiting when you come back
   const eggPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), eggHit = new THREE.Vector3();
   function launchFromEgg(app, eggEl) {
-    if (opening || eggLaunching) return;
+    if (opening) return;
     closeEverything();
     if (homeView !== 'recent') setHomeView('recent');
     const k = keyOf(app), had = RECENTS.some(r => r.key === k);
@@ -2019,13 +2019,11 @@
       raycaster.setFromCamera(ndc, camera);
       eggPlane.constant = -c.targetBase.z;
       if (raycaster.ray.intersectPlane(eggPlane, eggHit)) c.base.copy(eggHit);
-      c.vis = 0.35;
+      c.vis = 0.5;
     }
     c.visTarget = 1;
-    eggLaunching = true;
-    setTimeout(() => { eggLaunching = false; openApp(c); }, had ? 120 : 650);
+    openApp(c);
   }
-  let eggLaunching = false;
 
   const picker = document.getElementById('favPicker');
   let pickingFor = 0;
@@ -2282,7 +2280,7 @@
     if (c.flyOff) {                                  // flicked away: shoot up off the screen
       c.base.y += dt * 16;
       if (c.vis < 0.03) { c.flyOff = false; if (c.targetBase) c.base.copy(c.targetBase); }
-    } else if (c.targetBase) c.base.lerp(c.targetBase, Math.min(10 * dt, 1));   // glide when the list re-orders
+    } else if (c.targetBase && opening !== c) c.base.lerp(c.targetBase, Math.min(10 * dt, 1));   // glide when the list re-orders (not while it's flying into the screen)
     let s = c.scale * (0.6 + 0.4 * appFade) * (c.sizeMul || 1);
 
     // position: home cubes recede when hidden; app cubes emerge from their group cube
@@ -2381,6 +2379,7 @@
     if (opening) {
       openP = Math.max(0, Math.min(1, openP + openDir * dt / CFG.appOpenSeconds));
       if (openDir > 0 && openP >= 0.85) {
+        if (opening.targetBase) opening.base.copy(opening.targetBase);   // hidden behind the app: settle into its slot for the return
         if (NATIVE) {                                   // hand over to the real app, then reset the animation behind it
           if (!opening.launched) { opening.launched = true; window.Launcher.launch(opening.data.pkg, opening.data.activity);
             setTimeout(() => { openDir = -1; }, 450); }
