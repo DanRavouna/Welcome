@@ -47,10 +47,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Phone unlocked: play the fly-in.
+    // Screen off: the page gets the fly-in's start ready. Phone unlocked: the page plays it.
     private val unlockReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            js("window.onUnlock && window.onUnlock()")
+            when (intent.action) {
+                Intent.ACTION_SCREEN_OFF -> js("window.onScreenOff && window.onScreenOff()")
+                Intent.ACTION_USER_PRESENT -> js("window.onUnlock && window.onUnlock()")
+            }
         }
     }
 
@@ -114,7 +117,11 @@ class MainActivity : ComponentActivity() {
             addDataScheme("package")
         }
         ContextCompat.registerReceiver(this, packageReceiver, filter, ContextCompat.RECEIVER_EXPORTED)
-        ContextCompat.registerReceiver(this, unlockReceiver, IntentFilter(Intent.ACTION_USER_PRESENT), ContextCompat.RECEIVER_EXPORTED)
+        val screenFilter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        ContextCompat.registerReceiver(this, unlockReceiver, screenFilter, ContextCompat.RECEIVER_EXPORTED)
     }
 
     // Pressing Home while the launcher is already showing: go back to the main group view.
@@ -132,8 +139,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onPause() {
-        js("window.setPaused && window.setPaused(true)")
-        web.onPause()
+        js("window.setPaused && window.setPaused(true)")   // the page stops drawing; the WebView itself stays warm
         super.onPause()
     }
 

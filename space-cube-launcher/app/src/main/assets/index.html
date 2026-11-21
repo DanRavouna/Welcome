@@ -1198,7 +1198,7 @@
 
   // Grid layout: 2 columns in portrait, 3 in landscape. Camera fits a 6-cube grid.
   // ---- Arrival: the fly-in played on unlock (and when the launcher first starts) ----
-  let camBaseZ = 0, arrivalT = 1;                  // arrivalT: 0 -> 1 over the fly-in; 1 = done
+  let camBaseZ = 0, arrivalT = 1, arrivalHeld = false;                  // arrivalT: 0 -> 1 over the fly-in; 1 = done
   const ARRIVAL_S = 1.7;
   const easeOutCubic = x => 1 - Math.pow(1 - x, 3);
   const easeOutBack = x => { const k = 1.6, p = x - 1; return 1 + (k + 1) * p * p * p + k * p * p; };
@@ -2175,10 +2175,12 @@
     c.halo.material.opacity = (0.18 + ge * (0.67 + Math.sin(t * 4.2) * 0.15)) * a;   // glow pulses in step with the cube
   }
 
+  let oneFrame = false;
+  function drawOneFrame() { oneFrame = true; try { tick(); } finally { oneFrame = false; } }
   function tick() {
     const t = clock.getElapsedTime();
     if (arrivalT < 1) {
-      arrivalT = Math.min(1, arrivalT + Math.min((performance.now() - prev) / 1000, 0.05) / ARRIVAL_S);
+      if (!arrivalHeld) arrivalT = Math.min(1, arrivalT + Math.min((performance.now() - prev) / 1000, 0.05) / ARRIVAL_S);
       const e = easeOutCubic(arrivalT);
       camera.position.z = camBaseZ + (1 - e) * 9;      // start further back, glide forward to the ship
       spaceRig.position.copy(camera.position);
@@ -2226,7 +2228,7 @@
     const settingsOpen = settingsEl.classList.contains('show');
     updateHud(opening || settingsOpen ? 0 : 1 - (1 - CFG.tagOpacityWithCubes) * appFade);
     renderer.render(scene, camera);
-    if (!paused) requestAnimationFrame(tick);
+    if (!paused && !oneFrame) requestAnimationFrame(tick);
   }
   let paused = false;
   playArrival();                                    // fly in when the launcher starts
@@ -2256,11 +2258,27 @@
   window.goHome = () => { closeEverything(); appsVisible = true; };
   // Another app is in front: stop drawing (saves battery). Back home: start again.
   // Unlock: the Android app calls this when the phone is unlocked (newer app builds).
-  window.onUnlock = () => playArrival();
+  // Screen turned off: get the fly-in's starting pose ready NOW (empty space, everything tucked away)
+  // and draw it, so the first thing you see after unlocking is the start of the fly-in, not the old screen.
+  window.onScreenOff = () => {
+    closeEverything();
+    arrivalT = 0; arrivalHeld = true;
+    document.body.classList.add('arriving');
+    drawOneFrame();
+  };
+  // Unlocked (or back on screen after it was prepared): release the fly-in.
+  function releaseArrival() {
+    if (!arrivalHeld) return;
+    arrivalHeld = false;
+    prev = performance.now();
+    requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('arriving')));
+  }
+  window.onUnlock = () => { if (arrivalHeld) releaseArrival(); else playArrival(); };
   let pausedAt = 0;
   window.setPaused = p => {
     if (p) pausedAt = Date.now();
-    // older app builds have no unlock signal: treat "back after 20 s or more away" as an unlock
+    else if (arrivalHeld) releaseArrival();                 // came back after the screen was off
+    // older app builds have no screen/unlock signals: treat "back after 20 s or more away" as an unlock
     else if (!window.__hasUnlockHook && pausedAt && Date.now() - pausedAt > 20000) playArrival();
     if (p === paused) return;
     paused = p;
