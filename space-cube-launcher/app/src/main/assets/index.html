@@ -2270,6 +2270,12 @@
     arrivalT = 0; arrivalHeld = true;
     document.body.classList.add('arriving');
     drawOneFrame();
+    // hand the app an exact picture of this frame, so its cover matches the live screen pixel for pixel
+    // (read right after drawing, in the same task, while the frame is still in the canvas)
+    try {
+      if (window.Launcher && window.Launcher.setCover)
+        window.Launcher.setCover(renderer.domElement.toDataURL('image/jpeg', 0.9));
+    } catch (e) {}
   };
   // Unlocked (or back on screen after it was prepared): release the fly-in.
   function releaseArrival() {

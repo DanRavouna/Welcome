@@ -54,12 +54,20 @@ class MainActivity : ComponentActivity() {
     fun showCover() {
         runOnUiThread { cover.animate().cancel(); cover.alpha = 1f; cover.visibility = View.VISIBLE }
     }
+    /** The live frame the page just drew, used as the cover so unlock shows exactly the same picture. */
+    fun setCoverBitmap(bmp: android.graphics.Bitmap) {
+        runOnUiThread {
+            cover.setImageBitmap(bmp)
+            cover.scaleType = ImageView.ScaleType.FIT_XY        // same size as the page, pixel for pixel
+            cover.animate().cancel(); cover.alpha = 1f; cover.visibility = View.VISIBLE
+        }
+    }
     /** Called by the page once it has drawn the first frame of the fly-in. */
     fun hideCover() {
         runOnUiThread {
             handler.removeCallbacks(coverFailsafe)
             if (cover.visibility == View.VISIBLE) {
-                cover.animate().alpha(0f).setDuration(220).withEndAction { cover.visibility = View.GONE }.start()
+                cover.visibility = View.GONE                         // identical to the live frame: swap instantly
             }
         }
     }

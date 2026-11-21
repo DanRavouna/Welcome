@@ -88,6 +88,16 @@ class LauncherBridge(private val activity: MainActivity) {
         activity.runOnUiThread { activity.startActivity(i) }
     }
 
+    /** The page's picture of the fly-in's first frame (JPEG data URL): becomes the cover, so they match. */
+    @JavascriptInterface
+    fun setCover(dataUrl: String) {
+        val comma = dataUrl.indexOf(',')
+        if (comma < 0) return
+        val bytes = Base64.decode(dataUrl.substring(comma + 1), Base64.DEFAULT)
+        val bmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return
+        activity.setCoverBitmap(bmp)
+    }
+
     /** The page has drawn its first fly-in frame: fade out the native cover. */
     @JavascriptInterface
     fun hideCover() { activity.hideCover() }
