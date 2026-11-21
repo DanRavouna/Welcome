@@ -6,7 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -24,6 +26,15 @@ import androidx.webkit.WebViewAssetLoader
  *  - pauses the 3D rendering while another app is in front (saves battery).
  */
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        // LIVE: the home screen is loaded from the website, so page updates arrive without reinstalling.
+        // Triple-tap the clock to reload. If the site can't be reached, the copy built into the app is used.
+        const val LIVE_URL = "https://danravouna.github.io/Welcome/space-cube/index.html"
+        const val LIVE_HOST = "danravouna.github.io"
+        const val LOCAL_URL = "https://appassets.androidplatform.net/assets/index.html"
+    }
+    private var usingLocal = false
 
     private lateinit var web: WebView
     private lateinit var bridge: LauncherBridge
@@ -49,6 +60,7 @@ class MainActivity : ComponentActivity() {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true            // localStorage: groups, favourites
             settings.mediaPlaybackRequiresUserGesture = true
+            settings.cacheMode = WebSettings.LOAD_NO_CACHE   // always fetch the newest version of the page
             setBackgroundColor(android.graphics.Color.BLACK)
             isVerticalScrollBarEnabled = false
             isHorizontalScrollBarEnabled = false
@@ -59,13 +71,21 @@ class MainActivity : ComponentActivity() {
 
                 // Never leave the launcher page by following a link inside it.
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
-                    request.url.host != "appassets.androidplatform.net"
+                    request.url.host != "appassets.androidplatform.net" && request.url.host != LIVE_HOST
+
+                // Website unreachable (offline...): fall back to the copy inside the app.
+                override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                    if (request.isForMainFrame && !usingLocal) { usingLocal = true; view.loadUrl(LOCAL_URL) }
+                }
+                override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: WebResourceResponse) {
+                    if (request.isForMainFrame && !usingLocal && response.statusCode >= 400) { usingLocal = true; view.loadUrl(LOCAL_URL) }
+                }
             }
         }
         bridge = LauncherBridge(this)
         web.addJavascriptInterface(bridge, "Launcher")
         setContentView(web)
-        web.loadUrl("https://appassets.androidplatform.net/assets/index.html")
+        web.loadUrl(LIVE_URL)
 
         // Back: let the page close whatever is open (keyboard, group, settings...). A launcher never exits on Back.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {

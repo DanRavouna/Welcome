@@ -47,7 +47,7 @@
   /* ---- Floating clock: backlit cyan display in a chrome bezel (retro console style) ---- */
   #clock {
     position: fixed; top: 14px; left: 50%; width: min(64vw, 280px);
-    transform: translateX(-50%); z-index: 5; pointer-events: none;
+    transform: translateX(-50%); z-index: 5; pointer-events: auto;
     animation: clockFloat 4.5s ease-in-out infinite;
   }
   @keyframes clockFloat {
@@ -383,6 +383,12 @@
     document.getElementById('date').textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONS[d.getMonth()];
   }
   updateClock(); setInterval(updateClock, 1000);
+  // triple-tap the clock: reload, to pick up the newest version of this screen
+  let clockTaps = [];
+  document.getElementById('clock').addEventListener('click', () => {
+    const now = Date.now(); clockTaps = clockTaps.filter(t => now - t < 700); clockTaps.push(now);
+    if (clockTaps.length >= 3) { clockTaps = []; location.reload(); }
+  });
 
   if (!window.THREE) { document.getElementById('err').style.display = 'flex'; return; }
 
@@ -1177,7 +1183,7 @@
   }
   function appItemsFor(gi) {
     if (!appItemsByGroup.has(gi)) {
-      appItemsByGroup.set(gi, GROUPS[gi].apps.map(a => makeItem('app', a, appTexture(a), 0.95, 0.45)));
+      appItemsByGroup.set(gi, GROUPS[gi].apps.map(a => { const it = makeItem('app', a, appTexture(a), 0.95, 0.45); it.inGroup = true; return it; }));
       layout();
     }
     return appItemsByGroup.get(gi);
@@ -1188,19 +1194,34 @@
   const CONSOLE_SPACE = 2.2;   // empty band kept at the bottom for the Saturn-style console (coming next)
   function gridPositions(items) {
     const aspect = innerWidth / innerHeight;
-    const cols = aspect < 1 ? 2 : 3, rows = Math.ceil(6 / cols);
-    const n = items.length, usedRows = Math.ceil(n / cols);
-    const gx = 1.7, gy = 1.75;
+    const cols6 = aspect < 1 ? 2 : 3;
+    const n = items.length;
+    const big = n > 6 && items[0] && items[0].inGroup;     // a group with lots of apps
+    // up to 6: the normal big cubes. More: 3 or 4 per row, smaller, and the list scrolls.
+    const cols = big ? (n <= 12 ? cols6 + 1 : cols6 + 2) : cols6;
+    const size = big ? (cols === cols6 + 1 ? 0.72 : 0.56) : 1;
+    const gx = 1.7 * (cols6 + 0.15) / (cols + 0.15) * (big ? 1 : 1), gy = big ? 1.75 * size + 0.18 : 1.75;
+    const rows6 = Math.ceil(6 / cols6);
+    const topY = ((rows6 - 1) / 2) * 1.75 + 0.1 - CLOCK_SPACE / 2 + CONSOLE_SPACE / 2;
+    const usedRows = Math.ceil(n / cols);
     items.forEach((c, i) => {
       const row = Math.floor(i / cols), inRow = Math.min(cols, n - row * cols), col = i % cols;
-      c.base.set((col - (inRow - 1) / 2) * gx,
-                 ((usedRows - 1) / 2 - row) * gy + 0.1 - CLOCK_SPACE / 2 + CONSOLE_SPACE / 2, 0);
+      c.sizeMul = c.inGroup ? size : (c.sizeMul || 1);
+      if (big) c.base.set((col - (inRow - 1) / 2) * gx, topY - row * gy, 0);
+      else c.base.set((col - (inRow - 1) / 2) * gx, ((usedRows - 1) / 2 - row) * gy + topY - ((rows6 - 1) / 2) * 1.75, 0);
     });
+    if (items[0] && items[0].inGroup) items.scrollMax = big ? Math.max(0, (usedRows - 1) * gy - (rows6 - 1) * 1.75) : 0;
   }
+  // visible band for a scrolling group (cubes outside it fade out under the clock / console)
+  function scrollBand() {
+    const rows6 = 3, topY = ((rows6 - 1) / 2) * 1.75 + 0.1 - CLOCK_SPACE / 2 + CONSOLE_SPACE / 2;
+    return { top: topY + 0.75, bottom: topY - (rows6 - 1) * 1.75 - 0.75 };
+  }
+  let groupScroll = 0, groupScrollVel = 0;
   function layout() {
     const aspect = innerWidth / innerHeight;
     camera.aspect = aspect; camera.updateProjectionMatrix();
-    const most = Math.max(6, ...GROUPS.map(g => g.apps.length));
+    const most = 6;                                  // fixed zoom; big groups scroll instead
     const cols = aspect < 1 ? 2 : 3, rows = Math.ceil(most / cols);
     const w = (cols - 1) * 1.7 + 1.8, h = (rows - 1) * 1.75 + 2.2 + CLOCK_SPACE + CONSOLE_SPACE;
     const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
@@ -1228,7 +1249,7 @@
 
   function enterGroup(gi) {
     const g = groupItems[gi];
-    openGroupIdx = gi; selected = null;
+    openGroupIdx = gi; selected = null; groupScroll = 0; groupScrollVel = 0;
     groupItems.forEach(it => it.visTarget = 0);
     appItemsFor(gi).forEach(it => {
       it.origin = g.base.clone();              // apps burst out of the group cube
@@ -1877,7 +1898,7 @@
   const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
   function pick(px, py) {
     if (!appsVisible) return null;
-    const items = currentItems().filter(it => it.vis > 0.6);
+    const items = currentItems().filter(it => it.vis > 0.6 && (it.scrollFade === undefined || it.scrollFade > 0.5));
     ndc.set((px / innerWidth) * 2 - 1, -(py / innerHeight) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
     const hits = raycaster.intersectObjects(items.map(c => c.mesh), false);
@@ -1917,7 +1938,13 @@
     if (dragging) { moveDrag(e.clientX, e.clientY); return; }
     if (!active) return;
     const dx = e.clientX - lastX, dy = e.clientY - lastY;
-    if (active === 'sky') { spaceRig.rotation.y += dx * CFG.skyDragSensitivity; spaceRig.rotation.x += dy * CFG.skyDragSensitivity; }
+    if (active === 'sky') {
+      const list = openGroupIdx >= 0 && !searchActive ? appItemsFor(openGroupIdx) : null;
+      if (list && list.scrollMax > 0) {             // big group: up/down scrolls the apps, sideways turns space
+        groupScroll = Math.max(-0.4, Math.min(list.scrollMax + 0.4, groupScroll - dy * worldPerPx()));
+        spaceRig.rotation.y += dx * CFG.skyDragSensitivity;
+      } else { spaceRig.rotation.y += dx * CFG.skyDragSensitivity; spaceRig.rotation.x += dy * CFG.skyDragSensitivity; }
+    }
     else spin(active.mesh, dx * CFG.cubeSpinSensitivity, dy * CFG.cubeSpinSensitivity);
     lastX = e.clientX; lastY = e.clientY;
     const now = performance.now();
@@ -1925,6 +1952,7 @@
     while (samples.length > 2 && now - samples[0].t > WINDOW_MS) samples.shift();
   });
 
+  function worldPerPx() { return 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z / innerHeight; }
   function endPointer(e) {
     clearTimeout(liftTimer);
     if (dragging) { endDrag(); active = null; return; }
@@ -1950,7 +1978,11 @@
       const dt = Math.max((last.t - first.t) / 1000, 0.008);
       vx = (last.x - first.x) / dt; vy = (last.y - first.y) / dt;
     }
-    if (active === 'sky') { skyVelY = vx * CFG.skyDragSensitivity; skyVelX = vy * CFG.skyDragSensitivity; }
+    if (active === 'sky') {
+      const list = openGroupIdx >= 0 && !searchActive ? appItemsFor(openGroupIdx) : null;
+      if (list && list.scrollMax > 0) { groupScrollVel = -vy * worldPerPx(); skyVelY = vx * CFG.skyDragSensitivity; }
+      else { skyVelY = vx * CFG.skyDragSensitivity; skyVelX = vy * CFG.skyDragSensitivity; }
+    }
     else { active.velX = vx * CFG.cubeSpinSensitivity; active.velY = vy * CFG.cubeSpinSensitivity; selected = active; }
     active = null;
   }
@@ -2085,6 +2117,14 @@
         s *= 1 + smooth(openP) * 1.6;
       } else others = 1 - smooth(openP);
     }
+    // scrolling inside a big group: shift the list, fade cubes leaving the visible band
+    c.scrollFade = 1;
+    if (c.inGroup) {
+      tmp.y += groupScroll;
+      const band = scrollBand();
+      const over = Math.max(0, tmp.y - band.top, band.bottom - tmp.y);
+      c.scrollFade = Math.max(0, 1 - over / 0.6);
+    }
     // drag & drop: follow the finger, then glide home with ease-in-out
     if (c.dragPos && (c.dragBlend > 0 || dragging === c)) {
       c.dragBlend = dragging === c ? Math.min(1, c.dragBlend + dt / 0.18)    // lift: glide to the finger
@@ -2101,7 +2141,7 @@
     c.holder.position.copy(tmp);
     c.holder.scale.set(s, s, s);
 
-    const a = appFade * v * others;
+    const a = appFade * v * others * (c.scrollFade === undefined ? 1 : c.scrollFade);
     c.mesh.material.opacity = Math.min(1, c.frontOp * CFG.cubeGlassOpacity) * a;
     c.back.material.opacity = Math.min(1, c.backOp * CFG.cubeGlassOpacity) * a;
     c.minis.forEach(m => m.material.opacity = a);
@@ -2128,6 +2168,12 @@
       skyVelX *= Math.pow(0.4, dt);
     }
     appFade += ((appsVisible ? 1 : 0) - appFade) * Math.min(6 * dt, 1);
+    if (openGroupIdx >= 0 && active !== 'sky') {        // scroll coasting + springing back from the ends
+      const max = appItemsFor(openGroupIdx).scrollMax || 0;
+      groupScroll += groupScrollVel * dt; groupScrollVel *= Math.pow(0.04, dt);
+      if (groupScroll < 0) { groupScroll += (0 - groupScroll) * Math.min(10 * dt, 1); groupScrollVel = 0; }
+      if (groupScroll > max) { groupScroll += (max - groupScroll) * Math.min(10 * dt, 1); groupScrollVel = 0; }
+    }
 
     if (opening) {
       openP = Math.max(0, Math.min(1, openP + openDir * dt / CFG.appOpenSeconds));

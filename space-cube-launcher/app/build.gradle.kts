@@ -11,8 +11,8 @@ android {
         applicationId = "com.dan.spacecube"
         minSdk = 26          // Android 8.0+
         targetSdk = 34       // keeps the system bars outside the app (no edge-to-edge handling needed yet)
-        versionCode = 1
-        versionName = "0.1"
+        versionCode = 2
+        versionName = "0.2"
     }
 
     buildTypes {

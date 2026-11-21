@@ -27,6 +27,8 @@ jobs:
           mkdir -p site
           cp index.html shelf.js site/
           cp -r games engine play studio vendor site/
+          # Space Cube Launcher's home screen, loaded live by the Android app (site/space-cube/index.html)
+          cp -r space-cube-launcher/app/src/main/assets site/space-cube
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
