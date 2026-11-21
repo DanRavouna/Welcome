@@ -1286,10 +1286,22 @@
   //  The groups live on a second screen (button at the top right).
   // =========================================================
   let homeView = 'recent';                         // 'recent' | 'groups'
-  const RECENT_MAX = 6, RECENT_KEY = NATIVE ? 'spaceCubeRecents.phone.v1' : 'spaceCubeRecents.v1';
-  let RECENTS = [], DISMISSED = {};                // RECENTS: [{ key, t }] newest first; DISMISSED: key -> time closed
-  try { const d = JSON.parse(localStorage.getItem(RECENT_KEY)); if (d) { RECENTS = d.recents || []; DISMISSED = d.dismissed || {}; } } catch (e) {}
-  function saveRecents() { try { localStorage.setItem(RECENT_KEY, JSON.stringify({ recents: RECENTS, dismissed: DISMISSED })); } catch (e) {} }
+  // Slots are made only by launching: the list starts empty, a launch adds a cube in the next slot,
+  // re-opening an app keeps its slot, and when all 6 are taken the least recently used one gives up its slot.
+  const RECENT_MAX = 6, RECENT_KEY = NATIVE ? 'spaceCubeRecents.phone.v2' : 'spaceCubeRecents.v2';
+  let RECENTS = [], DISMISSED = {}, SINCE = Date.now();   // RECENTS: [{ key, t }] in slot order; SINCE: phone history read up to here
+  try { const d = JSON.parse(localStorage.getItem(RECENT_KEY)); if (d) { RECENTS = d.recents || []; DISMISSED = d.dismissed || {}; SINCE = d.since || SINCE; } } catch (e) {}
+  function saveRecents() { try { localStorage.setItem(RECENT_KEY, JSON.stringify({ recents: RECENTS, dismissed: DISMISSED, since: SINCE })); } catch (e) {} }
+  saveRecents();                                   // first run: history before now is never pulled in
+  // Put an app in the list: keep its slot if it has one, else take the next slot (evicting the least recently used when full)
+  function placeRecent(k, t) {
+    const cur = RECENTS.find(r => r.key === k);
+    if (cur) { cur.t = Math.max(cur.t, t); return; }
+    if (RECENTS.length >= RECENT_MAX) {               // full: take over the least recently used slot, others stay put
+      const oldest = RECENTS.reduce((a, b) => (b.t < a.t ? b : a));
+      RECENTS[RECENTS.indexOf(oldest)] = { key: k, t };
+    } else RECENTS.push({ key: k, t });
+  }
   const recentCache = new Map();                   // app key -> its cube
   let recentItems = [];
   const findAppByKey = key => allApps().find(a => keyOf(a) === key);
@@ -1314,12 +1326,10 @@
     recentItems = next;
     updateEmptyHint();
   }
-  // An app was used (opened from here, or reported by the phone): put it first
+  // An app was launched (from here, or reported by the phone)
   function noteAppUsed(app, t) {
     const k = keyOf(app); t = t || Date.now();
-    RECENTS = RECENTS.filter(r => r.key !== k);
-    RECENTS.unshift({ key: k, t });
-    RECENTS = RECENTS.slice(0, RECENT_MAX);
+    placeRecent(k, t);
     delete DISMISSED[k];
     saveRecents(); refreshRecents();
   }
@@ -1331,29 +1341,25 @@
     c.flyOff = true; c.visTarget = 0;
     saveRecents(); refreshRecents();
   }
-  // On the phone: ask Android which apps were used recently and add any that are new
+  // On the phone: ask Android which apps were opened since the last check (never before the launcher started counting)
   function syncPhoneRecents() {
     if (!NATIVE || !window.Launcher.getRecentApps) return;
     let list = [];
-    try { list = JSON.parse(window.Launcher.getRecentApps(Date.now() - 24 * 3600e3)); } catch (e) { return; }
+    const now = Date.now();
+    try { list = JSON.parse(window.Launcher.getRecentApps(SINCE)); } catch (e) { return; }
+    SINCE = now;
+    list.sort((a, b) => a.t - b.t);                            // oldest first, so slots fill in launch order
     let changed = false;
     list.forEach(({ pkg, t }) => {
       const app = [...NATIVE_APPS.values()].find(a => a.pkg === pkg);
       if (!app) return;
       const k = keyOf(app);
       if (DISMISSED[k] && DISMISSED[k] >= t) return;          // closed after its last use: stays closed
-      const cur = RECENTS.find(r => r.key === k);
-      if (!cur) { RECENTS.push({ key: k, t }); changed = true; }
-      else if (t > cur.t) { cur.t = t; changed = true; }
+      placeRecent(k, t); delete DISMISSED[k]; changed = true;
     });
-    if (changed) {
-      RECENTS.sort((a, b) => b.t - a.t);
-      RECENTS = RECENTS.slice(0, RECENT_MAX);
-      saveRecents(); refreshRecents();
-    }
+    saveRecents();
+    if (changed) refreshRecents();
   }
-  // Browser preview: start with a few "open" apps so the screen isn't empty
-  if (!NATIVE && localStorage.getItem(RECENT_KEY) === null) RECENTS = ['Chat', 'Music', 'Arcade'].map((k, i) => ({ key: k, t: Date.now() - i * 60e3 }));
 
   // Switch between the recent-apps screen and the groups screen
   function setHomeView(v) {
