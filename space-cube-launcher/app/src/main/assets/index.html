@@ -2002,15 +2002,28 @@
 
   // launching straight from an egg: flash the egg, then show the app
   let eggLaunched = false;
-  function launchFromEgg(app) {
+  // Egg tap: the app's cube rises out of the egg to its slot on the home screen, then opens like any cube
+  const eggPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), eggHit = new THREE.Vector3();
+  function launchFromEgg(app, eggEl) {
+    if (opening || eggLaunching) return;
+    closeEverything();
+    if (homeView !== 'recent') setHomeView('recent');
+    const k = keyOf(app), had = RECENTS.some(r => r.key === k);
     noteAppUsed(app);
-    if (NATIVE) { setTimeout(() => window.Launcher.launch(app.pkg, app.activity), 160); return; }   // real app opens
-    if (opening || eggLaunched) return;
-    eggLaunched = true;
-    appScreen.style.background = 'linear-gradient(160deg,' + app.c1 + ',' + app.c2 + ')';
-    document.getElementById('appName').textContent = app.name;
-    setTimeout(() => appScreen.classList.add('show'), 260);
+    const c = recentItemFor(app);
+    if (!had && eggEl && c.targetBase) {                 // new cube: start at the egg, glide up to its slot
+      const r = eggEl.getBoundingClientRect();
+      ndc.set(((r.left + r.width / 2) / innerWidth) * 2 - 1, -((r.top + r.height / 2) / innerHeight) * 2 + 1);
+      raycaster.setFromCamera(ndc, camera);
+      eggPlane.constant = -c.targetBase.z;
+      if (raycaster.ray.intersectPlane(eggPlane, eggHit)) c.base.copy(eggHit);
+      c.vis = 0.35;
+    }
+    c.visTarget = 1;
+    eggLaunching = true;
+    setTimeout(() => { eggLaunching = false; openApp(c); }, had ? 120 : 650);
   }
+  let eggLaunching = false;
 
   const picker = document.getElementById('favPicker');
   let pickingFor = 0;
@@ -2046,7 +2059,7 @@
       if (launch && !longPressed) {
         const app = appByName(FAVS[i]);
         setTimeout(() => egg.classList.remove('press'), 250);
-        if (app) launchFromEgg(app); else openPicker(i);
+        if (app) launchFromEgg(app, egg); else openPicker(i);
       } else egg.classList.remove('press');
     };
     egg.addEventListener('pointerup', () => end(true));
