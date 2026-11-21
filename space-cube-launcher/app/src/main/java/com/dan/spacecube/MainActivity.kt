@@ -44,6 +44,15 @@ class MainActivity : ComponentActivity() {
         const val LOCAL_URL = "https://appassets.androidplatform.net/assets/index.html"
     }
     private var usingLocal = false
+    private var lastLiveTry = 0L
+
+    /** Load the newest screen from the website (a new address each time skips GitHub's 10-minute cache).
+     *  If it can't be reached, the copy inside the app is used again. */
+    fun loadLive() {
+        usingLocal = false
+        lastLiveTry = System.currentTimeMillis()
+        web.loadUrl("$LIVE_URL?v=$lastLiveTry")
+    }
     // status bar / gesture bar sizes in CSS pixels, sent to the page so it keeps its UI clear of them
     private var insetTopCss = 0f
     private var insetBottomCss = 0f
@@ -179,7 +188,7 @@ class MainActivity : ComponentActivity() {
             sendInsets()
             insets
         }
-        web.loadUrl("$LIVE_URL?v=${System.currentTimeMillis()}")   // new address each start: skips GitHub's 10-minute cache
+        loadLive()
 
         // Back: let the page close whatever is open (keyboard, group, settings...). A launcher never exits on Back.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -215,6 +224,8 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (cover.visibility == View.VISIBLE) { handler.removeCallbacks(coverFailsafe); handler.postDelayed(coverFailsafe, 3000) }
         web.onResume()
+        // Stuck on the built-in copy (e.g. the phone started without internet)? Try the website again.
+        if (usingLocal && System.currentTimeMillis() - lastLiveTry > 30_000) { loadLive(); return }
         js("window.setPaused && window.setPaused(false)")
     }
 

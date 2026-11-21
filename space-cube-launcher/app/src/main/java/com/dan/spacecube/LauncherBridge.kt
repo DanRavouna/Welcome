@@ -147,6 +147,15 @@ class LauncherBridge(private val activity: MainActivity) {
         return activity.packageManager.queryIntentActivities(i, 0).map { it.activityInfo.packageName }.toSet()
     }
 
+    /** Triple-tap on the clock: fetch the newest screen from the website. */
+    @JavascriptInterface
+    fun reloadLive() { activity.runOnUiThread { activity.loadLive() } }
+
+    /** App version, shown in Settings. */
+    @JavascriptInterface
+    fun appVersion(): String =
+        try { activity.packageManager.getPackageInfo(activity.packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
+
     @JavascriptInterface
     fun hideCover() { activity.hideCover() }
 
