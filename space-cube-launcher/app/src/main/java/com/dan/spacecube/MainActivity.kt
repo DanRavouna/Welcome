@@ -49,16 +49,19 @@ class MainActivity : ComponentActivity() {
     // the page needs to redraw both show empty space instead of the old UI or a black frame.
     private lateinit var cover: ImageView
     private val handler = Handler(Looper.getMainLooper())
-    private val coverFailsafe = Runnable { hideCover() }
+    private val coverFailsafe: Runnable = Runnable { hideCover() }
 
-    fun showCover() = runOnUiThread {
-        cover.animate().cancel(); cover.alpha = 1f; cover.visibility = View.VISIBLE
+    fun showCover() {
+        runOnUiThread { cover.animate().cancel(); cover.alpha = 1f; cover.visibility = View.VISIBLE }
     }
     /** Called by the page once it has drawn the first frame of the fly-in. */
-    fun hideCover() = runOnUiThread {
-        handler.removeCallbacks(coverFailsafe)
-        if (cover.visibility != View.VISIBLE) return@runOnUiThread
-        cover.animate().alpha(0f).setDuration(220).withEndAction { cover.visibility = View.GONE }.start()
+    fun hideCover() {
+        runOnUiThread {
+            handler.removeCallbacks(coverFailsafe)
+            if (cover.visibility == View.VISIBLE) {
+                cover.animate().alpha(0f).setDuration(220).withEndAction { cover.visibility = View.GONE }.start()
+            }
+        }
     }
 
     // Re-sends the app list to the page whenever an app is installed, removed or updated.

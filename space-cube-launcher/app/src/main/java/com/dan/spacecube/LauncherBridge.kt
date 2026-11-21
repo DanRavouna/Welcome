@@ -90,7 +90,7 @@ class LauncherBridge(private val activity: MainActivity) {
 
     /** The page has drawn its first fly-in frame: fade out the native cover. */
     @JavascriptInterface
-    fun hideCover() = activity.hideCover()
+    fun hideCover() { activity.hideCover() }
 
     /** Short haptic buzz (milliseconds). */
     @JavascriptInterface
