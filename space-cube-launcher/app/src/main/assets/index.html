@@ -296,6 +296,7 @@
     <div class="bezel"><div class="lcd">SETTINGS · GROUPS</div></div>
   </div>
   <p class="setHelp" id="setHelp">Tap an app, then tap the group to move it into.</p>
+  <p class="setHelp" id="buildTag" style="opacity:.5;font-size:11px">SCREEN 2026-11-21 · 3</p>
   <div id="groupList"></div>
   <div id="setFoot">
     <button class="chromeBtn" id="resetGroups">Reset</button>
@@ -859,6 +860,7 @@
 
   // ---- Running inside the Android app? Then use the phone's real apps. ----
   const NATIVE = !!(window.Launcher && window.Launcher.isNative && window.Launcher.isNative());
+  try { if (NATIVE && window.Launcher.appVersion) document.getElementById('buildTag').textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
   const keyOf = app => app.key || app.name;          // stable id: package/activity on the phone, name in the browser
   let NATIVE_APPS = new Map();                        // key -> app object
   function loadNativeApps() {
