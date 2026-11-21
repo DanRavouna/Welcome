@@ -11,8 +11,19 @@ android {
         applicationId = "com.dan.spacecube"
         minSdk = 26          // Android 8.0+
         targetSdk = 34       // keeps the system bars outside the app (no edge-to-edge handling needed yet)
-        versionCode = 3
-        versionName = "0.3"
+        versionCode = 4
+        versionName = "0.4"
+    }
+
+    // One fixed signing key for every build, so a new APK installs OVER the old one
+    // (Android refuses updates signed with a different key: "App not installed").
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
