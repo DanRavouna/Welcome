@@ -1,0 +1,37 @@
+# Builds the Space Cube Launcher Android app (space-cube-launcher/) into an installable APK.
+# Runs only when that folder changes (or by hand from the Actions tab). Download the result from the
+# finished run's "Artifacts" section: SpaceCubeLauncher-debug.
+name: Build Space Cube APK
+
+on:
+  push:
+    paths:
+      - "space-cube-launcher/**"
+      - ".github/workflows/space-cube-apk.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: space-cube-launcher
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Build debug APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SpaceCubeLauncher-debug
+          path: space-cube-launcher/app/build/outputs/apk/debug/*.apk
