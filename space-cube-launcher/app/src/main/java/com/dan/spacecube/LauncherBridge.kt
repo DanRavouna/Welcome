@@ -1,5 +1,8 @@
 package com.dan.spacecube
 
+import android.app.AppOpsManager
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -99,6 +102,51 @@ class LauncherBridge(private val activity: MainActivity) {
     }
 
     /** The page has drawn its first fly-in frame: fade out the native cover. */
+    // ---- apps in use: Android's usage history (needs "Usage access", granted by the user in Settings) ----
+    @JavascriptInterface
+    fun hasUsageAccess(): Boolean {
+        val ops = activity.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = if (Build.VERSION.SDK_INT >= 29)
+            ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), activity.packageName)
+        else @Suppress("DEPRECATION")
+            ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), activity.packageName)
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    @JavascriptInterface
+    fun openUsageAccess() {
+        val i = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        activity.runOnUiThread { try { activity.startActivity(i) } catch (e: ActivityNotFoundException) { } }
+    }
+
+    /** Apps brought to the foreground since [sinceMs]: JSON [{pkg, t}], newest first, one entry per app. */
+    @JavascriptInterface
+    fun getRecentApps(sinceMs: Double): String {
+        val out = JSONArray()
+        if (!hasUsageAccess()) return out.toString()
+        val usm = activity.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val home = homePackages()
+        val last = HashMap<String, Long>()
+        val events = usm.queryEvents(sinceMs.toLong(), System.currentTimeMillis())
+        val e = UsageEvents.Event()
+        while (events.hasNextEvent()) {
+            events.getNextEvent(e)
+            if (e.eventType != UsageEvents.Event.MOVE_TO_FOREGROUND) continue   // = ACTIVITY_RESUMED (1)
+            val p = e.packageName ?: continue
+            if (p == activity.packageName || p in home) continue
+            last[p] = maxOf(last[p] ?: 0L, e.timeStamp)
+        }
+        last.entries.sortedByDescending { it.value }.forEach {
+            out.put(JSONObject().put("pkg", it.key).put("t", it.value))
+        }
+        return out.toString()
+    }
+
+    private fun homePackages(): Set<String> {
+        val i = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        return activity.packageManager.queryIntentActivities(i, 0).map { it.activityInfo.packageName }.toSet()
+    }
+
     @JavascriptInterface
     fun hideCover() { activity.hideCover() }
 

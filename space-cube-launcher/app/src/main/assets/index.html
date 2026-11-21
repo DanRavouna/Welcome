@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content">
 <title>Space Cube Launcher — Prototype</title>
-<style>@font-face{font-family:'Orbitron';font-weight:600;src:url(fonts/orbitron-latin-600-normal.woff2) format('woff2')}@font-face{font-family:'Orbitron';font-weight:700;src:url(fonts/orbitron-latin-700-normal.woff2) format('woff2')}</style>
 <style>
+  @font-face{font-family:'Orbitron';font-weight:600;font-display:block;src:url(fonts/orbitron-latin-600-normal.woff2) format('woff2')}
+  @font-face{font-family:'Orbitron';font-weight:700;font-display:block;src:url(fonts/orbitron-latin-700-normal.woff2) format('woff2')}
+
   html, body { margin: 0; height: 100%; background: #02030a; overflow: hidden; }
   body { touch-action: none; -webkit-user-select: none; user-select: none; font-family: system-ui, sans-serif; }
   canvas { display: block; }
@@ -27,6 +29,14 @@
   #hud text { fill: #a6ffd9; font: 600 10.5px 'Orbitron', system-ui, sans-serif; letter-spacing: .14em; }
   #hud .minor path, #hud .minor circle { stroke-opacity: .65; }
   #hud .minor text { fill-opacity: .75; font-size: 9px; }
+  #recentEmpty { position: fixed; left: 0; right: 0; top: 40%; text-align: center; z-index: 4; pointer-events: none;
+    opacity: 0; transition: opacity .4s; }
+  #recentEmpty.show { opacity: 1; }
+  #recentEmpty div { font: 600 11px 'Orbitron', system-ui, sans-serif; letter-spacing: .22em; color: #a6ffd9;
+    text-shadow: 0 0 8px rgba(90,255,190,.7); }
+  #recentEmpty button { pointer-events: auto; margin-top: 16px; }
+  #recentEmpty p { margin: 8px 0 0; font-size: 12px; color: rgba(200,220,255,.6); }
+  #usageAsk[style*="none"] + p { display: none; }
   #groupTitle {
     position: fixed; left: 0; right: 0; top: calc(96px + var(--inset-top)); text-align: center; z-index: 4;
     color: #e8f1ff; font: italic 800 15px/1 system-ui, sans-serif; letter-spacing: .25em;
@@ -273,7 +283,8 @@
 <svg id="hud" aria-hidden="true"></svg>
 <div id="groupTitle"></div>
 <button id="groupBack" class="roundBtn" aria-label="Back to groups">←</button>
-<button id="hideBtn" class="roundBtn" aria-label="Hide or show cubes">◐</button>
+<button id="hideBtn" class="roundBtn" aria-label="Show groups">▦</button>
+<div id="recentEmpty"><div>SEARCH TO LAUNCH AN APP</div><button id="usageAsk" class="chromeBtn" style="display:none">Allow usage access</button><p id="usageWhy" >So apps you open anywhere show up here</p></div>
 <div id="appScreen">
   <button id="backBtn">← Back</button>
   <div id="appName">App</div>
@@ -1186,8 +1197,10 @@
     appItemsByGroup.forEach(list => list.forEach(disposeItem));
     appItemsByGroup.clear();
     groupItems = GROUPS.map(buildGroupItem);
-    groupItems.forEach(it => { it.visTarget = 1; it.vis = 0; });
+    let hv = 'groups'; try { hv = homeView; } catch (e) {}
+    groupItems.forEach(it => { it.visTarget = hv === 'groups' ? 1 : 0; it.vis = 0; });
     layout();
+    try { recentCache.forEach(disposeItem); recentCache.clear(); recentItems = []; refreshRecents(); } catch (e) {}
   }
   function appItemsFor(gi) {
     if (!appItemsByGroup.has(gi)) {
@@ -1265,8 +1278,107 @@
     camBaseZ = camera.position.z;
     gridPositions(groupItems);
     appItemsByGroup.forEach(list => gridPositions(list));
+    try { if (recentItems.length) { gridPositions(recentItems); recentItems.forEach(it => it.targetBase = it.base.clone()); } } catch (e) {}   // (not created yet at first layout)
   }
-  rebuildCubes();                                // start on the home screen: group cubes appear
+  // =========================================================
+  //  RECENT APPS: the home screen shows a cube for each app you're using (max 6).
+  //  A cube appears when an app is used and stays until you flick it away (upward).
+  //  The groups live on a second screen (button at the top right).
+  // =========================================================
+  let homeView = 'recent';                         // 'recent' | 'groups'
+  const RECENT_MAX = 6, RECENT_KEY = NATIVE ? 'spaceCubeRecents.phone.v1' : 'spaceCubeRecents.v1';
+  let RECENTS = [], DISMISSED = {};                // RECENTS: [{ key, t }] newest first; DISMISSED: key -> time closed
+  try { const d = JSON.parse(localStorage.getItem(RECENT_KEY)); if (d) { RECENTS = d.recents || []; DISMISSED = d.dismissed || {}; } } catch (e) {}
+  function saveRecents() { try { localStorage.setItem(RECENT_KEY, JSON.stringify({ recents: RECENTS, dismissed: DISMISSED })); } catch (e) {} }
+  const recentCache = new Map();                   // app key -> its cube
+  let recentItems = [];
+  const findAppByKey = key => allApps().find(a => keyOf(a) === key);
+  function recentItemFor(app) {
+    const k = keyOf(app);
+    if (!recentCache.has(k)) recentCache.set(k, makeItem('app', app, appTexture(app), 0.95, 0.45));
+    return recentCache.get(k);
+  }
+  function recentsShowing() { let s = false; try { s = searchActive; } catch (e) {} return homeView === 'recent' && !s; }   // (search may not exist yet at startup)
+  // Rebuild the recent grid from RECENTS; cubes glide to their new spots, new ones pop in, closed ones leave
+  function refreshRecents() {
+    const apps = RECENTS.map(r => findAppByKey(r.key)).filter(Boolean).slice(0, RECENT_MAX);
+    const next = apps.map(recentItemFor);
+    recentItems.forEach(it => { if (!next.includes(it)) { it.visTarget = 0; try { if (selected === it) selected = null; } catch (e) {} } });
+    const olds = next.map(it => it.base.clone());
+    gridPositions(next);                            // sets each cube's base to its new spot...
+    next.forEach((it, i) => {
+      it.targetBase = it.base.clone();
+      if (it.vis > 0.05 && !it.flyOff) it.base.copy(olds[i]);   // ...then glides there from where it was
+      it.visTarget = recentsShowing() ? 1 : 0;
+    });
+    recentItems = next;
+    updateEmptyHint();
+  }
+  // An app was used (opened from here, or reported by the phone): put it first
+  function noteAppUsed(app, t) {
+    const k = keyOf(app); t = t || Date.now();
+    RECENTS = RECENTS.filter(r => r.key !== k);
+    RECENTS.unshift({ key: k, t });
+    RECENTS = RECENTS.slice(0, RECENT_MAX);
+    delete DISMISSED[k];
+    saveRecents(); refreshRecents();
+  }
+  // Flicked away: the cube shoots up and off the screen
+  function dismissRecent(c) {
+    const k = keyOf(c.data);
+    RECENTS = RECENTS.filter(r => r.key !== k);
+    DISMISSED[k] = Date.now();
+    c.flyOff = true; c.visTarget = 0;
+    saveRecents(); refreshRecents();
+  }
+  // On the phone: ask Android which apps were used recently and add any that are new
+  function syncPhoneRecents() {
+    if (!NATIVE || !window.Launcher.getRecentApps) return;
+    let list = [];
+    try { list = JSON.parse(window.Launcher.getRecentApps(Date.now() - 24 * 3600e3)); } catch (e) { return; }
+    let changed = false;
+    list.forEach(({ pkg, t }) => {
+      const app = [...NATIVE_APPS.values()].find(a => a.pkg === pkg);
+      if (!app) return;
+      const k = keyOf(app);
+      if (DISMISSED[k] && DISMISSED[k] >= t) return;          // closed after its last use: stays closed
+      const cur = RECENTS.find(r => r.key === k);
+      if (!cur) { RECENTS.push({ key: k, t }); changed = true; }
+      else if (t > cur.t) { cur.t = t; changed = true; }
+    });
+    if (changed) {
+      RECENTS.sort((a, b) => b.t - a.t);
+      RECENTS = RECENTS.slice(0, RECENT_MAX);
+      saveRecents(); refreshRecents();
+    }
+  }
+  // Browser preview: start with a few "open" apps so the screen isn't empty
+  if (!NATIVE && localStorage.getItem(RECENT_KEY) === null) RECENTS = ['Chat', 'Music', 'Arcade'].map((k, i) => ({ key: k, t: Date.now() - i * 60e3 }));
+
+  // Switch between the recent-apps screen and the groups screen
+  function setHomeView(v) {
+    if (v === homeView && !(v === 'groups' && openGroupIdx >= 0)) return;
+    if (openGroupIdx >= 0) leaveGroup();
+    homeView = v; selected = null;
+    groupItems.forEach(it => it.visTarget = v === 'groups' ? 1 : 0);
+    recentItems.forEach(it => it.visTarget = v === 'recent' ? 1 : 0);
+    const viewBtn = document.getElementById('hideBtn');
+    viewBtn.textContent = v === 'groups' ? '◈' : '▦';
+    viewBtn.setAttribute('aria-label', v === 'groups' ? 'Show open apps' : 'Show groups');
+    groupTitle.textContent = v === 'groups' ? 'GROUPS' : '';
+    groupTitle.classList.toggle('show', v === 'groups');
+    updateEmptyHint();
+  }
+  function updateEmptyHint() {
+    const el = document.getElementById('recentEmpty');
+    if (!el) return;
+    const show = recentsShowing() && !recentItems.length;
+    el.classList.toggle('show', show);
+    const ask = document.getElementById('usageAsk');
+    if (ask) ask.style.display = NATIVE && window.Launcher.hasUsageAccess && !window.Launcher.hasUsageAccess() ? '' : 'none';
+  }
+
+  rebuildCubes();                                // start on the home screen
 
   // Lights
   scene.add(new THREE.AmbientLight(0x404a70, 0.9));
@@ -1281,7 +1393,11 @@
   const groupBackBtn = document.getElementById('groupBack');
   const groupTitle = document.getElementById('groupTitle');
 
-  function currentItems() { return searchActive ? resultItems : (openGroupIdx < 0 ? groupItems : appItemsFor(openGroupIdx)); }
+  function currentItems() {
+    if (searchActive) return resultItems;
+    if (homeView === 'recent') return recentItems;
+    return openGroupIdx < 0 ? groupItems : appItemsFor(openGroupIdx);
+  }
 
   function enterGroup(gi) {
     const g = groupItems[gi];
@@ -1302,7 +1418,8 @@
     groupItems.forEach(it => it.visTarget = 1);
     selected = groupItems[openGroupIdx];
     openGroupIdx = -1;
-    groupTitle.classList.remove('show'); groupBackBtn.classList.remove('show'); settingsBtn.classList.remove('hidden');
+    groupBackBtn.classList.remove('show'); settingsBtn.classList.remove('hidden');
+    groupTitle.textContent = homeView === 'groups' ? 'GROUPS' : ''; groupTitle.classList.toggle('show', homeView === 'groups');
   }
   groupBackBtn.addEventListener('click', leaveGroup);
 
@@ -1753,6 +1870,7 @@
       if (openGroupIdx >= 0) { appItemsFor(openGroupIdx).forEach(it => it.visTarget = 0); openGroupIdx = -1;
         groupTitle.classList.remove('show'); groupBackBtn.classList.remove('show'); settingsBtn.classList.remove('hidden'); }
       groupItems.forEach(it => it.visTarget = 0);
+      recentItems.forEach(it => it.visTarget = 0);
       selected = null;
     }
     const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
@@ -1767,7 +1885,11 @@
       it.visTarget = 1;
     });
     resultItems = next;
-    if (!searchActive) groupItems.forEach(it => it.visTarget = 1);   // cleared: groups come back
+    if (!searchActive) {                            // cleared: the home view comes back
+      if (homeView === 'groups') groupItems.forEach(it => it.visTarget = 1);
+      else recentItems.forEach(it => it.visTarget = 1);
+    }
+    updateEmptyHint();
 
     searchStatus.textContent = !searchActive ? '' : found.length ? found.length + (found.length === 1 ? ' MATCH' : ' MATCHES') : 'NO MATCH';
     searchStatus.classList.toggle('show', searchActive);
@@ -1836,6 +1958,7 @@
   let opening = null, openP = 0, openDir = 0;
   function openApp(c) {
     if (opening) return;
+    noteAppUsed(c.data);
     opening = c; openDir = 1; openP = 0; selected = c;
     c.velY = 14;
     appScreen.style.background = 'linear-gradient(160deg,' + c.data.c1 + ',' + c.data.c2 + ')';
@@ -1874,6 +1997,7 @@
   // launching straight from an egg: flash the egg, then show the app
   let eggLaunched = false;
   function launchFromEgg(app) {
+    noteAppUsed(app);
     if (NATIVE) { setTimeout(() => window.Launcher.launch(app.pkg, app.activity), 160); return; }   // real app opens
     if (opening || eggLaunched) return;
     eggLaunched = true;
@@ -2019,6 +2143,9 @@
       if (list && list.scrollMax > 0) { groupScrollVel = -vy * worldPerPx(); skyVelY = vx * CFG.skyDragSensitivity; }
       else { skyVelY = vx * CFG.skyDragSensitivity; skyVelX = vy * CFG.skyDragSensitivity; }
     }
+    else if (recentItems.includes(active) && vy < -900 && Math.abs(vy) > Math.abs(vx) * 1.4) {
+      dismissRecent(active);                          // flicked up: close it, like swiping away in Recents
+    }
     else { active.velX = vx * CFG.cubeSpinSensitivity; active.velY = vy * CFG.cubeSpinSensitivity; selected = active; }
     active = null;
   }
@@ -2088,9 +2215,9 @@
   el.addEventListener('pointercancel', endPointer);
 
   let appsVisible = true, appFade = 1;
-  document.getElementById('hideBtn').addEventListener('click', () => {
-    appsVisible = !appsVisible; if (!appsVisible) selected = null;
-  });
+  const viewBtn = document.getElementById('hideBtn');
+  viewBtn.addEventListener('click', () => setHomeView(homeView === 'recent' ? 'groups' : 'recent'));
+  document.getElementById('usageAsk').addEventListener('click', () => { try { window.Launcher.openUsageAccess(); } catch (e) {} });
 
   // =========================================================
   //  LOOP
@@ -2131,11 +2258,15 @@
     const pulse = isSel && c.selP >= 1 ? Math.sin((t - (c.pulseT0 || t)) * 4.2) * 0.025 : 0;
     if (isSel && c.selP < 1) c.pulseT0 = t + 0.0;           // pulse starts right after the settle
     c.scale = 1 + (CFG.selectedScale - 1) * e + pulse;
-    if (c.targetBase) c.base.lerp(c.targetBase, Math.min(10 * dt, 1));   // results glide when the list re-orders
+    if (c.flyOff) {                                  // flicked away: shoot up off the screen
+      c.base.y += dt * 16;
+      if (c.vis < 0.03) { c.flyOff = false; if (c.targetBase) c.base.copy(c.targetBase); }
+    } else if (c.targetBase) c.base.lerp(c.targetBase, Math.min(10 * dt, 1));   // glide when the list re-orders
     let s = c.scale * (0.6 + 0.4 * appFade) * (c.sizeMul || 1);
 
     // position: home cubes recede when hidden; app cubes emerge from their group cube
     tmp.set(c.base.x, c.base.y + Math.sin(t * CFG.cubeBobSpeed + c.phase) * CFG.cubeBobHeight - (1 - appFade) * 0.6, c.base.z + 0.5 * e);
+    if (c.kind === 'app' && !c.origin && !c.inGroup && recentCache.has(keyOf(c.data))) s *= 0.3 + 0.7 * v;   // recent cubes pop in/out
     if (c.kind === 'app' && c.origin) {
       tmp.lerpVectors(c.origin, tmp, v);
       s *= 0.25 + 0.75 * v;
@@ -2238,6 +2369,7 @@
     }
 
     groupItems.forEach(c => updateItem(c, t, dt, f));
+    recentCache.forEach(c => updateItem(c, t, dt, f));
     appItemsByGroup.forEach(list => list.forEach(c => updateItem(c, t, dt, f)));
     resultCache.forEach(c => updateItem(c, t, dt, f));
 
@@ -2251,6 +2383,7 @@
     if (!paused && !oneFrame) requestAnimationFrame(tick);
   }
   let paused = false;
+  syncPhoneRecents(); refreshRecents(); setHomeView('recent');
   playArrival();                                    // fly in when the launcher starts
 
   // =========================================================
@@ -2271,11 +2404,12 @@
     if (kbdOpen) { showKbd(false); return true; }
     if (searchInput.value) { searchInput.value = ''; runSearch(); return true; }
     if (openGroupIdx >= 0) { leaveGroup(); return true; }
+    if (homeView === 'groups') { setHomeView('recent'); return true; }
     if (selected) { selected = null; return true; }
     return false;
   };
   // Home pressed while already home: back to the groups
-  window.goHome = () => { closeEverything(); appsVisible = true; };
+  window.goHome = () => { closeEverything(); appsVisible = true; setHomeView('recent'); };
   // Another app is in front: stop drawing (saves battery). Back home: start again.
   window.setInsets = (top, bottom) => {
     INSETS.top = top || 0; INSETS.bottom = bottom || 0;
@@ -2310,6 +2444,7 @@
   window.onUnlock = () => { if (arrivalHeld) releaseArrival(); else playArrival(); };
   let pausedAt = 0;
   window.setPaused = p => {
+    if (!p) { try { syncPhoneRecents(); updateEmptyHint(); } catch (e) {} }
     if (p) pausedAt = Date.now();
     else if (arrivalHeld) releaseArrival();                 // came back after the screen was off
     // older app builds have no screen/unlock signals: treat "back after 20 s or more away" as an unlock
