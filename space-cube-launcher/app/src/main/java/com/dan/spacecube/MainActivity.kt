@@ -218,6 +218,10 @@ class MainActivity : ComponentActivity() {
         if (Intent.ACTION_MAIN == intent.action && intent.hasCategory(Intent.CATEGORY_HOME)) {
             js("window.goHome && window.goHome()")
         }
+        // Opened from a checklist notification: show that checklist
+        intent.getStringExtra("routine")?.let { kind ->
+            if (kind == "sleep" || kind == "wake") js("window.goHome && window.goHome(); window.showRoutine && window.showRoutine('$kind')")
+        }
     }
 
     override fun onResume() {

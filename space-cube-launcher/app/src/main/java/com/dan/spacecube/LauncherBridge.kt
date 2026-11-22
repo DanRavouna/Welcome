@@ -147,6 +147,19 @@ class LauncherBridge(private val activity: MainActivity) {
         return activity.packageManager.queryIntentActivities(i, 0).map { it.activityInfo.packageName }.toSet()
     }
 
+    /** Sleep / wake-up checklist times from the page: {"sleep":{"on":true,"h":23,"m":0}, "wake":{...}} */
+    @JavascriptInterface
+    fun setRoutineAlarms(json: String) { RoutineAlarms.save(activity, json) }
+
+    /** Ask once for permission to show notifications (Android 13+). */
+    @JavascriptInterface
+    fun askNotifications() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            activity.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            activity.runOnUiThread { activity.requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 7) }
+        }
+    }
+
     /** Triple-tap on the clock: fetch the newest screen from the website. */
     @JavascriptInterface
     fun reloadLive() { activity.runOnUiThread { activity.loadLive() } }

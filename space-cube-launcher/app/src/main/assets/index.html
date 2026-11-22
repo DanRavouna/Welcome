@@ -131,6 +131,82 @@
   #setFoot { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px calc(20px + var(--inset-bottom)); display: flex; gap: 10px;
     background: linear-gradient(0deg, rgba(4,8,24,.95) 60%, transparent); }
   #setFoot .chromeBtn { flex: 1; }
+  .cfgFoot { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px calc(20px + var(--inset-bottom)); display: flex;
+    background: linear-gradient(0deg, rgba(4,8,24,.95) 60%, transparent); }
+  .cfgFoot .chromeBtn { flex: 1; }
+  /* ---- the old top buttons (groups, group sorting) are retired; groups stay saved ---- */
+  #settingsBtn, #hideBtn { display: none !important; }
+  #cfgBtn { right: 16px; font-size: 20px; padding: 0; }
+  /* ---- App settings: same chrome + cyan look as the old settings menu ---- */
+  #cfg { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column;
+    background: rgba(4,8,24,.82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    color: #e8f1ff; opacity: 0; pointer-events: none; transition: opacity .3s; touch-action: pan-y; }
+  #cfg.show { opacity: 1; pointer-events: auto; }
+  #cfgList { flex: 1; overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; padding: 4px 14px 55vh; }
+  #cfg input { -webkit-user-select: text; user-select: text; }
+  body.routine #recentEmpty { opacity: 0 !important; }
+  .rcTitle { flex: 1; white-space: nowrap; font: 700 13px 'Orbitron', system-ui, sans-serif; letter-spacing: .2em; color: #a6ffd9;
+    text-shadow: 0 0 8px rgba(90,255,190,.6); }
+  .rcTime { background: rgba(0,0,0,.35); color: #b9fbff; border: 1px solid rgba(95,227,242,.55); border-radius: 10px;
+    font: 700 16px 'Orbitron', system-ui, sans-serif; padding: 6px 8px; color-scheme: dark; }
+  .rcOn { min-width: 58px; padding: 8px 10px; }
+  .rcOn.off { opacity: .55; filter: grayscale(1); }
+  .rcRow { display: flex; align-items: center; gap: 6px; padding: 7px 2px; border-bottom: 1px solid rgba(160,200,255,.12); }
+  .rcRow span { flex: 1; font-size: 15px; }
+  .rcUp { background: none; border: none; color: rgba(160,220,255,.8); font-size: 13px; padding: 4px 6px; }
+  .rcUp:disabled { color: rgba(255,255,255,.15); }
+  .rcAdd { display: flex; gap: 8px; margin: 10px 0 4px; }
+  .rcAdd .gName { font-weight: 600; font-size: 15px; }
+  .rcPlus { padding: 6px 14px; }
+  .rcFoot { display: flex; justify-content: flex-end; margin-top: 8px; }
+  .rcNote { font-size: 12px; color: rgba(200,220,255,.5); margin: 2px 2px 6px; }
+  /* ---- Sleep / wake checklist: a ship draws a line, the line opens into a hologram frame ---- */
+  #rWrap { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
+  #rWrap.live { pointer-events: auto; }
+  #rLine { position: absolute; left: 0; height: 2px; width: 0; margin-top: -1px; background: #b9ffe4;
+    box-shadow: 0 0 8px 2px rgba(90,255,190,.8), 0 0 22px 4px rgba(90,255,190,.35); opacity: 0;
+    transform-origin: right center; transition: opacity .25s; }
+  #rLine.on { opacity: 1; }
+  #rLine.gone { transform: scaleX(0); transition: transform .35s cubic-bezier(.6,0,.9,.4), opacity .35s; }
+  #rFrame { position: absolute; left: 5%; right: 5%; height: 0; overflow: hidden; opacity: 0;
+    border-top: 2px solid #b9ffe4; border-bottom: 2px solid #b9ffe4;
+    box-shadow: 0 -6px 14px -6px rgba(90,255,190,.9), 0 6px 14px -6px rgba(90,255,190,.9);
+    background: linear-gradient(180deg, rgba(60,255,200,.13), rgba(40,170,255,.09) 60%, rgba(60,255,200,.12));
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+    transition: top .5s cubic-bezier(.25,.9,.3,1), height .5s cubic-bezier(.25,.9,.3,1), opacity .15s; }
+  #rFrame.on { opacity: 1; }
+  #rFrame::before { content: ''; position: absolute; inset: 0; pointer-events: none;   /* scanlines, drifting */
+    background: repeating-linear-gradient(0deg, rgba(150,255,215,.075) 0 1px, transparent 1px 3px);
+    animation: rScan 9s linear infinite; }
+  #rFrame::after { content: ''; position: absolute; left: 0; right: 0; height: 35%; top: -35%; pointer-events: none;   /* refresh band */
+    background: linear-gradient(180deg, transparent, rgba(150,255,215,.09), transparent); animation: rBand 4.2s linear infinite; }
+  @keyframes rScan { to { background-position: 0 60px; } }
+  @keyframes rBand { to { top: 100%; } }
+  .rSide { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(150,255,215,.35); }
+  .rSide.l { left: 0; } .rSide.r { right: 0; }
+  #rInner { position: relative; padding: 18px 18px 16px; opacity: 0; transition: opacity .35s;
+    color: #c9ffe9; text-shadow: 0 0 6px rgba(90,255,190,.7), 1px 0 rgba(255,80,170,.22), -1px 0 rgba(80,200,255,.28); }
+  #rFrame.ready #rInner { opacity: 1; animation: rFlick 5.3s infinite; }
+  @keyframes rFlick { 0%,6%,9%,40%,43%,71%,74%,100% { opacity: 1; } 7% { opacity: .82; } 8% { opacity: .95; }
+    41% { opacity: .9; } 42% { opacity: .97; } 72% { opacity: .86; } 73% { opacity: 1; } }
+  .rHead { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;
+    font: 700 13px 'Orbitron', system-ui, sans-serif; letter-spacing: .2em; }
+  .rHead b { font-size: 18px; letter-spacing: .1em; }
+  .rList { margin: 0; padding: 0; list-style: none; }
+  .rItem { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; color: inherit;
+    text-shadow: inherit; font: 500 16px system-ui, sans-serif; text-align: left; padding: 9px 2px; cursor: pointer; }
+  .rBox { width: 18px; height: 18px; flex: none; border: 1.5px solid #9dffd8; box-shadow: 0 0 6px rgba(90,255,190,.6);
+    position: relative; transition: background .2s; }
+  .rItem.done .rBox { background: rgba(150,255,215,.85); }
+  .rItem.done .rBox::after { content: ''; position: absolute; left: 5px; top: 1px; width: 5px; height: 10px;
+    border: solid #052a20; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .rItem.done span { opacity: .45; text-decoration: line-through; }
+  .rFoot { display: flex; gap: 10px; margin-top: 16px; }
+  .rBtn { flex: 1; background: rgba(90,255,190,.08); border: 1px solid rgba(150,255,215,.6); color: #c9ffe9;
+    font: 700 11px 'Orbitron', system-ui, sans-serif; letter-spacing: .18em; padding: 11px 6px; text-shadow: inherit; }
+  .rDone { text-align: center; font: 700 13px 'Orbitron', system-ui, sans-serif; letter-spacing: .25em; margin-top: 14px;
+    opacity: 0; transition: opacity .3s; }
+  .rDone.show { opacity: 1; }
   /* ---- Bottom console: chrome deck with two pods and a cyan search display ---- */
   #console {
     position: fixed; left: 0; right: 0; bottom: 0; height: calc(150px + var(--inset-bottom)); z-index: 6; pointer-events: none;
@@ -291,12 +367,32 @@
   <p>Stand-in app screen — the real launcher opens the actual app here</p>
 </div>
 <button id="settingsBtn" class="roundBtn" aria-label="Settings">⚙</button>
+<button id="cfgBtn" class="roundBtn" aria-label="Settings">⚙</button>
+<div id="cfg" aria-label="Settings">
+  <div class="setHead">
+    <div class="bezel"><div class="lcd">SETTINGS</div></div>
+  </div>
+  <div id="cfgList"></div>
+  <div class="cfgFoot">
+    <button class="chromeBtn" id="cfgDone">Done</button>
+  </div>
+</div>
+<div id="rWrap" aria-hidden="true">
+  <div id="rLine"></div>
+  <div id="rFrame"><i class="rSide l"></i><i class="rSide r"></i>
+    <div id="rInner">
+      <div class="rHead"><span id="rTitle">SLEEP SEQUENCE</span><b id="rTime">23:00</b></div>
+      <ul class="rList" id="rList"></ul>
+      <div class="rDone" id="rDone">SEQUENCE COMPLETE</div>
+      <div class="rFoot"><button class="rBtn" id="rSnooze">+10 MIN</button><button class="rBtn" id="rClose">CLOSE</button></div>
+    </div>
+  </div>
+</div>
 <div id="settings" aria-label="Settings">
   <div class="setHead">
     <div class="bezel"><div class="lcd">SETTINGS · GROUPS</div></div>
   </div>
   <p class="setHelp" id="setHelp">Tap an app, then tap the group to move it into.</p>
-  <p class="setHelp" id="buildTag" style="opacity:.5;font-size:11px">SCREEN 2026-11-21 · 7</p>
   <div id="groupList"></div>
   <div id="setFoot">
     <button class="chromeBtn" id="resetGroups">Reset</button>
@@ -872,8 +968,6 @@
 
   // ---- Running inside the Android app? Then use the phone's real apps. ----
   const NATIVE = !!(window.Launcher && window.Launcher.isNative && window.Launcher.isNative());
-  try { if (NATIVE && window.Launcher.appVersion) document.getElementById('buildTag').textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
-  if (NATIVE) document.getElementById('buildTag').textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
   const keyOf = app => app.key || app.name;          // stable id: package/activity on the phone, name in the browser
   let NATIVE_APPS = new Map();                        // key -> app object
   function loadNativeApps() {
@@ -2372,6 +2466,7 @@
 
     updateField(t, dt);
     updateShips(dt);
+    updateDash(dt);
     saturn.getWorldPosition(ringMat.uniforms.center.value);
     sunDirU.value.copy(S).applyQuaternion(spaceRig.quaternion);           // sunlight turns with space
     ringMat.uniforms.ringN.value.copy(axis).applyQuaternion(spaceRig.quaternion);
@@ -2420,9 +2515,239 @@
   playArrival();                                    // fly in when the launcher starts
 
   // =========================================================
+  //  SLEEP / WAKE-UP CHECKLISTS
+  //  Set in Settings (time + items). At that time the checklist window appears:
+  //  a ship dashes across and leaves a line, the line opens into a hologram frame.
+  //  On the phone, Android also rings a notification at that time (tap = open it here).
+  // =========================================================
+  const ROUTINE_KEY = 'spaceCubeRoutines.v1', RSTATE_KEY = 'spaceCubeRoutineState.v1';
+  const RWINDOW = 3 * 3600e3;                      // a checklist stays "due" for 3 hours after its time
+  const RNAMES = { sleep: 'SLEEP SEQUENCE', wake: 'WAKE-UP SEQUENCE' };
+  let ROUTINES = { sleep: { on: false, time: '23:00', items: ['Phone on the charger', 'Alarm set for tomorrow', 'Lights off'] },
+                   wake:  { on: false, time: '07:00', items: ['Open the curtains', 'Make the bed'] } };
+  let RSTATE = {};                                 // kind -> { key: date of that night/morning, done: [i], closed, snooze }
+  try { const d = JSON.parse(localStorage.getItem(ROUTINE_KEY)); if (d) ['sleep', 'wake'].forEach(k => { if (d[k]) ROUTINES[k] = Object.assign(ROUTINES[k], d[k]); }); } catch (e) {}
+  try { RSTATE = JSON.parse(localStorage.getItem(RSTATE_KEY)) || {}; } catch (e) {}
+  function saveRoutines() {
+    try { localStorage.setItem(ROUTINE_KEY, JSON.stringify(ROUTINES)); } catch (e) {}
+    if (NATIVE && window.Launcher.setRoutineAlarms) {                     // let Android ring at these times
+      const out = {};
+      Object.entries(ROUTINES).forEach(([k, r]) => { const [h, m] = r.time.split(':').map(Number); out[k] = { on: r.on, h, m }; });
+      try { window.Launcher.setRoutineAlarms(JSON.stringify(out)); } catch (e) {}
+    }
+  }
+  function saveRState() { try { localStorage.setItem(RSTATE_KEY, JSON.stringify(RSTATE)); } catch (e) {} }
+  // The most recent moment this checklist's time came round (today's, or yesterday's if today's is still ahead)
+  function lastStart(kind, now) {
+    const [h, m] = ROUTINES[kind].time.split(':').map(Number);
+    const d = new Date(now); d.setHours(h, m, 0, 0);
+    if (d.getTime() > now) d.setDate(d.getDate() - 1);
+    return d;
+  }
+  const dayKey = d => d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  function stateFor(kind, now) {
+    const key = dayKey(lastStart(kind, now));
+    if (!RSTATE[kind] || RSTATE[kind].key !== key) RSTATE[kind] = { key, done: [], closed: false, snooze: 0 };
+    return RSTATE[kind];
+  }
+  // Changing a time or switching a checklist on shouldn't fire a time that has already passed
+  function settleRoutine(kind) {
+    const now = Date.now();
+    const st = stateFor(kind, now);
+    if (now - lastStart(kind, now).getTime() < RWINDOW) st.closed = true;
+    saveRState();
+  }
+  function dueRoutine(now) {
+    let best = null, bestT = -1;
+    ['sleep', 'wake'].forEach(k => {
+      const r = ROUTINES[k];
+      if (!r.on || !r.items.length) return;
+      const t0 = lastStart(k, now).getTime();
+      const st = stateFor(k, now);
+      if (now - t0 < RWINDOW && !st.closed && st.snooze <= now && t0 > bestT) { best = k; bestT = t0; }
+    });
+    return best;
+  }
+
+  // ---- the window ----
+  const rWrap = document.getElementById('rWrap'), rLine = document.getElementById('rLine'), rFrame = document.getElementById('rFrame');
+  const rList = document.getElementById('rList'), rDone = document.getElementById('rDone');
+  let routineOpen = null, routineBusy = false, pendingRoutine = null;
+  var dash = null;                                  // the ship crossing the screen
+  function routineBlocked() {
+    return paused || routineBusy || routineOpen || document.body.classList.contains('arriving') || arrivalT < 1 ||
+      cfgEl.classList.contains('show') || settingsEl.classList.contains('show') || opening;
+  }
+  function checkRoutines() {
+    if (pendingRoutine && !routineBlocked()) { const k = pendingRoutine; pendingRoutine = null; showRoutine(k, true); return; }
+    if (routineBlocked()) return;
+    const k = dueRoutine(Date.now());
+    if (k) showRoutine(k);
+  }
+  setInterval(checkRoutines, 15000);
+  setTimeout(checkRoutines, 2500);
+  function renderRoutine(kind) {
+    const r = ROUTINES[kind], st = stateFor(kind, Date.now());
+    document.getElementById('rTitle').textContent = RNAMES[kind];
+    document.getElementById('rTime').textContent = r.time;
+    rList.innerHTML = '';
+    r.items.forEach((txt, i) => {
+      const li = document.createElement('li');
+      const b = document.createElement('button'); b.className = 'rItem' + (st.done.includes(i) ? ' done' : '');
+      b.innerHTML = '<i class="rBox"></i><span></span>'; b.querySelector('span').textContent = txt;
+      b.addEventListener('click', () => {
+        const at = st.done.indexOf(i);
+        if (at >= 0) st.done.splice(at, 1); else st.done.push(i);
+        b.classList.toggle('done', at < 0); saveRState();
+        try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(12); } catch (e) {}
+        if (r.items.every((_, j) => st.done.includes(j))) {          // all done: say so, then fold away
+          rDone.classList.add('show'); st.closed = true; saveRState();
+          setTimeout(() => closeRoutine(), 900);
+        }
+      });
+      li.appendChild(b); rList.appendChild(li);
+    });
+    rDone.classList.remove('show');
+  }
+  function showRoutine(kind, force) {
+    if (!ROUTINES[kind]) return;
+    if (routineBlocked()) { if (force) pendingRoutine = kind; return; }
+    const st = stateFor(kind, Date.now());
+    if (force) { st.closed = false; st.snooze = 0; saveRState(); }
+    routineOpen = kind; routineBusy = true;
+    document.body.classList.add('routine');
+    closeEverything();
+    renderRoutine(kind);
+    rWrap.classList.add('live');
+    const H = Math.min(innerHeight * 0.66, 150 + ROUTINES[kind].items.length * 44);
+    const Y = Math.max(H / 2 + 70, innerHeight * 0.46);
+    rLine.className = ''; rLine.style.top = Y + 'px'; rLine.style.width = '0px';
+    rFrame.className = ''; rFrame.style.top = Y + 'px'; rFrame.style.height = '0px';
+    // 1) a ship dashes across, the line trails behind it
+    startDash(Y, () => {
+      // 2) the line splits: top and bottom edges move apart into the frame
+      rFrame.classList.add('on');
+      requestAnimationFrame(() => {
+        rFrame.style.top = (Y - H / 2) + 'px'; rFrame.style.height = H + 'px';
+        rLine.classList.remove('on');
+      });
+      // 3) the hologram comes on
+      setTimeout(() => { rFrame.classList.add('ready'); routineBusy = false; }, 520);
+    });
+  }
+  function closeRoutine(snoozeMin) {
+    if (!routineOpen || routineBusy) return;
+    const kind = routineOpen, st = stateFor(kind, Date.now());
+    if (snoozeMin) st.snooze = Date.now() + snoozeMin * 60e3; else st.closed = true;
+    saveRState();
+    routineBusy = true;
+    rFrame.classList.remove('ready');                               // text fades...
+    setTimeout(() => {                                              // ...the frame folds back into a line...
+      const Y = parseFloat(rFrame.style.top) + parseFloat(rFrame.style.height) / 2;
+      rFrame.style.top = Y + 'px'; rFrame.style.height = '0px';
+      rLine.style.width = '100%'; rLine.className = 'on';
+      setTimeout(() => {
+        rFrame.classList.remove('on');
+        rLine.classList.add('gone');                                // ...and the line streaks away
+        setTimeout(() => { rLine.className = ''; rWrap.classList.remove('live'); document.body.classList.remove('routine'); routineOpen = null; routineBusy = false; }, 380);
+      }, 480);
+    }, 250);
+  }
+  window.showRoutine = kind => showRoutine(kind, true);
+  document.getElementById('rClose').addEventListener('click', () => closeRoutine());
+  document.getElementById('rSnooze').addEventListener('click', () => closeRoutine(10));
+
+  // The dashing ship: one of the passing-ship models, flown across just in front of the cubes
+  function startDash(yPx, done) {
+    const g = SHIP_MODELS[Math.floor(Math.random() * SHIP_MODELS.length)]();
+    const z = 1.6, depth = camera.position.z - z;
+    const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const halfW = tanH * depth * camera.aspect, wy = (1 - 2 * yPx / innerHeight) * tanH * depth;
+    g.scale.setScalar((2 * halfW) * 0.2 / 1.5);                     // about a fifth of the screen wide
+    g.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0));   // nose to the right
+    g.rotateZ(0.25);                                                // banked a little, like it's swooping in
+    g.traverse(o => { o.renderOrder = 50; });
+    scene.add(g);
+    dash = { g, t: 0, dur: 0.55, x0: -halfW - 1.5, x1: halfW + 1.5, y: wy, z, done };
+    rLine.classList.add('on');
+  }
+  const dashV = new THREE.Vector3();
+  function updateDash(dt) {
+    if (!dash) return;
+    dash.t += dt;
+    const p = Math.min(1, dash.t / dash.dur), e = p * p * (3 - 2 * p) * 0.25 + p * 0.75;   // fast, nearly even
+    dash.g.position.set(dash.x0 + (dash.x1 - dash.x0) * e, dash.y, dash.z);
+    dashV.copy(dash.g.position); dashV.x -= 0.5 * dash.g.scale.x;   // the line starts at the ship's tail
+    dashV.project(camera);
+    rLine.style.width = Math.max(0, Math.min(innerWidth, (dashV.x + 1) / 2 * innerWidth)) + 'px';
+    if (p >= 1) {
+      rLine.style.width = '100%';
+      scene.remove(dash.g);
+      dash.g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.isSpriteMaterial) o.material.dispose(); });
+      const cb = dash.done; dash = null; cb();
+    }
+  }
+
+  // ---- Settings panel ----
+  const cfgEl = document.getElementById('cfg'), cfgList = document.getElementById('cfgList');
+  function renderCfg() {
+    cfgList.innerHTML = '';
+    [['sleep', 'SLEEP', 'Bedtime checklist'], ['wake', 'WAKE-UP', 'Morning checklist']].forEach(([k, title, note]) => {
+      const r = ROUTINES[k];
+      const card = document.createElement('div'); card.className = 'gCard';
+      card.innerHTML = `<div class="gTop"><span class="rcTitle">${title}</span><input type="time" class="rcTime"><button class="chromeBtn rcOn"></button></div>
+        <div class="rcNote">${note}: appears at this time every day</div><div class="rcItems"></div>
+        <div class="rcAdd"><input class="gName rcNew" placeholder="Add an item" enterkeyhint="done"><button class="chromeBtn rcPlus">+</button></div>
+        <div class="rcFoot"><button class="chromeBtn rcPrev">Preview</button></div>`;
+      const time = card.querySelector('.rcTime'), on = card.querySelector('.rcOn'), items = card.querySelector('.rcItems');
+      time.value = r.time;
+      time.addEventListener('change', () => { if (time.value) { r.time = time.value; settleRoutine(k); saveRoutines(); } });
+      const paintOn = () => { on.textContent = r.on ? 'ON' : 'OFF'; on.classList.toggle('off', !r.on); };
+      paintOn();
+      on.addEventListener('click', () => {
+        r.on = !r.on; paintOn(); if (r.on) settleRoutine(k); saveRoutines();
+        if (r.on && NATIVE && window.Launcher.askNotifications) try { window.Launcher.askNotifications(); } catch (e) {}
+      });
+      const paintItems = () => {
+        items.innerHTML = r.items.length ? '' : '<div class="empty">No items yet</div>';
+        r.items.forEach((txt, i) => {
+          const row = document.createElement('div'); row.className = 'rcRow';
+          row.innerHTML = '<span></span><button class="rcUp" aria-label="Move up">▲</button><button class="gDel" aria-label="Delete">✕</button>';
+          row.querySelector('span').textContent = txt;
+          const up = row.querySelector('.rcUp'); up.disabled = i === 0;
+          up.addEventListener('click', () => { [r.items[i - 1], r.items[i]] = [r.items[i], r.items[i - 1]]; resetDone(k); saveRoutines(); paintItems(); });
+          row.querySelector('.gDel').addEventListener('click', () => { r.items.splice(i, 1); resetDone(k); saveRoutines(); paintItems(); });
+          items.appendChild(row);
+        });
+      };
+      paintItems();
+      const inp = card.querySelector('.rcNew');
+      const add = () => { const v = inp.value.trim(); if (!v) return; r.items.push(v); inp.value = ''; saveRoutines(); paintItems(); };
+      card.querySelector('.rcPlus').addEventListener('click', add);
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') { add(); inp.blur(); } });
+      inp.addEventListener('focus', () => setTimeout(() => inp.scrollIntoView({ block: 'start', behavior: 'smooth' }), 350));   // keep it above the keyboard
+      card.querySelector('.rcPrev').addEventListener('click', () => { closeCfg(); setTimeout(() => showRoutine(k, true), 450); });
+      cfgList.appendChild(card);
+    });
+    const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
+    tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
+    tag.textContent = 'SCREEN 2026-11-22 · 8';
+    try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
+    if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
+    cfgList.appendChild(tag);
+  }
+  function resetDone(k) { if (RSTATE[k]) { RSTATE[k].done = []; saveRState(); } }   // items moved: old ticks no longer line up
+  function openCfg() { closeEverything(); renderCfg(); cfgEl.classList.add('show'); }
+  function closeCfg() { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); cfgEl.classList.remove('show'); }
+  document.getElementById('cfgBtn').addEventListener('click', openCfg);
+  document.getElementById('cfgDone').addEventListener('click', closeCfg);
+  saveRoutines();                                   // make sure Android has the current times
+
+  // =========================================================
   //  PHONE HOOKS (called by the Android app)
   // =========================================================
   function closeEverything() {
+    if (typeof cfgEl !== 'undefined' && cfgEl.classList.contains('show')) closeCfg();
     picker.classList.remove('show');
     if (settingsEl.classList.contains('show')) closeSettings();
     showKbd(false);
@@ -2432,6 +2757,8 @@
   }
   // Back: close the top-most thing that's open, one step at a time
   window.handleBack = () => {
+    if (routineOpen) { closeRoutine(); return true; }
+    if (cfgEl.classList.contains('show')) { closeCfg(); return true; }
     if (picker.classList.contains('show')) { picker.classList.remove('show'); return true; }
     if (settingsEl.classList.contains('show')) { closeSettings(); return true; }
     if (kbdOpen) { showKbd(false); return true; }
@@ -2484,7 +2811,7 @@
     else if (!window.__hasUnlockHook && pausedAt && Date.now() - pausedAt > 20000) playArrival();
     if (p === paused) return;
     paused = p;
-    if (!p) { prev = performance.now(); requestAnimationFrame(tick); }
+    if (!p) { prev = performance.now(); requestAnimationFrame(tick); setTimeout(checkRoutines, 900); }
   };
   // An app was installed, removed or updated
   window.onAppsChanged = () => {
