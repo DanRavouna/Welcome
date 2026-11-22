@@ -2149,11 +2149,11 @@
     const lead = ASSAULT[Math.floor(Math.random() * ASSAULT.length)];
     for (let i = 0; i < n; i++) {                         // V formation: leader in front, wingmen fanning back
       const k = Math.ceil(i / 2), side = i === 0 ? 0 : (i % 2 ? 1 : -1);
-      const model = Math.random() < 0.7 ? lead : ASSAULT[Math.floor(Math.random() * ASSAULT.length)];
+      const model = lead;                                // a squadron is all the same ship
       sq.members.push(addShip(SHIP_MODELS[model](), 'wing', new THREE.Vector3(side * k * 2.1, (Math.random() - 0.5) * 0.5, -k * 2.4)));
     }
     if (chase) {
-      const pool = Math.random() < 0.5 ? CIVIL : ASSAULT;
+      const pool = Math.random() < 0.5 ? CIVIL : ASSAULT.filter(m => m !== lead);
       sq.target = addShip(SHIP_MODELS[pool[Math.floor(Math.random() * pool.length)]](), 'target', new THREE.Vector3());
     }
     squad = sq;
@@ -3230,7 +3230,7 @@
     });
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 18';
+    tag.textContent = 'SCREEN 2026-11-22 · 19';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
