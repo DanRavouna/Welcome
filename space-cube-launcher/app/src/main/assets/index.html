@@ -1799,8 +1799,8 @@
   const ships = [];
   let nextShipIn = 2;
   const qInv = new THREE.Quaternion(), shipTmp = new THREE.Vector3(), FWD = new THREE.Vector3(0, 0, 1);
-  function spawnShip() {
-    if (!whale && Math.random() < 0.05) return spawnWhale();   // 1 in 20: a space whale instead of a ship
+  function spawnShip(noWhale) {
+    if (!noWhale && !whale && Math.random() < 0.05) return spawnWhale();   // 1 in 20: a space whale instead of a ship
     const g = SHIP_MODELS[Math.floor(Math.random() * SHIP_MODELS.length)]();
     const roll = Math.random();
     if (roll < 0.35) return spawnOvertaker(g);              // ~1 in 3: overtakes you, flying your way but faster
@@ -1886,7 +1886,7 @@
   // =========================================================
   var whale = null;
   const whaleFx = [];
-  const WHALE_LIFE = 60, WHALE_FADE_IN = 5, WHALE_FADE_OUT = 4, WHALE_SCALE = 14;
+  const WHALE_LIFE = 60, WHALE_SCALE = 14;
   function makeWhale() {
     const g = new THREE.Group(), mats = [];
     const mat = (o) => { const m = new THREE.MeshStandardMaterial(Object.assign({ flatShading: true, metalness: 0.1, roughness: 0.75,
@@ -1931,7 +1931,25 @@
         g.add(sp); spots.push({ sp, ph: i * 0.7 + (sd > 0 ? 0 : 1.3) });
       });
     }
-    return { g, mats, tail, spots, body: geo };
+    // glowing wireframe outline (all the facet edges), ordered head -> tail so it can be "drawn"
+    g.updateMatrixWorld(true);
+    const segs = [];
+    g.traverse(o => {
+      if (!o.isMesh || o.geometry.type === 'SphereGeometry') return;
+      const eg = new THREE.EdgesGeometry(o.geometry, 15); eg.applyMatrix4(o.matrixWorld);
+      const a = eg.attributes.position.array;
+      for (let i = 0; i < a.length; i += 6) segs.push([a[i], a[i+1], a[i+2], a[i+3], a[i+4], a[i+5]]);
+      eg.dispose();
+    });
+    segs.sort((p, q) => (q[2] + q[5]) - (p[2] + p[5]));          // head first
+    const lg = new THREE.BufferGeometry();
+    lg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(segs.flat()), 3));
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x9ff6ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    const outline = new THREE.LineSegments(lg, lineMat); outline.renderOrder = 5;
+    g.add(outline);
+    const pen = new THREE.Sprite(new THREE.SpriteMaterial({ map: engineTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+    pen.scale.set(0.9, 0.9, 1); g.add(pen);                          // the bright point that draws the outline
+    return { g, mats, tail, spots, body: geo, outline, lineMat, nSeg: segs.length, segs, pen };
   }
   function spawnWhale() {
     const w = makeWhale();
@@ -1950,46 +1968,90 @@
     w.base = w.g.quaternion.clone();
     w.g.scale.setScalar(WHALE_SCALE);
     w.g.position.copy(start);
-    w.dir = dir; w.speed = 1.3 + Math.random() * 0.5; w.age = 0; w.sparkT = 0;
+    w.dir = dir; w.speed = 1.3 + Math.random() * 0.5; w.age = 0; w.state = 'in'; w.st = 0;
     shipLayer.add(w.g);
     whale = w;
   }
   const whaleTmpV = new THREE.Vector3(), whaleQ = new THREE.Quaternion(), whaleAxis = new THREE.Vector3(1, 0, 0);
-  function whaleSparkle(w, n) {                     // tiny lights peeling off the body as it dissolves
+  const whaleAxisP = new THREE.Vector3();
+  function whaleBurst(w, n) {                       // many sparkles shooting out of the body
     const pos = w.body.attributes.position;
     for (let k = 0; k < n; k++) {
       const i = Math.floor(Math.random() * pos.count);
       whaleTmpV.set(pos.getX(i), pos.getY(i), pos.getZ(i));
+      whaleAxisP.set(0, 0, pos.getZ(i));                            // the point on the spine behind it
       w.g.localToWorld(whaleTmpV); shipLayer.worldToLocal(whaleTmpV);
+      w.g.localToWorld(whaleAxisP); shipLayer.worldToLocal(whaleAxisP);
+      const v = whaleTmpV.clone().sub(whaleAxisP).normalize()
+        .add(new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(0.8))
+        .normalize().multiplyScalar(18 + Math.random() * 30);
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: engineTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-      const sz = 1.2 + Math.random() * 1.8; sp.scale.set(sz, sz, 1); sp.position.copy(whaleTmpV);
+      const sz = 1.4 + Math.random() * 2.2; sp.scale.set(sz, sz, 1); sp.position.copy(whaleTmpV);
       shipLayer.add(sp);
-      whaleFx.push({ sp, v: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.3, Math.random() - 0.5).multiplyScalar(5), t: 0, dur: 1.2 + Math.random() * 1.2, sz });
+      whaleFx.push({ sp, v, t: 0, dur: 1.0 + Math.random() * 1.1, sz });
     }
   }
+  const smooth01 = x => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
+  // the outline: how much is drawn (0..1) and how bright (0..1+)
+  function setOutline(w, drawn, glow) {
+    const n = Math.max(0, Math.min(w.nSeg, Math.round(w.nSeg * drawn)));
+    w.outline.geometry.setDrawRange(0, n * 2);
+    w.lineMat.opacity = Math.min(1, glow);
+    w.lineMat.color.setRGB(0.25 + 0.6 * Math.min(1, glow), 0.55 + 0.45 * Math.min(1, glow), 0.7 + 0.3 * Math.min(1, glow));
+    if (drawn > 0 && drawn < 1 && n > 0) {                       // the pen sits at the newest drawn edge
+      const sgm = w.segs[n - 1]; w.pen.position.set(sgm[3], sgm[4], sgm[5]); w.pen.material.opacity = Math.min(1, glow * 1.4);
+    } else w.pen.material.opacity = 0;
+  }
+  // three pulses, each quicker than the last; returns 0..1 brightness swing
+  const pulses = x => { x = Math.min(1, Math.max(0, x)); const ph = Math.pow(x, 0.75) * 3 * Math.PI * 2; return 0.5 - 0.5 * Math.cos(ph); };
   function updateWhale(dt) {
     for (let i = whaleFx.length - 1; i >= 0; i--) {
       const f = whaleFx[i]; f.t += dt;
       const k = f.t / f.dur;
-      f.sp.position.addScaledVector(f.v, dt);
+      f.sp.position.addScaledVector(f.v, dt); f.v.multiplyScalar(Math.exp(-2.4 * dt));
       f.sp.material.opacity = Math.max(0, (1 - k)) * (0.65 + 0.35 * Math.sin(f.t * 18 + i));
       const z = f.sz * (1 - 0.6 * k); f.sp.scale.set(z, z, 1);
       if (k >= 1) { shipLayer.remove(f.sp); f.sp.material.dispose(); whaleFx.splice(i, 1); }
     }
     const w = whale; if (!w) return;
-    w.age += dt;
+    w.age += dt; w.st += dt;
     w.g.position.addScaledVector(w.dir, w.speed * dt);
-    // slow swimming: flukes beat, the body rocks gently
-    w.tail.rotation.x = Math.sin(w.age * 0.9) * 0.28;
-    whaleQ.setFromAxisAngle(whaleAxis, Math.sin(w.age * 0.9 - 0.8) * 0.035);
+    // ARRIVING:  outline draws in (2.2 s) -> pulses (1.6 s) -> burst of sparkles, body appears, outline fades
+    // LEAVING:   outline lights up over the body (1 s) -> pulses (1.4 s) -> burst, body vanishes -> outline undraws (1.2 s)
+    let body = 0;
+    if (w.state === 'in') {
+      const DRAW = 2.2, PULSE = 1.6, SHOW = 0.8;
+      if (w.st < DRAW) { const d = w.st / DRAW; setOutline(w, smooth01(d), 0.15 + 0.85 * d * d); }
+      else if (w.st < DRAW + PULSE) setOutline(w, 1, 0.75 + 0.6 * pulses((w.st - DRAW) / PULSE));
+      else {
+        if (!w.burst) { w.burst = true; whaleBurst(w, 80); }
+        const k = (w.st - DRAW - PULSE) / SHOW;
+        body = smooth01(k); setOutline(w, 1, 1 - smooth01(k));
+        if (k >= 1) { w.state = 'swim'; w.st = 0; w.burst = false; setOutline(w, 0, 0); }
+      }
+    } else if (w.state === 'swim') {
+      body = 1;
+      if (w.st >= WHALE_LIFE) { w.state = 'out'; w.st = 0; }
+    } else {
+      const RISE = 1.0, PULSE = 1.4, HIDE = 0.35, UNDRAW = 1.2;
+      if (w.st < RISE) { body = 1; setOutline(w, 1, smooth01(w.st / RISE) * 0.9); }
+      else if (w.st < RISE + PULSE) { body = 1; setOutline(w, 1, 0.75 + 0.6 * pulses((w.st - RISE) / PULSE)); }
+      else {
+        if (!w.burst) { w.burst = true; whaleBurst(w, 80); }
+        const t2 = w.st - RISE - PULSE;
+        body = 1 - smooth01(t2 / HIDE);
+        const u = Math.max(0, (t2 - 0.15) / UNDRAW);
+        setOutline(w, 1 - smooth01(u), 0.9 * (1 - u * u));           // undraws tail-first, dimming
+        if (u >= 1) w.done = true;
+      }
+    }
+    // slow swimming: flukes beat, the body rocks gently (still while it's only an outline)
+    w.tail.rotation.x = Math.sin(w.age * 0.9) * 0.28 * body;
+    whaleQ.setFromAxisAngle(whaleAxis, Math.sin(w.age * 0.9 - 0.8) * 0.035 * body);
     w.g.quaternion.copy(w.base).multiply(whaleQ);
-    const fadeIn = Math.min(1, w.age / WHALE_FADE_IN);
-    const out = Math.max(0, (w.age - WHALE_LIFE) / WHALE_FADE_OUT);
-    const op = fadeIn * fadeIn * (3 - 2 * fadeIn) * (1 - Math.min(1, out));
-    w.mats.forEach(m => { m.opacity = op; m.depthWrite = op > 0.95; });
-    w.spots.forEach(({ sp, ph }) => { sp.material.opacity = op * (0.45 + 0.35 * Math.sin(w.age * 1.4 + ph)); });
-    if (out > 0) { w.sparkT += dt * 40 * (1 - out * 0.6); while (w.sparkT >= 1) { w.sparkT -= 1; whaleSparkle(w, 1); } }   // dissolving: sparkles
-    if (out >= 1) {
+    w.mats.forEach(m => { m.opacity = body; m.depthWrite = body > 0.95; });
+    w.spots.forEach(({ sp, ph }) => { sp.material.opacity = body * (0.45 + 0.35 * Math.sin(w.age * 1.4 + ph)); });
+    if (w.done) {
       shipLayer.remove(w.g);
       w.g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
       whale = null;
@@ -2976,11 +3038,35 @@
     });
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 14';
+    tag.textContent = 'SCREEN 2026-11-22 · 15';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
+    const dbg = document.createElement('div'); dbg.className = 'gCard'; dbg.id = 'dbgCard'; dbg.style.display = debugOpen ? '' : 'none';
+    dbg.innerHTML = `<div class="gTop"><span class="rcTitle">DEBUG</span></div>
+      <div class="rcAdd" style="flex-wrap:wrap">
+        <button class="chromeBtn" data-d="ship">Ship</button><button class="chromeBtn" data-d="ships">5 ships</button>
+        <button class="chromeBtn" data-d="jump">Ships jump</button><button class="chromeBtn" data-d="whale">Whale</button>
+        <button class="chromeBtn" data-d="whaleout">Whale leave</button></div>`;
+    dbg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      const d = b.dataset.d;
+      closeCfg();
+      setTimeout(() => {
+        if (d === 'ship') spawnShip(true);
+        if (d === 'ships') for (let i = 0; i < 5; i++) spawnShip(true);
+        if (d === 'jump') ships.forEach(sh => { if (!sh.phase) sh.life = sh.age; });
+        if (d === 'whale') { if (whale) { whale.state = 'out'; whale.st = 0; } else spawnWhale(); }
+        if (d === 'whaleout' && whale && whale.state !== 'out') { whale.state = 'out'; whale.st = 0; }
+      }, 350);
+    }));
+    cfgList.appendChild(dbg);
+    let taps = [];
+    tag.addEventListener('click', () => {                           // 5 quick taps on the version line
+      const now = Date.now(); taps = taps.filter(x => now - x < 4000); taps.push(now);
+      if (taps.length >= 5) { taps = []; debugOpen = !debugOpen; dbg.style.display = debugOpen ? '' : 'none'; if (debugOpen) dbg.scrollIntoView({ behavior: 'smooth' }); }
+    });
   }
+  let debugOpen = false;
   function resetDone(k) { if (RSTATE[k]) { RSTATE[k].done = []; saveRState(); } }   // items moved: old ticks no longer line up
   function openCfg() { closeEverything(); renderCfg(); cfgEl.classList.add('show'); }
   function closeCfg() { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); cfgEl.classList.remove('show'); }
