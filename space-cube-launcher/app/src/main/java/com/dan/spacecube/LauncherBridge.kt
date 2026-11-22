@@ -160,6 +160,27 @@ class LauncherBridge(private val activity: MainActivity) {
         }
     }
 
+    /** Open Android's live wallpaper preview for Space Cube (then "Set wallpaper" -> Home and lock screens). */
+    @JavascriptInterface
+    fun setLiveWallpaper() {
+        activity.runOnUiThread {
+            val i = Intent(android.app.WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
+                .putExtra(android.app.WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                    android.content.ComponentName(activity, SpaceWallpaper::class.java))
+            try { activity.startActivity(i) }
+            catch (e: Exception) {
+                try { activity.startActivity(Intent(android.app.WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER)) } catch (e2: Exception) { }
+            }
+        }
+    }
+
+    /** Is the Space Cube live wallpaper the current wallpaper? */
+    @JavascriptInterface
+    fun isLiveWallpaperOn(): Boolean {
+        val info = android.app.WallpaperManager.getInstance(activity).wallpaperInfo ?: return false
+        return info.packageName == activity.packageName
+    }
+
     /** Triple-tap on the clock: fetch the newest screen from the website. */
     @JavascriptInterface
     fun reloadLive() { activity.runOnUiThread { activity.loadLive() } }

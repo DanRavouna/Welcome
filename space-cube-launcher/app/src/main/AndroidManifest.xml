@@ -61,6 +61,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Space Cube live wallpaper (lock screen, recent apps) -->
+        <service android:name=".SpaceWallpaper"
+            android:label="@string/wallpaper_name"
+            android:permission="android.permission.BIND_WALLPAPER"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.wallpaper.WallpaperService" />
+            </intent-filter>
+            <meta-data android:name="android.service.wallpaper" android:resource="@xml/space_wallpaper" />
+        </service>
+
         <receiver android:name=".RoutineReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
