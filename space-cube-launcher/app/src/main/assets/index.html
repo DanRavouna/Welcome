@@ -2117,19 +2117,26 @@
     if (chase === undefined) chase = Math.random() < 0.6;
     const n = 3 + Math.floor(Math.random() * 3);
     const cz = camera.position.z;
-    route = route || (Math.random() < 0.7 ? 'by' : 'cross');
+    route = route || (Math.random() < 0.25 ? 'by' : Math.random() < 0.33 ? 'head' : 'cross');   // from behind, head-on, or any angle
     let start, dirC, speed;
     if (route === 'by') {                                 // comes from behind us and races ahead (the target first)
       const sx = Math.random() < 0.5 ? 1 : -1, sy = Math.random() < 0.6 ? 1 : -1;
       start = new THREE.Vector3(sx * (1.2 + Math.random() * 1.5), sy * (1.0 + Math.random() * 1.2), cz + 8);
       dirC = new THREE.Vector3(-sx * 0.05, -sy * 0.04, -1).normalize();
       speed = 14 + Math.random() * 6;
-    } else {                                              // crosses in front of us, side to side
-      const dirSign = Math.random() < 0.5 ? 1 : -1, depth = 28 + Math.random() * 25;
-      const halfW = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * depth * camera.aspect;
-      start = new THREE.Vector3(-dirSign * (halfW + 3), (Math.random() - 0.4) * depth * 0.4, cz - depth);
-      dirC = new THREE.Vector3(dirSign, (Math.random() - 0.5) * 0.15, -0.35 - Math.random() * 0.3).normalize();   // across and away: stays in view longer
-      speed = 4 + Math.random() * 2;
+    } else if (route === 'head') {                        // comes at us from far ahead and streaks past
+      const sx = Math.random() < 0.5 ? 1 : -1, sy = Math.random() < 0.6 ? 1 : -1;
+      start = new THREE.Vector3(sx * (1.5 + Math.random() * 2), sy * (1.2 + Math.random() * 1.5), cz - 110 - Math.random() * 40);
+      dirC = new THREE.Vector3(sx * 0.01, sy * 0.008, 1).normalize();
+      speed = 13 + Math.random() * 6;
+    } else {                                              // crosses the view from any side, at any angle (down, up, diagonal, away...)
+      const depth = 22 + Math.random() * 35;
+      const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      const a = Math.random() * Math.PI * 2;
+      dirC = new THREE.Vector3(Math.cos(a), Math.sin(a), (Math.random() - 0.6) * 0.9).normalize();
+      speed = 5 + Math.random() * 3;
+      const centre = new THREE.Vector3((Math.random() - 0.5) * tanH * depth * camera.aspect, (Math.random() - 0.5) * tanH * depth * 0.8, cz - depth);
+      start = centre.addScaledVector(dirC, -speed * 4);    // reaches the middle of the view after ~4 s
     }
     qInv.copy(spaceRig.quaternion).invert();
     start.sub(spaceRig.position).applyQuaternion(qInv);
@@ -3230,7 +3237,7 @@
     });
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 19';
+    tag.textContent = 'SCREEN 2026-11-22 · 20';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
@@ -3241,7 +3248,7 @@
         <button class="chromeBtn" data-d="ship">1 ship</button><button class="chromeBtn" data-d="ships">5 ships</button>
         <button class="chromeBtn" data-d="jump">All jump</button></div>
       <div class="dbgPane" data-pane="squads" hidden>
-        <button class="chromeBtn" data-d="sqchase">Chase</button><button class="chromeBtn" data-d="sqcross">Chase across</button><button class="chromeBtn" data-d="sqfly">Formation</button>
+        <button class="chromeBtn" data-d="sqchase">Chase from behind</button><button class="chromeBtn" data-d="sqhead">Chase head-on</button><button class="chromeBtn" data-d="sqcross">Chase any angle</button><button class="chromeBtn" data-d="sqfly">Formation</button>
         <button class="chromeBtn" data-d="sqend">Jump out</button></div>
       <div class="dbgPane" data-pane="whale" hidden>
         <button class="chromeBtn" data-d="whaleby">Overtakes</button><button class="chromeBtn" data-d="whalehead">Head-on</button>
@@ -3257,7 +3264,8 @@
         if (d === 'ship') spawnShip(true);
         if (d === 'ships') for (let i = 0; i < 5; i++) spawnShip(true);
         if (d === 'jump') ships.forEach(sh => { if (!sh.phase) sh.life = sh.age; });
-        if (d === 'sqchase' || d === 'sqfly' || d === 'sqcross') { if (squad) squad.t = squad.life; setTimeout(() => spawnSquad(d !== 'sqfly', d === 'sqcross' ? 'cross' : 'by'), squad ? 50 : 0); }
+        if (d === 'sqhead') { if (squad) squad.t = squad.life; setTimeout(() => spawnSquad(true, 'head'), squad ? 50 : 0); }
+        if (d === 'sqchase' || d === 'sqfly' || d === 'sqcross') { if (squad) squad.t = squad.life; setTimeout(() => spawnSquad(d !== 'sqfly', d === 'sqcross' ? 'cross' : d === 'sqchase' ? 'by' : undefined), squad ? 50 : 0); }
         if (d === 'sqend' && squad) squad.t = squad.life;
         if (d === 'whaleout' && whale && whale.state !== 'out') { whale.state = 'out'; whale.st = 0; }
         const route = { whaleby: 'by', whalehead: 'head', whalecross: 'cross' }[d];
