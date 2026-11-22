@@ -163,11 +163,11 @@
   /* ---- Sleep / wake checklist: a ship draws a line, the line opens into a hologram frame ---- */
   #rWrap { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
   #rWrap.live { pointer-events: auto; }
-  #rLine { position: absolute; left: 0; height: 2px; width: 0; margin-top: -1px; background: #b9ffe4;
+  #rLine { position: absolute; left: 0; height: 2px; width: 0; margin-top: -1px; background: #b9ffe4; transition: opacity .45s ease !important;
     box-shadow: 0 0 8px 2px rgba(90,255,190,.8), 0 0 22px 4px rgba(90,255,190,.35); opacity: 0;
     transform-origin: right center; transition: opacity .25s; }
   #rLine.on { opacity: 1; }
-  #rLine.gone { transform: scaleX(0); transition: transform .35s cubic-bezier(.6,0,.9,.4), opacity .35s; }
+  #rLine.on { transition: opacity .45s ease; }
   #rFrame { position: absolute; left: 5%; right: 5%; height: 0; overflow: hidden; opacity: 0;
     border-top: 2px solid #b9ffe4; border-bottom: 2px solid #b9ffe4;
     box-shadow: 0 -6px 14px -6px rgba(90,255,190,.9), 0 6px 14px -6px rgba(90,255,190,.9);
@@ -175,6 +175,7 @@
     backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
     transition: top .5s cubic-bezier(.25,.9,.3,1), height .5s cubic-bezier(.25,.9,.3,1), opacity .15s; }
   #rFrame.on { opacity: 1; }
+  #rFrame.fade { opacity: 0; transition: opacity .7s ease, left .7s ease, right .7s ease; left: 12%; right: 12%; }
   #rFrame::before { content: ''; position: absolute; inset: 0; pointer-events: none;   /* scanlines, drifting */
     background: repeating-linear-gradient(0deg, rgba(150,255,215,.075) 0 1px, transparent 1px 3px);
     animation: rScan 9s linear infinite; }
@@ -1832,20 +1833,122 @@
     shipLayer.add(g);
     ships.push({ g, dir, speed, life: start.distanceTo(end) / speed, age: 0, bank: (Math.random() - 0.5) * 0.5, base: g.quaternion.clone(), wob: Math.random() * 6 });
   }
+  // Ships never just vanish: at the end of their run they charge up, jump to lightspeed
+  // leaving a streak, and flash into a sparkle far away (like slipping through a portal).
+  const CHARGE_S = 0.7, JUMP_S = 0.4, JUMP_DIST = 140;
+  const jumpFx = [];                               // streaks and sparkles still fading out
+  const trailGeo = new THREE.BoxGeometry(1, 1, 1);
+  function disposeShip(g) {
+    shipLayer.remove(g);
+    g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.isSpriteMaterial) o.material.dispose(); });
+  }
+  function startJump(sh) {
+    sh.phase = 'jump'; sh.jt = 0; sh.from = sh.g.position.clone();
+    const mk = (op, col) => new THREE.Mesh(trailGeo, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op,
+      blending: THREE.AdditiveBlending, depthWrite: false }));
+    sh.trail = [mk(0.9, 0xd8fbff), mk(0.25, 0x6fd8ff)];          // bright core + soft wide glow
+    sh.trail.forEach(m => shipLayer.add(m));
+  }
+  function placeTrail(sh, from, to) {
+    const len = Math.max(0.001, from.distanceTo(to)), w = 0.05 * sh.g.scale.x;
+    sh.trail.forEach((m, k) => {
+      m.position.copy(from).add(to).multiplyScalar(0.5);
+      m.quaternion.setFromUnitVectors(FWD, sh.jdir);
+      m.scale.set(w * (k ? 5 : 1), w * (k ? 5 : 1), len);
+    });
+  }
+  const ringTex = (() => {                          // thin glowing circle for the portal ring
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 40, 64, 64, 62);
+    g.addColorStop(0, 'rgba(120,230,255,0)'); g.addColorStop(0.55, 'rgba(200,250,255,0.95)'); g.addColorStop(1, 'rgba(120,230,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  })();
+  function sparkleAt(pos, size) {                   // the portal flash: core + star flare + ring + sparks
+    const g = new THREE.Group(); g.position.copy(pos);
+    const mkS = (sx, sy, tex) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex || engineTex, transparent: true, depthWrite: false,
+      blending: THREE.AdditiveBlending })); sp.scale.set(sx, sy || sx, 1); g.add(sp); return sp; };
+    const core = mkS(size), core2 = mkS(size * 0.5);
+    const flareH = mkS(size * 3, size * 0.12), flareV = mkS(size * 0.12, size * 2.2);
+    const ring = mkS(size, size, ringTex);
+    const specks = [];
+    for (let i = 0; i < 22; i++) {
+      const sp = mkS(size * 0.16);
+      const v = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(size * (0.9 + Math.random() * 1.2));
+      specks.push({ sp, v });
+    }
+    shipLayer.add(g);
+    jumpFx.push({ kind: 'spark', g, core, core2, flareH, flareV, ring, specks, t: 0, dur: 1.3, size });
+  }
   function updateShips(dt) {
     nextShipIn -= dt;
     if (nextShipIn <= 0 && ships.length < 6) { spawnShip(); nextShipIn = 2 + Math.random() * 4; }   // avg every 4 s (was 6): 1.5x the ships
     for (let i = ships.length - 1; i >= 0; i--) {
       const sh = ships[i];
       sh.age += dt;
-      sh.g.position.addScaledVector(sh.dir, sh.speed * dt);
+      const phase = sh.phase || 'cruise';
+      if (phase === 'cruise') {
+        sh.g.position.addScaledVector(sh.dir, sh.speed * dt);
+        if (sh.age > sh.life) {
+          sh.phase = 'charge'; sh.ct = 0; sh.glows = []; sh.g.traverse(o => { if (o.isSprite) sh.glows.push([o, o.scale.x]); });
+          // the jump heads into the distance (away from you), so its flash shows up where the ship vanished
+          const away = sh.g.position.clone().normalize();          // you sit at the centre of space's frame
+          sh.jdir = away.multiplyScalar(1).addScaledVector(sh.dir, 0.45).normalize();
+          sh.base0 = sh.base.clone(); sh.baseJ = new THREE.Quaternion().setFromUnitVectors(FWD, sh.jdir);
+        }
+      } else if (phase === 'charge') {                  // slows down, engines swell, a little shiver
+        sh.ct += dt;
+        const c = Math.min(1, sh.ct / CHARGE_S);
+        sh.g.position.addScaledVector(sh.dir, sh.speed * (1 - 0.8 * c) * dt);
+        sh.glows.forEach(([o, s0]) => { const k = s0 * (1 + 2.5 * c * c); o.scale.set(k, k, 1); });
+        sh.base.copy(sh.base0).slerp(sh.baseJ, c * c * (3 - 2 * c));   // swings its nose round to the jump line
+        sh.g.position.x += (Math.random() - 0.5) * 0.02 * c * sh.g.scale.x;
+        if (c >= 1) startJump(sh);
+      } else if (phase === 'jump') {                    // blasts away, stretching, leaving a streak
+        sh.jt += dt;
+        const j = Math.min(1, sh.jt / JUMP_S), d = JUMP_DIST * j * j;
+        sh.g.position.copy(sh.from).addScaledVector(sh.jdir, d);
+        sh.g.scale.z = sh.g.scale.x * (1 + 4 * j);
+        placeTrail(sh, sh.from, sh.g.position);
+        if (j >= 1) {
+          const end = sh.g.position.clone();
+          sparkleAt(end, 4 + end.length() * 0.075);
+          jumpFx.push({ kind: 'trail', meshes: sh.trail, from: sh.from.clone(), to: end, dir: sh.dir, w: sh.g.scale.x, t: 0, dur: 0.9 });
+          disposeShip(sh.g); ships.splice(i, 1);
+          continue;
+        }
+      }
       // gentle banking roll so they feel piloted
       shipTmp.set(0, 0, 1);
       sh.g.quaternion.copy(sh.base).multiply(new THREE.Quaternion().setFromAxisAngle(shipTmp, sh.bank + Math.sin(sh.age * 0.8 + sh.wob) * 0.15));
-      if (sh.age > sh.life) {
-        shipLayer.remove(sh.g);
-        sh.g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.isSpriteMaterial) o.material.dispose(); });
-        ships.splice(i, 1);
+    }
+    for (let i = jumpFx.length - 1; i >= 0; i--) {
+      const fx = jumpFx[i];
+      fx.t += dt;
+      const k = Math.min(1, fx.t / fx.dur), fade = 1 - k * k * (3 - 2 * k);
+      if (fx.kind === 'trail') {                        // the streak thins and fades, its tail catching up
+        const from = fx.from.clone().lerp(fx.to, k * k);
+        fx.meshes.forEach((m, n) => {
+          m.position.copy(from).add(fx.to).multiplyScalar(0.5);
+          m.scale.z = Math.max(0.001, from.distanceTo(fx.to));
+          m.scale.x = m.scale.y = 0.05 * fx.w * (n ? 5 : 1) * (0.4 + 0.6 * fade);
+          m.material.opacity = (n ? 0.25 : 0.9) * fade;
+        });
+        if (k >= 1) { fx.meshes.forEach(m => { shipLayer.remove(m); m.material.dispose(); }); jumpFx.splice(i, 1); }
+      } else {                                         // sparkle: quick swell, specks drift out and twinkle away
+        const pop = Math.min(1, fx.t / 0.1), flash = pop * Math.max(0, 1 - fx.t / 0.5);   // bright burst for the first half-second
+        const cs = fx.size * (0.4 + 0.9 * pop) * (1 - 0.5 * k);
+        fx.core.scale.set(cs, cs, 1); fx.core.material.opacity = fade;
+        fx.core2.material.opacity = flash;
+        fx.flareH.scale.set(fx.size * 3.2 * (0.3 + 0.7 * pop) * (1 - 0.6 * k), fx.size * 0.12, 1); fx.flareH.material.opacity = fade;
+        fx.flareV.scale.set(fx.size * 0.12, fx.size * 2.2 * (0.3 + 0.7 * pop) * (1 - 0.6 * k), 1); fx.flareV.material.opacity = fade;
+        const rs = fx.size * (0.4 + 2.2 * Math.sqrt(k));                // the ring opens outward and thins away
+        fx.ring.scale.set(rs, rs, 1); fx.ring.material.opacity = 0.9 * (1 - k);
+        fx.specks.forEach(({ sp, v }, n) => {
+          sp.position.copy(v).multiplyScalar(k);
+          sp.material.opacity = fade * (0.6 + 0.4 * Math.sin(fx.t * 30 + n * 2.1));
+        });
+        if (k >= 1) { shipLayer.remove(fx.g); fx.g.traverse(o => { if (o.material) o.material.dispose(); }); jumpFx.splice(i, 1); }
       }
     }
   }
@@ -2622,13 +2725,13 @@
     const H = Math.min(innerHeight * 0.66, 150 + ROUTINES[kind].items.length * 44);
     const Y = Math.max(H / 2 + 70, innerHeight * 0.46);
     rLine.className = ''; rLine.style.top = Y + 'px'; rLine.style.width = '0px';
-    rFrame.className = ''; rFrame.style.top = Y + 'px'; rFrame.style.height = '0px';
+    rFrame.className = ''; rFrame.style.top = (Y - 2) + 'px'; rFrame.style.height = '0px';
     // 1) a ship dashes across, the line trails behind it
     startDash(Y, () => {
       // 2) the line splits: top and bottom edges move apart into the frame
       rFrame.classList.add('on');
       requestAnimationFrame(() => {
-        rFrame.style.top = (Y - H / 2) + 'px'; rFrame.style.height = H + 'px';
+        rFrame.style.top = (Y - H / 2 - 2) + 'px'; rFrame.style.height = H + 'px';
         rLine.classList.remove('on');
       });
       // 3) the hologram comes on
@@ -2642,15 +2745,13 @@
     saveRState();
     routineBusy = true;
     rFrame.classList.remove('ready');                               // text fades...
-    setTimeout(() => {                                              // ...the frame folds back into a line...
-      const Y = parseFloat(rFrame.style.top) + parseFloat(rFrame.style.height) / 2;
-      rFrame.style.top = Y + 'px'; rFrame.style.height = '0px';
-      rLine.style.width = '100%'; rLine.className = 'on';
+    setTimeout(() => {                                              // ...top and bottom edges close in and meet in one line...
+      const mid = parseFloat(rFrame.style.top) + parseFloat(rFrame.style.height) / 2;
+      rFrame.style.top = (mid - 2 + 2) + 'px'; rFrame.style.height = '0px';
       setTimeout(() => {
-        rFrame.classList.remove('on');
-        rLine.classList.add('gone');                                // ...and the line streaks away
-        setTimeout(() => { rLine.className = ''; rWrap.classList.remove('live'); document.body.classList.remove('routine'); routineOpen = null; routineBusy = false; }, 380);
-      }, 480);
+        rFrame.classList.add('fade');                               // ...which fades away, drawing in a little
+        setTimeout(() => { rFrame.className = ''; rLine.className = ''; rWrap.classList.remove('live'); document.body.classList.remove('routine'); routineOpen = null; routineBusy = false; }, 720);
+      }, 500);
     }, 250);
   }
   window.showRoutine = kind => showRoutine(kind, true);
@@ -2731,7 +2832,7 @@
     });
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 8';
+    tag.textContent = 'SCREEN 2026-11-22 · 9';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
