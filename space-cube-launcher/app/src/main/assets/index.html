@@ -173,10 +173,11 @@
     box-shadow: 0 -6px 14px -6px rgba(90,255,190,.9), 0 6px 14px -6px rgba(90,255,190,.9);
     background: linear-gradient(180deg, rgba(60,255,200,.13), rgba(40,170,255,.09) 60%, rgba(60,255,200,.12));
     backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
-    transition: top .5s cubic-bezier(.25,.9,.3,1), height .5s cubic-bezier(.25,.9,.3,1), opacity .15s; }
+    transition: top .5s cubic-bezier(.25,.9,.3,1), height .5s cubic-bezier(.25,.9,.3,1), left .5s cubic-bezier(.25,.9,.3,1), right .5s cubic-bezier(.25,.9,.3,1), opacity .15s; }
   #rFrame.on { opacity: 1; }
-  #rFrame.exit { left: 100% !important; right: 0 !important;
-    transition: left .6s cubic-bezier(.55,0,.85,.35), right .18s ease-out; }
+  #rFrame.collapse { left: 0; right: 0; }
+  #rFrame.collapse .rSide { opacity: 0; }
+  #rFrame.exit { left: 100%; right: 0; transition: left .6s cubic-bezier(.55,0,.85,.35); }
   #rFrame::before { content: ''; position: absolute; inset: 0; pointer-events: none;   /* scanlines, drifting */
     background: repeating-linear-gradient(0deg, rgba(150,255,215,.075) 0 1px, transparent 1px 3px);
     animation: rScan 9s linear infinite; }
@@ -1816,7 +1817,7 @@
     g.scale.setScalar(s);
     g.position.copy(start);
     shipLayer.add(g);
-    ships.push({ g, dir, speed, life: start.distanceTo(end) / speed, age: 0, bank: (Math.random() - 0.5) * 0.6, base: g.quaternion.clone(), wob: Math.random() * 6 });
+    ships.push({ g, dir, speed, life: 10 + Math.random() * 20, age: 0, bank: (Math.random() - 0.5) * 0.6, base: g.quaternion.clone(), wob: Math.random() * 6 });   // leaves after 10-30 s
   }
   // A ship coming from behind you, flying the same way you are (into the screen) but faster:
   // it appears big at a screen edge, then shrinks away toward the distance.
@@ -1832,7 +1833,7 @@
     g.scale.setScalar(0.8 + Math.random() * 0.3);
     g.position.copy(start);
     shipLayer.add(g);
-    ships.push({ g, dir, speed, life: start.distanceTo(end) / speed, age: 0, bank: (Math.random() - 0.5) * 0.5, base: g.quaternion.clone(), wob: Math.random() * 6 });
+    ships.push({ g, dir, speed, life: 10 + Math.random() * 20, age: 0, bank: (Math.random() - 0.5) * 0.5, base: g.quaternion.clone(), wob: Math.random() * 6 });   // leaves after 10-30 s
   }
   // Ships never just vanish: at the end of their run they charge up, jump to lightspeed
   // leaving a streak, and flash into a sparkle far away (like slipping through a portal).
@@ -1875,7 +1876,7 @@
   }
   function updateShips(dt) {
     nextShipIn -= dt;
-    if (nextShipIn <= 0 && ships.length < 6) { spawnShip(); nextShipIn = 2 + Math.random() * 4; }   // avg every 4 s (was 6): 1.5x the ships
+    if (nextShipIn <= 0 && ships.length < 9) { spawnShip(); nextShipIn = 2 + Math.random() * 4; }   // avg every 4 s; up to 9 at once now that they stay 10-30 s
     for (let i = ships.length - 1; i >= 0; i--) {
       const sh = ships[i];
       sh.age += dt;
@@ -2717,7 +2718,7 @@
     const H = Math.min(innerHeight * 0.66, 150 + ROUTINES[kind].items.length * 44);
     const Y = Math.max(H / 2 + 70, innerHeight * 0.46);
     rLine.className = ''; rLine.style.top = Y + 'px'; rLine.style.width = '0px';
-    rFrame.className = ''; rFrame.style.top = (Y - 2) + 'px'; rFrame.style.height = '0px';
+    rFrame.style.transition = 'none'; rFrame.className = ''; rFrame.style.top = (Y - 2) + 'px'; rFrame.style.height = '0px'; void rFrame.offsetWidth; rFrame.style.transition = '';
     // 1) a ship dashes across, the line trails behind it
     startDash(Y, () => {
       // 2) the line splits: top and bottom edges move apart into the frame
@@ -2740,9 +2741,19 @@
     setTimeout(() => {                                              // ...top and bottom edges close in and meet in one line...
       const mid = parseFloat(rFrame.style.top) + parseFloat(rFrame.style.height) / 2;
       rFrame.style.top = (mid - 2 + 2) + 'px'; rFrame.style.height = '0px';
+      rFrame.classList.add('collapse');                             // (and stretch to full width, like the ship's line)
       setTimeout(() => {
         rFrame.classList.add('exit');                               // ...which leaves the screen left to right
-        setTimeout(() => { rFrame.className = ''; rLine.className = ''; rWrap.classList.remove('live'); document.body.classList.remove('routine'); routineOpen = null; routineBusy = false; }, 650);
+        let finished = false;
+        const finish = () => {
+          if (finished) return; finished = true;
+          rFrame.removeEventListener('transitionend', onEnd);
+          rFrame.style.transition = 'none'; rFrame.className = ''; void rFrame.offsetWidth; rFrame.style.transition = '';   // reset instantly, unseen (no ghost sliding back)
+          rLine.className = ''; rWrap.classList.remove('live'); document.body.classList.remove('routine'); routineOpen = null; routineBusy = false;
+        };
+        const onEnd = e => { if (e.target === rFrame && e.propertyName === 'left' && rFrame.getBoundingClientRect().left >= innerWidth - 2) finish(); };   // only once the line is really off screen
+        rFrame.addEventListener('transitionend', onEnd);
+        setTimeout(finish, 1500);                                   // safety net
       }, 500);
     }, 250);
   }
@@ -2824,7 +2835,7 @@
     });
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 10';
+    tag.textContent = 'SCREEN 2026-11-22 · 12';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
