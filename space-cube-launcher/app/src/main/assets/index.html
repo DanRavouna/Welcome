@@ -1800,6 +1800,7 @@
   let nextShipIn = 2;
   const qInv = new THREE.Quaternion(), shipTmp = new THREE.Vector3(), FWD = new THREE.Vector3(0, 0, 1);
   function spawnShip() {
+    if (!whale && Math.random() < 0.05) return spawnWhale();   // 1 in 20: a space whale instead of a ship
     const g = SHIP_MODELS[Math.floor(Math.random() * SHIP_MODELS.length)]();
     const roll = Math.random();
     if (roll < 0.35) return spawnOvertaker(g);              // ~1 in 3: overtakes you, flying your way but faster
@@ -1879,7 +1880,123 @@
     shipLayer.add(g);
     jumpFx.push({ kind: 'spark', g, core, core2, flareH, flareV, specks, t: 0, dur: 1.3, size });
   }
+  // =========================================================
+  //  THE SPACE WHALE (1 in 20 spawns). An original low-poly whale ~50x a ship's size,
+  //  far out, drifting across very slowly. It never warps: after a minute it dissolves into sparkles.
+  // =========================================================
+  var whale = null;
+  const whaleFx = [];
+  const WHALE_LIFE = 60, WHALE_FADE_IN = 5, WHALE_FADE_OUT = 4, WHALE_SCALE = 14;
+  function makeWhale() {
+    const g = new THREE.Group(), mats = [];
+    const mat = (o) => { const m = new THREE.MeshStandardMaterial(Object.assign({ flatShading: true, metalness: 0.1, roughness: 0.75,
+      transparent: true, opacity: 0 }, o)); mats.push(m); return m; };
+    // body: a lathe (round in section) along +z, tail at -z, head at +z; low segment count for the 90s look
+    const prof = [[0.05,-3.3],[0.22,-2.7],[0.5,-1.8],[0.82,-0.6],[1.0,0.5],[0.97,1.5],[0.78,2.4],[0.42,3.05],[0.08,3.35]];
+    const geo = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 10);
+    geo.rotateX(Math.PI / 2);                               // length along z...
+    geo.scale(1, 0.82, 1);                                  // ...a little flatter than round
+    const pos = geo.attributes.position, col = new Float32Array(pos.count * 3);
+    const back = new THREE.Color(0x35507a), belly = new THREE.Color(0xc4d6e8), c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {                   // dark back, pale belly
+      const y = pos.getY(i), r = Math.hypot(pos.getX(i), y) || 1;
+      c.copy(back).lerp(belly, THREE.MathUtils.smoothstep(-y / r, 0.05, 0.6));
+      col.set([c.r, c.g, c.b], i * 3);
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.add(new THREE.Mesh(geo, mat({ vertexColors: true, color: 0xffffff })));
+    const finMat = mat({ color: 0x2c4468 });
+    // tail flukes on a pivot so they can beat
+    const tail = new THREE.Group(); tail.position.z = -3.0; g.add(tail);
+    [false, true].forEach(m => { const w = wing([[0, 0.25], [1.7, -0.55], [1.5, -0.95], [0.55, -0.55], [0, -0.7]], 0.07, finMat, m); tail.add(w); });
+    // pectoral fins, drooping a little
+    [1, -1].forEach(sd => {
+      const fg = new THREE.Group(); fg.position.set(0.62 * sd, -0.42, 1.0); fg.rotation.z = -0.45 * sd;
+      fg.add(wing([[0, 0.35], [1.25 * sd, -0.45], [1.05 * sd, -0.85], [0, -0.25]], 0.05, finMat, false)); g.add(fg);
+    });
+    // small dorsal ridge
+    const ridge = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.45, 4), finMat); ridge.position.set(0, 0.72, -1.4); g.add(ridge);
+    // eyes
+    const eyeM = mat({ color: 0x0b1020, roughness: 0.3 });
+    [1, -1].forEach(sd => { const e = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 4), eyeM); e.position.set(0.66 * sd, 0.02, 2.35); g.add(e); });
+    // a row of soft glow spots along each flank
+    const spots = [];
+    const radiusAt = z => { for (let i = 1; i < prof.length; i++) if (z <= prof[i][1]) { const [r0, y0] = prof[i - 1], [r1, y1] = prof[i]; return r0 + (r1 - r0) * (z - y0) / (y1 - y0); } return 0.1; };
+    for (let i = 0; i < 9; i++) {
+      const z = -1.9 + i * 0.48;
+      [1, -1].forEach(sd => {
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: engineTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+        const r = radiusAt(z) * 0.98;
+        sp.position.set(Math.cos(-0.35) * r * sd, Math.sin(-0.35) * r * 0.82, z); sp.scale.set(0.32, 0.32, 1);
+        g.add(sp); spots.push({ sp, ph: i * 0.7 + (sd > 0 ? 0 : 1.3) });
+      });
+    }
+    return { g, mats, tail, spots, body: geo };
+  }
+  function spawnWhale() {
+    const w = makeWhale();
+    // its path, in camera space: far out, crossing slowly sideways
+    const sideSign = Math.random() < 0.5 ? 1 : -1;
+    const depth = 190 + Math.random() * 70;
+    const halfW = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * depth * camera.aspect;
+    const start = new THREE.Vector3(-sideSign * halfW * (0.35 + Math.random() * 0.3), (Math.random() - 0.4) * depth * 0.25, camera.position.z - depth);
+    const dirC = new THREE.Vector3(sideSign, (Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.25).normalize();
+    // into space's own frame, so it turns with the stars; keep it upright (its back toward screen-up)
+    qInv.copy(spaceRig.quaternion).invert();
+    start.sub(spaceRig.position).applyQuaternion(qInv);
+    const dir = dirC.applyQuaternion(qInv), up = new THREE.Vector3(0, 1, 0).applyQuaternion(qInv);
+    const m4 = new THREE.Matrix4().lookAt(dir, new THREE.Vector3(), up);   // +z of the model along dir
+    w.g.quaternion.setFromRotationMatrix(m4);
+    w.base = w.g.quaternion.clone();
+    w.g.scale.setScalar(WHALE_SCALE);
+    w.g.position.copy(start);
+    w.dir = dir; w.speed = 1.3 + Math.random() * 0.5; w.age = 0; w.sparkT = 0;
+    shipLayer.add(w.g);
+    whale = w;
+  }
+  const whaleTmpV = new THREE.Vector3(), whaleQ = new THREE.Quaternion(), whaleAxis = new THREE.Vector3(1, 0, 0);
+  function whaleSparkle(w, n) {                     // tiny lights peeling off the body as it dissolves
+    const pos = w.body.attributes.position;
+    for (let k = 0; k < n; k++) {
+      const i = Math.floor(Math.random() * pos.count);
+      whaleTmpV.set(pos.getX(i), pos.getY(i), pos.getZ(i));
+      w.g.localToWorld(whaleTmpV); shipLayer.worldToLocal(whaleTmpV);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: engineTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      const sz = 1.2 + Math.random() * 1.8; sp.scale.set(sz, sz, 1); sp.position.copy(whaleTmpV);
+      shipLayer.add(sp);
+      whaleFx.push({ sp, v: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.3, Math.random() - 0.5).multiplyScalar(5), t: 0, dur: 1.2 + Math.random() * 1.2, sz });
+    }
+  }
+  function updateWhale(dt) {
+    for (let i = whaleFx.length - 1; i >= 0; i--) {
+      const f = whaleFx[i]; f.t += dt;
+      const k = f.t / f.dur;
+      f.sp.position.addScaledVector(f.v, dt);
+      f.sp.material.opacity = Math.max(0, (1 - k)) * (0.65 + 0.35 * Math.sin(f.t * 18 + i));
+      const z = f.sz * (1 - 0.6 * k); f.sp.scale.set(z, z, 1);
+      if (k >= 1) { shipLayer.remove(f.sp); f.sp.material.dispose(); whaleFx.splice(i, 1); }
+    }
+    const w = whale; if (!w) return;
+    w.age += dt;
+    w.g.position.addScaledVector(w.dir, w.speed * dt);
+    // slow swimming: flukes beat, the body rocks gently
+    w.tail.rotation.x = Math.sin(w.age * 0.9) * 0.28;
+    whaleQ.setFromAxisAngle(whaleAxis, Math.sin(w.age * 0.9 - 0.8) * 0.035);
+    w.g.quaternion.copy(w.base).multiply(whaleQ);
+    const fadeIn = Math.min(1, w.age / WHALE_FADE_IN);
+    const out = Math.max(0, (w.age - WHALE_LIFE) / WHALE_FADE_OUT);
+    const op = fadeIn * fadeIn * (3 - 2 * fadeIn) * (1 - Math.min(1, out));
+    w.mats.forEach(m => { m.opacity = op; m.depthWrite = op > 0.95; });
+    w.spots.forEach(({ sp, ph }) => { sp.material.opacity = op * (0.45 + 0.35 * Math.sin(w.age * 1.4 + ph)); });
+    if (out > 0) { w.sparkT += dt * 40 * (1 - out * 0.6); while (w.sparkT >= 1) { w.sparkT -= 1; whaleSparkle(w, 1); } }   // dissolving: sparkles
+    if (out >= 1) {
+      shipLayer.remove(w.g);
+      w.g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+      whale = null;
+    }
+  }
   function updateShips(dt) {
+    updateWhale(dt);
     nextShipIn -= dt;
     if (nextShipIn <= 0 && ships.length < 9) { spawnShip(); nextShipIn = 2 + Math.random() * 4; }   // avg every 4 s; up to 9 at once now that they stay 10-30 s
     for (let i = ships.length - 1; i >= 0; i--) {
@@ -2859,7 +2976,7 @@
     });
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 13';
+    tag.textContent = 'SCREEN 2026-11-22 · 14';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
