@@ -175,7 +175,8 @@
     backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
     transition: top .5s cubic-bezier(.25,.9,.3,1), height .5s cubic-bezier(.25,.9,.3,1), opacity .15s; }
   #rFrame.on { opacity: 1; }
-  #rFrame.fade { opacity: 0; transition: opacity .7s ease, left .7s ease, right .7s ease; left: 12%; right: 12%; }
+  #rFrame.exit { left: 100% !important; right: 0 !important;
+    transition: left .6s cubic-bezier(.55,0,.85,.35), right .18s ease-out; }
   #rFrame::before { content: ''; position: absolute; inset: 0; pointer-events: none;   /* scanlines, drifting */
     background: repeating-linear-gradient(0deg, rgba(150,255,215,.075) 0 1px, transparent 1px 3px);
     animation: rScan 9s linear infinite; }
@@ -1857,20 +1858,12 @@
       m.scale.set(w * (k ? 5 : 1), w * (k ? 5 : 1), len);
     });
   }
-  const ringTex = (() => {                          // thin glowing circle for the portal ring
-    const c = document.createElement('canvas'); c.width = c.height = 128;
-    const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 40, 64, 64, 62);
-    g.addColorStop(0, 'rgba(120,230,255,0)'); g.addColorStop(0.55, 'rgba(200,250,255,0.95)'); g.addColorStop(1, 'rgba(120,230,255,0)');
-    x.fillStyle = g; x.fillRect(0, 0, 128, 128);
-    return new THREE.CanvasTexture(c);
-  })();
   function sparkleAt(pos, size) {                   // the portal flash: core + star flare + ring + sparks
     const g = new THREE.Group(); g.position.copy(pos);
     const mkS = (sx, sy, tex) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex || engineTex, transparent: true, depthWrite: false,
       blending: THREE.AdditiveBlending })); sp.scale.set(sx, sy || sx, 1); g.add(sp); return sp; };
     const core = mkS(size), core2 = mkS(size * 0.5);
     const flareH = mkS(size * 3, size * 0.12), flareV = mkS(size * 0.12, size * 2.2);
-    const ring = mkS(size, size, ringTex);
     const specks = [];
     for (let i = 0; i < 22; i++) {
       const sp = mkS(size * 0.16);
@@ -1878,7 +1871,7 @@
       specks.push({ sp, v });
     }
     shipLayer.add(g);
-    jumpFx.push({ kind: 'spark', g, core, core2, flareH, flareV, ring, specks, t: 0, dur: 1.3, size });
+    jumpFx.push({ kind: 'spark', g, core, core2, flareH, flareV, specks, t: 0, dur: 1.3, size });
   }
   function updateShips(dt) {
     nextShipIn -= dt;
@@ -1942,8 +1935,7 @@
         fx.core2.material.opacity = flash;
         fx.flareH.scale.set(fx.size * 3.2 * (0.3 + 0.7 * pop) * (1 - 0.6 * k), fx.size * 0.12, 1); fx.flareH.material.opacity = fade;
         fx.flareV.scale.set(fx.size * 0.12, fx.size * 2.2 * (0.3 + 0.7 * pop) * (1 - 0.6 * k), 1); fx.flareV.material.opacity = fade;
-        const rs = fx.size * (0.4 + 2.2 * Math.sqrt(k));                // the ring opens outward and thins away
-        fx.ring.scale.set(rs, rs, 1); fx.ring.material.opacity = 0.9 * (1 - k);
+
         fx.specks.forEach(({ sp, v }, n) => {
           sp.position.copy(v).multiplyScalar(k);
           sp.material.opacity = fade * (0.6 + 0.4 * Math.sin(fx.t * 30 + n * 2.1));
@@ -2749,8 +2741,8 @@
       const mid = parseFloat(rFrame.style.top) + parseFloat(rFrame.style.height) / 2;
       rFrame.style.top = (mid - 2 + 2) + 'px'; rFrame.style.height = '0px';
       setTimeout(() => {
-        rFrame.classList.add('fade');                               // ...which fades away, drawing in a little
-        setTimeout(() => { rFrame.className = ''; rLine.className = ''; rWrap.classList.remove('live'); document.body.classList.remove('routine'); routineOpen = null; routineBusy = false; }, 720);
+        rFrame.classList.add('exit');                               // ...which leaves the screen left to right
+        setTimeout(() => { rFrame.className = ''; rLine.className = ''; rWrap.classList.remove('live'); document.body.classList.remove('routine'); routineOpen = null; routineBusy = false; }, 650);
       }, 500);
     }, 250);
   }
@@ -2832,7 +2824,7 @@
     });
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 9';
+    tag.textContent = 'SCREEN 2026-11-22 · 10';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
