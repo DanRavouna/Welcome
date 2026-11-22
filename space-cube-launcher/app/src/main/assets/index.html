@@ -1964,14 +1964,35 @@
     const ripple = new THREE.Mesh(geo, ripMat); ripple.userData.fx = true; ripple.visible = false; ripple.renderOrder = 6; g.add(ripple);
     return { g, mats, tail, spots, body: geo, rims, haloMat, ripple, ripMat };
   }
-  function spawnWhale() {
+  // Our own speed through space: how fast the dots stream past us (average)
+  const ourSpeed = () => 1.4 * CFG.dotSpeed;
+  // Routes: 'by' = overtakes us from behind, passing beside us; 'head' = comes from far ahead and sweeps past us;
+  // 'cross' = crosses far away at a random angle. (Speeds are relative to us; at least 3x our speed when it passes us.)
+  function spawnWhale(route) {
     const w = makeWhale();
-    // its path, in camera space: far out, crossing slowly sideways
-    const sideSign = Math.random() < 0.5 ? 1 : -1;
-    const depth = 190 + Math.random() * 70;
-    const halfW = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * depth * camera.aspect;
-    const start = new THREE.Vector3(-sideSign * halfW * (0.35 + Math.random() * 0.3), (Math.random() - 0.4) * depth * 0.25, camera.position.z - depth);
-    const dirC = new THREE.Vector3(sideSign, (Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.25).normalize();
+    route = route || (Math.random() < 0.35 ? 'by' : Math.random() < 0.5 ? 'head' : 'cross');
+    const cz = camera.position.z, v = ourSpeed();
+    // close passes go over us (or under us): the portrait screen is tall, so that's where you actually see it go by
+    const sx = Math.random() < 0.5 ? 1 : -1, side = sx * (6 + Math.random() * 8);
+    const lift = (Math.random() < 0.65 ? 1 : -1) * (16 + Math.random() * 4);
+    let start, dirC, speed;
+    if (route === 'by') {                                   // flying our way at ~3x our speed: 2x faster than us, relative
+      start = new THREE.Vector3(side, lift, cz + 70);
+      dirC = new THREE.Vector3(-sx * 0.06, (Math.random() - 0.5) * 0.04, -1).normalize();
+      speed = v * (2 + Math.random() * 0.8);
+    } else if (route === 'head') {                          // flying toward us at ~3x our speed: 4x, relative
+      start = new THREE.Vector3(side, lift * 1.15, cz - 320);
+      dirC = new THREE.Vector3(-sx * 0.03, (Math.random() - 0.5) * 0.03, 1).normalize();
+      speed = v * (4 + Math.random());
+    } else {                                                // far crossing, any angle
+      const depth = 170 + Math.random() * 90;
+      const halfW = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * depth * camera.aspect;
+      const a = Math.random() * Math.PI * 2;
+      dirC = new THREE.Vector3(Math.cos(a), Math.sin(a) * 0.55, (Math.random() - 0.5) * 0.8).normalize();
+      speed = 1.3 + Math.random() * 0.7;
+      const centre = new THREE.Vector3((Math.random() - 0.5) * halfW * 0.6, (Math.random() - 0.5) * depth * 0.2, cz - depth);
+      start = centre.addScaledVector(dirC, -speed * 25);    // crosses the middle of the view about halfway through its stay
+    }
     // into space's own frame, so it turns with the stars; keep it upright (its back toward screen-up)
     qInv.copy(spaceRig.quaternion).invert();
     start.sub(spaceRig.position).applyQuaternion(qInv);
@@ -1981,7 +2002,7 @@
     w.base = w.g.quaternion.clone();
     w.g.scale.setScalar(WHALE_SCALE);
     w.g.position.copy(start);
-    w.dir = dir; w.speed = 1.3 + Math.random() * 0.5; w.age = 0; w.state = 'in'; w.st = 0; w.emit = 0;
+    w.dir = dir; w.speed = speed; w.route = route; w.age = 0; w.state = 'in'; w.st = 0; w.emit = 0;
     shipLayer.add(w.g);
     whale = w;
   }
@@ -2060,8 +2081,9 @@
     w.emit += emitRate * dt;
     while (w.emit >= 1) { w.emit -= 1; whaleEdgeSpark(w, 1); }
     // slow swimming: flukes beat, the body rocks gently (still while it's only an outline)
-    w.tail.rotation.x = Math.sin(w.age * 0.9) * 0.28 * body;
-    whaleQ.setFromAxisAngle(whaleAxis, Math.sin(w.age * 0.9 - 0.8) * 0.035 * body);
+    const beat = 0.9 * (1 + w.speed / 8);                  // fast whales beat their flukes harder
+    w.tail.rotation.x = Math.sin(w.age * beat) * 0.28 * body;
+    whaleQ.setFromAxisAngle(whaleAxis, Math.sin(w.age * beat - 0.8) * 0.035 * body);
     w.g.quaternion.copy(w.base).multiply(whaleQ);
     w.mats.forEach(m => { m.opacity = body; m.depthWrite = body > 0.95; });
     w.spots.forEach(({ sp, ph }) => { sp.material.opacity = body * (0.45 + 0.35 * Math.sin(w.age * 1.4 + ph)); });
@@ -3052,7 +3074,7 @@
     });
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 16';
+    tag.textContent = 'SCREEN 2026-11-22 · 17';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
@@ -3061,7 +3083,8 @@
       <div class="rcAdd" style="flex-wrap:wrap">
         <button class="chromeBtn" data-d="ship">Ship</button><button class="chromeBtn" data-d="ships">5 ships</button>
         <button class="chromeBtn" data-d="jump">Ships jump</button><button class="chromeBtn" data-d="whale">Whale</button>
-        <button class="chromeBtn" data-d="whaleout">Whale leave</button></div>`;
+        <button class="chromeBtn" data-d="whaleby">Whale overtakes</button><button class="chromeBtn" data-d="whalehead">Whale head-on</button>
+        <button class="chromeBtn" data-d="whalecross">Whale far</button><button class="chromeBtn" data-d="whaleout">Whale leave</button></div>`;
     dbg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
       const d = b.dataset.d;
       closeCfg();
@@ -3071,6 +3094,11 @@
         if (d === 'jump') ships.forEach(sh => { if (!sh.phase) sh.life = sh.age; });
         if (d === 'whale') { if (whale) { whale.state = 'out'; whale.st = 0; } else spawnWhale(); }
         if (d === 'whaleout' && whale && whale.state !== 'out') { whale.state = 'out'; whale.st = 0; }
+        const route = { whaleby: 'by', whalehead: 'head', whalecross: 'cross' }[d];
+        if (route) {                                                // replace any current whale right away
+          if (whale) { shipLayer.remove(whale.g); whale.g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); whale = null; }
+          spawnWhale(route);
+        }
       }, 350);
     }));
     cfgList.appendChild(dbg);
