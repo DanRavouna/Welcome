@@ -159,6 +159,12 @@
   .rcAdd .gName { font-weight: 600; font-size: 15px; }
   .rcPlus { padding: 6px 14px; }
   .rcFoot { display: flex; justify-content: flex-end; margin-top: 8px; }
+  .dbgTabs { display: flex; gap: 6px; margin: 4px 0 10px; }
+  .dbgTabs button { flex: 1; background: rgba(0,0,0,.3); color: rgba(185,250,255,.6); border: 1px solid rgba(95,227,242,.35);
+    border-radius: 10px; padding: 7px 2px; font: 700 10px 'Orbitron', system-ui, sans-serif; letter-spacing: .12em; }
+  .dbgTabs button.on { color: #13337a; background: linear-gradient(180deg,#b9fbff 0%,#5fe3f2 45%,#2cc6df 100%); border-color: transparent; }
+  .dbgPane { display: flex; flex-wrap: wrap; gap: 8px; }
+  .dbgPane[hidden] { display: none; }
   .rcNote { font-size: 12px; color: rgba(200,220,255,.5); margin: 2px 2px 6px; }
   /* ---- Sleep / wake checklist: a ship draws a line, the line opens into a hologram frame ---- */
   #rWrap { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
@@ -1801,6 +1807,7 @@
   const qInv = new THREE.Quaternion(), shipTmp = new THREE.Vector3(), FWD = new THREE.Vector3(0, 0, 1);
   function spawnShip(noWhale) {
     if (!noWhale && !whale && Math.random() < 0.05) return spawnWhale();   // 1 in 20: a space whale instead of a ship
+    if (!noWhale && !squad && Math.random() < 0.1) return spawnSquad();    // 1 in 10: a squadron
     const g = SHIP_MODELS[Math.floor(Math.random() * SHIP_MODELS.length)]();
     const roll = Math.random();
     if (roll < 0.35) return spawnOvertaker(g);              // ~1 in 3: overtakes you, flying your way but faster
@@ -2093,8 +2100,157 @@
       whale = null;
     }
   }
+  // =========================================================
+  //  SQUADRONS: 3-5 assault ships (Dart, Needle, Crescent, Trident) in a V.
+  //  Sometimes they chase a target that weaves to dodge, firing twin laser bolts at it.
+  //  When their time is up the target jumps to lightspeed first, and the squadron follows it in.
+  // =========================================================
+  const ASSAULT = [0, 3, 4, 7];                        // indexes in SHIP_MODELS: dart, needle, trident, crescent
+  const CIVIL = [1, 2, 5, 6];                          // hauler, manta, shuttle, ringer
+  var squad = null;
+  const bolts = [], hitFx = [];
+  const boltGeo = new THREE.BoxGeometry(0.05, 0.05, 1.4);
+  const boltMat = new THREE.MeshBasicMaterial({ color: 0x7dff9a, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
+  const boltGlowMat = new THREE.MeshBasicMaterial({ color: 0x2bff6a, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
+  const hitTex = pointTexture('255,190,110');
+  function spawnSquad(chase, route) {
+    if (chase === undefined) chase = Math.random() < 0.6;
+    const n = 3 + Math.floor(Math.random() * 3);
+    const cz = camera.position.z;
+    route = route || (Math.random() < 0.7 ? 'by' : 'cross');
+    let start, dirC, speed;
+    if (route === 'by') {                                 // comes from behind us and races ahead (the target first)
+      const sx = Math.random() < 0.5 ? 1 : -1, sy = Math.random() < 0.6 ? 1 : -1;
+      start = new THREE.Vector3(sx * (1.2 + Math.random() * 1.5), sy * (1.0 + Math.random() * 1.2), cz + 8);
+      dirC = new THREE.Vector3(-sx * 0.05, -sy * 0.04, -1).normalize();
+      speed = 14 + Math.random() * 6;
+    } else {                                              // crosses in front of us, side to side
+      const dirSign = Math.random() < 0.5 ? 1 : -1, depth = 28 + Math.random() * 25;
+      const halfW = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * depth * camera.aspect;
+      start = new THREE.Vector3(-dirSign * (halfW + 3), (Math.random() - 0.4) * depth * 0.4, cz - depth);
+      dirC = new THREE.Vector3(dirSign, (Math.random() - 0.5) * 0.15, -0.35 - Math.random() * 0.3).normalize();   // across and away: stays in view longer
+      speed = 4 + Math.random() * 2;
+    }
+    qInv.copy(spaceRig.quaternion).invert();
+    start.sub(spaceRig.position).applyQuaternion(qInv);
+    const dir = dirC.applyQuaternion(qInv);
+    const U = new THREE.Vector3(1, 0, 0).applyQuaternion(qInv), V0 = new THREE.Vector3(0, 1, 0).applyQuaternion(qInv);
+    U.addScaledVector(dir, -U.dot(dir)).normalize(); const V = new THREE.Vector3().crossVectors(dir, U).normalize();
+    if (V.dot(V0) < 0) V.negate();
+    const sq = { start, dir, U, V, speed, t: 0, life: 12 + Math.random() * 10, chase, lag: chase ? 0.55 + Math.random() * 0.25 : 0,
+      ph1: Math.random() * 6, ph2: Math.random() * 6, members: [], target: null, released: false };
+    const addShip = (g, role, off) => {
+      g.scale.setScalar(0.9);
+      shipLayer.add(g);
+      const sh = { g, dir: dir.clone(), speed, life: Infinity, age: 0, bank: 0, base: g.quaternion.clone(), wob: Math.random() * 6,
+        squad: sq, role, off, prev: null, fireIn: 1 + Math.random() };
+      ships.push(sh); return sh;
+    };
+    const lead = ASSAULT[Math.floor(Math.random() * ASSAULT.length)];
+    for (let i = 0; i < n; i++) {                         // V formation: leader in front, wingmen fanning back
+      const k = Math.ceil(i / 2), side = i === 0 ? 0 : (i % 2 ? 1 : -1);
+      const model = Math.random() < 0.7 ? lead : ASSAULT[Math.floor(Math.random() * ASSAULT.length)];
+      sq.members.push(addShip(SHIP_MODELS[model](), 'wing', new THREE.Vector3(side * k * 2.1, (Math.random() - 0.5) * 0.5, -k * 2.4)));
+    }
+    if (chase) {
+      const pool = Math.random() < 0.5 ? CIVIL : ASSAULT;
+      sq.target = addShip(SHIP_MODELS[pool[Math.floor(Math.random() * pool.length)]](), 'target', new THREE.Vector3());
+    }
+    squad = sq;
+    updateSquad(0);
+  }
+  // where the flight path is at time t; amp = how hard it weaves
+  const sqP = new THREE.Vector3();
+  function squadPath(sq, t, amp, out) {
+    out.copy(sq.start).addScaledVector(sq.dir, sq.speed * t)
+      .addScaledVector(sq.U, Math.sin(t * 1.1 + sq.ph1) * amp)
+      .addScaledVector(sq.V, Math.sin(t * 1.7 + sq.ph2) * amp * 0.6);
+    return out;
+  }
+  const sqVel = new THREE.Vector3(), sqTmp = new THREE.Vector3(), boltDir = new THREE.Vector3();
+  function placeSquadShip(sq, sh, pos, dt) {
+    if (sh.prev && dt > 0) {
+      sqVel.copy(pos).sub(sh.prev);
+      sh.vel = (sh.vel || new THREE.Vector3()).copy(sqVel).divideScalar(dt);
+      if (sqVel.lengthSq() > 1e-8) {
+        sqVel.normalize(); sh.dir.copy(sqVel);
+        sh.base.setFromUnitVectors(FWD, sqVel);
+        // bank into turns: lateral velocity along U
+        const lat = sqVel.dot(sq.U);
+        sh.bank += ((-lat * 6) - sh.bank) * Math.min(1, dt * 4);
+      }
+    }
+    sh.prev = (sh.prev || new THREE.Vector3()).copy(pos);
+    sh.g.position.copy(pos);
+  }
+  function fireBolt(from, to, shooterScale, shooterVel) {
+    boltDir.copy(to).sub(from).normalize()
+      .add(sqTmp.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(0.06)).normalize();
+    [-0.25, 0.25].forEach(side => {                       // twin bolts from both wings
+      const g = new THREE.Group();
+      const core = new THREE.Mesh(boltGeo, boltMat), glowM = new THREE.Mesh(boltGeo, boltGlowMat);
+      glowM.scale.set(4, 4, 1.1); g.add(core, glowM);
+      g.quaternion.setFromUnitVectors(FWD, boltDir);
+      g.position.copy(from).addScaledVector(sqTmp.set(1, 0, 0).applyQuaternion(g.quaternion), side * shooterScale);
+      g.scale.setScalar(shooterScale);
+      shipLayer.add(g);
+      bolts.push({ g, v: boltDir.clone().multiplyScalar(70).add(shooterVel || sqTmp.set(0, 0, 0)), life: 0.9 });
+    });
+  }
+  function hitSpark(pos, size) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: hitTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    sp.position.copy(pos); sp.scale.set(size, size, 1); shipLayer.add(sp);
+    hitFx.push({ sp, t: 0, dur: 0.35, size });
+  }
+  function updateSquad(dt) {
+    // bolts in flight
+    for (let i = bolts.length - 1; i >= 0; i--) {
+      const b = bolts[i];
+      b.life -= dt; b.g.position.addScaledVector(b.v, dt);
+      const tgt = squad && squad.target && !squad.target.phase ? squad.target : null;
+      if (tgt && b.g.position.distanceTo(tgt.g.position) < 1.3 * tgt.g.scale.x) { hitSpark(b.g.position, 1.4); b.life = 0; }
+      if (b.life <= 0) { shipLayer.remove(b.g); bolts.splice(i, 1); }
+    }
+    for (let i = hitFx.length - 1; i >= 0; i--) {
+      const h = hitFx[i]; h.t += dt; const k = h.t / h.dur;
+      const z = h.size * (0.6 + 1.2 * k); h.sp.scale.set(z, z, 1); h.sp.material.opacity = 1 - k;
+      if (k >= 1) { shipLayer.remove(h.sp); h.sp.material.dispose(); hitFx.splice(i, 1); }
+    }
+    const sq = squad; if (!sq) return;
+    sq.t += dt;
+    const flying = sq.members.concat(sq.target ? [sq.target] : []).filter(sh => !sh.phase && ships.includes(sh));
+    if (!flying.length && !bolts.length) { squad = null; return; }
+    if (sq.target && sq.target.squad) placeSquadShip(sq, sq.target, squadPath(sq, sq.t, 2.2, sqP), dt);
+    sq.members.forEach(sh => {
+      if (sh.phase || !sh.squad) return;                  // released: it flies on by itself now
+      squadPath(sq, sq.t - sq.lag, sq.chase ? 1.6 : 0.25, sqP)
+        .addScaledVector(sq.U, sh.off.x).addScaledVector(sq.V, sh.off.y).addScaledVector(sq.dir, sh.off.z);
+      placeSquadShip(sq, sh, sqP, dt);
+      // firing: short twin bursts at the target while it's ahead
+      if (sq.chase && sq.target && !sq.target.phase && sq.t > 0.5) {
+        sh.fireIn -= dt;
+        if (sh.fireIn <= 0) {
+          sqTmp.copy(sq.target.g.position).sub(sh.g.position);
+          if (sqTmp.dot(sh.dir) > 0 && sqTmp.length() < 40) {
+            const lead = sqTmp.length() / 70;               // bolt flight time
+            const aim = sq.target.g.position.clone();      // bolts carry the shooter's speed, so lead by the difference
+            if (sq.target.vel) aim.addScaledVector(sq.target.vel, lead); if (sh.vel) aim.addScaledVector(sh.vel, -lead);
+            fireBolt(sh.g.position.clone().addScaledVector(sh.dir, 0.8 * sh.g.scale.x), aim, sh.g.scale.x, sh.vel && sh.vel.clone());
+          }
+          sh.fireIn = Math.random() < 0.35 ? 0.12 : 0.45 + Math.random() * 0.9;   // sometimes a quick double shot
+        }
+      }
+    });
+    // time's up: the target jumps first, the squadron follows it into lightspeed
+    if (!sq.released && sq.t >= sq.life) {
+      sq.released = true;
+      const order = (sq.target ? [sq.target] : []).concat(sq.members);
+      order.forEach((sh, i) => { if (!sh.phase) { sh.squad = null; sh.life = sh.age + (sq.target ? 0.35 : 0) * Math.min(i, 1) + i * 0.12; } });
+    }
+  }
   function updateShips(dt) {
     updateWhale(dt);
+    updateSquad(dt);
     nextShipIn -= dt;
     if (nextShipIn <= 0 && ships.length < 9) { spawnShip(); nextShipIn = 2 + Math.random() * 4; }   // avg every 4 s; up to 9 at once now that they stay 10-30 s
     for (let i = ships.length - 1; i >= 0; i--) {
@@ -2102,7 +2258,7 @@
       sh.age += dt;
       const phase = sh.phase || 'cruise';
       if (phase === 'cruise') {
-        sh.g.position.addScaledVector(sh.dir, sh.speed * dt);
+        if (!sh.squad) sh.g.position.addScaledVector(sh.dir, sh.speed * dt);
         if (sh.age > sh.life) {
           sh.phase = 'charge'; sh.ct = 0; sh.glows = []; sh.g.traverse(o => { if (o.isSprite) sh.glows.push([o, o.scale.x]); });
           // the jump heads into the distance (away from you), so its flash shows up where the ship vanished
@@ -3074,25 +3230,35 @@
     });
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 17';
+    tag.textContent = 'SCREEN 2026-11-22 · 18';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
     const dbg = document.createElement('div'); dbg.className = 'gCard'; dbg.id = 'dbgCard'; dbg.style.display = debugOpen ? '' : 'none';
     dbg.innerHTML = `<div class="gTop"><span class="rcTitle">DEBUG</span></div>
-      <div class="rcAdd" style="flex-wrap:wrap">
-        <button class="chromeBtn" data-d="ship">Ship</button><button class="chromeBtn" data-d="ships">5 ships</button>
-        <button class="chromeBtn" data-d="jump">Ships jump</button><button class="chromeBtn" data-d="whale">Whale</button>
-        <button class="chromeBtn" data-d="whaleby">Whale overtakes</button><button class="chromeBtn" data-d="whalehead">Whale head-on</button>
-        <button class="chromeBtn" data-d="whalecross">Whale far</button><button class="chromeBtn" data-d="whaleout">Whale leave</button></div>`;
-    dbg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      <div class="dbgTabs"><button data-tab="ships" class="on">SHIPS</button><button data-tab="squads">SQUADRONS</button><button data-tab="whale">WHALE</button></div>
+      <div class="dbgPane" data-pane="ships">
+        <button class="chromeBtn" data-d="ship">1 ship</button><button class="chromeBtn" data-d="ships">5 ships</button>
+        <button class="chromeBtn" data-d="jump">All jump</button></div>
+      <div class="dbgPane" data-pane="squads" hidden>
+        <button class="chromeBtn" data-d="sqchase">Chase</button><button class="chromeBtn" data-d="sqcross">Chase across</button><button class="chromeBtn" data-d="sqfly">Formation</button>
+        <button class="chromeBtn" data-d="sqend">Jump out</button></div>
+      <div class="dbgPane" data-pane="whale" hidden>
+        <button class="chromeBtn" data-d="whaleby">Overtakes</button><button class="chromeBtn" data-d="whalehead">Head-on</button>
+        <button class="chromeBtn" data-d="whalecross">Far</button><button class="chromeBtn" data-d="whaleout">Leave</button></div>`;
+    dbg.querySelectorAll('.dbgTabs button').forEach(tb => tb.addEventListener('click', () => {
+      dbg.querySelectorAll('.dbgTabs button').forEach(x => x.classList.toggle('on', x === tb));
+      dbg.querySelectorAll('.dbgPane').forEach(pn => { pn.hidden = pn.dataset.pane !== tb.dataset.tab; });
+    }));
+    dbg.querySelectorAll('.dbgPane button').forEach(b => b.addEventListener('click', () => {
       const d = b.dataset.d;
       closeCfg();
       setTimeout(() => {
         if (d === 'ship') spawnShip(true);
         if (d === 'ships') for (let i = 0; i < 5; i++) spawnShip(true);
         if (d === 'jump') ships.forEach(sh => { if (!sh.phase) sh.life = sh.age; });
-        if (d === 'whale') { if (whale) { whale.state = 'out'; whale.st = 0; } else spawnWhale(); }
+        if (d === 'sqchase' || d === 'sqfly' || d === 'sqcross') { if (squad) squad.t = squad.life; setTimeout(() => spawnSquad(d !== 'sqfly', d === 'sqcross' ? 'cross' : 'by'), squad ? 50 : 0); }
+        if (d === 'sqend' && squad) squad.t = squad.life;
         if (d === 'whaleout' && whale && whale.state !== 'out') { whale.state = 'out'; whale.st = 0; }
         const route = { whaleby: 'by', whalehead: 'head', whalecross: 'cross' }[d];
         if (route) {                                                // replace any current whale right away
