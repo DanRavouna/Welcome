@@ -177,7 +177,12 @@
   #rFrame.on { opacity: 1; }
   #rFrame.collapse { left: 0; right: 0; }
   #rFrame.collapse .rSide { opacity: 0; }
-  #rFrame.exit { left: 100%; right: 0; transition: left .6s cubic-bezier(.55,0,.85,.35); }
+  #rFrame.exit { left: 100%; right: 0; opacity: .45; transition: left .6s cubic-bezier(.55,0,.85,.35), opacity .6s ease-in; }
+  .rSpark { position: absolute; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; pointer-events: none;
+    background: #e6fff6; box-shadow: 0 0 5px 1px rgba(120,255,200,.75); animation: rSpark var(--life) ease-out forwards; }
+  @keyframes rSpark { 0% { opacity: .85; transform: translate(0,0) scale(1); }
+    40% { opacity: .5; } 55% { opacity: .75; }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.3); } }
   #rFrame::before { content: ''; position: absolute; inset: 0; pointer-events: none;   /* scanlines, drifting */
     background: repeating-linear-gradient(0deg, rgba(150,255,215,.075) 0 1px, transparent 1px 3px);
     animation: rScan 9s linear infinite; }
@@ -2743,8 +2748,27 @@
       rFrame.style.top = (mid - 2 + 2) + 'px'; rFrame.style.height = '0px';
       rFrame.classList.add('collapse');                             // (and stretch to full width, like the ship's line)
       setTimeout(() => {
-        rFrame.classList.add('exit');                               // ...which leaves the screen left to right
+        rFrame.classList.add('exit');                               // ...which leaves the screen left to right, fading a little
         let finished = false;
+        // a few tiny sparks shed from the tail end of the line as it goes
+        const sparkY = parseFloat(rFrame.style.top) + 2;
+        let lastSpark = 0;
+        const shed = now => {
+          if (finished) return;
+          const x = rFrame.getBoundingClientRect().left;
+          if (x < innerWidth - 4 && now - lastSpark > 28) {
+            lastSpark = now;
+            const sp = document.createElement('i'); sp.className = 'rSpark';
+            sp.style.left = (x + Math.random() * 14) + 'px'; sp.style.top = (sparkY + (Math.random() - 0.5) * 3) + 'px';
+            sp.style.setProperty('--dx', (-6 - Math.random() * 14) + 'px');            // drift back along the trail...
+            sp.style.setProperty('--dy', ((Math.random() - 0.5) * 12) + 'px');         // ...and a touch up or down
+            sp.style.setProperty('--life', (420 + Math.random() * 300) + 'ms');
+            sp.addEventListener('animationend', () => sp.remove());
+            rWrap.appendChild(sp);
+          }
+          requestAnimationFrame(shed);
+        };
+        requestAnimationFrame(shed);
         const finish = () => {
           if (finished) return; finished = true;
           rFrame.removeEventListener('transitionend', onEnd);
@@ -2835,7 +2859,7 @@
     });
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 12';
+    tag.textContent = 'SCREEN 2026-11-22 · 13';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
