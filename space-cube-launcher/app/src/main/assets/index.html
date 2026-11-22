@@ -1931,25 +1931,38 @@
         g.add(sp); spots.push({ sp, ph: i * 0.7 + (sd > 0 ? 0 : 1.3) });
       });
     }
-    // glowing wireframe outline (all the facet edges), ordered head -> tail so it can be "drawn"
-    g.updateMatrixWorld(true);
-    const segs = [];
-    g.traverse(o => {
-      if (!o.isMesh || o.geometry.type === 'SphereGeometry') return;
-      const eg = new THREE.EdgesGeometry(o.geometry, 15); eg.applyMatrix4(o.matrixWorld);
-      const a = eg.attributes.position.array;
-      for (let i = 0; i < a.length; i += 6) segs.push([a[i], a[i+1], a[i+2], a[i+3], a[i+4], a[i+5]]);
-      eg.dispose();
+    // ---- the glowing OUTLINE: a rim light on the silhouette only (no inner lines) ----
+    const rims = [];
+    const rimMat = () => { const m = new THREE.ShaderMaterial({
+      uniforms: { uI: { value: 0 }, uC: { value: new THREE.Color(0x9ff6ff) } },
+      vertexShader: `varying vec3 vN; varying vec3 vV;
+        void main() { vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: `uniform float uI; uniform vec3 uC; varying vec3 vN; varying vec3 vV;
+        void main() { float f = 1.0 - abs(dot(normalize(vN), normalize(vV))); float rim = pow(f, 4.0) * uI;
+          if (rim < 0.004) discard; gl_FragColor = vec4(uC * (0.7 + 0.3 * min(uI, 3.0)), min(rim, 1.0)); }`,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+      rims.push(m); return m; };
+    g.traverse(o => {                                         // a rim copy of the body, flukes and fins, moving with them
+      if (!o.isMesh || o.geometry.type !== 'LatheGeometry' || o.userData.fx) return;   // the body's silhouette (flat fins would light up whole)
+      const r = new THREE.Mesh(o.geometry, rimMat()); r.userData.fx = true;
+      r.position.copy(o.position); r.rotation.copy(o.rotation); r.scale.copy(o.scale); r.renderOrder = 6;
+      o.parent.add(r);
     });
-    segs.sort((p, q) => (q[2] + q[5]) - (p[2] + p[5]));          // head first
-    const lg = new THREE.BufferGeometry();
-    lg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(segs.flat()), 3));
-    const lineMat = new THREE.LineBasicMaterial({ color: 0x9ff6ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
-    const outline = new THREE.LineSegments(lg, lineMat); outline.renderOrder = 5;
-    g.add(outline);
-    const pen = new THREE.Sprite(new THREE.SpriteMaterial({ map: engineTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
-    pen.scale.set(0.9, 0.9, 1); g.add(pen);                          // the bright point that draws the outline
-    return { g, mats, tail, spots, body: geo, outline, lineMat, nSeg: segs.length, segs, pen };
+    // ---- the HALO: a soft ring of light just outside the silhouette (a slightly bigger shell, glowing at its inner edge) ----
+    const haloMat = new THREE.ShaderMaterial({
+      uniforms: { uI: { value: 0 }, uC: { value: new THREE.Color(0x7fe9ff) } },
+      vertexShader: `varying vec3 vN; varying vec3 vV;
+        void main() { vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: `uniform float uI; uniform vec3 uC; varying vec3 vN; varying vec3 vV;
+        void main() { float x = abs(dot(normalize(vN), normalize(vV)));
+          float ring = smoothstep(0.0, 0.38, x) * (1.0 - smoothstep(0.38, 0.8, x));   // soft, brightest right at the body's edge
+          float a = ring * ring * uI * 0.22; if (a < 0.004) discard; gl_FragColor = vec4(uC, min(a, 1.0)); }`,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.BackSide });
+    const halo = new THREE.Mesh(geo, haloMat); halo.scale.setScalar(1.08); halo.userData.fx = true; halo.renderOrder = 5; g.add(halo);
+    // ---- the RIPPLE: a copy of the outline that expands outward once and fades ----
+    const ripMat = rimMat(); rims.pop();                       // (driven separately from the outline)
+    const ripple = new THREE.Mesh(geo, ripMat); ripple.userData.fx = true; ripple.visible = false; ripple.renderOrder = 6; g.add(ripple);
+    return { g, mats, tail, spots, body: geo, rims, haloMat, ripple, ripMat };
   }
   function spawnWhale() {
     const w = makeWhale();
@@ -1968,42 +1981,40 @@
     w.base = w.g.quaternion.clone();
     w.g.scale.setScalar(WHALE_SCALE);
     w.g.position.copy(start);
-    w.dir = dir; w.speed = 1.3 + Math.random() * 0.5; w.age = 0; w.state = 'in'; w.st = 0;
+    w.dir = dir; w.speed = 1.3 + Math.random() * 0.5; w.age = 0; w.state = 'in'; w.st = 0; w.emit = 0;
     shipLayer.add(w.g);
     whale = w;
   }
   const whaleTmpV = new THREE.Vector3(), whaleQ = new THREE.Quaternion(), whaleAxis = new THREE.Vector3(1, 0, 0);
-  const whaleAxisP = new THREE.Vector3();
-  function whaleBurst(w, n) {                       // many sparkles shooting out of the body
-    const pos = w.body.attributes.position;
-    for (let k = 0; k < n; k++) {
+  const smooth01 = x => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
+  const wN = new THREE.Vector3(), wV = new THREE.Vector3(), wQ = new THREE.Quaternion(), camLocal = new THREE.Vector3();
+  // one sparkle leaving the silhouette, drifting outward (scale > 1: from the expanding ripple instead)
+  function whaleEdgeSpark(w, scale) {
+    const pos = w.body.attributes.position, nor = w.body.attributes.normal;
+    w.g.getWorldQuaternion(wQ);
+    camLocal.copy(camera.position); shipLayer.worldToLocal(camLocal);
+    for (let tries = 0; tries < 12; tries++) {
       const i = Math.floor(Math.random() * pos.count);
-      whaleTmpV.set(pos.getX(i), pos.getY(i), pos.getZ(i));
-      whaleAxisP.set(0, 0, pos.getZ(i));                            // the point on the spine behind it
+      whaleTmpV.set(pos.getX(i) * scale, pos.getY(i) * scale, pos.getZ(i) * scale);
       w.g.localToWorld(whaleTmpV); shipLayer.worldToLocal(whaleTmpV);
-      w.g.localToWorld(whaleAxisP); shipLayer.worldToLocal(whaleAxisP);
-      const v = whaleTmpV.clone().sub(whaleAxisP).normalize()
-        .add(new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(0.8))
-        .normalize().multiplyScalar(18 + Math.random() * 30);
+      wN.set(nor.getX(i), nor.getY(i), nor.getZ(i)).applyQuaternion(wQ).normalize();
+      wV.copy(camLocal).sub(whaleTmpV).normalize();
+      const d = wN.dot(wV);
+      if (Math.abs(d) > 0.3) continue;                        // only from the silhouette
+      const out = wN.addScaledVector(wV, -d).normalize();      // outward, across the screen
+      const v = out.multiplyScalar(6 + Math.random() * 10).add(new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(2));
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: engineTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-      const sz = 1.4 + Math.random() * 2.2; sp.scale.set(sz, sz, 1); sp.position.copy(whaleTmpV);
+      const sz = 2.2 + Math.random() * 2.6; sp.scale.set(sz, sz, 1); sp.position.copy(whaleTmpV);
       shipLayer.add(sp);
-      whaleFx.push({ sp, v, t: 0, dur: 1.0 + Math.random() * 1.1, sz });
+      whaleFx.push({ sp, v, t: 0, dur: 1.1 + Math.random() * 1.1, sz });
+      return;
     }
   }
-  const smooth01 = x => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
-  // the outline: how much is drawn (0..1) and how bright (0..1+)
-  function setOutline(w, drawn, glow) {
-    const n = Math.max(0, Math.min(w.nSeg, Math.round(w.nSeg * drawn)));
-    w.outline.geometry.setDrawRange(0, n * 2);
-    w.lineMat.opacity = Math.min(1, glow);
-    w.lineMat.color.setRGB(0.25 + 0.6 * Math.min(1, glow), 0.55 + 0.45 * Math.min(1, glow), 0.7 + 0.3 * Math.min(1, glow));
-    if (drawn > 0 && drawn < 1 && n > 0) {                       // the pen sits at the newest drawn edge
-      const sgm = w.segs[n - 1]; w.pen.position.set(sgm[3], sgm[4], sgm[5]); w.pen.material.opacity = Math.min(1, glow * 1.4);
-    } else w.pen.material.opacity = 0;
+  // outline brightness e (1 = normal outline). The halo is always 3x the outline.
+  function setGlow(w, e) {
+    w.rims.forEach(m => { m.uniforms.uI.value = e; });
+    w.haloMat.uniforms.uI.value = e * 3;
   }
-  // three pulses, each quicker than the last; returns 0..1 brightness swing
-  const pulses = x => { x = Math.min(1, Math.max(0, x)); const ph = Math.pow(x, 0.75) * 3 * Math.PI * 2; return 0.5 - 0.5 * Math.cos(ph); };
   function updateWhale(dt) {
     for (let i = whaleFx.length - 1; i >= 0; i--) {
       const f = whaleFx[i]; f.t += dt;
@@ -2016,35 +2027,38 @@
     const w = whale; if (!w) return;
     w.age += dt; w.st += dt;
     w.g.position.addScaledVector(w.dir, w.speed * dt);
-    // ARRIVING:  outline draws in (2.2 s) -> pulses (1.6 s) -> burst of sparkles, body appears, outline fades
-    // LEAVING:   outline lights up over the body (1 s) -> pulses (1.4 s) -> burst, body vanishes -> outline undraws (1.2 s)
-    let body = 0;
-    if (w.state === 'in') {
-      const DRAW = 2.2, PULSE = 1.6, SHOW = 0.8;
-      if (w.st < DRAW) { const d = w.st / DRAW; setOutline(w, smooth01(d), 0.15 + 0.85 * d * d); }
-      else if (w.st < DRAW + PULSE) setOutline(w, 1, 0.75 + 0.6 * pulses((w.st - DRAW) / PULSE));
-      else {
-        if (!w.burst) { w.burst = true; whaleBurst(w, 80); }
-        const k = (w.st - DRAW - PULSE) / SHOW;
-        body = smooth01(k); setOutline(w, 1, 1 - smooth01(k));
-        if (k >= 1) { w.state = 'swim'; w.st = 0; w.burst = false; setOutline(w, 0, 0); }
-      }
-    } else if (w.state === 'swim') {
-      body = 1;
+    // ARRIVING and LEAVING play the same way:
+    //   the outline glows up to 3x (halo 3x the outline), sparkles start leaving the edge as it nears its peak ->
+    //   a single ripple pulses outward (a copy of the outline expanding), the body appears (or vanishes), sparkles keep coming
+    const BUILD = 2.6, RIP = 1.4, FAINT = 0.3, PEAK = 3;
+    let body = w.state === 'in' ? 0 : 1, glow = FAINT, emitRate = 0;
+    if (w.state === 'swim') {
       if (w.st >= WHALE_LIFE) { w.state = 'out'; w.st = 0; }
     } else {
-      const RISE = 1.0, PULSE = 1.4, HIDE = 0.35, UNDRAW = 1.2;
-      if (w.st < RISE) { body = 1; setOutline(w, 1, smooth01(w.st / RISE) * 0.9); }
-      else if (w.st < RISE + PULSE) { body = 1; setOutline(w, 1, 0.75 + 0.6 * pulses((w.st - RISE) / PULSE)); }
-      else {
-        if (!w.burst) { w.burst = true; whaleBurst(w, 80); }
-        const t2 = w.st - RISE - PULSE;
-        body = 1 - smooth01(t2 / HIDE);
-        const u = Math.max(0, (t2 - 0.15) / UNDRAW);
-        setOutline(w, 1 - smooth01(u), 0.9 * (1 - u * u));           // undraws tail-first, dimming
-        if (u >= 1) w.done = true;
+      const from = w.state === 'in' ? 0 : FAINT;
+      if (w.st < BUILD) {
+        const k = w.st / BUILD;
+        glow = from + (PEAK - from) * k * k;                    // rises slowly, then faster
+        emitRate = 70 * smooth01((k - 0.45) / 0.55);            // sparkles begin as it nears its peak
+      } else {
+        const r = (w.st - BUILD) / RIP;
+        if (!w.rippled) { w.rippled = true; w.ripple.visible = true; }
+        w.ripple.scale.setScalar(1 + 0.75 * (1 - Math.pow(1 - Math.min(1, r), 2)));   // pulses out, easing off
+        w.ripMat.uniforms.uI.value = PEAK * (1 - smooth01(r));
+        const settle = smooth01(r / 0.45);
+        if (w.state === 'in') { body = settle; glow = PEAK + (FAINT - PEAK) * settle; }   // visible now; outline back to a faint rim
+        else { body = 1 - settle; glow = PEAK * (1 - smooth01(r / 0.8)); }               // gone; outline fades away
+        emitRate = 70 * (1 - smooth01(r)) + 0.0;
+        if (Math.random() < dt * 30 * (1 - r)) whaleEdgeSpark(w, w.ripple.scale.x);       // the ripple sheds a few too
+        if (r >= 1) {
+          w.ripple.visible = false; w.rippled = false;
+          if (w.state === 'in') { w.state = 'swim'; w.st = 0; } else w.done = true;
+        }
       }
     }
+    setGlow(w, glow);
+    w.emit += emitRate * dt;
+    while (w.emit >= 1) { w.emit -= 1; whaleEdgeSpark(w, 1); }
     // slow swimming: flukes beat, the body rocks gently (still while it's only an outline)
     w.tail.rotation.x = Math.sin(w.age * 0.9) * 0.28 * body;
     whaleQ.setFromAxisAngle(whaleAxis, Math.sin(w.age * 0.9 - 0.8) * 0.035 * body);
@@ -3038,7 +3052,7 @@
     });
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 15';
+    tag.textContent = 'SCREEN 2026-11-22 · 16';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
