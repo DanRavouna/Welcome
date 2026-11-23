@@ -21,11 +21,14 @@ def get(url, tries=3):
 
 COLS = ['pl_name', 'hostname', 'ra', 'dec', 'sy_dist', 'pl_rade', 'pl_bmasse', 'pl_eqt', 'pl_orbper',
         'pl_orbsmax', 'st_teff', 'st_rad', 'st_spectype', 'disc_year', 'discoverymethod', 'sy_pnum']
-adql = 'select top 1000 ' + ','.join(COLS) + ' from pscomppars where sy_dist is not null order by sy_dist asc'
+# The archive ignores 'order by' together with 'top', so fetch every planet with a distance and sort here.
+adql = 'select ' + ','.join(COLS) + ' from pscomppars where sy_dist is not null'
 rows = json.loads(get('https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=' + urllib.parse.quote(adql) + '&format=json'))
 def rnd(v, n):
     return round(v, n) if isinstance(v, float) else v
-planets = [[rnd(p.get(c), 5 if c in ('ra', 'dec') else 3) for c in COLS] for p in rows]
+rows.sort(key=lambda p: p['sy_dist'])
+print('archive planets with a distance:', len(rows))
+planets = [[rnd(p.get(c), 5 if c in ('ra', 'dec') else 3) for c in COLS] for p in rows[:1000]]
 print('exoplanets:', len(planets), 'nearest', planets[0][0], planets[0][4], 'pc; farthest', planets[-1][0], planets[-1][4], 'pc')
 
 # id, name, kind, Sesame query, fallback RA, Dec (deg), distance (ly), distance source
@@ -65,3 +68,9 @@ data = {
 OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text(json.dumps(data, separators=(',', ':')))
 print('wrote', OUT, OUT.stat().st_size, 'bytes')
+
+# The sandbox that builds the screen cannot download artifacts, so the data is also printed (gzip + base64).
+import base64, gzip
+print('SKYDATA-BEGIN'); b = base64.b64encode(gzip.compress(OUT.read_bytes())).decode()
+for i in range(0, len(b), 3000): print('SKY:' + b[i:i + 3000])
+print('SKYDATA-END')
