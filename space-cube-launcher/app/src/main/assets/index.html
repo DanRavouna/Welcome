@@ -2425,6 +2425,7 @@
   remeasure(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(remeasure);
 
   const hp = new THREE.Vector3(), camFwd = new THREE.Vector3();
+  const hudOcc = new THREE.Vector3();
   function updateHud(fade) {
     hudEl.style.opacity = fade;
     if (fade < 0.02) return;
@@ -2437,6 +2438,12 @@
       hp.project(camera);
       const x = (hp.x + 1) / 2 * W, y = (1 - hp.y) / 2 * H;
       if (toObj.dot(camFwd) <= 0) { t.g.style.display = 'none'; return; }      // behind you
+      if (typeof NAV !== 'undefined' && NAV.some(n => {                         // hidden behind a nearer planet or moon
+        if (n.t === t) return false;
+        n.t.obj.getWorldPosition(hudOcc); const dn = hudOcc.distanceTo(camera.position);
+        if (dn >= dist) return false;
+        return toObj.angleTo(hudOcc.sub(camera.position)) < Math.asin(Math.min(1, n.bodyR / dn));
+      })) { t.g.style.display = 'none'; return; }
       const rPx = t.rKm ? Math.max((t.rKm * k / dist) * pxPerRad, 3) : 4;
       const sx = t.sx, sy = t.sy;
       const x0 = x + sx * (rPx * 0.72 + 3), y0 = y + sy * (rPx * 0.72 + 3);
@@ -2540,14 +2547,21 @@
     if (n.name === 'SATURN') dir.addScaledVector(axis, 0.3);    // see the rings a little from above
     dir.normalize();
     const p1 = tp.clone().addScaledVector(dir, d), p0 = shipPos.clone();
-    const ctrl = p0.clone().add(p1).multiplyScalar(0.5);
+    const len0 = p0.distanceTo(p1);
+    // a curved route: leave heading at the target, arrive flying straight in (so the view doesn't swing at the end)
+    const ctrl = p0.clone().addScaledVector(tp.clone().sub(p0).normalize(), len0 * 0.35);
+    const ctrl2 = p1.clone().addScaledVector(dir, len0 * 0.4);
     if (n.name !== 'SATURN') {                       // don't fly through Saturn or its rings
       const sc = saturn.position, seg = p1.clone().sub(p0), u = Math.max(0, Math.min(1, sc.clone().sub(p0).dot(seg) / seg.lengthSq()));
       const close = p0.clone().addScaledVector(seg, u), clear = RING.A1 * k * 1.4;
-      if (close.distanceTo(sc) < clear) ctrl.copy(close).addScaledVector(close.clone().sub(sc).normalize(), clear * 1.6);
+      if (close.distanceTo(sc) < clear) {
+        const out = close.clone().addScaledVector(close.clone().sub(sc).normalize(), clear * 1.6);
+        ctrl.copy(out).addScaledVector(out.clone().sub(p0).normalize(), len0 * 0.1);   // swing wide early; the end stays a straight run in
+      }
     }
     const len = p0.distanceTo(p1);
-    travel = { n, p0, p1, ctrl, t: 0, turn: 0.7, dur: 0.7 + 2.2 + 0.5 * Math.log10(1 + len) };
+    const fly = 2.4 + 0.5 * Math.log10(1 + len);
+    travel = { n, p0, p1, ctrl, ctrl2, t: 0, turn: 0.8, fly, dur: 0.8 + fly, settle: 0.6 };
     nav.target = null; factsT = -1; factsG.style.display = 'none';
   }
   const qFace = new THREE.Quaternion(), mBasis = new THREE.Matrix4();
@@ -2557,22 +2571,43 @@
     const y = upL.addScaledVector(z, -upL.dot(z)).normalize(), xx = new THREE.Vector3().crossVectors(y, z);
     mBasis.makeBasis(xx, y, z); out.setFromRotationMatrix(mBasis).invert(); return out;
   }
-  const smoother = u => u * u * u * (u * (u * 6 - 15) + 10);
+  // Speed over the trip: a hard punch (12% of the time), full warp, then a long, gentle slow-down
+  const PROFILE = (() => {
+    const N = 400, A = 0.12, B = 0.42, v = [], e = [0];
+    for (let i = 0; i <= N; i++) {
+      const u = i / N;
+      v.push(u < A ? Math.pow(u / A, 1.6) : u < B ? 1 : Math.pow(1 - (u - B) / (1 - B), 2.2));
+    }
+    for (let i = 1; i <= N; i++) e.push(e[i - 1] + (v[i] + v[i - 1]) / 2);
+    const tot = e[N]; return { N, v, e: e.map(x => x / tot) };
+  })();
+  const prof = (arr, u) => { const f = Math.max(0, Math.min(1, u)) * PROFILE.N, i = Math.min(PROFILE.N - 1, Math.floor(f)), r = f - i; return arr[i] * (1 - r) + arr[i + 1] * r; };
+  let worldFov = 55, travelV = 0;                     // wider view for the far/space layers while warping
   function navUpdate(dt) {
     if (travel) {
       const tr = travel; tr.t += dt;
       const tp = navLocal(tr.n, navTmp.set(0, 0, 0)).clone();
-      let u = Math.max(0, Math.min(1, (tr.t - tr.turn) / (tr.dur - tr.turn)));
-      const e = smoother(u), de = 30 * u * u * (1 - u) * (1 - u);              // speed (0 -> 1.875 -> 0)
+      const u = Math.max(0, Math.min(1, (tr.t - tr.turn) / tr.fly));
+      const e = prof(PROFILE.e, u), v = tr.t < tr.turn ? 0 : prof(PROFILE.v, u);
       const a = 1 - e, b = e;
-      shipPos.set(0, 0, 0).addScaledVector(tr.p0, a * a).addScaledVector(tr.ctrl, 2 * a * b).addScaledVector(tr.p1, b * b);
-      navWarp = 1 + 26 * de / 1.875;                                          // dots stretch into streaks mid-trip
+      shipPos.set(0, 0, 0).addScaledVector(tr.p0, a * a * a).addScaledVector(tr.ctrl, 3 * a * a * b).addScaledVector(tr.ctrl2, 3 * a * b * b).addScaledVector(tr.p1, b * b * b);
+      // charge: in the last moments of the turn the dots slow and drift back... then the punch
+      const charge = tr.t < tr.turn ? Math.max(0, (tr.t - (tr.turn - 0.35)) / 0.35) : 0;
+      navWarp = tr.t < tr.turn ? 1 - 1.6 * charge : 1 + 70 * v;
+      travelV = v;
+      worldFov = 55 + 20 * Math.pow(v, 0.8) - 3 * charge;                     // the view widens with speed
       faceQuat(tp.sub(shipPos), qFace);
-      spaceRig.quaternion.slerp(qFace, Math.min(1, dt * (tr.t < tr.turn ? 5 : 9)));
+      spaceRig.quaternion.slerp(qFace, Math.min(1, dt * (tr.t < tr.turn ? 5 : 10)));
       skyVelX = skyVelY = 0;
-      if (tr.t >= tr.dur) {
-        shipPos.copy(tr.p1); faceQuat(navLocal(tr.n, new THREE.Vector3()).sub(shipPos), qFace); spaceRig.quaternion.copy(qFace);
-        nav.target = tr.n.name; travel = null; navWarp = 1;
+      if (tr.t >= tr.dur) {                                                   // there: hold still, finish turning smoothly
+        shipPos.copy(tr.p1);
+        if (tr.t >= tr.dur + tr.settle) {
+          faceQuat(navLocal(tr.n, new THREE.Vector3()).sub(shipPos), qFace);
+          if (spaceRig.quaternion.angleTo(qFace) < 0.002) spaceRig.quaternion.copy(qFace);
+        }
+      }
+      if (tr.t >= tr.dur + tr.settle) {
+        nav.target = tr.n.name; travel = null; navWarp = 1; worldFov = 55; travelV = 0;
         navOffset.copy(shipPos).sub(navLocal(tr.n, new THREE.Vector3())); saveNav();
         factsFor = tr.n; factsT = performance.now();
         try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(20); } catch (e) {}
@@ -2629,6 +2664,43 @@
       syncSysRig();
     }
   } catch (e) {}
+  // Invisible stand-ins for the bodies, drawn in the near "space" layer: dots, ships and the whale
+  // behind a planet are hidden by it (the planets themselves are drawn in the far pass).
+  const occluders = new THREE.Group(); scene.add(occluders);
+  const occMat = new THREE.MeshBasicMaterial({ colorWrite: false });
+  NAV.forEach(n => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), occMat);
+    m.userData.n = n; m.renderOrder = -10; n.occ = m; occluders.add(m);
+  });
+  const occQ = new THREE.Quaternion();
+  function updateOccluders() {
+    NAV.forEach(n => {
+      const src = n.moon ? n.moon.body : satBody;
+      src.getWorldPosition(n.occ.position); src.getWorldQuaternion(occQ); n.occ.quaternion.copy(occQ);
+      src.getWorldScale(n.occ.scale); n.occ.scale.multiplyScalar(n.bodyR * 0.985);   // a hair smaller: no dark fringe
+    });
+  }
+  const STREAK_N = 260;
+  const streakGeo = new THREE.BufferGeometry(), streakPos = new Float32Array(STREAK_N * 6), streakSeed = [];
+  streakGeo.setAttribute('position', new THREE.BufferAttribute(streakPos, 3));
+  const streakMat = new THREE.LineBasicMaterial({ color: 0xbff6ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+  const streaks = new THREE.LineSegments(streakGeo, streakMat); streaks.frustumCulled = false; scene.add(streaks);
+  for (let i = 0; i < STREAK_N; i++) {
+    const a = Math.random() * Math.PI * 2, r = 1.5 + Math.pow(Math.random(), 0.6) * 22;
+    streakSeed.push({ x: Math.cos(a) * r, y: Math.sin(a) * r, z: -Math.random() * 90 });
+  }
+  function updateStreaks(dt) {
+    streakMat.opacity = Math.min(0.85, travelV * 1.2);
+    streaks.visible = streakMat.opacity > 0.01;
+    if (!streaks.visible) return;
+    streaks.position.copy(camera.position); streaks.quaternion.copy(camera.quaternion);
+    const sp = 140 * travelV * dt, len = 2 + 26 * travelV;
+    streakSeed.forEach((s, i) => {
+      s.z += sp; if (s.z > 0) { s.z -= 90; const a = Math.random() * Math.PI * 2, r = 1.5 + Math.pow(Math.random(), 0.6) * 22; s.x = Math.cos(a) * r; s.y = Math.sin(a) * r; }
+      streakPos.set([s.x, s.y, s.z, s.x, s.y, s.z - len], i * 6);
+    });
+    streakGeo.attributes.position.needsUpdate = true;
+  }
   window.__navDebug = () => ({ target: nav.target, lock: navLock && navLock.name, travel: !!travel, ship: shipPos.toArray().map(v => +v.toFixed(2)) });
 
   // =========================================================
@@ -3221,17 +3293,27 @@
 
     // tags are softer while the cubes are showing, hidden while an app or settings is open
     const settingsOpen = settingsEl.classList.contains('show');
-    updateHud(opening || settingsOpen ? 0 : 1 - (1 - CFG.tagOpacityWithCubes) * appFade);
+    updateHud(opening || settingsOpen || travel ? 0 : 1 - (1 - CFG.tagOpacityWithCubes) * appFade);
     navHud();
     syncSysRig();
-    // far pass (stars, Sun, planets, Saturn system) first, then everything near on top
+    updateOccluders();
+    updateStreaks(dt);
+    // 1) far pass: stars, Sun, planets, Saturn system   2) space layer: dots, ships, whale (hidden behind planets)
+    // 3) UI layer: your cubes (and the checklist ship), always on top
     renderer.autoClear = false; renderer.clear();
-    const n0 = camera.near, f0 = camera.far;
-    camera.near = sysNear; camera.far = 3000; camera.updateProjectionMatrix();
+    const n0 = camera.near, f0 = camera.far, fov0 = camera.fov;
+    camera.fov = worldFov; camera.near = sysNear; camera.far = 3000; camera.updateProjectionMatrix();
     renderer.render(sysScene, camera);
     camera.near = n0; camera.far = f0; camera.updateProjectionMatrix();
     renderer.clearDepth();
+    appLayer.visible = false; if (dash) dash.g.visible = false;
     renderer.render(scene, camera);
+    camera.fov = fov0; camera.updateProjectionMatrix();
+    renderer.clearDepth();
+    appLayer.visible = true; if (dash) dash.g.visible = true;
+    spaceRig.visible = false; occluders.visible = false; streaks.visible = false;
+    renderer.render(scene, camera);
+    spaceRig.visible = true; occluders.visible = true;
     if (coverPending > 0 && !oneFrame && --coverPending === 0) {
       try { if (window.Launcher && window.Launcher.hideCover) window.Launcher.hideCover(); } catch (e) {}
     }
@@ -3494,7 +3576,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 23';
+    tag.textContent = 'SCREEN 2026-11-23 · 24';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
