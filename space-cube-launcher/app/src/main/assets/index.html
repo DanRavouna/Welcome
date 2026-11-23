@@ -3304,7 +3304,7 @@
       const ps = o.planets, main = (planetName && ps.find(x => x.name === planetName)) || mainPlanet(o);
       const rad = p => 3.5 + 7.5 * Math.min(1, Math.log(Math.max(p.re || 1, 0.5)) / Math.log(15) + 0.05);
       const light = addLight(starAt.clone());
-      const m = planetMesh(main, rad(main), light); destGroup.add(m); dest.solids.push({ mesh: m, r: rad(main) }); dest.r = rad(main);
+      const m = planetMesh(main, rad(main), light); destGroup.add(m); dest.solids.push({ mesh: m, r: rad(main) }); dest.r = rad(main); dest.ext = rad(main); dest.off = 0;
       dest.anim.push(dt => m.rotation.y += dt * 0.05);
       ps.filter(p => p !== main).slice(0, 3).forEach((p, i) => {
         const r = rad(p) * 0.45, pos = at(-26 - 20 * i, -6 + 7 * i, 25 + 35 * i), pm = planetMesh(p, r, addLight(starAt.clone().sub(pos))); pm.position.copy(pos);
@@ -3313,7 +3313,7 @@
     } else if (o.kind === 'blackhole') {
       const bh = new THREE.Group(); bh.position.copy(at(0, 0, 90)); destGroup.add(bh);
       const hole = new THREE.Mesh(new THREE.SphereGeometry(7, 48, 32), new THREE.MeshBasicMaterial({ color: 0x000000 }));
-      bh.add(hole); dest.solids.push({ mesh: hole, r: 7 }); dest.r = 14;
+      bh.add(hole); dest.solids.push({ mesh: hole, r: 7 }); dest.r = 14; dest.ext = 34; dest.off = 90;
       const tU = { value: 0 };
       const disk = new THREE.Mesh(new THREE.RingGeometry(8.5, 34, 160, 1), new THREE.ShaderMaterial({ uniforms: { uT: tU },
         vertexShader: `varying vec3 vP; void main() { vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
@@ -3347,7 +3347,7 @@
         bh.add(new THREE.Points(sg, new THREE.PointsMaterial({ size: 3, color: 0xfff0d8, map: pointTexture('255,255,255'), transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })));
       }
     } else if (o.kind === 'galaxy') {
-      dest.r = 60;
+      dest.r = 60; dest.ext = o.id === 'lmc' ? 110 : 150; dest.off = o.id === 'lmc' ? 380 : 430;
       const Ng = 9000, pp = new Float32Array(Ng * 3), cc = new Float32Array(Ng * 3), lmc = o.id === 'lmc';
       for (let i = 0; i < Ng; i++) {
         let x, y; const r0 = R();
@@ -3369,6 +3369,7 @@
     } else {                                           // nebulae and the Pleiades
       dest.r = 40;
       const pal = PAL[o.id] || ['200,120,255'], ring = o.id === 'm57' || o.id === 'ngc7293', cl = o.kind === 'cluster';
+      dest.ext = ring ? 30 : cl ? 120 : 130; dest.off = ring ? 150 : cl ? 150 : 210;
       const nC = cl ? 22 : ring ? 70 : 60;
       for (let i = 0; i < nC; i++) {
         const hue = pal[ring ? (i % 3 === 0 ? 0 : 1) : i % pal.length].split(',').map(v => v / 255);
@@ -3423,7 +3424,7 @@
     });
   }
   // arriving: the destination first shows as a far point of light where you're heading, then grows as you slow down
-  const deepBeacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: pointTexture('255,255,255'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: false, opacity: 0 }));
+  const deepBeacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: pointTexture('255,255,255'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
   deepBeacon.scale.setScalar(0.05); deepBeacon.visible = false; sysRig.add(deepBeacon);
   const BEACON_COL = { blackhole: 0xffb070, nebula: 0xff8fc0, galaxy: 0xc8d0ff, cluster: 0xa8c4ff };
   function arriveAt(o, dir, planetName) {
@@ -3446,7 +3447,10 @@
     // far jumps hold in white light for a while (2 s for the nearest landmarks, up to 4 s for M87): you're travelling far
     const dly = o.pos.distanceTo(deep.here), lg = Math.log10;
     const hold = same || dly <= WARP_LY ? 0 : THREE.MathUtils.clamp(2 + 2 * (lg(dly) - lg(400)) / (lg(5.5e7) - lg(400)), 2, 4);
-    deepJump = { o, planet: planetName || null, dir, t: 0, turn: same ? 0.5 : 1.0, warp: same ? 1.4 : 2.6, arrive: same ? 2.0 : 3.0, hold };
+    const pxPerRad = (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(55 / 2));
+    const a0 = o.kind === 'system' ? 0.6 * (3 + 6 * Math.max(0, 1 - dly / deep.limit)) / pxPerRad     // its dot, in screen size
+             : o.sprite ? 0.6 * o.sprite.scale.x / 980 : 0.004;                                        // its picture in the sky
+    deepJump = { o, planet: planetName || null, dir, t: 0, turn: same ? 0.5 : 1.0, warp: same ? 1.4 : 2.6, arrive: same ? 2.0 : 3.0, hold, a0 };
     factsT = -1; factsG.style.display = 'none';
   }
   function deepJumpUpdate(dt) {
@@ -3469,12 +3473,20 @@
     jumpFlash.style.opacity = fl.toFixed(3);
     if (!j.swapped && j.t >= tf + H / 2) { j.swapped = true; arriveAt(j.o, j.dir, j.planet); }
     if (j.swapped && deep.at) {                        // the destination rushes in from far away, then slows to a stop
-      const u = THREE.MathUtils.clamp((j.t - ta) / (T3 - ta), 0, 1), e = 1 - Math.pow(1 - u, 3);
-      destGroup.position.copy(j.dir).multiplyScalar(DEST_D * (1 + 25 * Math.pow(1 - e, 1.5)));
-      destGroup.scale.setScalar(0.02 + 0.98 * Math.pow(e, 2.5));                                  // a tiny far thing at first...
-      if (!j.beaconSet) { j.beaconSet = true; deepBeacon.material.color.setHex(j.o.kind === 'system' ? starColor(j.o.teff).getHex() : BEACON_COL[j.o.kind] || 0xffffff); }
-      deepBeacon.visible = true; deepBeacon.position.copy(destGroup.position);
-      deepBeacon.material.opacity = 1 - THREE.MathUtils.smoothstep(e, 0.45, 0.9);                 // ...a point of light that hands over to the real thing
+      const ga = ta + (H ? 0.45 : 0.25);                                                        // start growing once the white has mostly cleared
+      const u = THREE.MathUtils.clamp((j.t - ga) / (T3 - ga), 0, 1), e = 1 - Math.pow(1 - u, 3);
+      // it starts exactly as big on screen as it looked before you left, and only grows from there
+      const ext = (dest && dest.ext) || 10, off = (dest && dest.off) || 0;
+      const a1 = 2 * ext / (DEST_D + off), a0 = Math.min(j.a0 || a1, a1);
+      const a = Math.exp(Math.log(a0) + (Math.log(a1) - Math.log(a0)) * e);                     // apparent size: smooth, steady growth
+      destGroup.position.copy(j.dir).multiplyScalar(DEST_D);
+      destGroup.scale.setScalar(Math.min(1, a * DEST_D / Math.max(1e-6, 2 * ext - a * off)));
+      if (j.o.kind === 'system') {                                                              // a star: its dot carries on, then hands over to the planet
+        if (!j.beaconSet) { j.beaconSet = true; deepBeacon.material.color.setHex(starColor(j.o.teff).getHex()); }
+        deepBeacon.visible = true; deepBeacon.position.copy(destGroup.position);
+        deepBeacon.scale.setScalar(Math.max(j.a0, a) * DEST_D / 0.45);
+        deepBeacon.material.opacity = 1 - THREE.MathUtils.smoothstep(e, 0.35, 0.85);
+      }
     }
     if (j.t >= T3) {
       deepJump = null; navWarp = 1; worldFov = 55; travelV = 0; jumpFlash.style.opacity = 0; destGroup.scale.setScalar(1); deepBeacon.visible = false;
@@ -4493,7 +4505,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 38';
+    tag.textContent = 'SCREEN 2026-11-23 · 39';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
