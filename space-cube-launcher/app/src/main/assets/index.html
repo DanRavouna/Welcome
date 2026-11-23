@@ -2318,10 +2318,131 @@
       order.forEach((sh, i) => { if (!sh.phase) { sh.squad = null; sh.life = sh.age + (sq.target ? 0.35 : 0) * Math.min(i, 1) + i * 0.12; } });
     }
   }
+  // =========================================================
+  //  LEFT BEHIND: when we warp, everything flying around us slides back past us at our extra speed
+  //  (the same speed the dots stream by), and is gone once it's well behind. Nothing new arrives mid-warp.
+  // =========================================================
+  const lbFwd = new THREE.Vector3(), lbD = new THREE.Vector3();
+  const warping = () => !!(travel || deepJump) || warp > 1.5;
+  function dropWhale() {
+    shipLayer.remove(whale.g); whale.g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); whale = null;
+  }
+  function leaveBehind(dt) {
+    const extra = ourSpeed() * (warp - 1);
+    if (Math.abs(extra) < 0.01) return;
+    lbFwd.set(0, 0, -1).applyQuaternion(spaceRig.quaternion.clone().invert());
+    lbD.copy(lbFwd).multiplyScalar(-extra * dt);
+    shipLayer.children.forEach(o => { if (!o.userData.pathLine) o.position.add(lbD); });
+    ships.forEach(sh => { if (sh.from) sh.from.add(lbD); if (sh.prev) sh.prev.add(lbD); });
+    if (squad) squad.start.add(lbD);
+    jumpFx.forEach(fx => { if (fx.from) fx.from.add(lbD); if (fx.to) fx.to.add(lbD); });
+    for (let i = ships.length - 1; i >= 0; i--) {
+      const sh = ships[i];
+      if (sh.g.position.dot(lbFwd) > -40) continue;
+      if (sh.trail) sh.trail.forEach(m => { shipLayer.remove(m); m.material.dispose(); });
+      disposeShip(sh.g); ships.splice(i, 1);
+    }
+    if (whale && whale.g.position.dot(lbFwd) < -140) dropWhale();
+  }
+
+  // =========================================================
+  //  FLIGHT PATHS: every ship (and each squadron as a whole) looks 3 s ahead along its line,
+  //  checks it against where the whale and the other ships will be, and bends its line around them.
+  //  The whale is too big to dodge anything: everyone else goes around it.
+  //  Debug > Ships > Show paths draws those lines.
+  // =========================================================
+  const AV_T = 3, AV_STEP = 0.2, WHALE_R = 1.5 * WHALE_SCALE, WHALE_HALF = 2.4 * WHALE_SCALE;
+  const avA = new THREE.Vector3(), avB = new THREE.Vector3(), avC = new THREE.Vector3(), avPush = new THREE.Vector3(), avTmp = new THREE.Vector3();
+  function moverList() {
+    const L = [];
+    if (whale) L.push({ kind: 'whale', pos: whale.g.position, vel: whale.dir.clone().multiplyScalar(whale.speed), r: WHALE_R, axis: whale.dir, half: WHALE_HALF });
+    ships.forEach(sh => {
+      if (sh.phase === 'jump' || sh.squad) return;           // squadron members move as one formation (below)
+      L.push({ kind: 'ship', sh, pos: sh.g.position, vel: sh.dir.clone().multiplyScalar(sh.phase === 'charge' ? sh.speed * 0.3 : sh.speed), r: 1.5 * sh.g.scale.x });
+    });
+    const sq = squad;
+    if (sq && !sq.released) {
+      const mem = sq.members.concat(sq.target ? [sq.target] : []).filter(sh => sh.squad && !sh.phase && ships.includes(sh));
+      if (mem.length) {
+        const c = new THREE.Vector3(); mem.forEach(sh => c.add(sh.g.position)); c.divideScalar(mem.length);
+        let r = 0; mem.forEach(sh => r = Math.max(r, sh.g.position.distanceTo(c)));
+        sq.avV = sq.avV || new THREE.Vector3();
+        L.push({ kind: 'squad', sq, pos: c, vel: sq.dir.clone().multiplyScalar(sq.speed).add(sq.avV), r: r + 1.5 });
+      }
+    }
+    return L;
+  }
+  function moverAt(m, t, near, out) {                    // where mover m will be at time t (closest point of the whale's body to `near`)
+    out.copy(m.pos).addScaledVector(m.vel, t);
+    if (m.axis) out.addScaledVector(m.axis, THREE.MathUtils.clamp(avTmp.copy(near).sub(out).dot(m.axis), -m.half, m.half));
+    return out;
+  }
+  function steerAway(a, L) {
+    avPush.set(0, 0, 0);
+    const v2 = Math.max(a.vel.lengthSq(), 1e-6);
+    for (const b of L) {
+      if (b === a) continue;
+      const T = b.kind === 'whale' ? 6 : AV_T;              // the whale is huge: start going round it sooner
+      for (let t = 0; t <= T; t += AV_STEP) {
+        avA.copy(a.pos).addScaledVector(a.vel, t);
+        moverAt(b, t, avA, avB);
+        avC.copy(avA).sub(avB);
+        const d = avC.length(), need = a.r + b.r + 0.8;
+        if (d >= need) continue;
+        avC.addScaledVector(a.vel, -avC.dot(a.vel) / v2);   // only sideways: it keeps flying, just bends its line
+        if (avC.lengthSq() < 1e-6) avC.set(0, 1, 0).applyQuaternion(spaceRig.quaternion.clone().invert()).addScaledVector(a.vel, -avC.dot(a.vel) / v2);
+        avPush.addScaledVector(avC.normalize(), (1 - d / need) * (1 - 0.6 * t / T) * (b.kind === 'whale' ? 3 : 1));
+        break;                                            // the first conflict with this one is what matters
+      }
+    }
+    return avPush;
+  }
+  let showPaths = false;
+  const pathLines = [];
+  function updateAvoid(dt) {
+    if (window.__noAvoid) return;
+    const L = moverList();
+    L.forEach(a => {
+      if (a.kind === 'whale') return;
+      const push = steerAway(a, L);
+      if (a.kind === 'ship') {
+        const sh = a.sh;
+        if (sh.phase || push.lengthSq() < 1e-8) return;
+        const before = sh.dir.clone();
+        sh.dir.addScaledVector(push, dt * 2.2).normalize();
+        sh.base.setFromUnitVectors(FWD, sh.dir);
+        const turn = avTmp.crossVectors(before, sh.dir).dot(new THREE.Vector3(0, 0, 1).applyQuaternion(spaceRig.quaternion.clone().invert()));
+        sh.bank += (THREE.MathUtils.clamp(-turn / Math.max(dt, 1e-3) * 2, -0.7, 0.7) - sh.bank) * Math.min(1, dt * 3);   // lean into the swerve
+      } else if (a.kind === 'squad') {
+        const sq = a.sq;
+        sq.avV.addScaledVector(push, dt * sq.speed * 0.9);
+        sq.avV.multiplyScalar(Math.exp(-1.2 * dt));
+        sq.start.addScaledVector(sq.avV, dt);              // the whole formation's line shifts; the ships turn with it
+      }
+    });
+    // debug: draw each line, 4 s ahead
+    pathLines.forEach(l => l.visible = false);
+    if (!showPaths) return;
+    L.forEach((m, i) => {
+      let ln = pathLines[i];
+      if (!ln) {
+        const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(21 * 3), 3));
+        ln = new THREE.Line(g, new THREE.LineBasicMaterial({ transparent: true, opacity: 0.8, depthWrite: false }));
+        ln.userData.pathLine = true; ln.frustumCulled = false; shipLayer.add(ln); pathLines.push(ln);
+      }
+      ln.visible = true; ln.material.color.set(m.kind === 'whale' ? 0xffa05a : m.kind === 'squad' ? 0x7dff9a : 0x7fe6ff);
+      const arr = ln.geometry.attributes.position.array;
+      for (let k = 0; k <= 20; k++) { avA.copy(m.pos).addScaledVector(m.vel, k * 0.2); arr.set([avA.x, avA.y, avA.z], k * 3); }
+      ln.geometry.attributes.position.needsUpdate = true;
+    });
+  }
   function updateShips(dt) {
+    leaveBehind(dt);
     updateWhale(dt);
     updateSquad(dt);
+    updateAvoid(dt);
     nextShipIn -= dt;
+    if (warping()) nextShipIn = Math.max(nextShipIn, 1.5);       // nothing arrives mid-warp, and not right as we stop
     if (nextShipIn <= 0 && ships.length < 9) { spawnShip(); nextShipIn = 2 + Math.random() * 4; }   // avg every 4 s; up to 9 at once now that they stay 10-30 s
     for (let i = ships.length - 1; i >= 0; i--) {
       const sh = ships[i];
@@ -4250,7 +4371,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 30';
+    tag.textContent = 'SCREEN 2026-11-23 · 31';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
@@ -4259,7 +4380,7 @@
       <div class="dbgTabs"><button data-tab="ships" class="on">SHIPS</button><button data-tab="squads">SQUADRONS</button><button data-tab="whale">WHALE</button></div>
       <div class="dbgPane" data-pane="ships">
         <button class="chromeBtn" data-d="ship">1 ship</button><button class="chromeBtn" data-d="ships">5 ships</button>
-        <button class="chromeBtn" data-d="jump">All jump</button></div>
+        <button class="chromeBtn" data-d="jump">All jump</button><button class="chromeBtn" data-d="paths">${showPaths ? 'Hide paths' : 'Show paths'}</button></div>
       <div class="dbgPane" data-pane="squads" hidden>
         <button class="chromeBtn" data-d="sqchase">Chase from behind</button><button class="chromeBtn" data-d="sqhead">Chase head-on</button><button class="chromeBtn" data-d="sqcross">Chase any angle</button><button class="chromeBtn" data-d="sqfly">Formation</button>
         <button class="chromeBtn" data-d="sqend">Jump out</button></div>
@@ -4274,6 +4395,7 @@
       const d = b.dataset.d;
       closeCfg();
       setTimeout(() => {
+        if (d === 'paths') showPaths = !showPaths;
         if (d === 'ship') spawnShip(true);
         if (d === 'ships') for (let i = 0; i < 5; i++) spawnShip(true);
         if (d === 'jump') ships.forEach(sh => { if (!sh.phase) sh.life = sh.age; });
