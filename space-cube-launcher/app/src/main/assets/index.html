@@ -2922,7 +2922,7 @@
       const [x, y, r, front] = screenOf(factsFor);
       if (!front) { factsG.style.display = 'none'; return; }
       factsG.style.display = ''; factsG.style.opacity = Math.min(1, age / 0.5, (7.5 - age) / 0.8);
-      const lines = [factsFor.name, ...factsFor.facts], fx = 18, fy = Math.min(innerHeight - 140, y + r + 34);
+      const lines = [factsFor.name, ...factsFor.facts], fx = 18, dockTop = innerHeight - (INSETS.bottom || 0) - 150, fy = Math.min(dockTop - lines.length * 16, y + r + 34);   // all lines stay above the dock
       factLines.forEach((tx, i) => { tx.textContent = lines[i] || ''; tx.setAttribute('x', fx); tx.setAttribute('y', fy + i * 16); tx.setAttribute('class', i ? '' : 'big'); });
     }
   }
@@ -3003,7 +3003,7 @@
   const WARP_LY = 20;
   // the star map records a place as seen (???) only when its name tag shows on your screen, or you lock on to it
   const seenSent = new Set();
-  function reportSeen(o) { if (!o || seenSent.has(o.id)) return; seenSent.add(o.id); try { window.SpaceMap && window.SpaceMap.saw(o.id); } catch (e) {} }
+  function reportSeen(o) { if (!o || seenSent.has(o.id) || !window.SpaceMap) return; seenSent.add(o.id); try { window.SpaceMap.saw(o.id); } catch (e) {} }
   const inRange = o => !o.deep || o.kind !== 'system' || o.pos.distanceTo(deep.here) <= WARP_LY;
   const SKY = (() => { try { return JSON.parse(document.getElementById('skyData').textContent); } catch (e) { return null; } })();
   const DEEP_KEY = 'spaceCubeDeep.v1', LY_PER_PC = 3.26156, DEG = Math.PI / 180;
@@ -3130,7 +3130,15 @@
   const sysPoints = new THREE.Points(sysGeo, sysMat); sysPoints.frustumCulled = false; skyRig.add(sysPoints);
 
   // ---- landmark pictures on the sky ----
-  function canvasTex(size, draw) { const c = document.createElement('canvas'); c.width = c.height = size; draw(c.getContext('2d'), size); return new THREE.CanvasTexture(c); }
+  function canvasTex(size, draw, soft) {
+    const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'); draw(x, size);
+    if (soft) {                                        // fade to nothing before the edge, so a glow is never cut off in a straight line
+      const g = x.createRadialGradient(size / 2, size / 2, size * 0.3, size / 2, size / 2, size / 2);
+      g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      x.globalCompositeOperation = 'destination-in'; x.fillStyle = g; x.fillRect(0, 0, size, size); x.globalCompositeOperation = 'source-over';
+    }
+    return new THREE.CanvasTexture(c);
+  }
   const blob = (x, cx, cy, r, rgb, a) => { const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = g; x.fillRect(cx - r, cy - r, 2 * r, 2 * r); };
   const PAL = {
     m42: ['255,90,150', '230,70,70', '90,210,220', '255,170,120'], m16: ['235,175,80', '70,175,160', '200,120,60'],
@@ -3164,7 +3172,7 @@
         for (let i = 0; i < 26; i++) blob(x, c + (R() - 0.5) * c, c + (R() - 0.5) * c, c * (0.25 + R() * 0.45), pal[i % pal.length], 0.28);
         for (let i = 0; i < 8; i++) blob(x, c + (R() - 0.5) * c * 0.8, c + (R() - 0.5) * c * 0.8, 3 + R() * 4, '255,255,255', 1);
       }
-    });
+    }, true);
   }
   const LM_SIZE = { blackhole: 46, nebula: 72, galaxy: 92, cluster: 60, home: 40 };
   ALL_DEEP.forEach(o => {
@@ -3196,7 +3204,7 @@
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     mwGroup.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 3.2, vertexColors: true, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending, map: pointTexture('255,255,255') })));
   }
-  const cloudTex = [0, 1, 2].map(n => canvasTex(256, (x, s) => { const R = rng(99 + n); for (let i = 0; i < 14; i++) blob(x, s / 2 + (R() - 0.5) * s * 0.5, s / 2 + (R() - 0.5) * s * 0.35, s * (0.15 + R() * 0.25), '255,255,255', 0.35); }));
+  const cloudTex = [0, 1, 2].map(n => canvasTex(256, (x, s) => { const R = rng(99 + n); for (let i = 0; i < 14; i++) blob(x, s / 2 + (R() - 0.5) * s * 0.5, s / 2 + (R() - 0.5) * s * 0.35, s * (0.15 + R() * 0.25), '255,255,255', 0.35); }, true));
   const WAVE_HUES = ['150,90,255', '60,200,210', '255,90,170', '90,140,255', '255,150,90', '120,255,200'];
   const waves = [];
   for (let i = 0; i < 46; i++) {                        // the diffuse glow of the band itself (brightest toward the centre)
@@ -4443,7 +4451,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 34';
+    tag.textContent = 'SCREEN 2026-11-23 · 35';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
