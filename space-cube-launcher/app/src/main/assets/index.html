@@ -2659,8 +2659,14 @@
       navWarp = tr.t < tr.turn ? 1 - 1.6 * charge : 1 + 70 * v;
       travelV = v;
       worldFov = 55 + 20 * Math.pow(v, 0.8) - 3 * charge;                     // the view widens with speed
-      faceQuat(tp.sub(shipPos), qFace);
-      spaceRig.quaternion.slerp(qFace, Math.min(1, dt * (tr.t < tr.turn ? 5 : 10)));
+      // look where the ship is going: along the route (a little ahead on the curve);
+      // the route starts heading at the target and ends with a straight run in, so start and end still face it
+      const ahead = bez(tr, Math.min(1, e + 0.035), navTmp2).sub(shipPos);
+      const toT = tp.sub(shipPos);
+      const w = THREE.MathUtils.smoothstep(e, 0.9, 1);                     // last moments: settle onto the target
+      const look = ahead.lengthSq() > 1e-10 ? ahead.normalize().multiplyScalar(1 - w).addScaledVector(toT.normalize(), w) : toT;
+      faceQuat(look, qFace);
+      spaceRig.quaternion.slerp(qFace, Math.min(1, dt * (tr.t < tr.turn ? 5 : 7)));
       skyVelX = skyVelY = 0;
       if (tr.t >= tr.dur) {                                                   // there: hold still, finish turning smoothly
         shipPos.copy(tr.p1);
@@ -3659,7 +3665,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 26';
+    tag.textContent = 'SCREEN 2026-11-23 · 27';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
