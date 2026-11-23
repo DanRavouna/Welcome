@@ -89,6 +89,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Work-profile apps (and personal ones) installed / removed / updated, or work apps paused / resumed
+    private val appsCallback = object : android.content.pm.LauncherApps.Callback() {
+        private fun changed() { bridge.invalidateCache(); js("window.onAppsChanged && window.onAppsChanged()") }
+        override fun onPackageRemoved(p: String?, u: android.os.UserHandle?) = changed()
+        override fun onPackageAdded(p: String?, u: android.os.UserHandle?) = changed()
+        override fun onPackageChanged(p: String?, u: android.os.UserHandle?) = changed()
+        override fun onPackagesAvailable(p: Array<out String>?, u: android.os.UserHandle?, r: Boolean) = changed()
+        override fun onPackagesUnavailable(p: Array<out String>?, u: android.os.UserHandle?, r: Boolean) = changed()
+    }
+
     // Re-sends the app list to the page whenever an app is installed, removed or updated.
     private val packageReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -205,6 +215,7 @@ class MainActivity : ComponentActivity() {
             addDataScheme("package")
         }
         ContextCompat.registerReceiver(this, packageReceiver, filter, ContextCompat.RECEIVER_EXPORTED)
+        (getSystemService(Context.LAUNCHER_APPS_SERVICE) as android.content.pm.LauncherApps).registerCallback(appsCallback)
         val screenFilter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_USER_PRESENT)
@@ -239,6 +250,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        try { (getSystemService(Context.LAUNCHER_APPS_SERVICE) as android.content.pm.LauncherApps).unregisterCallback(appsCallback) } catch (e: Exception) { }
         unregisterReceiver(packageReceiver)
         unregisterReceiver(unlockReceiver)
         web.destroy()

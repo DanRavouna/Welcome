@@ -989,7 +989,9 @@
     let list = [];
     try { list = JSON.parse(window.Launcher.getApps()); } catch (e) {}
     list.forEach(a => {
-      const app = { key: a.pkg + '/' + a.activity, pkg: a.pkg, activity: a.activity, name: a.name,
+      // work-profile apps: their own key (personal keys stay as before, so saves keep working) and "(Work)" in the name
+      const app = { key: a.pkg + '/' + a.activity + (a.work ? '@' + a.user : ''), pkg: a.pkg, activity: a.activity,
+                    name: a.work ? a.name + ' (Work)' : a.name, work: !!a.work, user: a.work ? a.user : null,
                     icon: a.icon, category: a.category, c1: '#5fe3f2', c2: '#2c64c9' };
       app.img = new Image(); app.img.src = a.icon;
       NATIVE_APPS.set(app.key, app);
@@ -1474,7 +1476,7 @@
     list.sort((a, b) => a.t - b.t);                            // oldest first, so slots fill in launch order
     let changed = false;
     list.forEach(({ pkg, t }) => {
-      const app = [...NATIVE_APPS.values()].find(a => a.pkg === pkg);
+      const app = [...NATIVE_APPS.values()].find(a => a.pkg === pkg && !a.work) || [...NATIVE_APPS.values()].find(a => a.pkg === pkg);   // usage history is the personal profile's
       if (!app) return;
       const k = keyOf(app);
       if (DISMISSED[k] && DISMISSED[k] >= t) return;          // closed after its last use: stays closed
@@ -2968,7 +2970,7 @@
       if (openDir > 0 && openP >= 0.85) {
         if (opening.targetBase) opening.base.copy(opening.targetBase);   // hidden behind the app: settle into its slot for the return
         if (NATIVE) {                                   // hand over to the real app, then reset the animation behind it
-          if (!opening.launched) { opening.launched = true; window.Launcher.launch(opening.data.pkg, opening.data.activity);
+          if (!opening.launched) { opening.launched = true; (opening.data.work && window.Launcher.launchAs) ? window.Launcher.launchAs(opening.data.pkg, opening.data.activity, opening.data.user) : window.Launcher.launch(opening.data.pkg, opening.data.activity);
             setTimeout(() => { openDir = -1; }, 450); }
         } else appScreen.classList.add('show');
       }
@@ -3246,7 +3248,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-22 · 21';
+    tag.textContent = 'SCREEN 2026-11-23 · 22';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);

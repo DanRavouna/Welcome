@@ -43,24 +43,52 @@ class LauncherBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun getApps(): String {
         cachedApps?.let { return it }
-        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val list = pm.queryIntentActivities(intent, 0)
+        // Every profile's apps (personal + work), the way the built-in home screen lists them
+        val la = activity.getSystemService(Context.LAUNCHER_APPS_SERVICE) as android.content.pm.LauncherApps
+        val um = activity.getSystemService(Context.USER_SERVICE) as android.os.UserManager
+        val me = android.os.Process.myUserHandle()
         val out = JSONArray()
         val seen = HashSet<String>()
-        for (ri in list) {
-            val ai = ri.activityInfo ?: continue
-            if (ai.packageName == activity.packageName) continue          // don't list ourselves
-            val key = ai.packageName + "/" + ai.name
-            if (!seen.add(key)) continue
-            out.put(JSONObject().apply {
-                put("pkg", ai.packageName)
-                put("activity", ai.name)
-                put("name", ri.loadLabel(pm).toString())
-                put("icon", iconDataUrl(ri.loadIcon(pm)))
-                put("category", categoryName(ai.applicationInfo))
-            })
+        for (user in la.profiles) {
+            val work = user != me
+            val serial = um.getSerialNumberForUser(user)
+            val list = try { la.getActivityList(null, user) } catch (e: Exception) { emptyList() }
+            for (lai in list) {
+                val cn = lai.componentName
+                if (!work && cn.packageName == activity.packageName) continue   // don't list ourselves
+                val key = cn.packageName + "/" + cn.className + (if (work) "@$serial" else "")
+                if (!seen.add(key)) continue
+                out.put(JSONObject().apply {
+                    put("pkg", cn.packageName)
+                    put("activity", cn.className)
+                    put("name", lai.label.toString())
+                    put("icon", iconDataUrl(if (work) lai.getBadgedIcon(0) else lai.getIcon(0)))   // work apps keep their briefcase badge
+                    put("category", categoryName(lai.applicationInfo))
+                    if (work) { put("work", true); put("user", serial) }
+                })
+            }
         }
         return out.toString().also { cachedApps = it }
+    }
+
+    /** Opens an app in another profile (work apps). If work apps are paused, asks Android to turn them on first. */
+    @JavascriptInterface
+    fun launchAs(pkg: String, activityName: String, serial: Double): Boolean {
+        val la = activity.getSystemService(Context.LAUNCHER_APPS_SERVICE) as android.content.pm.LauncherApps
+        val um = activity.getSystemService(Context.USER_SERVICE) as android.os.UserManager
+        val user = um.getUserForSerialNumber(serial.toLong()) ?: return false
+        val cn = android.content.ComponentName(pkg, activityName)
+        activity.runOnUiThread {
+            try {
+                if (Build.VERSION.SDK_INT >= 28 && um.isQuietModeEnabled(user)) {
+                    um.requestQuietModeEnabled(false, user)                 // "turn on work apps"
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        try { la.startMainActivity(cn, user, null, null) } catch (e: Exception) { }
+                    }, 1500)
+                } else la.startMainActivity(cn, user, null, null)
+            } catch (e: Exception) { }
+        }
+        return true
     }
 
     /** Opens an app. Returns false if it couldn't be started (e.g. it was just uninstalled). */
