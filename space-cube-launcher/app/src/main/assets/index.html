@@ -2709,7 +2709,10 @@
     return false;
   }
   function engage(n) {
-    if (n.deep) { cancelLock(); deepGo(n); return; }
+    if (n.deep) {
+      if (!inRange(n)) { lockT = performance.now(); try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(60); } catch (e) {} return; }   // out of range: the lock pulses, nothing happens
+      cancelLock(); deepGo(n); return;
+    }
     const plan = routePlan && routePlan.n === n ? routePlan : planRoute(n);
     cancelLock();
     if (nav.target === n.name) return;               // already here
@@ -2910,7 +2913,7 @@
       const here = navLock.deep ? (deep.at || 'sol') === navLock.id : nav.target === navLock.name;
       lockName.textContent = navLock.name + (here ? '' : '  ' + (navLock.deep ? fmtLy(deepDist(navLock)) : fmtKm(Math.max(0, dist - navLock.bodyR) / k)));
       lockName.setAttribute('x', (x - sz).toFixed(1)); lockName.setAttribute('y', (y + sz + 16).toFixed(1));
-      lockHint.textContent = here ? 'YOU ARE HERE' : navLock.deep ? 'TAP AGAIN TO JUMP' : 'TAP AGAIN TO ENGAGE';
+      lockHint.textContent = here ? 'YOU ARE HERE' : navLock.deep ? (inRange(navLock) ? 'TAP AGAIN TO JUMP' : 'OUT OF RANGE · MAX ' + WARP_LY + ' LY') : 'TAP AGAIN TO ENGAGE';
       lockHint.setAttribute('x', (x - sz).toFixed(1)); lockHint.setAttribute('y', (y + sz + 30).toFixed(1));
     } else lockG.style.display = 'none';
     if (factsFor && factsT > 0) {                    // arrival readout, ~7 s
@@ -2995,6 +2998,10 @@
   //  Close-ups are artist's impressions built from each object's real numbers (size, temperature, star colour).
   // =========================================================
   var deep = { at: null, here: new THREE.Vector3(), limit: 50, dir: null }, deepJump = null;
+  // Warp range: you can see stars farther out, but only jump to stars within 20 ly of where you are.
+  // Home (SOL) and the far landmarks (black holes, nebulae, galaxies) can always be reached.
+  const WARP_LY = 20;
+  const inRange = o => !o.deep || o.kind !== 'system' || o.pos.distanceTo(deep.here) <= WARP_LY;
   const SKY = (() => { try { return JSON.parse(document.getElementById('skyData').textContent); } catch (e) { return null; } })();
   const DEEP_KEY = 'spaceCubeDeep.v1', LY_PER_PC = 3.26156, DEG = Math.PI / 180;
   function saturnLongitude(date) {                    // heliocentric ecliptic longitude (rad), JPL Table 1 (1800-2050)
@@ -3390,7 +3397,7 @@
   document.body.appendChild(jumpFlash);
 
   function deepGo(o, planetName) {
-    if (deepJump || travel) return;
+    if (deepJump || travel || !inRange(o)) return;
     const same = o.id === (deep.at || 'sol');
     if (same && (!planetName || planetName === deep.planet)) return;
     const dir = same ? fwdLocal.clone() : relDir(o, new THREE.Vector3());     // another planet of the same system: a short hop straight ahead
@@ -3469,7 +3476,7 @@
     DLABELS.forEach((L, i) => {
       const p = picks[i]; if (!p) { L.g.style.display = 'none'; return; }
       L.g.style.display = ''; L.c.setAttribute('cx', p.x.toFixed(1)); L.c.setAttribute('cy', p.y.toFixed(1));
-      L.t.textContent = p.o.name + '  ' + fmtLy(deepDist(p.o));
+      L.t.textContent = p.o.name + '  ' + fmtLy(deepDist(p.o)); L.g.style.opacity = inRange(p.o) ? '' : '0.45';
       L.t.setAttribute('x', (p.x + 10).toFixed(1)); L.t.setAttribute('y', (p.y - 8).toFixed(1));
     });
   }
@@ -4433,7 +4440,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 32';
+    tag.textContent = 'SCREEN 2026-11-23 · 33';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
@@ -4684,7 +4691,9 @@
   if (!visited.includes('sol')) visited.unshift('sol');
   // You know a place's name and details only once you've been there yourself (our solar system is known)
   // the map's JUMP: places you've been, and the planets of a star system you've been to (you're already in that system)
-  const canJump = o => !!o && o.id !== here && (o.kind === 'planet' ? (o.host.id !== 'sol' && visited.includes(o.host.id)) : known(o));
+  const WARP_LY = 20;                                 // same warp range as the game
+  const inReach = o => { const t = o.host || o; return t.kind !== 'system' || t.real.distanceTo(starOf(here).real) <= WARP_LY; };
+  const canJump = o => !!o && o.id !== here && inReach(o) && (o.kind === 'planet' ? (o.host.id !== 'sol' && visited.includes(o.host.id)) : known(o));
   const known = o => !o ? false : o.id === 'sol' || (o.kind === 'planet' ? (o.host.id === 'sol' || beenPl.has(o.id) || o.id === here) : visited.includes(o.id));
   const nameOf = o => known(o) ? String(o.name).toUpperCase() : '???';
   const save = () => { try { localStorage.setItem(SAVE, JSON.stringify({ visited, here, planets: [...beenPl], seen: [...seen] })); } catch (e) {} };
@@ -4857,7 +4866,7 @@
   function select(p) {
     sel = p; const card = document.getElementById('mp-card');
     if (!p) { card.style.display = 'none'; return; }
-    const jb = document.getElementById('mp-jump'); jb.classList.toggle('off', !canJump(p)); jb.textContent = canJump(p) || p.id === here ? 'JUMP' : p.kind === 'planet' && p.host.id === 'sol' ? 'HOME SYSTEM' : 'JUMP · NOT VISITED';
+    const jb = document.getElementById('mp-jump'); jb.classList.toggle('off', !canJump(p)); jb.textContent = canJump(p) || p.id === here ? 'JUMP' : p.kind === 'planet' && p.host.id === 'sol' ? 'HOME SYSTEM' : known(p) && !inReach(p) ? 'OUT OF RANGE · MAX ' + WARP_LY + ' LY' : 'JUMP · NOT VISITED';
     if (p.kind === 'planet' && !known(p)) {
       const hs = starOf(here);
       document.getElementById('mp-cName').textContent = '???';
