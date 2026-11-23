@@ -3443,27 +3443,33 @@
     const same = o.id === (deep.at || 'sol');
     if (same && (!planetName || planetName === deep.planet)) return;
     const dir = same ? fwdLocal.clone() : relDir(o, new THREE.Vector3());     // another planet of the same system: a short hop straight ahead
-    deepJump = { o, planet: planetName || null, dir, t: 0, turn: same ? 0.5 : 1.0, warp: same ? 1.4 : 2.6, arrive: same ? 2.0 : 3.0 };
+    // far jumps hold in white light for a while (2 s for the nearest landmarks, up to 4 s for M87): you're travelling far
+    const dly = o.pos.distanceTo(deep.here), lg = Math.log10;
+    const hold = same || dly <= WARP_LY ? 0 : THREE.MathUtils.clamp(2 + 2 * (lg(dly) - lg(400)) / (lg(5.5e7) - lg(400)), 2, 4);
+    deepJump = { o, planet: planetName || null, dir, t: 0, turn: same ? 0.5 : 1.0, warp: same ? 1.4 : 2.6, arrive: same ? 2.0 : 3.0, hold };
     factsT = -1; factsG.style.display = 'none';
   }
   function deepJumpUpdate(dt) {
     const j = deepJump; j.t += dt;
     skyVelX = skyVelY = 0;
-    const T1 = j.turn, T2 = T1 + j.warp, T3 = T2 + j.arrive, tf = T1 + j.warp * 0.55;
+    const H = j.hold || 0, T1 = j.turn, T2 = T1 + j.warp + H, T3 = T2 + j.arrive, tf = T1 + j.warp * 0.55, ta = tf + H;   // white from tf to ta
     faceQuat(j.dir, qFace); spaceRig.quaternion.slerp(qFace, Math.min(1, dt * (j.t < T1 ? 4.5 : 8)));
     const charge = j.t < T1 ? Math.max(0, (j.t - (T1 - 0.45)) / 0.45) : 0, ch = charge * charge;
     let v = 0;
-    if (j.t >= T1 && j.t < T2) { const u = (j.t - T1) / j.warp; v = u < 0.15 ? Math.pow(u / 0.15, 1.5) : 1; }
+    if (j.t >= T1 && j.t < T2) { const u = (j.t - T1) / j.warp; v = u < 0.15 ? Math.pow(u / 0.15, 1.5) : 1; }   // (u > 1 while holding in white: still full warp)
     else if (j.t >= T2) v = Math.pow(1 - Math.min(1, (j.t - T2) / j.arrive), 2.2);
     navWarp = j.t < T1 ? 1 - 2.6 * ch : 1 + 70 * v; travelV = v;
     const since = j.t - T1, over = since >= 0 ? Math.max(0, 1 - since / 0.6) : 0;
     worldFov = 55 + 22 * Math.pow(v, 0.8) + 6 * Math.sin(Math.min(1, Math.max(0, since) / 0.6) * Math.PI) * over - 6 * ch;
     camMove.pitch = 0.035 * ch;
     if (since >= 0 && !j.shook) { j.shook = true; camMove.shake = 1; try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(35); } catch (e) {} }
-    jumpFlash.style.opacity = Math.pow(Math.max(0, 1 - Math.abs(j.t - tf) / 0.35), 1.5).toFixed(3);
-    if (!j.swapped && j.t >= tf) { j.swapped = true; arriveAt(j.o, j.dir, j.planet); }
+    const fl = j.t < tf ? Math.pow(Math.max(0, 1 - (tf - j.t) / 0.35), 1.5)
+             : j.t < ta ? 0.9 + 0.06 * Math.sin(j.t * 7) + 0.04 * Math.sin(j.t * 17)                 // holding in white: a gentle shimmer, streaks faintly behind
+             : Math.pow(Math.max(0, 1 - (j.t - ta) / (H ? 0.6 : 0.35)), 1.5);
+    jumpFlash.style.opacity = fl.toFixed(3);
+    if (!j.swapped && j.t >= tf + H / 2) { j.swapped = true; arriveAt(j.o, j.dir, j.planet); }
     if (j.swapped && deep.at) {                        // the destination rushes in from far away, then slows to a stop
-      const u = Math.min(1, (j.t - tf) / (T3 - tf)), e = 1 - Math.pow(1 - u, 3);
+      const u = THREE.MathUtils.clamp((j.t - ta) / (T3 - ta), 0, 1), e = 1 - Math.pow(1 - u, 3);
       destGroup.position.copy(j.dir).multiplyScalar(DEST_D * (1 + 25 * Math.pow(1 - e, 1.5)));
       destGroup.scale.setScalar(0.02 + 0.98 * Math.pow(e, 2.5));                                  // a tiny far thing at first...
       if (!j.beaconSet) { j.beaconSet = true; deepBeacon.material.color.setHex(j.o.kind === 'system' ? starColor(j.o.teff).getHex() : BEACON_COL[j.o.kind] || 0xffffff); }
@@ -4487,7 +4493,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 37';
+    tag.textContent = 'SCREEN 2026-11-23 · 38';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
