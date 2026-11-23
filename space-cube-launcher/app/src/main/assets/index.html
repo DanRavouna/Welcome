@@ -555,10 +555,16 @@
   const sysScene = new THREE.Scene();
   const sysRig = new THREE.Group(); sysScene.add(sysRig);
   const sysWorld = new THREE.Group(); sysRig.add(sysWorld);
-  function syncSysRig() { sysRig.position.copy(spaceRig.position); sysRig.quaternion.copy(spaceRig.quaternion); sysRig.updateMatrixWorld(true); }
+  // The starry sky is a pure backdrop, drawn before everything: planets always cover it
+  const skyScene = new THREE.Scene();
+  const skyRig = new THREE.Group(); skyScene.add(skyRig);
+  function syncSysRig() {
+    sysRig.position.copy(spaceRig.position); sysRig.quaternion.copy(spaceRig.quaternion); sysRig.updateMatrixWorld(true);
+    skyRig.position.copy(spaceRig.position); skyRig.quaternion.copy(spaceRig.quaternion); skyRig.updateMatrixWorld(true);
+  }
   const sky = new THREE.Group();
   sky.rotation.x = 0.35;
-  sysRig.add(sky);
+  skyRig.add(sky);
 
   function makeStars(count, rMin, rMax, size, color) {
     const g = new THREE.BufferGeometry();
@@ -2672,12 +2678,21 @@
     const m = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), occMat);
     m.userData.n = n; m.renderOrder = -10; n.occ = m; occluders.add(m);
   });
-  const occQ = new THREE.Quaternion();
+  // Near copies: the same outline on screen, placed just in front of you. They hide the flying dots
+  // wherever a planet covers the screen (the dots read as stars, so none should show on a planet).
+  const nearOcc = new THREE.Group(); scene.add(nearOcc); nearOcc.visible = false;
+  NAV.forEach(n => { const m = new THREE.Mesh(n.occ.geometry, occMat); m.renderOrder = -10; n.occNear = m; nearOcc.add(m); });
+  const occQ = new THREE.Quaternion(), occDir = new THREE.Vector3();
   function updateOccluders() {
     NAV.forEach(n => {
       const src = n.moon ? n.moon.body : satBody;
       src.getWorldPosition(n.occ.position); src.getWorldQuaternion(occQ); n.occ.quaternion.copy(occQ);
       src.getWorldScale(n.occ.scale); n.occ.scale.multiplyScalar(n.bodyR * 0.985);   // a hair smaller: no dark fringe
+      occDir.copy(n.occ.position).sub(camera.position);
+      const dist = occDir.length(), nearD = 0.5;
+      n.occNear.visible = dist > n.bodyR * 1.02;                   // (not when you're inside it)
+      n.occNear.position.copy(camera.position).addScaledVector(occDir, nearD / dist);
+      n.occNear.quaternion.copy(occQ); n.occNear.scale.copy(n.occ.scale).multiplyScalar(nearD / dist);
     });
   }
   const STREAK_N = 260;
@@ -3302,12 +3317,22 @@
     // 3) UI layer: your cubes (and the checklist ship), always on top
     renderer.autoClear = false; renderer.clear();
     const n0 = camera.near, f0 = camera.far, fov0 = camera.fov;
-    camera.fov = worldFov; camera.near = sysNear; camera.far = 3000; camera.updateProjectionMatrix();
+    camera.fov = worldFov; camera.near = 1; camera.far = 3000; camera.updateProjectionMatrix();
+    renderer.render(skyScene, camera);                // 0) the starry backdrop
+    renderer.clearDepth();
+    camera.near = sysNear; camera.updateProjectionMatrix();
     renderer.render(sysScene, camera);
     camera.near = n0; camera.far = f0; camera.updateProjectionMatrix();
     renderer.clearDepth();
     appLayer.visible = false; if (dash) dash.g.visible = false;
+    // 2a) the flying dots, hidden wherever a planet covers the screen
+    shipLayer.visible = false; occluders.visible = false; const stV = streaks.visible; streaks.visible = false; nearOcc.visible = true;
     renderer.render(scene, camera);
+    renderer.clearDepth();
+    // 2b) ships, whale, squadrons and warp streaks, with true depth against the planets
+    field.visible = false; nearOcc.visible = false; shipLayer.visible = true; occluders.visible = true; streaks.visible = stV;
+    renderer.render(scene, camera);
+    field.visible = true;
     camera.fov = fov0; camera.updateProjectionMatrix();
     renderer.clearDepth();
     appLayer.visible = true; if (dash) dash.g.visible = true;
@@ -3576,7 +3601,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 24';
+    tag.textContent = 'SCREEN 2026-11-23 · 25';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
