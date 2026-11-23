@@ -2646,6 +2646,8 @@
   })();
   const prof = (arr, u) => { const f = Math.max(0, Math.min(1, u)) * PROFILE.N, i = Math.min(PROFILE.N - 1, Math.floor(f)), r = f - i; return arr[i] * (1 - r) + arr[i + 1] * r; };
   let worldFov = 55, travelV = 0;                     // wider view for the far/space layers while warping
+  // camera "body language" for the space layers only (your cubes stay level): bank into turns, nose lift, shake
+  const camMove = { roll: 0, pitch: 0, shake: 0, prevFwd: null };
   function navUpdate(dt) {
     if (travel) {
       const tr = travel; tr.t += dt;
@@ -2655,10 +2657,25 @@
       const a = 1 - e, b = e;
       shipPos.set(0, 0, 0).addScaledVector(tr.p0, a * a * a).addScaledVector(tr.ctrl, 3 * a * a * b).addScaledVector(tr.ctrl2, 3 * a * b * b).addScaledVector(tr.p1, b * b * b);
       // charge: in the last moments of the turn the dots slow and drift back... then the punch
-      const charge = tr.t < tr.turn ? Math.max(0, (tr.t - (tr.turn - 0.35)) / 0.35) : 0;
-      navWarp = tr.t < tr.turn ? 1 - 1.6 * charge : 1 + 70 * v;
+      const charge = tr.t < tr.turn ? Math.max(0, (tr.t - (tr.turn - 0.4)) / 0.4) : 0;
+      const ch = charge * charge;
+      // anticipation: the ship pulls back a touch, nose lifts, view squeezes, dots rush backward...
+      if (charge > 0) {
+        const back = tr.p0.clone().sub(tr.ctrl).normalize().multiplyScalar(Math.min(tr.plan.len0 * 0.01, 2.5) * ch);
+        shipPos.add(back);
+      }
+      const sinceGo = tr.t - tr.turn;
+      if (sinceGo >= 0 && sinceGo < 0.5) {                                     // ...release: ease the pull-back out over the first moments
+        const k = 1 - THREE.MathUtils.smoothstep(sinceGo, 0, 0.5);
+        shipPos.add(tr.p0.clone().sub(tr.ctrl).normalize().multiplyScalar(Math.min(tr.plan.len0 * 0.01, 2.5) * k));
+      }
+      navWarp = tr.t < tr.turn ? 1 - 2.6 * ch : 1 + 70 * v;
       travelV = v;
-      worldFov = 55 + 20 * Math.pow(v, 0.8) - 3 * charge;                     // the view widens with speed
+      // punch: the view snaps wide (a little past, then settles) and shakes for a moment
+      const over = sinceGo >= 0 ? Math.max(0, 1 - sinceGo / 0.6) : 0;
+      worldFov = 55 + 20 * Math.pow(v, 0.8) + 6 * Math.sin(Math.min(1, sinceGo / 0.6) * Math.PI) * over - 6 * ch;
+      camMove.pitch = 0.035 * ch;
+      if (sinceGo >= 0 && sinceGo < 0.05 && !tr.shook) { tr.shook = true; camMove.shake = 1; try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(35); } catch (e) {} }
       // look where the ship is going: along the route (a little ahead on the curve);
       // the route starts heading at the target and ends with a straight run in, so start and end still face it
       const ahead = bez(tr, Math.min(1, e + 0.035), navTmp2).sub(shipPos);
@@ -2667,6 +2684,15 @@
       const look = ahead.lengthSq() > 1e-10 ? ahead.normalize().multiplyScalar(1 - w).addScaledVector(toT.normalize(), w) : toT;
       faceQuat(look, qFace);
       spaceRig.quaternion.slerp(qFace, Math.min(1, dt * (tr.t < tr.turn ? 5 : 7)));
+      // bank into the turn: roll with how fast the heading swings left/right
+      const fwdNow = new THREE.Vector3(0, 0, -1).applyQuaternion(spaceRig.quaternion.clone().invert());
+      if (camMove.prevFwd && dt > 0) {
+        const upL = new THREE.Vector3(0, 1, 0).applyQuaternion(spaceRig.quaternion.clone().invert());
+        const yawRate = new THREE.Vector3().crossVectors(camMove.prevFwd, fwdNow).dot(upL) / dt;   // + = turning left
+        const want = THREE.MathUtils.clamp(yawRate * 0.55, -0.5, 0.5);
+        camMove.roll += (want - camMove.roll) * Math.min(1, dt * 4);
+      }
+      camMove.prevFwd = fwdNow;
       skyVelX = skyVelY = 0;
       if (tr.t >= tr.dur) {                                                   // there: hold still, finish turning smoothly
         shipPos.copy(tr.p1);
@@ -2676,12 +2702,16 @@
         }
       }
       if (tr.t >= tr.dur + tr.settle) {
-        nav.target = tr.n.name; travel = null; navWarp = 1; worldFov = 55; travelV = 0;
+        nav.target = tr.n.name; travel = null; navWarp = 1; worldFov = 55; travelV = 0; camMove.prevFwd = null;
         navOffset.copy(shipPos).sub(navLocal(tr.n, new THREE.Vector3())); saveNav();
         factsFor = tr.n; factsT = performance.now();
         try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(20); } catch (e) {}
       }
     }
+    if (!travel) {                                    // not flying: bank, nose and shake ease back to level
+      camMove.roll *= Math.pow(0.02, dt); camMove.pitch *= Math.pow(0.02, dt);
+    }
+    camMove.shake *= Math.pow(0.003, dt);
     if (!travel && nav.target) {
       const n = NAV.find(x => x.name === nav.target);
       if (n) { sysWorld.position.copy(shipPos).negate(); syncSysRig(); shipPos.copy(navLocal(n, navTmp2)).add(navOffset); }
@@ -3381,6 +3411,9 @@
     // 3) UI layer: your cubes (and the checklist ship), always on top
     renderer.autoClear = false; renderer.clear();
     const n0 = camera.near, f0 = camera.far, fov0 = camera.fov;
+    camera.rotation.set(camMove.pitch + (Math.random() - 0.5) * 0.012 * camMove.shake,
+                        (Math.random() - 0.5) * 0.012 * camMove.shake, camMove.roll);
+    camera.updateMatrixWorld();
     camera.fov = worldFov; camera.near = 1; camera.far = 3000; camera.updateProjectionMatrix();
     renderer.render(skyScene, camera);                // 0) the starry backdrop
     renderer.clearDepth();
@@ -3398,6 +3431,7 @@
     renderer.render(scene, camera);
     field.visible = true;
     camera.fov = fov0; camera.updateProjectionMatrix();
+    camera.rotation.set(0, 0, 0); camera.updateMatrixWorld();          // your cubes stay level
     renderer.clearDepth();
     appLayer.visible = true; if (dash) dash.g.visible = true;
     spaceRig.visible = false; occluders.visible = false; streaks.visible = false;
@@ -3665,7 +3699,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 27';
+    tag.textContent = 'SCREEN 2026-11-23 · 28';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
