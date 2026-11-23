@@ -3394,7 +3394,38 @@
   }
 
   // ---- arriving somewhere ----
-  function setHomeVisible(v) { sysRig.children.forEach(c => { if (c !== destGroup) c.visible = v; }); }
+  function setHomeVisible(v) { sysRig.children.forEach(c => { if (c !== destGroup && c !== deepRoute && c !== deepBeacon) c.visible = v; }); }
+  // the route to a far destination: glowing dots from your nose straight out toward it (same look as the Saturn routes)
+  const DEEP_ROUTE_N = 60;
+  const deepRoute = new THREE.Group(); deepRoute.visible = false; sysRig.add(deepRoute);
+  const deepRouteDots = [];
+  for (let i = 0; i < DEEP_ROUTE_N; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: routeTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: false, opacity: 0 }));
+    const u = (i + 1) / (DEEP_ROUTE_N + 1); sp.userData.u = u; sp.scale.setScalar(0.022 * (1 - 0.55 * u)); deepRoute.add(sp); deepRouteDots.push(sp);
+  }
+  let deepRouteFor = null, deepRouteT = 0;
+  const drDown = new THREE.Vector3(), drDir = new THREE.Vector3();
+  function updateDeepRoute() {
+    const lockT0 = navLock && navLock.deep && inRange(navLock) && navLock.id !== (deep.at || 'sol') ? navLock : null;
+    const tgt = deepJump && !deepJump.swapped ? deepJump.o : lockT0;
+    if (!tgt) { deepRoute.visible = false; deepRouteFor = null; return; }
+    if (deepRouteFor !== tgt) { deepRouteFor = tgt; deepRouteT = performance.now(); }
+    if (deepJump) drDir.copy(deepJump.dir); else relDir(tgt, drDir);
+    drDown.set(0, -1, 0).applyQuaternion(spaceRig.quaternion.clone().invert());
+    const now = performance.now(), reveal = Math.min(1, (now - deepRouteT) / 450), ph = now / 1000;
+    const fade = deepJump ? Math.max(0, 1 - Math.max(0, deepJump.t - deepJump.turn) / 0.8) : 1;   // gone soon after the punch
+    deepRoute.visible = true;
+    deepRouteDots.forEach(sp => {
+      const u = sp.userData.u, d = 3 + Math.pow(u, 2.2) * 900, w = Math.pow(1 - u, 2.2);
+      sp.position.copy(drDir).multiplyScalar(d).addScaledVector(drDown, 3 * w);       // starts just below the view, where your nose is
+      const pulse = 0.5 + 0.5 * Math.cos((u * 6 - ph * 1.6) * Math.PI);
+      sp.material.opacity = (u <= reveal ? 1 : 0) * (0.45 + 0.55 * Math.pow(Math.max(0, pulse), 3)) * fade;
+    });
+  }
+  // arriving: the destination first shows as a far point of light where you're heading, then grows as you slow down
+  const deepBeacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: pointTexture('255,255,255'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: false, opacity: 0 }));
+  deepBeacon.scale.setScalar(0.05); deepBeacon.visible = false; sysRig.add(deepBeacon);
+  const BEACON_COL = { blackhole: 0xffb070, nebula: 0xff8fc0, galaxy: 0xc8d0ff, cluster: 0xa8c4ff };
   function arriveAt(o, dir, planetName) {
     deep.here.copy(o.pos); deep.at = o.kind === 'home' ? null : o.id; deep.dir = dir.clone();
     deep.planet = o.kind === 'system' ? ((planetName && o.planets.some(x => x.name === planetName)) ? planetName : mainPlanet(o).name) : null;
@@ -3412,7 +3443,7 @@
     const same = o.id === (deep.at || 'sol');
     if (same && (!planetName || planetName === deep.planet)) return;
     const dir = same ? fwdLocal.clone() : relDir(o, new THREE.Vector3());     // another planet of the same system: a short hop straight ahead
-    deepJump = { o, planet: planetName || null, dir, t: 0, turn: same ? 0.5 : 1.0, warp: same ? 1.4 : 2.6, arrive: 2.0 };
+    deepJump = { o, planet: planetName || null, dir, t: 0, turn: same ? 0.5 : 1.0, warp: same ? 1.4 : 2.6, arrive: same ? 2.0 : 3.0 };
     factsT = -1; factsG.style.display = 'none';
   }
   function deepJumpUpdate(dt) {
@@ -3433,10 +3464,14 @@
     if (!j.swapped && j.t >= tf) { j.swapped = true; arriveAt(j.o, j.dir, j.planet); }
     if (j.swapped && deep.at) {                        // the destination rushes in from far away, then slows to a stop
       const u = Math.min(1, (j.t - tf) / (T3 - tf)), e = 1 - Math.pow(1 - u, 3);
-      destGroup.position.copy(j.dir).multiplyScalar(DEST_D * (1 + 9 * (1 - e)));
+      destGroup.position.copy(j.dir).multiplyScalar(DEST_D * (1 + 25 * Math.pow(1 - e, 1.5)));
+      destGroup.scale.setScalar(0.02 + 0.98 * Math.pow(e, 2.5));                                  // a tiny far thing at first...
+      if (!j.beaconSet) { j.beaconSet = true; deepBeacon.material.color.setHex(j.o.kind === 'system' ? starColor(j.o.teff).getHex() : BEACON_COL[j.o.kind] || 0xffffff); }
+      deepBeacon.visible = true; deepBeacon.position.copy(destGroup.position);
+      deepBeacon.material.opacity = 1 - THREE.MathUtils.smoothstep(e, 0.45, 0.9);                 // ...a point of light that hands over to the real thing
     }
     if (j.t >= T3) {
-      deepJump = null; navWarp = 1; worldFov = 55; travelV = 0; jumpFlash.style.opacity = 0;
+      deepJump = null; navWarp = 1; worldFov = 55; travelV = 0; jumpFlash.style.opacity = 0; destGroup.scale.setScalar(1); deepBeacon.visible = false;
       saveDeep(); factsFor = { deep: true, center: true, name: deep.planet ? deep.planet.toUpperCase() : j.o.name, facts: deepFacts(j.o, deep.planet) }; factsT = performance.now();
       try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(20); } catch (e) {}
     }
@@ -3509,11 +3544,12 @@
     destOcc.forEach(([a, b], i) => {
       const s = dest && dest.solids[i];
       a.visible = b.visible = !!s; if (!s) return;
-      s.mesh.getWorldPosition(a.position); a.scale.setScalar(s.r * 0.985);
+      const rs = s.r * destGroup.scale.x; s.mesh.getWorldPosition(a.position); a.scale.setScalar(rs * 0.985);
       occDir.copy(a.position).sub(camera.position); const dist = occDir.length();
-      b.visible = dist > s.r * 1.02; b.position.copy(camera.position).addScaledVector(occDir, 0.5 / dist); b.scale.setScalar(s.r * 0.985 * 0.5 / dist);
+      b.visible = dist > rs * 1.02; b.position.copy(camera.position).addScaledVector(occDir, 0.5 / dist); b.scale.setScalar(rs * 0.985 * 0.5 / dist);
     });
     if (deep.at) sysNear = 0.5;
+    updateDeepRoute();
     deepLabels();
   }
   window.__deepDebug = () => ({ at: deep.at, here: deep.here.toArray().map(v => +v.toFixed(2)), limit: deep.limit, jumping: !!deepJump,
@@ -4451,7 +4487,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 36';
+    tag.textContent = 'SCREEN 2026-11-23 · 37';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
