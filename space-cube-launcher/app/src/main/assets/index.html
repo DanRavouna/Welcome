@@ -2681,7 +2681,7 @@
     const pxPerRad = (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     return [(navTmp.x + 1) / 2 * innerWidth, (1 - navTmp.y) / 2 * innerHeight, (n.bodyR / dist) * pxPerRad, front, dist];
   }
-  function lockOn(n) { navLock = n; lockT = performance.now(); try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(14); } catch (e) {} }
+  function lockOn(n) { if (n.deep) reportSeen(n); navLock = n; lockT = performance.now(); try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(14); } catch (e) {} }
   function cancelLock() { navLock = null; lockG.style.display = 'none'; }
   // A tap on empty space: lock on / engage / cancel. Returns true if it used the tap.
   function navTap(x, y) {
@@ -3001,6 +3001,9 @@
   // Warp range: you can see stars farther out, but only jump to stars within 20 ly of where you are.
   // Home (SOL) and the far landmarks (black holes, nebulae, galaxies) can always be reached.
   const WARP_LY = 20;
+  // the star map records a place as seen (???) only when its name tag shows on your screen, or you lock on to it
+  const seenSent = new Set();
+  function reportSeen(o) { if (!o || seenSent.has(o.id)) return; seenSent.add(o.id); try { window.SpaceMap && window.SpaceMap.saw(o.id); } catch (e) {} }
   const inRange = o => !o.deep || o.kind !== 'system' || o.pos.distanceTo(deep.here) <= WARP_LY;
   const SKY = (() => { try { return JSON.parse(document.getElementById('skyData').textContent); } catch (e) { return null; } })();
   const DEEP_KEY = 'spaceCubeDeep.v1', LY_PER_PC = 3.26156, DEG = Math.PI / 180;
@@ -3447,7 +3450,7 @@
   function deepVis(o) {                                // how visible a marker is right now (0..1)
     if (o.id === (deep.at || 'sol')) return 0;
     const c = THREE.MathUtils.smoothstep(relDir(o, dTmp2).dot(fwdLocal), CONE[0], CONE[1]);
-    if (o.kind === 'system') { const d = deepDist(o); return d > deep.limit ? 0 : c; }
+    if (o.kind === 'system') { const d = deepDist(o); return d > deep.limit || d > WARP_LY ? 0 : c; }   // beyond warp range: just a dot in the sky
     return o.kind === 'home' && !deep.at ? 0 : 0.35 + 0.65 * c;
   }
   function deepPick(x, y) {
@@ -3476,7 +3479,7 @@
     DLABELS.forEach((L, i) => {
       const p = picks[i]; if (!p) { L.g.style.display = 'none'; return; }
       L.g.style.display = ''; L.c.setAttribute('cx', p.x.toFixed(1)); L.c.setAttribute('cy', p.y.toFixed(1));
-      L.t.textContent = p.o.name + '  ' + fmtLy(deepDist(p.o)); L.g.style.opacity = inRange(p.o) ? '' : '0.45';
+      L.t.textContent = p.o.name + '  ' + fmtLy(deepDist(p.o)); reportSeen(p.o);
       L.t.setAttribute('x', (p.x + 10).toFixed(1)); L.t.setAttribute('y', (p.y - 8).toFixed(1));
     });
   }
@@ -4440,7 +4443,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 33';
+    tag.textContent = 'SCREEN 2026-11-23 · 34';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
@@ -4686,8 +4689,8 @@
 
   // ============ saved progress ============
   let visited = ['sol'], here = 'sol', beenPl = new Set(), seen = new Set();
-  const SIGHT_LY = 20;                                // stars within 20 ly of everywhere you've been go on the map (as ??? until you go there)
-  try { const s = JSON.parse(localStorage.getItem(SAVE)); if (s && s.visited && s.visited.length) { visited = s.visited.filter(id => byId.has(id)); here = byId.has(s.here) ? s.here : 'sol'; if (s.planets) beenPl = new Set(s.planets.filter(id => byId.has(id))); if (s.seen) seen = new Set(s.seen.filter(id => byId.has(id))); } } catch (e) {}
+  const SIGHT_LY = 20;                                // (unused now: the map adds what the game showed you)
+  try { const s = JSON.parse(localStorage.getItem(SAVE)); if (s && s.visited && s.visited.length) { visited = s.visited.filter(id => byId.has(id)); here = byId.has(s.here) ? s.here : 'sol'; if (s.planets) beenPl = new Set(s.planets.filter(id => byId.has(id))); if (s.seen2) seen = new Set(s.seen2.filter(id => byId.has(id))); } } catch (e) {}   // (the old 'seen' list counted stars you never saw: dropped)
   if (!visited.includes('sol')) visited.unshift('sol');
   // You know a place's name and details only once you've been there yourself (our solar system is known)
   // the map's JUMP: places you've been, and the planets of a star system you've been to (you're already in that system)
@@ -4696,19 +4699,14 @@
   const canJump = o => !!o && o.id !== here && inReach(o) && (o.kind === 'planet' ? (o.host.id !== 'sol' && visited.includes(o.host.id)) : known(o));
   const known = o => !o ? false : o.id === 'sol' || (o.kind === 'planet' ? (o.host.id === 'sol' || beenPl.has(o.id) || o.id === here) : visited.includes(o.id));
   const nameOf = o => known(o) ? String(o.name).toUpperCase() : '???';
-  const save = () => { try { localStorage.setItem(SAVE, JSON.stringify({ visited, here, planets: [...beenPl], seen: [...seen] })); } catch (e) {} };
+  const save = () => { try { localStorage.setItem(SAVE, JSON.stringify({ visited, here, planets: [...beenPl], seen2: [...seen] })); } catch (e) {} };
   // a place shows on the map if you've been there, it's within 30 ly of somewhere you've been,
   // or it's a famous landmark (seen from home with telescopes: shown dim until you go)
   // The map only shows where you've been: it grows as you explore. Far landmarks stay as ? markers to aim for.
   // Arriving somewhere, you see everything the sky shows from there: it goes on the map as ??? until you've been there.
   // Far landmarks show in the sky from anywhere, so they're always seen.
-  function lookAround(star) {
-    PLACES.forEach(p => { if (p.kind === 'system' && p.real.distanceTo(star.real) <= SIGHT_LY) seen.add(p.id); });
-  }
-  function isRevealed(p) {
-    if (p.kind !== 'system' && p.kind !== 'home') return true;
-    return p.id === 'sol' || visited.includes(p.id) || seen.has(p.id);
-  }
+  function lookAround() {}                            // (seen now comes only from name tags shown in the game: SpaceMap.saw)
+  function isRevealed(p) { return p.id === 'sol' || visited.includes(p.id) || seen.has(p.id); }   // landmarks too: only once seen
 
   // ============ scene ============
   const el = document.getElementById('mp-v'), ov = document.getElementById('mp-ov');
@@ -4930,8 +4928,6 @@
     sgr: () => byId.get('sgra').dir.toArray().map(v => +v.toFixed(3)) };
 
   // ============ every frame ============
-  visited.forEach(id => lookAround(starOf(id)));
-  visited.forEach(id => lookAround(starOf(id)));
   rebuild(); goal.copy(starOf(here).pos); tgt.copy(goal);
   const pr = new THREE.Vector3();
   let running = false;
@@ -5004,11 +5000,12 @@
     if (!quiet) { goal.copy(star.pos); goalD = star.planets ? 3.2 : 8; freeZoom = false; }
   }
   window.SpaceMap = {
-    open() { resize(); running = true; screen.classList.add('show'); requestAnimationFrame(() => screen.classList.add('vis')); select(null);
+    open() { resize(); rebuild(); running = true; screen.classList.add('show'); requestAnimationFrame(() => screen.classList.add('vis')); select(null);
       const h = starOf(here); goal.copy(h.pos); tgt.copy(h.pos); goalD = dist = h.planets ? 3.2 : 10; frame(); },
     close() { running = false; screen.classList.remove('vis'); setTimeout(() => { if (!running) screen.classList.remove('show'); }, 360); if (window.SpaceMapClosed) window.SpaceMapClosed(); },
     get isOpen() { return running; },
     back() { if (sel) { select(null); return; } window.SpaceMap.close(); },
+    saw(id) { if (!byId.has(id) || seen.has(id) || visited.includes(id)) return; seen.add(id); save(); if (running) rebuild(); },
     arrived, debug: () => ({ here, visited: visited.slice(), seen: seen.size, planets: [...beenPl] }),
     groups: () => groups.map(g => [Math.round(g.x), Math.round(g.y), g.m.length, nameOf(g.m[0]), !!g.planet, g.m[0].name]),
     selectId: id => select(byId.get(id)), card: () => document.getElementById('mp-card').innerText,
