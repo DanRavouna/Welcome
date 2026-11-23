@@ -143,6 +143,7 @@
   /* ---- the old top buttons (groups, group sorting) are retired; groups stay saved ---- */
   #settingsBtn, #hideBtn { display: none !important; }
   #cfgBtn { right: 16px; font-size: 20px; padding: 0; }
+  #mapBtn { left: 16px; padding: 0; }
   /* ---- App settings: same chrome + cyan look as the old settings menu ---- */
   #cfg { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column;
     background: rgba(4,8,24,.82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -365,6 +366,53 @@
   #kbd button.num { height: 36px; font-size: 14px; }
   #err { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
     color: #aab; text-align: center; padding: 24px; }
+  /* ---- STAR MAP (opened with the map button) ---- */
+
+  #mapScreen { position: fixed; inset: 0; z-index: 30; background: #000; color: #bfeee0; font-family: 'Orbitron', system-ui, sans-serif; display: none; opacity: 0; transition: opacity .35s; }
+  #mapScreen.show { display: block; }
+  #mapScreen.vis { opacity: 1; }
+  #mapScreen #mp-v { position: fixed; inset: 0; touch-action: none; }
+  #mapScreen #mp-v canvas { display: block; }
+  #mapScreen #mp-ov { position: fixed; inset: 0; pointer-events: none; }
+  #mapScreen .lb { position: absolute; font-size: 10px; letter-spacing: .1em; color: #bfe9dc; white-space: nowrap; text-shadow: 0 0 4px #000, 0 0 8px #000; }
+  #mapScreen .lb.dim { color: #5f8a80; }
+  #mapScreen .lb.here { color: #7dffc6; }
+  #mapScreen .cl { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; border: 1.5px solid #7dffc6; background: rgba(8,36,32,.75); color: #c9fff0; font-size: 11px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(125,255,198,.35); }
+  #mapScreen .ret { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; }
+  #mapScreen .ret i { position: absolute; width: 9px; height: 9px; border-color: #b9ffe4; border-style: solid; filter: drop-shadow(0 0 3px rgba(90,255,190,.8)); }
+  #mapScreen #mp-top { position: fixed; top: var(--inset-top, 0px); left: 0; right: 0; padding: max(12px, env(safe-area-inset-top)) 14px 8px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+  #mapScreen #mp-top b { font-size: 13px; letter-spacing: .22em; color: #7dffc6; font-weight: 700; }
+  #mapScreen #mp-lvl { font-size: 10px; letter-spacing: .18em; color: #9fd8c8; }
+  #mapScreen #mp-side { position: fixed; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
+  #mapScreen .btn { width: 40px; height: 40px; border: 1px solid #2d6b5e; border-radius: 10px; background: rgba(4,16,14,.85); color: #7dffc6; font: 600 18px 'Orbitron', sans-serif; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  #mapScreen .btn.sol { color: #ffd27a; font-size: 11px; letter-spacing: .05em; }
+  #mapScreen #mp-bar { position: fixed; left: 12px; top: 22%; bottom: 30%; width: 3px; background: #0c2622; border-radius: 2px; }
+  #mapScreen #mp-knob { position: absolute; left: -4px; width: 11px; height: 11px; border-radius: 50%; background: #7dffc6; box-shadow: 0 0 8px #7dffc6; }
+  #mapScreen #mp-card { position: fixed; left: 10px; right: 10px; bottom: max(12px, env(safe-area-inset-bottom)); background: rgba(6,16,22,.92); border: 1px solid #1f4a4e; border-radius: 16px; padding: 12px 14px; display: none; }
+  #mapScreen #mp-card h3 { margin: 0 0 4px; font-size: 13px; letter-spacing: .12em; color: #dffff4; font-weight: 700; }
+  #mapScreen #mp-card p { margin: 2px 0; font-size: 9.5px; letter-spacing: .08em; color: #8fcabb; line-height: 1.6; }
+  #mapScreen #mp-card .row { display: flex; gap: 8px; margin-top: 10px; }
+  #mapScreen #mp-card button { flex: 1; height: 38px; border-radius: 10px; font: 700 11px 'Orbitron', sans-serif; letter-spacing: .14em; cursor: pointer; }
+  #mapScreen #mp-jump { background: #7dffc6; color: #06231a; border: 0; }
+  #mapScreen #mp-jump.off { background: transparent; color: #4d7a72; border: 1px dashed #2d4f4a; }
+  #mapScreen #mp-zoomTo { background: transparent; color: #7dffc6; border: 1px solid #2d6b5e; }
+  #mapScreen #mp-stat { position: fixed; left: 14px; bottom: max(14px, env(safe-area-inset-bottom)); font-size: 9px; letter-spacing: .12em; color: #5f8a80; pointer-events: none; }
+  #mapScreen #mp-keyBtn { position: fixed; right: 64px; top: max(40px, calc(env(safe-area-inset-top) + 30px)); font-size: 9px; letter-spacing: .12em; color: #7dffc6; cursor: pointer; padding: 6px; }
+  #mapScreen #mp-key { position: fixed; left: 10px; right: 10px; top: max(70px, calc(env(safe-area-inset-top) + 60px)); background: rgba(6,16,22,.94); border: 1px solid #1f4a4e; border-radius: 16px; padding: 10px 12px; display: none; }
+  #mapScreen #mp-key .k { display: flex; align-items: center; gap: 10px; padding: 3px 0; font-size: 9.5px; letter-spacing: .08em; color: #bfe9dc; }
+  #mapScreen #mp-key .k img { width: 30px; height: 30px; }
+  #mapScreen #mp-key .k span:last-child { margin-left: auto; color: #5f8a80; }
+  #mapScreen #mp-tests { position: fixed; left: 14px; top: max(40px, calc(env(safe-area-inset-top) + 30px)); display: flex; flex-direction: column; gap: 6px; }
+  #mapScreen #mp-tests div { font-size: 8.5px; letter-spacing: .1em; color: #7dffc6; border: 1px dashed #2d6b5e; border-radius: 8px; padding: 6px 8px; cursor: pointer; }
+  #mapScreen #mp-menu { position: fixed; right: 10px; top: max(40px, calc(env(safe-area-inset-top) + 30px)); font-size: 9px; letter-spacing: .12em; color: #5f8a80; cursor: pointer; padding: 6px; }
+
+  #mapScreen #mp-close { pointer-events: auto; cursor: pointer; font-size: 18px; color: #7dffc6; padding: 4px 6px 4px 14px; }
+  #mapScreen #mp-top { gap: 10px; } #mapScreen #mp-lvl { margin-left: auto; }
+  #mapScreen #mp-menu, #mapScreen #mp-keyBtn { top: calc(var(--inset-top, 0px) + 44px); }
+  #mapScreen #mp-key { top: calc(var(--inset-top, 0px) + 74px); }
+  #mapScreen #mp-card { bottom: calc(var(--inset-bottom, 0px) + 12px); }
+  #mapScreen #mp-stat { bottom: calc(var(--inset-bottom, 0px) + 14px); }
+
 </style>
 </head>
 <body>
@@ -388,6 +436,7 @@
 </div>
 <button id="settingsBtn" class="roundBtn" aria-label="Settings">⚙</button>
 <button id="cfgBtn" class="roundBtn" aria-label="Settings">⚙</button>
+<button id="mapBtn" class="roundBtn" aria-label="Star map"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.4"/><ellipse cx="12" cy="12" rx="8.5" ry="3.2" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".7"/><circle cx="9" cy="10.5" r="1.4" fill="currentColor"/><circle cx="15.5" cy="13.5" r="1" fill="currentColor"/><circle cx="13" cy="8" r=".8" fill="currentColor"/></svg></button>
 <div id="cfg" aria-label="Settings">
   <div class="setHead">
     <div class="bezel"><div class="lcd">SETTINGS</div></div>
@@ -3025,10 +3074,10 @@
   const mainPlanet = o => o.planets.reduce((a, p) => ((p.re || 0) > (a.re || 0) ? p : a), o.planets[0]);
   const planetClass = re => !re || re < 1.6 ? 'rocky' : re < 4 ? 'subneptune' : re < 10 ? 'neptune' : 'giant';
   const CLASS_NAME = { rocky: 'ROCKY', subneptune: 'SUB-NEPTUNE', neptune: 'NEPTUNE-LIKE', giant: 'GAS GIANT' };
-  function deepFacts(o) {
+  function deepFacts(o, planetName) {
     if (o.kind === 'home') return ['THE SUN', 'HOME · SATURN SYSTEM'];
     if (o.kind === 'system') {
-      const p = mainPlanet(o), n = o.planets.length;
+      const p = (planetName && o.planets.find(x => x.name === planetName)) || mainPlanet(o), n = o.planets.length;
       const lines = [fmtLy(o.ly) + ' FROM THE SUN · ' + n + ' PLANET' + (n > 1 ? 'S' : '')];
       lines.push('STAR ' + (o.spec ? o.spec.toUpperCase() + ' · ' : '') + (o.teff ? Math.round(o.teff).toLocaleString('en-US') + ' K' : 'TEMP. UNKNOWN'));
       lines.push(p.name.toUpperCase() + ' · ' + CLASS_NAME[planetClass(p.re)] + (p.re ? ' · ' + p.re.toFixed(2) + ' × EARTH' : ''));
@@ -3218,7 +3267,7 @@
     while (destGroup.children.length) destGroup.remove(destGroup.children[0]);
     dest = null;
   }
-  function buildDest(o, dir) {
+  function buildDest(o, dir, planetName) {
     clearDest();
     if (o.kind === 'home') return;
     const R = rng(hash(o.id));
@@ -3234,7 +3283,7 @@
       const st = glowSprite('255,255,255', 40, 1); st.position.copy(starAt);
       const g1 = glowSprite(rgb, 200, 0.75); g1.position.copy(starAt); const g2 = glowSprite(rgb, 600, 0.25); g2.position.copy(starAt);
       destGroup.add(g2, g1, st);
-      const ps = o.planets, main = mainPlanet(o);
+      const ps = o.planets, main = (planetName && ps.find(x => x.name === planetName)) || mainPlanet(o);
       const rad = p => 3.5 + 7.5 * Math.min(1, Math.log(Math.max(p.re || 1, 0.5)) / Math.log(15) + 0.05);
       const light = addLight(starAt.clone());
       const m = planetMesh(main, rad(main), light); destGroup.add(m); dest.solids.push({ mesh: m, r: rad(main) }); dest.r = rad(main);
@@ -3328,20 +3377,24 @@
 
   // ---- arriving somewhere ----
   function setHomeVisible(v) { sysRig.children.forEach(c => { if (c !== destGroup) c.visible = v; }); }
-  function arriveAt(o, dir) {
+  function arriveAt(o, dir, planetName) {
     deep.here.copy(o.pos); deep.at = o.kind === 'home' ? null : o.id; deep.dir = dir.clone();
-    buildDest(o, dir); setHomeVisible(!deep.at); refreshMarkers();
+    deep.planet = o.kind === 'system' ? ((planetName && o.planets.some(x => x.name === planetName)) ? planetName : mainPlanet(o).name) : null;
+    buildDest(o, dir, deep.planet); setHomeVisible(!deep.at); refreshMarkers();
+    try { if (window.SpaceMap) window.SpaceMap.arrived(o.kind === 'home' ? 'sol' : o.id, deep.planet, true); } catch (e) {}   // the star map records where you've been
   }
-  function saveDeep() { try { localStorage.setItem(DEEP_KEY, JSON.stringify({ limit: deep.limit, at: deep.at, dir: deep.dir && deep.dir.toArray(), q: spaceRig.quaternion.toArray() })); } catch (e) {} }
+  function saveDeep() { try { localStorage.setItem(DEEP_KEY, JSON.stringify({ limit: deep.limit, at: deep.at, planet: deep.planet || null, dir: deep.dir && deep.dir.toArray(), q: spaceRig.quaternion.toArray() })); } catch (e) {} }
   const destOcc = [0, 1, 2, 3].map(() => { const a = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), occMat), b = new THREE.Mesh(a.geometry, occMat); a.renderOrder = b.renderOrder = -10; occluders.add(a); nearOcc.add(b); a.visible = b.visible = false; return [a, b]; });
   const jumpFlash = document.createElement('div');
   jumpFlash.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,1) 0%,rgba(190,240,255,.85) 35%,rgba(120,200,255,.2) 75%,rgba(0,0,0,0) 100%)';
   document.body.appendChild(jumpFlash);
 
-  function deepGo(o) {
+  function deepGo(o, planetName) {
     if (deepJump || travel) return;
-    if (o.id === (deep.at || 'sol')) return;
-    deepJump = { o, dir: relDir(o, new THREE.Vector3()), t: 0, turn: 1.0, warp: 2.6, arrive: 2.0 };
+    const same = o.id === (deep.at || 'sol');
+    if (same && (!planetName || planetName === deep.planet)) return;
+    const dir = same ? fwdLocal.clone() : relDir(o, new THREE.Vector3());     // another planet of the same system: a short hop straight ahead
+    deepJump = { o, planet: planetName || null, dir, t: 0, turn: same ? 0.5 : 1.0, warp: same ? 1.4 : 2.6, arrive: 2.0 };
     factsT = -1; factsG.style.display = 'none';
   }
   function deepJumpUpdate(dt) {
@@ -3359,14 +3412,14 @@
     camMove.pitch = 0.035 * ch;
     if (since >= 0 && !j.shook) { j.shook = true; camMove.shake = 1; try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(35); } catch (e) {} }
     jumpFlash.style.opacity = Math.pow(Math.max(0, 1 - Math.abs(j.t - tf) / 0.35), 1.5).toFixed(3);
-    if (!j.swapped && j.t >= tf) { j.swapped = true; arriveAt(j.o, j.dir); }
+    if (!j.swapped && j.t >= tf) { j.swapped = true; arriveAt(j.o, j.dir, j.planet); }
     if (j.swapped && deep.at) {                        // the destination rushes in from far away, then slows to a stop
       const u = Math.min(1, (j.t - tf) / (T3 - tf)), e = 1 - Math.pow(1 - u, 3);
       destGroup.position.copy(j.dir).multiplyScalar(DEST_D * (1 + 9 * (1 - e)));
     }
     if (j.t >= T3) {
       deepJump = null; navWarp = 1; worldFov = 55; travelV = 0; jumpFlash.style.opacity = 0;
-      saveDeep(); factsFor = { deep: true, center: true, name: j.o.name, facts: j.o.facts }; factsT = performance.now();
+      saveDeep(); factsFor = { deep: true, center: true, name: deep.planet ? deep.planet.toUpperCase() : j.o.name, facts: deepFacts(j.o, deep.planet) }; factsT = performance.now();
       try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(20); } catch (e) {}
     }
   }
@@ -3451,6 +3504,9 @@
   window.__deepScr = id => { const o = ALL_DEEP.find(x => x.id === id); return o ? deepScreenOf(o).map(v => typeof v === 'number' ? +v.toFixed(1) : v) : null; };
   window.__eqEcl = (ra, de) => { const d = eqDir(ra, de); return [+(Math.atan2(d.dot(EQY), d.dot(EQX)) / DEG).toFixed(2), +(Math.asin(d.dot(N)) / DEG).toFixed(2)]; };
   window.__galLB = id => { const d = relDir(ALL_DEEP.find(x => x.id === id), new THREE.Vector3()); return [+(Math.atan2(d.dot(GY), d.dot(GC)) / DEG).toFixed(1), +(Math.asin(d.dot(GP)) / DEG).toFixed(1)]; };
+  // the star map's JUMP lands here: the normal warp, to a star (or one of its planets)
+  window.SpaceJump = (id, planetName) => { const o = ALL_DEEP.find(x => x.id === id); if (o) { cancelLock(); deepGo(o, planetName); } };
+  window.__deepSync = () => { try { window.SpaceMap.arrived(deep.at || 'sol', deep.planet, true); } catch (e) {} };
   window.__deepGo = id => { const o = ALL_DEEP.find(x => x.id === id); if (o) deepGo(o); return !!o; };
   window.__deepFace = id => { const o = ALL_DEEP.find(x => x.id === id); if (o) { faceQuat(relDir(o, new THREE.Vector3()), qFace); spaceRig.quaternion.copy(qFace); syncSysRig(); } return !!o; };
 
@@ -3462,7 +3518,7 @@
       const o = d && d.at && ALL_DEEP.find(x => x.id === d.at);
       if (o && d.dir) {
         if (d.q) spaceRig.quaternion.fromArray(d.q);
-        arriveAt(o, new THREE.Vector3().fromArray(d.dir)); destGroup.position.copy(deep.dir).multiplyScalar(DEST_D);
+        arriveAt(o, new THREE.Vector3().fromArray(d.dir), d.planet); destGroup.position.copy(deep.dir).multiplyScalar(DEST_D);
         syncSysRig();
       } else refreshMarkers();
     } catch (e) { refreshMarkers(); }
@@ -4100,9 +4156,15 @@
     if (coverPending > 0 && !oneFrame && --coverPending === 0) {
       try { if (window.Launcher && window.Launcher.hideCover) window.Launcher.hideCover(); } catch (e) {}
     }
-    if (!paused && !oneFrame) requestAnimationFrame(tick);
+    if (!paused && !oneFrame && !mapOpen) requestAnimationFrame(tick);
   }
-  let paused = false;
+  let paused = false, mapOpen = false;
+  function openMap() {
+    if (!window.SpaceMap || deepJump || travel) return;
+    closeEverything(); cancelLock(); mapOpen = true; window.SpaceMap.open();
+  }
+  window.SpaceMapClosed = () => { if (!mapOpen) return; mapOpen = false; prev = performance.now(); requestAnimationFrame(tick); };
+  document.getElementById('mapBtn').addEventListener('click', openMap);
   syncPhoneRecents(); refreshRecents(); setHomeView('recent');
   playArrival();                                    // fly in when the launcher starts
 
@@ -4371,7 +4433,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 31';
+    tag.textContent = 'SCREEN 2026-11-23 · 32';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
@@ -4429,6 +4491,7 @@
   //  PHONE HOOKS (called by the Android app)
   // =========================================================
   function closeEverything() {
+    if (window.SpaceMap && window.SpaceMap.isOpen) window.SpaceMap.close();
     if (typeof cfgEl !== 'undefined' && cfgEl.classList.contains('show')) closeCfg();
     picker.classList.remove('show');
     if (settingsEl.classList.contains('show')) closeSettings();
@@ -4439,6 +4502,7 @@
   }
   // Back: close the top-most thing that's open, one step at a time
   window.handleBack = () => {
+    if (window.SpaceMap && window.SpaceMap.isOpen) { window.SpaceMap.back(); return true; }
     if (navLock) { cancelLock(); return true; }
     if (routineOpen) { closeRoutine(); return true; }
     if (cfgEl.classList.contains('show')) { closeCfg(); return true; }
@@ -4522,6 +4586,428 @@
   }
   addEventListener('resize', fitViewport);
 })();
+</script>
+<!-- STAR MAP: a record of where you've been. Only places within 20 ly of where you've been show (??? until you go there). -->
+<div id="mapScreen" aria-hidden="true">
+<div id="mp-v"></div>
+<div id="mp-ov"></div>
+<div id="mp-top"><b>STAR MAP</b><span id="mp-lvl">GALAXY</span><span id="mp-close" aria-label="Close">✕</span></div>
+<div id="mp-menu">RESET</div>
+<div id="mp-keyBtn">KEY</div>
+<div id="mp-key"></div>
+<div id="mp-bar"><div id="mp-knob"></div></div>
+<div id="mp-side">
+  <div class="btn" id="mp-zin" aria-label="Zoom in">+</div>
+  <div class="btn" id="mp-zout" aria-label="Zoom out">−</div>
+  <div class="btn" id="mp-home" aria-label="Back to your ship"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 2 L15 13 L21 17 L21 19 L14.5 17.5 L13.5 21 L10.5 21 L9.5 17.5 L3 19 L3 17 L9 13 Z" fill="none" stroke="#7dffc6" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="10" r="1.5" fill="#7dffc6"/></svg></div>
+</div>
+<div id="mp-stat"></div>
+<div id="mp-card"><h3 id="mp-cName"></h3><div id="mp-cBody"></div><div class="row"><button id="mp-zoomTo">ZOOM IN</button><button id="mp-jump">JUMP</button></div></div>
+</div>
+<script>
+(() => {
+  // ============ data ============
+  const SKY = JSON.parse(document.getElementById('skyData').textContent);
+  const screen = document.getElementById('mapScreen');
+  const LY_PER_PC = 3.26156, DEG = Math.PI / 180, REVEAL_LY = 20, SAVE = 'spaceCubeMap.v1';
+  // equatorial (J2000) -> galactic, the standard rotation matrix; the map lies flat on the Milky Way's plane
+  const MG = [[-0.0548755604, -0.8734370902, -0.4838350155], [0.4941094279, -0.4448296300, 0.7469822445], [-0.8676661490, -0.1980763734, 0.4559837762]];
+  function galDir(ra, dec) {
+    const a = ra * DEG, d = dec * DEG, e = [Math.cos(d) * Math.cos(a), Math.cos(d) * Math.sin(a), Math.sin(d)];
+    const g = MG.map(r => r[0] * e[0] + r[1] * e[1] + r[2] * e[2]);       // x: to the galactic centre, y: galactic longitude 90, z: north galactic pole
+    return new THREE.Vector3(g[0], g[2], -g[1]);                          // scene: up = north galactic pole
+  }
+  // distances span 4 ly to 55 million ly: the map compresses them (log scale from the Sun)
+  const C = ly => 18 * Math.log10(1 + ly);
+  const fmtLy = d => d < 0.01 ? 'HERE' : (d < 10 ? d.toFixed(2) : d < 1000 ? d.toFixed(1) : d < 1e6 ? Math.round(d).toLocaleString('en-US') : (d / 1e6).toFixed(1) + ' MILLION') + ' LY';
+  const LM_INFO = {
+    sgra: ['SUPERMASSIVE BLACK HOLE', 'MILKY WAY CENTRE · 4.3 MILLION SUNS'], m87: ['SUPERMASSIVE BLACK HOLE', 'FIRST ONE IMAGED · 6.5 BILLION SUNS'],
+    cygx1: ['STELLAR BLACK HOLE', 'IN A BINARY · 21 SUNS'], m42: ['NEBULA', 'NEAREST REGION OF MASSIVE STAR BIRTH'], m1: ['SUPERNOVA REMNANT', 'SEEN EXPLODING IN 1054'],
+    m16: ['NEBULA', 'PILLARS OF CREATION'], m57: ['PLANETARY NEBULA', 'A DYING SUN-LIKE STAR'], ngc7293: ['PLANETARY NEBULA', 'ONE OF THE CLOSEST'],
+    carina: ['NEBULA', 'OVER 300 LY ACROSS'], m31: ['GALAXY', 'NEAREST MAJOR GALAXY'], lmc: ['GALAXY', 'SATELLITE OF THE MILKY WAY'], m45: ['STAR CLUSTER', 'OVER 1,000 STARS'],
+  };
+  // Star categories: from the catalogued spectral type (570 of 642 stars), else from temperature
+  // (HyperPhysics ranges: O >30,000 K, B 10,000-30,000, A 7,500-10,000, F 6,000-7,500, G 5,000-6,000, K 3,500-5,000, M <3,500;
+  //  L, T and Y are the cooler brown-dwarf classes). Giants: luminosity class III, II or I.
+  const CATS = {
+    red:    { name: 'RED DWARF',          note: 'SMALL, COOL, THE MOST COMMON STAR', size: 0.026 },
+    orange: { name: 'ORANGE DWARF',       note: 'A BIT SMALLER AND COOLER THAN THE SUN', size: 0.03 },
+    sun:    { name: 'SUN-LIKE STAR',      note: 'YELLOW, LIKE OUR SUN', size: 0.034 },
+    white:  { name: 'YELLOW-WHITE STAR',  note: 'A BIT HOTTER THAN THE SUN', size: 0.036 },
+    hot:    { name: 'HOT BLUE-WHITE STAR',note: 'MUCH HOTTER AND BRIGHTER THAN THE SUN', size: 0.042 },
+    giant:  { name: 'GIANT STAR',         note: 'AN OLD STAR THAT HAS SWOLLEN UP', size: 0.05 },
+    wd:     { name: 'WHITE DWARF',        note: 'THE HOT LEFTOVER CORE OF A DEAD STAR', size: 0.022 },
+    brown:  { name: 'BROWN DWARF',        note: 'TOO SMALL TO SHINE LIKE A STAR', size: 0.024 },
+  };
+  function starCat(spec, teff) {
+    const sp = String(spec || '').trim();
+    if (/^D/.test(sp)) return 'wd';
+    if (/^[LTY]/.test(sp)) return 'brown';
+    if (/(^|[^I])(III|II|Ia|Ib)([^I]|$)/.test(sp.replace(/IV/g, ''))) return 'giant';
+    const L = sp.charAt(0).toUpperCase();
+    if (L && ('OBA'.includes(L))) return 'hot';
+    if (L === 'F') return 'white'; if (L === 'G') return 'sun'; if (L === 'K') return 'orange'; if (L === 'M') return 'red';
+    const T = teff || 0;
+    if (!T) return 'sun';
+    if (T >= 7500) return 'hot'; if (T >= 6000) return 'white'; if (T >= 5000) return 'sun'; if (T >= 3500) return 'orange'; if (T >= 2000) return 'red';
+    return 'brown';
+  }
+  const KIND_RANK = { home: 10, blackhole: 5, galaxy: 5, nebula: 4, cluster: 4, system: 1 };
+  const ix = {}; SKY.cols.forEach((c, i) => ix[c] = i);
+  const PLACES = [];
+  const SOL = { id: 'sol', name: 'SOL', kind: 'home', ly: 0, dir: new THREE.Vector3(1, 0, 0), planets: [                                // semi-major axes: JPL approximate planet positions, Table 1
+    { name: 'MERCURY', au: 0.387, re: 0.38, col: 0xa8a29a }, { name: 'VENUS', au: 0.723, re: 0.95, col: 0xe8c98a },
+    { name: 'EARTH', au: 1.0, re: 1, col: 0x6fb3ff, tag: 'HOME PLANET' }, { name: 'MARS', au: 1.524, re: 0.53, col: 0xd9774a },
+    { name: 'JUPITER', au: 5.203, re: 11.2, col: 0xe0b98a }, { name: 'SATURN', au: 9.537, re: 9.45, col: 0xe8d6a8, tag: 'YOUR SHIP' },
+    { name: 'URANUS', au: 19.19, re: 4.0, col: 0x9fe0e8 }, { name: 'NEPTUNE', au: 30.07, re: 3.9, col: 0x6f8fff }], teff: 5772 };
+  PLACES.push(SOL);
+  const byHost = new Map();
+  SKY.planets.forEach(r => { const h = r[ix.hostname]; if (!byHost.has(h)) byHost.set(h, []); byHost.get(h).push(r); });
+  byHost.forEach((rows, h) => {
+    const r0 = rows[0];
+    PLACES.push({ id: 'sys:' + h, name: h.toUpperCase(), kind: 'system', ly: r0[ix.sy_dist] * LY_PER_PC, dir: galDir(r0[ix.ra], r0[ix.dec]),
+      teff: r0[ix.st_teff], spec: r0[ix.st_spectype], cat: starCat(r0[ix.st_spectype], r0[ix.st_teff]), rad: r0[ix.st_rad],
+      planets: rows.map(r => ({ name: r[ix.pl_name], re: r[ix.pl_rade], au: r[ix.pl_orbsmax], eqt: r[ix.pl_eqt], per: r[ix.pl_orbper], year: r[ix.disc_year], how: r[ix.discoverymethod] })).sort((a, b) => (a.au || a.per || 0) - (b.au || b.per || 0)) });
+  });
+  SKY.landmarks.forEach(l => PLACES.push({ id: l.id, name: l.name, kind: l.kind, ly: l.ly, dir: galDir(l.ra, l.dec) }));
+  PLACES.forEach(p => { p.real = p.dir.clone().multiplyScalar(p.ly); p.pos = p.dir.clone().multiplyScalar(C(p.ly)); p.rank = KIND_RANK[p.kind] || 1; });
+  const byId = new Map(PLACES.map(p => [p.id, p]));
+  // planets are places too (you can fly to them): id 'pl:<name>', they live inside their star's system
+  PLACES.forEach(p => (p.planets || []).forEach(q => { q.id = 'pl:' + q.name; q.kind = 'planet'; q.host = p; byId.set(q.id, q); }));
+  const starOf = id => { const o = byId.get(id); return o && o.host ? o.host : o; };     // the star system a place is in
+  const PCLASS = re => !re || re < 1.6 ? 'ROCKY PLANET' : re < 4 ? 'SUB-NEPTUNE' : re < 10 ? 'NEPTUNE-LIKE PLANET' : 'GAS GIANT';
+
+  // ============ saved progress ============
+  let visited = ['sol'], here = 'sol', beenPl = new Set(), seen = new Set();
+  const SIGHT_LY = 20;                                // stars within 20 ly of everywhere you've been go on the map (as ??? until you go there)
+  try { const s = JSON.parse(localStorage.getItem(SAVE)); if (s && s.visited && s.visited.length) { visited = s.visited.filter(id => byId.has(id)); here = byId.has(s.here) ? s.here : 'sol'; if (s.planets) beenPl = new Set(s.planets.filter(id => byId.has(id))); if (s.seen) seen = new Set(s.seen.filter(id => byId.has(id))); } } catch (e) {}
+  if (!visited.includes('sol')) visited.unshift('sol');
+  // You know a place's name and details only once you've been there yourself (our solar system is known)
+  // the map's JUMP: places you've been, and the planets of a star system you've been to (you're already in that system)
+  const canJump = o => !!o && o.id !== here && (o.kind === 'planet' ? (o.host.id !== 'sol' && visited.includes(o.host.id)) : known(o));
+  const known = o => !o ? false : o.id === 'sol' || (o.kind === 'planet' ? (o.host.id === 'sol' || beenPl.has(o.id) || o.id === here) : visited.includes(o.id));
+  const nameOf = o => known(o) ? String(o.name).toUpperCase() : '???';
+  const save = () => { try { localStorage.setItem(SAVE, JSON.stringify({ visited, here, planets: [...beenPl], seen: [...seen] })); } catch (e) {} };
+  // a place shows on the map if you've been there, it's within 30 ly of somewhere you've been,
+  // or it's a famous landmark (seen from home with telescopes: shown dim until you go)
+  // The map only shows where you've been: it grows as you explore. Far landmarks stay as ? markers to aim for.
+  // Arriving somewhere, you see everything the sky shows from there: it goes on the map as ??? until you've been there.
+  // Far landmarks show in the sky from anywhere, so they're always seen.
+  function lookAround(star) {
+    PLACES.forEach(p => { if (p.kind === 'system' && p.real.distanceTo(star.real) <= SIGHT_LY) seen.add(p.id); });
+  }
+  function isRevealed(p) {
+    if (p.kind !== 'system' && p.kind !== 'home') return true;
+    return p.id === 'sol' || visited.includes(p.id) || seen.has(p.id);
+  }
+
+  // ============ scene ============
+  const el = document.getElementById('mp-v'), ov = document.getElementById('mp-ov');
+  const rd = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'low-power' }); rd.setPixelRatio(Math.min(2, devicePixelRatio)); rd.setClearColor(0); el.appendChild(rd.domElement);
+  const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(50, 1, 0.01, 5000);
+  function resize() { rd.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
+  addEventListener('resize', resize); resize();
+  function canvasTex(sz, draw) { const c = document.createElement('canvas'); c.width = c.height = sz; draw(c.getContext('2d'), sz); const t = new THREE.CanvasTexture(c); return t; }
+  const glow = (x, cx, cy, r, rgb, a) => { const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = g; x.fillRect(cx - r, cy - r, 2 * r, 2 * r); };
+  const ICON = {
+    home: canvasTex(64, (x) => { glow(x, 32, 32, 30, '255,210,120', .6); glow(x, 32, 32, 10, '255,250,235', 1); }),
+    system: canvasTex(64, (x) => { glow(x, 32, 32, 22, '255,255,255', .5); glow(x, 32, 32, 7, '255,255,255', 1); x.strokeStyle = 'rgba(255,255,255,.75)'; x.lineWidth = 2; x.beginPath(); x.ellipse(32, 32, 20, 7, -0.35, 0, 7); x.stroke(); }),
+    blackhole: canvasTex(64, (x) => { glow(x, 32, 32, 30, '255,140,60', .5); x.lineWidth = 5; x.strokeStyle = 'rgba(255,200,130,1)'; x.beginPath(); x.arc(32, 32, 13, 0, 7); x.stroke(); x.fillStyle = '#000'; x.beginPath(); x.arc(32, 32, 10, 0, 7); x.fill(); }),
+    nebula: canvasTex(64, (x) => { [[24, 28, '255,90,150'], [38, 34, '90,210,220'], [32, 24, '255,170,120'], [30, 40, '200,100,255']].forEach(([a, b, c]) => glow(x, a, b, 16, c, .75)); }),
+    galaxy: canvasTex(64, (x) => { x.save(); x.translate(32, 32); x.rotate(-0.5); x.scale(1, .42); glow(x, 0, 0, 30, '170,180,255', .7); x.restore(); glow(x, 32, 32, 8, '255,240,210', 1); }),
+    unknown: canvasTex(64, (x) => { glow(x, 32, 32, 26, '160,190,200', .35); x.strokeStyle = 'rgba(190,225,230,.8)'; x.lineWidth = 1.5; x.setLineDash([4, 3]); x.beginPath(); x.arc(32, 32, 15, 0, 7); x.stroke(); x.setLineDash([]); x.fillStyle = '#d8f4f0'; x.font = '700 18px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('?', 32, 33); }),
+    cluster: canvasTex(64, (x) => { glow(x, 32, 32, 28, '120,160,255', .4); [[24, 26], [36, 22], [40, 36], [28, 40], [32, 31], [20, 36]].forEach(([a, b]) => glow(x, a, b, 6, '220,235,255', 1)); }),
+  };
+  const ray = (x, n, len, w, rgb, a, rot = 0) => { x.save(); x.translate(32, 32); x.rotate(rot); for (let i = 0; i < n; i++) { x.rotate(Math.PI * 2 / n); const g = x.createLinearGradient(0, 0, len, 0); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = g; x.fillRect(0, -w / 2, len, w); } x.restore(); };
+  const STAR_ICON = {
+    red:    canvasTex(64, x => { glow(x, 32, 32, 16, '255,90,60', .55); glow(x, 32, 32, 6, '255,170,140', 1); }),
+    orange: canvasTex(64, x => { glow(x, 32, 32, 20, '255,150,60', .55); glow(x, 32, 32, 8, '255,210,160', 1); }),
+    sun:    canvasTex(64, x => { glow(x, 32, 32, 24, '255,220,110', .5); ray(x, 4, 26, 2, '255,235,170', .9, Math.PI / 4); glow(x, 32, 32, 9, '255,250,225', 1); }),
+    white:  canvasTex(64, x => { glow(x, 32, 32, 24, '255,245,210', .5); ray(x, 6, 28, 1.6, '255,250,235', .9); glow(x, 32, 32, 9, '255,255,245', 1); }),
+    hot:    canvasTex(64, x => { glow(x, 32, 32, 28, '140,180,255', .6); ray(x, 4, 32, 2.4, '200,225,255', 1); ray(x, 4, 18, 1.4, '200,225,255', .7, Math.PI / 4); glow(x, 32, 32, 10, '235,245,255', 1); }),
+    giant:  canvasTex(64, x => { glow(x, 32, 32, 31, '255,120,50', .45); x.strokeStyle = 'rgba(255,170,110,.75)'; x.lineWidth = 1.5; x.beginPath(); x.arc(32, 32, 22, 0, 7); x.stroke(); glow(x, 32, 32, 15, '255,190,120', 1); }),
+    wd:     canvasTex(64, x => { x.strokeStyle = 'rgba(190,225,255,.8)'; x.lineWidth = 1.2; x.beginPath(); x.arc(32, 32, 14, 0, 7); x.stroke(); glow(x, 32, 32, 8, '230,245,255', 1); glow(x, 32, 32, 3, '255,255,255', 1); }),
+    brown:  canvasTex(64, x => { x.fillStyle = '#5a2a22'; x.beginPath(); x.arc(32, 32, 11, 0, 7); x.fill(); x.save(); x.beginPath(); x.arc(32, 32, 11, 0, 7); x.clip(); x.fillStyle = 'rgba(150,80,60,.8)'; [-6, 0, 6].forEach(y => x.fillRect(20, 31 + y, 24, 2.2)); x.restore(); x.strokeStyle = 'rgba(200,110,80,.6)'; x.lineWidth = 1.2; x.beginPath(); x.arc(32, 32, 13, 0, 7); x.stroke(); }),
+  };
+  function starColor(teff) {
+    const T = (teff || 5800) / 100;
+    const r = T <= 66 ? 255 : 329.698727446 * Math.pow(T - 60, -0.1332047592);
+    const g = T <= 66 ? 99.4708025861 * Math.log(T) - 161.1195681661 : 288.1221695283 * Math.pow(T - 60, -0.0755148492);
+    const b = T >= 66 ? 255 : T <= 19 ? 0 : 138.5177312231 * Math.log(T - 10) - 305.0447927307;
+    const c = v => Math.max(0, Math.min(255, v)) / 255; return new THREE.Color(c(r), c(g), c(b));
+  }
+  PLACES.forEach(p => {
+    const m = new THREE.SpriteMaterial({ map: p.kind === 'system' ? STAR_ICON[p.cat] : ICON[p.kind], transparent: true, depthWrite: false, depthTest: false, sizeAttenuation: false });
+    p.sp = new THREE.Sprite(m); p.sp.position.copy(p.pos); p.sp.scale.setScalar(p.kind === 'system' ? CATS[p.cat].size * 1.4 : p.kind === 'home' ? 0.05 : 0.055); sc.add(p.sp);
+  });
+  // reference rings on the Milky Way plane, at real distances (the log scale shows here)
+  const grid = new THREE.Group(); sc.add(grid);
+  const ringLabels = [];
+  [[10, '10 LY'], [100, '100 LY'], [1000, '1,000 LY'], [26670, 'GALACTIC CENTRE DIST.'], [2.5e6, '2.5 MILLION LY']].forEach(([ly, t]) => {
+    const r = C(ly), pts = []; for (let k = 0; k <= 128; k++) pts.push(new THREE.Vector3(Math.cos(k / 128 * 6.2832) * r, 0, Math.sin(k / 128 * 6.2832) * r));
+    grid.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x14514a, transparent: true, opacity: .55 })));
+    ringLabels.push({ t, p: new THREE.Vector3(r, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), -0.6) });
+  });
+  const gcDir = galDir(266.405, -28.936); gcDir.y = 0; gcDir.normalize();
+  grid.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), gcDir.clone().multiplyScalar(C(26670))]), new THREE.LineDashedMaterial({ color: 0x14514a, dashSize: 1.5, gapSize: 1.5 })));
+  grid.children[grid.children.length - 1].computeLineDistances();
+  // explored areas: a soft glow and a slowly turning wireframe around each visited place
+  const bubbleTex = canvasTex(128, (x) => glow(x, 64, 64, 64, '40,160,170', .35));
+  const bubbles = new THREE.Group(); sc.add(bubbles);
+  const routeLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0x7dffc6, dashSize: .8, gapSize: .6, transparent: true, opacity: .7 })); sc.add(routeLine);
+  function bubbleR(p) { return Math.max(0.6, (C(p.ly + REVEAL_LY) - C(Math.max(0, p.ly - REVEAL_LY))) / 2); }
+  function rebuild() {
+    while (bubbles.children.length) { const c = bubbles.children.pop(); c.geometry && c.geometry.dispose(); }
+    visited.forEach(id => {
+      const p = byId.get(id), r = bubbleR(p);
+      const g = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      g.position.copy(p.pos); g.scale.setScalar(r * 2.2); g.userData.r = r; bubbles.add(g);
+      const w = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 2), new THREE.MeshBasicMaterial({ color: 0x2bd6c0, wireframe: true, transparent: true, opacity: .1, depthWrite: false }));
+      w.position.copy(p.pos); w.userData.r = r; bubbles.add(w);
+    });
+    PLACES.forEach(p => { p.shown = isRevealed(p); p.been = visited.includes(p.id); p.sp.visible = p.shown;
+      p.sp.material.opacity = p.been || p.kind === 'system' ? 1 : 0.6;
+      if (p.kind !== 'system' && p.kind !== 'home') { const m = known(p) ? ICON[p.kind] : ICON.unknown; if (p.sp.material.map !== m) { p.sp.material.map = m; p.sp.material.needsUpdate = true; } } });
+    routeLine.geometry.setFromPoints(visited.map(id => byId.get(id).pos)); routeLine.computeLineDistances();
+    const sysN = PLACES.filter(p => p.kind === 'system' && p.shown).length;
+    document.getElementById('mp-stat').textContent = visited.length + ' VISITED · ' + Math.max(0, seen.size - visited.filter(id => seen.has(id)).length) + ' SEEN, NOT VISITED';
+  }
+
+  // ============ your ship, floating at your current location ============
+  const shipG = new THREE.Group(); sc.add(shipG);
+  (function buildShip() {
+    const hull = new THREE.MeshBasicMaterial({ color: 0xbff6ff }), dark = new THREE.MeshBasicMaterial({ color: 0x2b6f78 }), glowM = new THREE.MeshBasicMaterial({ color: 0x7dffc6 });
+    const body = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1.4, 6), hull); body.rotation.x = -Math.PI / 2; shipG.add(body);
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.05, 0.45), dark); wing.position.z = 0.35; shipG.add(wing);
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.35, 0.35), dark); fin.position.set(0, 0.18, 0.5); shipG.add(fin);
+    const eng = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(64, x => glow(x, 32, 32, 32, '125,255,198', 1)), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    eng.scale.setScalar(0.7); eng.position.z = 0.8; shipG.add(eng); shipG.userData.eng = eng;
+    shipG.traverse(o => { if (o.material) { o.material.depthTest = false; o.renderOrder = 5; } });
+  })();
+
+  // ============ a star system up close (planet orbits at their real sizes, sqrt-scaled) ============
+  const sysG = new THREE.Group(); sc.add(sysG);
+  let sysFor = null;
+  const dotTex = canvasTex(64, (x) => { glow(x, 32, 32, 32, '255,255,255', 1); });
+  function buildSystem(p) {
+    while (sysG.children.length) sysG.remove(sysG.children[0]);
+    sysFor = p; if (!p || !p.planets) return;
+    sysG.position.copy(p.pos);
+    const maxAu = Math.max(...p.planets.map(q => q.au || 0.05), 0.05);
+    p.planets.forEach((q, i) => {
+      const au = q.au || (0.05 * (i + 1)), r = 0.6 * (0.2 + 0.95 * Math.log10(1 + au * 4 / maxAu * 30) / Math.log10(1 + 120));   // log-spaced so inner planets don't pile up
+      const pts = []; for (let k = 0; k <= 96; k++) pts.push(new THREE.Vector3(Math.cos(k / 96 * 6.2832) * r, 0, Math.sin(k / 96 * 6.2832) * r));
+      sysG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x2bd6c0, transparent: true, opacity: .45 })));
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, color: q.col || ((q.eqt || 300) > 1000 ? 0xff9a5a : (q.re || 1) > 4 ? 0xe6c68a : 0x9fc6e6), sizeAttenuation: false, depthTest: false }));
+      sp.scale.setScalar(0.012 + 0.012 * Math.min(1, (q.re || 1) / 11));
+      sp.userData = { r, ph: i * 2.1, sp: 0.6 / Math.sqrt(Math.max(au, 0.01)) * 0.15, q, au };
+      sysG.add(sp); q.sprite = sp;
+    });
+  }
+
+  // ============ camera & touch ============
+  let yaw = 0.8, pitch = 0.55, dist = 170, goalD = 170;
+  const tgt = new THREE.Vector3(), goal = new THREE.Vector3();
+  const MIN_D = 2.6, MAX_D = 420;                     // closest zoom still fits a whole planetary system
+  const LV = [[0, 5, 'SYSTEM'], [5, 30, 'NEIGHBOURHOOD'], [30, 95, 'REGION'], [95, 1e9, 'GALAXY']];
+  const clampD = d => Math.max(MIN_D, Math.min(MAX_D, d));
+  // zooming in homes in on the star (or bubble) under your fingers, so you can dive into any system
+  let freeZoom = false;
+  function zoomAt(x, y, f) {
+    goalD = clampD(goalD * f); freeZoom = true;
+    if (f >= 1 || !groups.length) return;
+    let best = null, bd = 140;
+    groups.forEach(g => { const d = Math.hypot(g.x - x, g.y - y); if (d < bd) { bd = d; best = g; } });
+    if (!best) return;
+    const c = new THREE.Vector3(); best.m.forEach(p => c.add(p.pos)); c.divideScalar(best.m.length);
+    goal.lerp(c, Math.min(1, (1 - f) * 2.2));                       // drift toward it as you zoom
+  }
+  let touches = new Map(), pinch0 = 0, moved = 0, downT = 0;
+  function onDown(id, x, y) { touches.set(id, [x, y]); if (touches.size === 1) { moved = 0; downT = performance.now(); } if (touches.size === 2) { const [a, b] = [...touches.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); moved += 99; } }
+  function onMove(id, x, y) {
+    if (!touches.has(id)) return; const o = touches.get(id), dx = x - o[0], dy = y - o[1]; touches.set(id, [x, y]);
+    if (touches.size >= 2) { const [a, b] = [...touches.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch0 > 0) zoomAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, pinch0 / d); pinch0 = d; }
+    else { moved += Math.abs(dx) + Math.abs(dy); yaw -= dx * 0.007; pitch = Math.max(-1.35, Math.min(1.35, pitch + dy * 0.007)); }
+  }
+  function onUp(id, x, y) { touches.delete(id); if (touches.size === 0 && moved < 8 && performance.now() - downT < 500) tap(x, y); if (touches.size < 2) pinch0 = 0; }
+  el.addEventListener('touchstart', e => { e.preventDefault(); [...e.changedTouches].forEach(t => onDown(t.identifier, t.clientX, t.clientY)); }, { passive: false });
+  el.addEventListener('touchmove', e => { e.preventDefault(); [...e.changedTouches].forEach(t => onMove(t.identifier, t.clientX, t.clientY)); }, { passive: false });
+  el.addEventListener('touchend', e => { e.preventDefault(); [...e.changedTouches].forEach(t => onUp(t.identifier, t.clientX, t.clientY)); }, { passive: false });
+  el.addEventListener('touchcancel', e => { [...e.changedTouches].forEach(t => touches.delete(t.identifier)); });
+  el.addEventListener('mousedown', e => onDown('m', e.clientX, e.clientY));
+  el.addEventListener('mousemove', e => onMove('m', e.clientX, e.clientY));
+  el.addEventListener('mouseup', e => { if (touches.has('m')) onUp('m', e.clientX, e.clientY); });
+  el.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, 1 + e.deltaY * 0.0015); }, { passive: false });
+  (function legend() {
+    const n = {}; PLACES.forEach(p => { if (p.kind === 'system') n[p.cat] = (n[p.cat] || 0) + 1; });
+    const row = (img, label, count) => `<div class="k"><img src="${img}" alt=""><span>${label}</span><span>${count}</span></div>`;
+    let h = Object.keys(CATS).map(k => row(STAR_ICON[k].image.toDataURL(), CATS[k].name, n[k] || 0)).join('');
+    h += [['blackhole', 'BLACK HOLE'], ['nebula', 'NEBULA'], ['galaxy', 'GALAXY'], ['cluster', 'STAR CLUSTER']].map(([k, l]) => row(ICON[k].image.toDataURL(), l, PLACES.filter(p => p.kind === k).length)).join('');
+    document.getElementById('mp-key').innerHTML = h;
+  })();
+  document.getElementById('mp-keyBtn').addEventListener('click', () => { const k = document.getElementById('mp-key'); k.style.display = k.style.display === 'block' ? 'none' : 'block'; });
+  const btn = (id, f) => document.getElementById(id).addEventListener('click', f);
+  btn('mp-zin', () => zoomAt(innerWidth / 2, innerHeight / 2, 1 / 2.2));
+  btn('mp-zout', () => goalD = clampD(goalD * 2.2));
+  btn('mp-home', () => { const h = starOf(here); goal.copy(h.pos); goalD = h.planets ? 3.2 : 10; freeZoom = false; select(null); });
+  btn('mp-menu', () => { if (confirm('Reset the map? It forgets every place you have been.')) { const h = here; visited = ['sol']; beenPl = new Set(); seen = new Set(); lookAround(byId.get('sol')); here = 'sol'; const s0 = starOf(h); if (s0 && s0.id !== 'sol') arrived(s0.id, h.startsWith('pl:') ? byId.get(h).name : null, true); save(); rebuild(); select(null); } });
+
+  // ============ selecting, zooming in, jumping ============
+  let groups = [], sel = null;
+  function select(p) {
+    sel = p; const card = document.getElementById('mp-card');
+    if (!p) { card.style.display = 'none'; return; }
+    const jb = document.getElementById('mp-jump'); jb.classList.toggle('off', !canJump(p)); jb.textContent = canJump(p) || p.id === here ? 'JUMP' : p.kind === 'planet' && p.host.id === 'sol' ? 'HOME SYSTEM' : 'JUMP · NOT VISITED';
+    if (p.kind === 'planet' && !known(p)) {
+      const hs = starOf(here);
+      document.getElementById('mp-cName').textContent = '???';
+      document.getElementById('mp-cBody').innerHTML = ['<p>' + (hs === p.host ? 'IN THIS SYSTEM' : fmtLy(p.host.real.distanceTo(hs.real)) + ' FROM YOU') + '</p>', (visited.includes(p.host.id) ? '<p>UNKNOWN PLANET · JUMP THERE TO SCAN IT</p>' : '<p>UNKNOWN PLANET</p>'), '<p>NOT VISITED</p>'].join('');
+      document.getElementById('mp-jump').style.display = p.id === here ? 'none' : ''; document.getElementById('mp-zoomTo').style.display = 'none';
+      card.style.display = 'block'; return;
+    }
+    if (p.kind === 'planet') {
+      const L = [], hs = starOf(here), same = hs === p.host;
+      L.push(p.id === here ? 'YOU ARE HERE' : same ? 'IN THIS SYSTEM' : fmtLy(p.host.real.distanceTo(hs.real)) + ' FROM YOU');
+      L.push((p.tag && p.host.id === 'sol' ? p.tag + ' · ' : '') + PCLASS(p.re) + (p.re ? ' · ' + (+p.re.toFixed(2)) + ' × EARTH SIZE' : ''));
+      if (p.au || p.per) L.push((p.au ? 'ORBIT ' + p.au + ' AU FROM ' + p.host.name : '') + (p.per ? ' · YEAR ' + (p.per < 1000 ? (+p.per.toFixed(1)) + ' DAYS' : (p.per / 365.25).toFixed(1) + ' EARTH YEARS') : ''));
+      if (p.eqt) L.push('ABOUT ' + Math.round(p.eqt).toLocaleString('en-US') + ' K (' + Math.round(p.eqt - 273).toLocaleString('en-US') + ' °C)');
+      if (p.year) L.push('FOUND ' + p.year + (p.how ? ' · ' + String(p.how).toUpperCase() : ''));
+      L.push(beenPl.has(p.id) ? 'VISITED' : 'NOT VISITED');
+      document.getElementById('mp-cName').textContent = String(p.name).toUpperCase();
+      document.getElementById('mp-cBody').innerHTML = L.map(l => '<p>' + l + '</p>').join('');
+      document.getElementById('mp-jump').style.display = p.id === here ? '' : ''; if (p.id === here) document.getElementById('mp-jump').style.display = 'none';
+      document.getElementById('mp-zoomTo').style.display = 'none';
+      card.style.display = 'block'; return;
+    }
+    document.getElementById('mp-zoomTo').style.display = '';
+    const d = p.real.distanceTo(starOf(here).real), info = LM_INFO[p.id];
+    document.getElementById('mp-cName').textContent = nameOf(p);
+    const lines = [];
+    lines.push(p === starOf(here) ? (p.id === here ? 'YOU ARE HERE' : 'YOUR SHIP IS IN THIS SYSTEM') : fmtLy(d) + ' FROM YOU' + (starOf(here).id !== 'sol' && known(p) ? ' · ' + fmtLy(p.ly) + ' FROM THE SUN' : ''));
+    if (!known(p)) {
+      if (p.kind === 'system') { lines.push(CATS[p.cat].name + ' · PLANETS: ???'); lines.push('VISIT IT IN THE GAME TO SCAN IT'); }
+      else lines.push('UNKNOWN OBJECT · VISIT IT IN THE GAME TO FIND OUT');
+    }
+    else if (p.kind === 'system') { const n = p.planets.length, c = CATS[p.cat];
+      lines.push(c.name + (p.spec ? ' · ' + String(p.spec).toUpperCase() : '') + (p.teff ? ' · ' + Math.round(p.teff).toLocaleString('en-US') + ' K' : ''));
+      lines.push(c.note); lines.push(n + ' KNOWN PLANET' + (n > 1 ? 'S' : '')); }
+    else if (info) lines.push(info.join(' · '));
+    else if (p.kind === 'home') lines.push('THE SUN · HOME');
+    lines.push(p.been || p.id === 'sol' ? 'VISITED' : 'SEEN · NOT VISITED');
+    document.getElementById('mp-cBody').innerHTML = lines.map(l => '<p>' + l + '</p>').join('');
+    document.getElementById('mp-jump').style.display = p.id === here ? 'none' : '';
+    card.style.display = 'block';
+  }
+  function tap(x, y) {
+    let best = null, bd = 36;
+    groups.forEach(g => { const d = Math.hypot(g.x - x, g.y - y) - (g.planet ? 8 : 0); if (d < bd) { bd = d; best = g; } });
+    if (!best) { select(null); return; }
+    if (best.m.length > 1) {                                  // a bubble: zoom in until it splits
+      const c = new THREE.Vector3(); best.m.forEach(p => c.add(p.pos)); c.divideScalar(best.m.length);
+      let sp = 0; best.m.forEach(p => sp = Math.max(sp, p.pos.distanceTo(c)));
+      goal.copy(c); goalD = clampD(Math.max(1.5, sp * 3)); freeZoom = false; select(null);
+    } else select(best.m[0]);
+  }
+  btn('mp-zoomTo', () => { if (!sel) return; goal.copy(sel.pos); goalD = sel.planets ? 3.2 : 6; freeZoom = false; });
+  btn('mp-jump', () => {
+    if (!canJump(sel)) return;
+    const star = sel.host || sel, target = sel;
+    window.SpaceMap.close();
+    if (window.SpaceJump) setTimeout(() => window.SpaceJump(star.id, target.kind === 'planet' ? target.name : null), 380);
+  });
+  window.__mapDbg = { places: PLACES.length, systems: PLACES.filter(p => p.kind === 'system').length, get visited() { return visited.slice(); }, get here() { return here; },
+    jump: id => { const p = byId.get(id); if (p) { sel = p; document.getElementById('mp-jump').click(); } return !!p; }, zoom: d => { goalD = clampD(d); }, look: id => { const p = byId.get(id); goal.copy(p.pos); },
+    sys: () => sysFor && sysFor.name, cats: () => { const n = {}; PLACES.forEach(p => { if (p.cat) n[p.cat] = (n[p.cat] || 0) + 1; }); return n; }, revealed: () => PLACES.filter(p => p.shown && p.kind === 'system').length, groups: () => groups.map(g => [Math.round(g.x), Math.round(g.y), g.m.length, nameOf(g.m[0]), !!g.planet, g.m[0].name]),
+    sgr: () => byId.get('sgra').dir.toArray().map(v => +v.toFixed(3)) };
+
+  // ============ every frame ============
+  visited.forEach(id => lookAround(starOf(id)));
+  visited.forEach(id => lookAround(starOf(id)));
+  rebuild(); goal.copy(starOf(here).pos); tgt.copy(goal);
+  const pr = new THREE.Vector3();
+  let running = false;
+  function frame() {
+    if (!running) return;
+    requestAnimationFrame(frame);
+    tgt.lerp(goal, 0.09); dist += (goalD - dist) * 0.12;
+    if (touches.size === 0 && !sel) yaw += 0.0007;                 // a slow idle turn
+    cam.position.set(tgt.x + dist * Math.cos(pitch) * Math.sin(yaw), tgt.y + dist * Math.sin(pitch), tgt.z + dist * Math.cos(pitch) * Math.cos(yaw));
+    cam.lookAt(tgt); cam.near = Math.max(0.005, dist * 0.01); cam.updateProjectionMatrix();
+    const lv = LV.find(l => dist >= l[0] && dist < l[1]); document.getElementById('mp-lvl').textContent = lv[2];
+    document.getElementById('mp-knob').style.top = (100 - 100 * Math.log(dist / MIN_D) / Math.log(MAX_D / MIN_D)) + '%';
+    const t = performance.now() / 1000;
+    bubbles.children.forEach(c => {                               // fade out a bubble you're inside or right next to, so it doesn't fill the screen
+      const k = THREE.MathUtils.smoothstep(cam.position.distanceTo(c.position), c.userData.r * 0.9, c.userData.r * 2.6);
+      if (c.isMesh) { c.rotation.y = t * 0.05; c.material.opacity = 0.1 * k; } else c.material.opacity = 0.25 + 0.75 * k;
+    });
+    // system close-up: the nearest star system to the view centre when zoomed right in
+    const want = dist < 5 ? PLACES.reduce((a, p) => p.shown && p.planets && (p.id === 'sol' || visited.includes(p.id)) && (!a || p.pos.distanceTo(tgt) < a.pos.distanceTo(tgt)) ? p : a, null) : null;
+    if (want !== sysFor) buildSystem(want);
+    if (sysFor && freeZoom) goal.lerp(sysFor.pos, 0.12);                         // inside a system: centre on its star
+    sysG.visible = !!sysFor;
+    PLACES.forEach(p => { p.sp.visible = p.shown && (!sysFor || p === sysFor); });
+    sysG.children.forEach(c => { if (c.isSprite) { if (!c.userData.col0) c.userData.col0 = c.material.color.getHex(); c.material.color.setHex(known(c.userData.q) ? c.userData.col0 : 0x6d7f80); const u = c.userData, a = u.ph + t * u.sp; c.position.set(Math.cos(a) * u.r, 0, Math.sin(a) * u.r); } });
+    {                                                                 // the ship: same size on screen at every zoom, bobbing gently beside the star
+      const hp = byId.get(here), h = starOf(here), k = dist * (hp.kind === 'planet' && sysFor === h ? 0.022 : 0.03);
+      const at = hp.kind === 'planet' && sysFor === h && hp.sprite ? hp.sprite.position.clone().add(sysG.position) : h.pos;
+      shipG.scale.setScalar(k); shipG.position.copy(at).add(new THREE.Vector3(0, k * (1.4 + 0.25 * Math.sin(t * 1.6)), 0));
+      if (sysFor === h && hp === h) shipG.position.add(new THREE.Vector3(k * 1.2, 0, 0));
+      shipG.rotation.set(0.15 * Math.sin(t * 0.9), t * 0.35, 0.12 * Math.sin(t * 1.3));
+      shipG.userData.eng.material.opacity = 0.6 + 0.4 * Math.sin(t * 9);
+    }
+    // labels: places close together on screen merge into one bubble with a count
+    const W = innerWidth, H = innerHeight, items = [];
+    PLACES.forEach(p => {
+      if (!p.shown || (sysFor && p !== sysFor)) return; pr.copy(p.pos).project(cam);
+      if (pr.z > 1 || pr.x < -1.1 || pr.x > 1.1 || pr.y < -1.1 || pr.y > 1.1) return;
+      items.push({ p, x: (pr.x + 1) / 2 * W, y: (1 - pr.y) / 2 * H, imp: p.rank + (p === starOf(here) ? 20 : 0) + (p.been ? 2 : 0) });
+    });
+    items.sort((a, b) => b.imp - a.imp); groups = [];
+    const MERGE = sysFor ? 0 : 58;
+    items.forEach(it => { const g = MERGE && groups.find(g => Math.hypot(g.x - it.x, g.y - it.y) < MERGE); if (g) g.m.push(it.p); else groups.push({ x: it.x, y: it.y, m: [it.p] }); });
+    let html = '';
+    groups.forEach(g => {
+      const p = g.m[0], cls = p === starOf(here) ? 'lb here' : (!p.been && p.kind !== 'system' && p.kind !== 'home') ? 'lb dim' : 'lb';
+      if (g.m.length === 1) html += `<div class="${cls}" style="left:${g.x + 10}px;top:${g.y - 15}px">${nameOf(p)}</div>`;
+      else html += `<div class="cl" style="left:${g.x}px;top:${g.y}px">${g.m.length}</div><div class="${cls}" style="left:${g.x + 19}px;top:${g.y - 7}px">${nameOf(p)} +${g.m.length - 1}</div>`;
+    });
+    if (sysFor) sysG.children.forEach(c => { if (!c.isSprite) return; pr.copy(c.position).add(sysG.position).project(cam); if (pr.z > 1) return;
+      groups.push({ x: (pr.x + 1) / 2 * W, y: (1 - pr.y) / 2 * H, m: [c.userData.q], planet: true });
+      const q = c.userData.q;
+      html += `<div class="lb" style="left:${(pr.x + 1) / 2 * W + 8}px;top:${(1 - pr.y) / 2 * H - 13}px;font-size:8.5px;color:${q.id === here ? '#7dffc6' : q.tag ? '#9fe8c8' : '#8fcabb'}">${nameOf(q)}${q.au && known(q) ? ' · ' + q.au + ' AU' : ''}${q.id === here ? ' · YOU' : q.tag ? ' · ' + q.tag : ''}${beenPl.has(q.id) && q.id !== here ? ' ✓' : ''}</div>`; });
+    if (lv[2] !== 'SYSTEM') ringLabels.forEach(r => { pr.copy(r.p).project(cam); if (pr.z > 1 || Math.abs(pr.x) > 1 || Math.abs(pr.y) > 1) return;
+      html += `<div class="lb" style="left:${(pr.x + 1) / 2 * W}px;top:${(1 - pr.y) / 2 * H}px;font-size:8px;color:#2f7d70">${r.t}</div>`; });
+    const selPos = sel && (sel.kind === 'planet' ? (sysFor === sel.host && sel.sprite ? sel.sprite.position.clone().add(sysG.position) : null) : sel.shown ? sel.pos : null);
+    if (selPos) { pr.copy(selPos).project(cam); if (pr.z < 1) { const x = (pr.x + 1) / 2 * W, y = (1 - pr.y) / 2 * H, s = 1 + 0.12 * Math.sin(t * 6);
+      html += `<div class="ret" style="left:${x}px;top:${y}px;transform:scale(${s})"><i style="left:0;top:0;border-width:2px 0 0 2px"></i><i style="right:0;top:0;border-width:2px 2px 0 0"></i><i style="right:0;bottom:0;border-width:0 2px 2px 0"></i><i style="left:0;bottom:0;border-width:0 0 2px 2px"></i></div>`; } }
+    ov.innerHTML = html;
+    rd.render(sc, cam);
+  }
+  // ============ the launcher talks to the map through this ============
+  // arrived(id, planetName): the game just arrived somewhere (or this is where you already are)
+  function arrived(id, planetName, quiet) {
+    const star = byId.get(id); if (!star) return;
+    const q = planetName && star.planets ? star.planets.find(x => x.name === planetName) : null;
+    here = q ? q.id : star.id;
+    if (!visited.includes(star.id)) visited.push(star.id);
+    if (q) beenPl.add(q.id);
+    lookAround(star); save(); rebuild();
+    if (!quiet) { goal.copy(star.pos); goalD = star.planets ? 3.2 : 8; freeZoom = false; }
+  }
+  window.SpaceMap = {
+    open() { resize(); running = true; screen.classList.add('show'); requestAnimationFrame(() => screen.classList.add('vis')); select(null);
+      const h = starOf(here); goal.copy(h.pos); tgt.copy(h.pos); goalD = dist = h.planets ? 3.2 : 10; frame(); },
+    close() { running = false; screen.classList.remove('vis'); setTimeout(() => { if (!running) screen.classList.remove('show'); }, 360); if (window.SpaceMapClosed) window.SpaceMapClosed(); },
+    get isOpen() { return running; },
+    back() { if (sel) { select(null); return; } window.SpaceMap.close(); },
+    arrived, debug: () => ({ here, visited: visited.slice(), seen: seen.size, planets: [...beenPl] }),
+    groups: () => groups.map(g => [Math.round(g.x), Math.round(g.y), g.m.length, nameOf(g.m[0]), !!g.planet, g.m[0].name]),
+    selectId: id => select(byId.get(id)), card: () => document.getElementById('mp-card').innerText,
+  };
+  document.getElementById('mp-close').addEventListener('click', () => window.SpaceMap.close());
+})();
+
+if (window.__deepSync) window.__deepSync();
 </script>
 </body>
 </html>
