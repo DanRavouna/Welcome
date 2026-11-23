@@ -1,0 +1,17 @@
+# Downloads Space Cube's real sky data (nearest 1000 exoplanets from the NASA Exoplanet Archive,
+# landmark positions from CDS Sesame) and keeps it as a run artifact. Run by hand; commits nothing.
+name: Space Cube sky data
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 space-cube-launcher/tools/fetch_sky.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sky-data
+          path: space-cube-launcher/app/src/main/assets/sky-data.json
