@@ -2678,7 +2678,8 @@
       if (sinceGo >= 0 && sinceGo < 0.05 && !tr.shook) { tr.shook = true; camMove.shake = 1; try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(35); } catch (e) {} }
       // look where the ship is going: along the route (a little ahead on the curve);
       // the route starts heading at the target and ends with a straight run in, so start and end still face it
-      const ahead = bez(tr, Math.min(1, e + 0.035), navTmp2).sub(shipPos);
+      // look INTO the turn: aim at a point well ahead on the curve (where the turn is taking you), not just the tangent
+      const ahead = bez(tr, Math.min(1, e + 0.22), navTmp2).sub(shipPos);
       const toT = tp.sub(shipPos);
       const w = THREE.MathUtils.smoothstep(e, 0.9, 1);                     // last moments: settle onto the target
       const look = ahead.lengthSq() > 1e-10 ? ahead.normalize().multiplyScalar(1 - w).addScaledVector(toT.normalize(), w) : toT;
@@ -3699,7 +3700,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 28';
+    tag.textContent = 'SCREEN 2026-11-23 · 29';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
