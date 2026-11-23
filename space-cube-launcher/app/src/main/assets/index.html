@@ -3315,14 +3315,14 @@
       const hole = new THREE.Mesh(new THREE.SphereGeometry(7, 48, 32), new THREE.MeshBasicMaterial({ color: 0x000000 }));
       bh.add(hole); dest.solids.push({ mesh: hole, r: 7 }); dest.r = 14; dest.ext = 34; dest.off = 90;
       const tU = { value: 0 };
-      const disk = new THREE.Mesh(new THREE.RingGeometry(8.5, 34, 160, 1), new THREE.ShaderMaterial({ uniforms: { uT: tU },
+      const disk = new THREE.Mesh(new THREE.RingGeometry(8.5, 34, 160, 1), new THREE.ShaderMaterial({ uniforms: { uT: tU, uFade: { value: 1 } },
         vertexShader: `varying vec3 vP; void main() { vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-        fragmentShader: `uniform float uT; varying vec3 vP;
+        fragmentShader: `uniform float uT, uFade; varying vec3 vP;
           void main() { float r = length(vP.xy), a = atan(vP.y, vP.x), x = (r - 8.5) / 25.5;
             float n = 0.5 + 0.5 * sin(a * 6.0 - uT * 1.4 + r * 0.9); n = mix(n, 0.5 + 0.5 * sin(a * 13.0 + uT * 2.1 - r * 1.7), 0.5);
             vec3 c = mix(vec3(1.0, 0.95, 0.85), vec3(1.0, 0.55, 0.15), smoothstep(0.0, 0.4, x)); c = mix(c, vec3(0.55, 0.1, 0.04), smoothstep(0.4, 1.0, x));
             float b = pow(1.0 - x, 1.5) * (0.55 + 0.45 * n) * (1.0 + 0.75 * sin(a)) * smoothstep(0.0, 0.05, x) * (1.0 - smoothstep(0.8, 1.0, x));
-            gl_FragColor = vec4(c * b * 1.7, 1.0); }`,
+            gl_FragColor = vec4(c * b * 1.7 * uFade, 1.0); }`,
         side: THREE.DoubleSide, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
       const n = up.clone().multiplyScalar(Math.cos(14 * DEG)).addScaledVector(fw, -Math.sin(14 * DEG)).normalize();
       disk.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n); bh.add(disk);
@@ -3378,7 +3378,7 @@
         else sp.position.copy(at((R() - 0.5) * 260, (R() - 0.5) * 200, 90 + R() * 240));
         const s = (ring ? 16 : 70) + R() * (ring ? 16 : 100); sp.scale.set(s, s, 1); sp.material.rotation = R() * 6.28;
         sp.userData = { ph: R() * 6.28, base: sp.material.opacity };
-        destGroup.add(sp); dest.anim.push((dt, t) => sp.material.opacity = sp.userData.base * (0.8 + 0.2 * Math.sin(t * 0.4 + sp.userData.ph)));
+        destGroup.add(sp); dest.anim.push((dt, t) => sp.material.opacity = sp.userData.base * (0.8 + 0.2 * Math.sin(t * 0.4 + sp.userData.ph)) * (dest.fadeK == null ? 1 : dest.fadeK));
       }
       const nS = cl ? 9 : ring ? 1 : 30;
       for (let i = 0; i < nS; i++) {
@@ -3389,13 +3389,13 @@
       if (cl) for (let i = 0; i < 140; i++) { const st = glowSprite('200,220,255', 2 + R() * 3, 0.8); st.position.copy(at((R() - 0.5) * 260, (R() - 0.5) * 180, 30 + R() * 200)); destGroup.add(st); }
       if (o.id === 'm1') {                              // the pulsar at its heart
         const pu = glowSprite('190,215,255', 14, 1); pu.position.copy(at(0, 0, 160)); destGroup.add(pu);
-        dest.anim.push((dt, t) => pu.material.opacity = 0.35 + 0.65 * (Math.sin(t * 40) > 0.6 ? 1 : 0.2));
+        dest.anim.push((dt, t) => pu.material.opacity = (0.35 + 0.65 * (Math.sin(t * 40) > 0.6 ? 1 : 0.2)) * (dest.fadeK == null ? 1 : dest.fadeK));
       }
     }
   }
 
   // ---- arriving somewhere ----
-  function setHomeVisible(v) { sysRig.children.forEach(c => { if (c !== destGroup && c !== deepRoute && c !== deepBeacon) c.visible = v; }); }
+  function setHomeVisible(v) { sysRig.children.forEach(c => { if (c !== destGroup && c !== deepRoute && c !== deepBeacon && c !== deepPicture) c.visible = v; }); }
   // the route to a far destination: glowing dots from your nose straight out toward it (same look as the Saturn routes)
   const DEEP_ROUTE_N = 60;
   const deepRoute = new THREE.Group(); deepRoute.visible = false; sysRig.add(deepRoute);
@@ -3426,6 +3426,20 @@
   // arriving: the destination first shows as a far point of light where you're heading, then grows as you slow down
   const deepBeacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: pointTexture('255,255,255'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
   deepBeacon.scale.setScalar(0.05); deepBeacon.visible = false; sysRig.add(deepBeacon);
+  // the target's sky picture, shown where it'll appear after the warp, cross-fading into the 3D version as you arrive
+  const deepPicture = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+  deepPicture.visible = false; sysRig.add(deepPicture);
+  function setDestFade(k) {                            // fade the 3D destination's glowing parts in (0..1)
+    if (!dest) return;
+    if (!dest.fades) {
+      dest.fades = [];
+      destGroup.traverse(o => { const m = o.material; if (!m) return;
+        if (m.uniforms && m.uniforms.uFade) dest.fades.push({ m, u: true });
+        else if (m.transparent && !(m.uniforms && m.uniforms.sunDir)) dest.fades.push({ m, base: m.opacity }); });
+    }
+    dest.fadeK = k;
+    dest.fades.forEach(f => { if (f.u) f.m.uniforms.uFade.value = k; else f.m.opacity = f.base * k; });
+  }
   const BEACON_COL = { blackhole: 0xffb070, nebula: 0xff8fc0, galaxy: 0xc8d0ff, cluster: 0xa8c4ff };
   function arriveAt(o, dir, planetName) {
     deep.here.copy(o.pos); deep.at = o.kind === 'home' ? null : o.id; deep.dir = dir.clone();
@@ -3481,6 +3495,15 @@
       const a = Math.exp(Math.log(a0) + (Math.log(a1) - Math.log(a0)) * e);                     // apparent size: smooth, steady growth
       destGroup.position.copy(j.dir).multiplyScalar(DEST_D);
       destGroup.scale.setScalar(Math.min(1, a * DEST_D / Math.max(1e-6, 2 * ext - a * off)));
+      if (dest && !dest.pts) { dest.pts = []; destGroup.traverse(o => { if (o.isPoints) dest.pts.push({ m: o.material, s: o.material.size }); }); }
+      if (dest) dest.pts.forEach(p => p.m.size = p.s * destGroup.scale.x);                       // star dots shrink with the rest while it's far
+      if (j.o.kind !== 'system' && j.o.sprite) {                                               // a landmark: its sky picture first, blending into the 3D view
+        if (!j.picSet) { j.picSet = true; deepPicture.material.map = j.o.sprite.material.map; deepPicture.material.needsUpdate = true; }
+        deepPicture.visible = true; deepPicture.position.copy(destGroup.position).addScaledVector(j.dir, off * destGroup.scale.x);
+        deepPicture.scale.setScalar(a * (DEST_D + off * destGroup.scale.x) / 0.6);
+        deepPicture.material.opacity = 0.9 * (1 - THREE.MathUtils.smoothstep(e, 0.15, 0.7));
+        setDestFade(THREE.MathUtils.smoothstep(e, 0.05, 0.55));
+      }
       if (j.o.kind === 'system') {                                                              // a star: its dot carries on, then hands over to the planet
         if (!j.beaconSet) { j.beaconSet = true; deepBeacon.material.color.setHex(starColor(j.o.teff).getHex()); }
         deepBeacon.visible = true; deepBeacon.position.copy(destGroup.position);
@@ -3489,7 +3512,7 @@
       }
     }
     if (j.t >= T3) {
-      deepJump = null; navWarp = 1; worldFov = 55; travelV = 0; jumpFlash.style.opacity = 0; destGroup.scale.setScalar(1); deepBeacon.visible = false;
+      deepJump = null; navWarp = 1; worldFov = 55; travelV = 0; jumpFlash.style.opacity = 0; destGroup.scale.setScalar(1); deepBeacon.visible = false; deepPicture.visible = false; setDestFade(1); if (dest && dest.pts) dest.pts.forEach(p => p.m.size = p.s);
       saveDeep(); factsFor = { deep: true, center: true, name: deep.planet ? deep.planet.toUpperCase() : j.o.name, facts: deepFacts(j.o, deep.planet) }; factsT = performance.now();
       try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(20); } catch (e) {}
     }
@@ -4505,7 +4528,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 39';
+    tag.textContent = 'SCREEN 2026-11-23 · 40';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
