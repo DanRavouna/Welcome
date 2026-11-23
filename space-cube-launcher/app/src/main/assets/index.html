@@ -4451,7 +4451,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 35';
+    tag.textContent = 'SCREEN 2026-11-23 · 36';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
@@ -4610,7 +4610,6 @@
 <div id="mp-v"></div>
 <div id="mp-ov"></div>
 <div id="mp-top"><b>STAR MAP</b><span id="mp-lvl">GALAXY</span><span id="mp-close" aria-label="Close">✕</span></div>
-<div id="mp-menu">RESET</div>
 <div id="mp-keyBtn">KEY</div>
 <div id="mp-key"></div>
 <div id="mp-bar"><div id="mp-knob"></div></div>
@@ -4865,7 +4864,6 @@
   btn('mp-zin', () => zoomAt(innerWidth / 2, innerHeight / 2, 1 / 2.2));
   btn('mp-zout', () => goalD = clampD(goalD * 2.2));
   btn('mp-home', () => { const h = starOf(here); goal.copy(h.pos); goalD = h.planets ? 3.2 : 10; freeZoom = false; select(null); });
-  btn('mp-menu', () => { if (confirm('Reset the map? It forgets every place you have been.')) { const h = here; visited = ['sol']; beenPl = new Set(); seen = new Set(); lookAround(byId.get('sol')); here = 'sol'; const s0 = starOf(h); if (s0 && s0.id !== 'sol') arrived(s0.id, h.startsWith('pl:') ? byId.get(h).name : null, true); save(); rebuild(); select(null); } });
 
   // ============ selecting, zooming in, jumping ============
   let groups = [], sel = null;
