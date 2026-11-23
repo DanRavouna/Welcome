@@ -2538,8 +2538,19 @@
     return false;
   }
   function engage(n) {
+    const plan = routePlan && routePlan.n === n ? routePlan : planRoute(n);
     cancelLock();
     if (nav.target === n.name) return;               // already here
+    const { p0, p1, ctrl, ctrl2, len0 } = plan;
+    const len = p0.distanceTo(p1);
+    const fly = 2.4 + 0.5 * Math.log10(1 + len);
+    travel = { n, p0, p1, ctrl, ctrl2, t: 0, turn: 0.8, fly, dur: 0.8 + fly, settle: 0.6, plan };
+    nav.target = null; factsT = -1; factsG.style.display = 'none';
+    routeShowT = performance.now();
+  }
+  // The route to a body: parking spot ~50 degrees off the Sun, a curve that leaves heading at it,
+  // swings wide of Saturn if needed, and ends with a straight run in.
+  function planRoute(n) {
     const tp = navLocal(n, new THREE.Vector3());
     const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
     const d = Math.max(n.fitR / (tanH * 0.7), n.bodyR * 2.2);
@@ -2565,10 +2576,56 @@
         ctrl.copy(out).addScaledVector(out.clone().sub(p0).normalize(), len0 * 0.1);   // swing wide early; the end stays a straight run in
       }
     }
-    const len = p0.distanceTo(p1);
-    const fly = 2.4 + 0.5 * Math.log10(1 + len);
-    travel = { n, p0, p1, ctrl, ctrl2, t: 0, turn: 0.8, fly, dur: 0.8 + fly, settle: 0.6 };
-    nav.target = null; factsT = -1; factsG.style.display = 'none';
+    return { n, p0, p1, ctrl, ctrl2, len0 };
+  }
+  // ---- the route on screen: a line of glowing dots from the ship's nose to the target ----
+  const ROUTE_N = 64;
+  const routeTex = pointTexture('125,255,198');
+  const routeGroup = new THREE.Group(); sysWorld.add(routeGroup); routeGroup.visible = false;
+  const routeDots = [];
+  for (let i = 0; i < ROUTE_N; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: routeTex, transparent: true, depthWrite: false,
+      blending: THREE.AdditiveBlending, sizeAttenuation: false, opacity: 0 }));
+    sp.scale.set(0.022, 0.022, 1); routeGroup.add(sp); routeDots.push(sp);
+  }
+  let routePlan = null, routeLockT = 0, routeShowT = 0;
+  const bez = (pl, u, out) => { const a = 1 - u, b = u;
+    return out.set(0, 0, 0).addScaledVector(pl.p0, a * a * a).addScaledVector(pl.ctrl, 3 * a * a * b)
+      .addScaledVector(pl.ctrl2, 3 * a * b * b).addScaledVector(pl.p1, b * b * b); };
+  function layRoute(pl) {
+    // start just below the view (where the ship's nose would be), blending into the true route
+    const inv = spaceRig.quaternion.clone().invert();
+    const down = new THREE.Vector3(0, -1, 0).applyQuaternion(inv), fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(inv);
+    const lift = Math.min(pl.len0 * 0.05, 6);
+    routeDots.forEach((sp, i) => {
+      const u = (i + 1.5) / (ROUTE_N + 1);
+      bez(pl, u, sp.position);
+      const w = Math.pow(1 - u, 2.2);                                     // offset fades out along the route
+      sp.position.addScaledVector(down, lift * w).addScaledVector(fwd, lift * 0.6 * w);
+      sp.userData.u = u;
+    });
+  }
+  function updateRoute() {
+    const now = performance.now();
+    if (navLock && nav.target !== navLock.name && !travel) {
+      if (!routePlan || routePlan.n !== navLock) { routePlan = planRoute(navLock); layRoute(routePlan); routeLockT = now; }
+      routeGroup.visible = true;
+      const reveal = Math.min(1, (now - routeLockT) / 450), ph = now / 1000;
+      routeDots.forEach((sp, i) => {
+        const u = sp.userData.u;
+        const shown = u <= reveal ? 1 : 0;
+        const pulse = 0.5 + 0.5 * Math.cos((u * 6 - ph * 1.6) * Math.PI * 2 / 6 * 3);   // pulses flowing toward the target
+        sp.material.opacity = shown * (0.5 + 0.5 * Math.pow(Math.max(0, pulse), 3));
+      });
+    } else if (travel && travel.plan) {
+      if (routePlan !== travel.plan) { routePlan = travel.plan; layRoute(routePlan); }
+      routeGroup.visible = true;
+      const u = Math.max(0, Math.min(1, (travel.t - travel.turn) / travel.fly)), e = prof(PROFILE.e, u);
+      const fade = Math.max(0, 1 - (now - routeShowT) / 1000 / (travel.dur * 0.8));
+      routeDots.forEach(sp => { sp.material.opacity = sp.userData.u > e + 0.02 ? 0.6 * fade : 0; });   // passed dots vanish
+    } else {
+      routeGroup.visible = false; routePlan = null;
+    }
   }
   const qFace = new THREE.Quaternion(), mBasis = new THREE.Matrix4();
   function faceQuat(fwdLocal, out) {                  // the turn of space that puts fwdLocal straight ahead, keeping "up" roughly as it is
@@ -3313,6 +3370,7 @@
     syncSysRig();
     updateOccluders();
     updateStreaks(dt);
+    updateRoute();
     // 1) far pass: stars, Sun, planets, Saturn system   2) space layer: dots, ships, whale (hidden behind planets)
     // 3) UI layer: your cubes (and the checklist ship), always on top
     renderer.autoClear = false; renderer.clear();
@@ -3601,7 +3659,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 25';
+    tag.textContent = 'SCREEN 2026-11-23 · 26';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
