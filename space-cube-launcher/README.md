@@ -45,7 +45,10 @@ To go back to Samsung's launcher: same place, pick **One UI Home**.
 - Widgets.
 
 ## Files
-- `app/src/main/assets/index.html` – the whole 3D home screen (edit this to change the look/feel).
+- `app/src/main/assets/index.html` – the whole 3D home screen, as the app and the site load it. **Built, never edited by hand.**
+- `src/` – what it is built from: `page.html` (markup and styles), `catalogue.js` (every place, the one saved state, the rules, the time model, the pictures), `game.js` (the home screen), `map.js` (the star map).
+- `tools/build.py` – the one build command: `python3 space-cube-launcher/tools/build.py` (add `--preview FILE` for a stand-alone copy to open in a browser).
+- `tools/catalog-hand.json` – everything written by hand: our planets, their rings and moons, their orbits, the landmarks, the star categories. `tools/nasa-snapshot.json` – the NASA Exoplanet Archive download (`tools/fetch_sky.py`, run by the "sky-data" workflow). `tools/build_catalog.py` turns both into `tools/catalog.json`, the one data file the page reads.
 - `app/src/main/java/com/dan/spacecube/MainActivity.kt` – hosts the page, Home/Back, pause, app-change events.
 - `app/src/main/java/com/dan/spacecube/LauncherBridge.kt` – what the page can ask the phone for.
 - Bundled offline: `three.min.js` (three.js r128, MIT licence) and the Orbitron font (SIL Open Font Licence).
