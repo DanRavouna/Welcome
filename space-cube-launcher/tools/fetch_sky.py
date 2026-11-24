@@ -57,6 +57,26 @@ OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text(json.dumps(data, separators=(',', ':')))
 print('wrote', OUT, OUT.stat().st_size, 'bytes')
 
+# NASA NSSDC fact sheets (the Sun, planets, their moons), saved as the pages themselves: the numbers are read from them by hand
+# into catalog-hand.json, with the page named as the source. A page that fails is reported and skipped.
+FACT_PAGES = ['sunfact', 'mercuryfact', 'venusfact', 'earthfact', 'marsfact', 'jupiterfact', 'saturnfact', 'uranusfact', 'neptunefact',
+              'moonfact', 'joviansatfact', 'saturniansatfact', 'uraniansatfact', 'neptuniansatfact']
+facts = {}
+for name in FACT_PAGES:
+    url = 'https://nssdc.gsfc.nasa.gov/planetary/factsheet/' + name + '.html'
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'SpaceCube/1.0'})
+        with urllib.request.urlopen(req, timeout=60) as r: facts[name] = r.read().decode('utf-8', 'replace')
+        print('fact sheet', name, len(facts[name]), 'chars')
+    except Exception as e:
+        print('fact sheet FAILED', name, e)
+FACTS = OUT.parent / 'fact-sheets.json'
+FACTS.write_text(json.dumps({'fetched': data['fetched'], 'source': 'NASA NSSDC planetary fact sheets', 'pages': facts}))
+import base64, gzip
+print('FACTS-BEGIN'); b = base64.b64encode(gzip.compress(FACTS.read_bytes())).decode()
+for i in range(0, len(b), 3000): print('FACT:' + b[i:i + 3000])
+print('FACTS-END')
+
 # The sandbox that builds the screen cannot download artifacts, so the data is also printed (gzip + base64).
 import base64, gzip
 print('SKYDATA-BEGIN'); b = base64.b64encode(gzip.compress(OUT.read_bytes())).decode()
