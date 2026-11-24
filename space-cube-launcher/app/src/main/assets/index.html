@@ -698,10 +698,47 @@ window.CAT = (() => {
     if (q.year) L.push('FOUND ' + q.year + (q.how ? ' · ' + String(q.how).toUpperCase() : ''));
     return L;
   }
+  // ---- THE PICTURES: what a place looks like from far away. One picture per place, used by the sky and by the map. ----
+  const pics = new Map();
+  const hash32 = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const blob = (x, cx, cy, r, rgb, a) => { const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = g; x.fillRect(cx - r, cy - r, 2 * r, 2 * r); };
+  function picture(o) {                               // -> a canvas (its glow fills about 60% of the square, fading out before the edge)
+    if (pics.has(o.id)) return pics.get(o.id);
+    const S2 = 256, cv = document.createElement('canvas'); cv.width = cv.height = S2; const x = cv.getContext('2d'), c = S2 / 2, R = rng(hash32(o.id));
+
+    if (o.kind === 'blackhole') {
+      blob(x, c, c, c, '255,140,60', 0.35);
+      x.lineWidth = 14; x.strokeStyle = 'rgba(255,200,130,0.9)'; x.shadowColor = 'rgba(255,150,60,1)'; x.shadowBlur = 30;
+      x.beginPath(); x.ellipse(c, c, c * 0.42, c * 0.42, 0, 0, Math.PI * 2); x.stroke();
+      x.shadowBlur = 0; x.fillStyle = '#000'; x.beginPath(); x.arc(c, c, c * 0.33, 0, Math.PI * 2); x.fill();
+    } else if (o.kind === 'galaxy') {
+      blob(x, c, c, c * 0.95, '170,180,255', 0.35); x.save(); x.translate(c, c); x.scale(1, (o.look && o.look.squash) || 0.6);
+      for (let i = 0; i < 900; i++) { const a = R() * Math.PI * 2, r = Math.pow(R(), 0.7) * c * 0.9; x.fillStyle = `rgba(${R() < 0.2 ? '255,170,200' : '200,215,255'},${0.25 * (1 - r / c)})`; x.fillRect(Math.cos(a) * r, Math.sin(a) * r, 3, 3); }
+      x.restore(); blob(x, c, c, c * 0.22, '255,235,200', 0.95);
+    } else if (o.look && o.look.ring) {
+      x.lineWidth = 26; x.strokeStyle = 'rgba(235,90,70,0.6)'; x.shadowColor = 'rgba(235,90,70,1)'; x.shadowBlur = 24;
+      x.beginPath(); x.ellipse(c, c, c * 0.55, c * 0.45, 0.4, 0, Math.PI * 2); x.stroke(); x.shadowBlur = 0;
+      blob(x, c, c, c * 0.5, '90,220,210', 0.55); blob(x, c, c, 8, '255,255,255', 1);
+    } else if (o.kind === 'cluster') {
+      blob(x, c, c, c, '120,160,255', 0.3);
+      for (let i = 0; i < 9; i++) blob(x, c + (R() - 0.5) * c * 1.1, c + (R() - 0.5) * c * 0.8, 14 + R() * 10, '210,225,255', 1);
+    } else if (o.planets) {
+      blob(x, c, c, c, '255,220,150', 0.5); blob(x, c, c, c * 0.25, '255,250,235', 1);
+    } else {
+      const pal = o.pal || ['200,120,255'];
+      for (let i = 0; i < 26; i++) blob(x, c + (R() - 0.5) * c, c + (R() - 0.5) * c, c * (0.25 + R() * 0.45), pal[i % pal.length], 0.28);
+      for (let i = 0; i < 8; i++) blob(x, c + (R() - 0.5) * c * 0.8, c + (R() - 0.5) * c * 0.8, 3 + R() * 4, '255,255,255', 1);
+    }
+    const g = x.createRadialGradient(c, c, S2 * 0.3, c, c, c);     // fade to nothing before the edge, so a glow is never cut off in a straight line
+    g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.globalCompositeOperation = 'destination-in'; x.fillStyle = g; x.fillRect(0, 0, S2, S2); x.globalCompositeOperation = 'source-over';
+    pics.set(o.id, cv); return cv;
+  }
   load();
   return { v: raw.v, fetched: raw.fetched, sources: raw.sources, systems, sol, landmarks: raw.landmarks, byId, starCats: raw.starCats, warpLy: raw.warpLy,
     planetCount: raw.planets.length - sol.planets.length, KM_AU, fmtLy, starRGB, starCat, planetClass, CLASS_NAME, CLASS_LONG,
-    now: NOW, homeLon, helio,
+    now: NOW, homeLon, helio, picture,
     state, save, arrive, saw, hereId, atHome, homePlanet, dist, inReach, known, placeFacts, planetFacts, mainPlanet, defaultPlanet, planetOf };
 })();
 </script>
@@ -3125,6 +3162,7 @@ window.CAT = (() => {
   // Warp range: you can see stars farther out, but only jump to stars within 20 ly of where you are.
   // Places marked `always` (our own system, and the far landmarks) can be seen and reached from anywhere; so can the planets of the system you're in.
   const WARP_LY = window.CAT.warpLy;
+  deep.limit = Math.max(deep.limit, WARP_LY);          // star dots are always drawn at least as far as you can jump
   // the star map records a place as seen (???) only when its name tag shows on your screen, or you lock on to it
   const reportSeen = o => window.CAT.saw(o.id);
   const inRange = o => !o.deep || o.kind === 'planet' || window.CAT.inReach(window.CAT.byId.get(o.id));
@@ -3220,35 +3258,7 @@ window.CAT = (() => {
     return new THREE.CanvasTexture(c);
   }
   const blob = (x, cx, cy, r, rgb, a) => { const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = g; x.fillRect(cx - r, cy - r, 2 * r, 2 * r); };
-  function landmarkTex(o) {
-    const R = rng(hash(o.id));
-    return canvasTex(256, (x, S2) => {
-      const c = S2 / 2;
-      if (o.kind === 'blackhole') {
-        blob(x, c, c, c, '255,140,60', 0.35);
-        x.lineWidth = 14; x.strokeStyle = 'rgba(255,200,130,0.9)'; x.shadowColor = 'rgba(255,150,60,1)'; x.shadowBlur = 30;
-        x.beginPath(); x.ellipse(c, c, c * 0.42, c * 0.42, 0, 0, Math.PI * 2); x.stroke();
-        x.shadowBlur = 0; x.fillStyle = '#000'; x.beginPath(); x.arc(c, c, c * 0.33, 0, Math.PI * 2); x.fill();
-      } else if (o.kind === 'galaxy') {
-        blob(x, c, c, c * 0.95, '170,180,255', 0.35); x.save(); x.translate(c, c); x.scale(1, (o.look && o.look.squash) || 0.6);
-        for (let i = 0; i < 900; i++) { const a = R() * Math.PI * 2, r = Math.pow(R(), 0.7) * c * 0.9; x.fillStyle = `rgba(${R() < 0.2 ? '255,170,200' : '200,215,255'},${0.25 * (1 - r / c)})`; x.fillRect(Math.cos(a) * r, Math.sin(a) * r, 3, 3); }
-        x.restore(); blob(x, c, c, c * 0.22, '255,235,200', 0.95);
-      } else if (o.look && o.look.ring) {
-        x.lineWidth = 26; x.strokeStyle = 'rgba(235,90,70,0.6)'; x.shadowColor = 'rgba(235,90,70,1)'; x.shadowBlur = 24;
-        x.beginPath(); x.ellipse(c, c, c * 0.55, c * 0.45, 0.4, 0, Math.PI * 2); x.stroke(); x.shadowBlur = 0;
-        blob(x, c, c, c * 0.5, '90,220,210', 0.55); blob(x, c, c, 8, '255,255,255', 1);
-      } else if (o.kind === 'cluster') {
-        blob(x, c, c, c, '120,160,255', 0.3);
-        for (let i = 0; i < 9; i++) blob(x, c + (R() - 0.5) * c * 1.1, c + (R() - 0.5) * c * 0.8, 14 + R() * 10, '210,225,255', 1);
-      } else if (o.planets) {
-        blob(x, c, c, c, '255,220,150', 0.5); blob(x, c, c, c * 0.25, '255,250,235', 1);
-      } else {
-        const pal = o.pal || ['200,120,255'];
-        for (let i = 0; i < 26; i++) blob(x, c + (R() - 0.5) * c, c + (R() - 0.5) * c, c * (0.25 + R() * 0.45), pal[i % pal.length], 0.28);
-        for (let i = 0; i < 8; i++) blob(x, c + (R() - 0.5) * c * 0.8, c + (R() - 0.5) * c * 0.8, 3 + R() * 4, '255,255,255', 1);
-      }
-    }, true);
-  }
+  const landmarkTex = o => new THREE.CanvasTexture(SKY.picture(o));     // the catalogue's picture of a place (the map shows the same one)
   // Real sizes come from the catalogue (diamLy). Black holes are far too small to see, so they show at the minimum dot size.
   const MIN_PX = 9;                                      // nothing is drawn smaller than this (a small dot)
   const SUN_DIAM_LY = 1.3927e6 / 9.4607e12;             // the Sun: 1,392,700 km across
@@ -3649,7 +3659,7 @@ window.CAT = (() => {
     if (o.id === deep.sys) return 0;                   // the place you're in
     const c = THREE.MathUtils.smoothstep(relDir(o, dTmp2).dot(fwdLocal), CONE[0], CONE[1]);
     if (o.always || o.kind === 'planet') return 0.35 + 0.65 * c;
-    const d = deepDist(o); return d > deep.limit || d > WARP_LY ? 0 : c;   // ordinary stars: named and reachable within warp range only
+    return deepDist(o) > WARP_LY ? 0 : c;              // ordinary stars: named and reachable within warp range only
   }
   function deepPick(x, y) {
     let best = null, bestD = 34;
@@ -4655,18 +4665,18 @@ window.CAT = (() => {
     if (SKY) {                                                       // deep sky: how far out to show exoplanets
       const dc = document.createElement('div'); dc.className = 'gCard';
       dc.innerHTML = `<div class="gTop"><span class="rcTitle">DEEP SKY</span><span class="dsVal" style="margin-left:auto;font-size:12px;opacity:.8"></span></div>
-        <div class="rcNote">Exoplanets show up to this distance, near the middle of the view, fainter the farther they are. Tap one to lock on, tap again to jump.</div>
-        <input type="range" class="dsRange" min="5" max="170" step="5" style="width:100%;accent-color:#7dffc6;margin:10px 0 4px">
+        <div class="rcNote">Stars with known planets are drawn as dots out to this distance, fainter the farther they are. You can lock on and jump to the ones within ${WARP_LY} light-years.</div>
+        <input type="range" class="dsRange" min="${WARP_LY}" max="170" step="5" style="width:100%;accent-color:#7dffc6;margin:10px 0 4px">
         <div class="rcNote" style="opacity:.6">Data: NASA Exoplanet Archive, ${SKY.planetCount} nearest planets (${SKY.fetched}). Positions: CDS Sesame.</div>`;
       const rg = dc.querySelector('.dsRange'), val = dc.querySelector('.dsVal');
       const paint = () => { const n = SYSTEMS.filter(o => o.ly <= deep.limit).reduce((a, o) => a + o.planets.length, 0); val.textContent = deep.limit + ' LY · ' + n + ' PLANETS'; };
-      rg.value = deep.limit; paint();
+      deep.limit = Math.max(deep.limit, WARP_LY); rg.value = deep.limit; paint();
       rg.addEventListener('input', () => { deep.limit = +rg.value; paint(); saveDeep(); });
       cfgList.appendChild(dc);
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 52';
+    tag.textContent = 'SCREEN 2026-11-23 · 53';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
@@ -4888,14 +4898,9 @@ window.CAT = (() => {
   addEventListener('resize', resize); resize();
   function canvasTex(sz, draw) { const c = document.createElement('canvas'); c.width = c.height = sz; draw(c.getContext('2d'), sz); const t = new THREE.CanvasTexture(c); return t; }
   const glow = (x, cx, cy, r, rgb, a) => { const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = g; x.fillRect(cx - r, cy - r, 2 * r, 2 * r); };
+  const pic = p => p._pic || (p._pic = new THREE.CanvasTexture(CAT.picture(cat(p))));   // a place's picture: the same one the sky shows
   const ICON = {
-    home: canvasTex(64, (x) => { glow(x, 32, 32, 30, '255,210,120', .6); glow(x, 32, 32, 10, '255,250,235', 1); }),
-    system: canvasTex(64, (x) => { glow(x, 32, 32, 22, '255,255,255', .5); glow(x, 32, 32, 7, '255,255,255', 1); x.strokeStyle = 'rgba(255,255,255,.75)'; x.lineWidth = 2; x.beginPath(); x.ellipse(32, 32, 20, 7, -0.35, 0, 7); x.stroke(); }),
-    blackhole: canvasTex(64, (x) => { glow(x, 32, 32, 30, '255,140,60', .5); x.lineWidth = 5; x.strokeStyle = 'rgba(255,200,130,1)'; x.beginPath(); x.arc(32, 32, 13, 0, 7); x.stroke(); x.fillStyle = '#000'; x.beginPath(); x.arc(32, 32, 10, 0, 7); x.fill(); }),
-    nebula: canvasTex(64, (x) => { [[24, 28, '255,90,150'], [38, 34, '90,210,220'], [32, 24, '255,170,120'], [30, 40, '200,100,255']].forEach(([a, b, c]) => glow(x, a, b, 16, c, .75)); }),
-    galaxy: canvasTex(64, (x) => { x.save(); x.translate(32, 32); x.rotate(-0.5); x.scale(1, .42); glow(x, 0, 0, 30, '170,180,255', .7); x.restore(); glow(x, 32, 32, 8, '255,240,210', 1); }),
     unknown: canvasTex(64, (x) => { glow(x, 32, 32, 26, '160,190,200', .35); x.strokeStyle = 'rgba(190,225,230,.8)'; x.lineWidth = 1.5; x.setLineDash([4, 3]); x.beginPath(); x.arc(32, 32, 15, 0, 7); x.stroke(); x.setLineDash([]); x.fillStyle = '#d8f4f0'; x.font = '700 18px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('?', 32, 33); }),
-    cluster: canvasTex(64, (x) => { glow(x, 32, 32, 28, '120,160,255', .4); [[24, 26], [36, 22], [40, 36], [28, 40], [32, 31], [20, 36]].forEach(([a, b]) => glow(x, a, b, 6, '220,235,255', 1)); }),
   };
   const ray = (x, n, len, w, rgb, a, rot = 0) => { x.save(); x.translate(32, 32); x.rotate(rot); for (let i = 0; i < n; i++) { x.rotate(Math.PI * 2 / n); const g = x.createLinearGradient(0, 0, len, 0); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = g; x.fillRect(0, -w / 2, len, w); } x.restore(); };
   const STAR_ICON = {
@@ -4909,8 +4914,8 @@ window.CAT = (() => {
     brown:  canvasTex(64, x => { x.fillStyle = '#5a2a22'; x.beginPath(); x.arc(32, 32, 11, 0, 7); x.fill(); x.save(); x.beginPath(); x.arc(32, 32, 11, 0, 7); x.clip(); x.fillStyle = 'rgba(150,80,60,.8)'; [-6, 0, 6].forEach(y => x.fillRect(20, 31 + y, 24, 2.2)); x.restore(); x.strokeStyle = 'rgba(200,110,80,.6)'; x.lineWidth = 1.2; x.beginPath(); x.arc(32, 32, 13, 0, 7); x.stroke(); }),
   };
   PLACES.forEach(p => {
-    const m = new THREE.SpriteMaterial({ map: p.home ? ICON.home : p.planets ? STAR_ICON[p.cat] : ICON[p.kind], transparent: true, depthWrite: false, depthTest: false, sizeAttenuation: false });
-    p.sp = new THREE.Sprite(m); p.sp.position.copy(p.pos); p.sp.scale.setScalar(p.home ? 0.05 : p.planets ? CATS[p.cat].size * 1.4 : 0.055); sc.add(p.sp);
+    const m = new THREE.SpriteMaterial({ map: p.home ? pic(p) : p.planets ? STAR_ICON[p.cat] : ICON.unknown, transparent: true, depthWrite: false, depthTest: false, sizeAttenuation: false });
+    p.sp = new THREE.Sprite(m); p.sp.position.copy(p.pos); p.sp.scale.setScalar(p.home ? 0.08 : p.planets ? CATS[p.cat].size * 1.4 : 0.055); sc.add(p.sp);
   });
   // reference rings on the Milky Way plane, at real distances (the log scale shows here)
   const grid = new THREE.Group(); sc.add(grid);
@@ -4940,7 +4945,7 @@ window.CAT = (() => {
     });
     PLACES.forEach(p => { p.shown = isRevealed(p); p.been = visited.includes(p.id); p.sp.visible = p.shown;
       p.sp.material.opacity = p.been || p.planets ? 1 : 0.6;
-      if (!p.planets) { const m = known(p) ? ICON[p.kind] : ICON.unknown; if (p.sp.material.map !== m) { p.sp.material.map = m; p.sp.material.needsUpdate = true; } } });
+      if (!p.planets) { const k = known(p), m = k ? pic(p) : ICON.unknown; if (p.sp.material.map !== m) { p.sp.material.map = m; p.sp.material.needsUpdate = true; p.sp.scale.setScalar(k ? 0.09 : 0.055); } } });
     routeLine.geometry.setFromPoints(visited.map(id => byId.get(id).pos)); routeLine.computeLineDistances();
     SHOWN = PLACES.filter(p => p.shown); spritesFor = undefined;
     document.getElementById('mp-stat').textContent = visited.length + ' VISITED · ' + Math.max(0, seen.size - visited.filter(id => seen.has(id)).length) + ' SEEN, NOT VISITED';
@@ -5015,7 +5020,7 @@ window.CAT = (() => {
     const n = {}; PLACES.forEach(p => { if (p.planets) n[p.cat] = (n[p.cat] || 0) + 1; });
     const row = (img, label, count) => `<div class="k"><img src="${img}" alt=""><span>${label}</span><span>${count}</span></div>`;
     let h = Object.keys(CATS).map(k => row(STAR_ICON[k].image.toDataURL(), CATS[k].name, n[k] || 0)).join('');
-    h += [['blackhole', 'BLACK HOLE'], ['nebula', 'NEBULA'], ['galaxy', 'GALAXY'], ['cluster', 'STAR CLUSTER']].map(([k, l]) => row(ICON[k].image.toDataURL(), l, PLACES.filter(p => p.kind === k).length)).join('');
+    h += [['blackhole', 'BLACK HOLE'], ['nebula', 'NEBULA'], ['galaxy', 'GALAXY'], ['cluster', 'STAR CLUSTER']].map(([k, l]) => row(CAT.picture(CAT.landmarks.find(o => o.kind === k)).toDataURL(), l, PLACES.filter(p => p.kind === k).length)).join('');
     document.getElementById('mp-key').innerHTML = h;
   })();
   document.getElementById('mp-keyBtn').addEventListener('click', () => { const k = document.getElementById('mp-key'); k.style.display = k.style.display === 'block' ? 'none' : 'block'; });
