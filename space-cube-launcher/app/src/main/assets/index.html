@@ -3068,7 +3068,7 @@
       const r0 = rows[0];
       const o = { deep: true, kind: 'system', id: 'sys:' + h, name: h.toUpperCase(), ly: r0[ix.sy_dist] * LY_PER_PC,
         teff: r0[ix.st_teff], spec: r0[ix.st_spectype], strad: r0[ix.st_rad],
-        planets: rows.map(r => ({ name: r[ix.pl_name], re: r[ix.pl_rade], me: r[ix.pl_bmasse], eqt: r[ix.pl_eqt], per: r[ix.pl_orbper],
+        planets: rows.map(r => ({ name: r[ix.pl_name], re: r[ix.pl_rade], me: r[ix.pl_bmasse], eqt: r[ix.pl_eqt], per: r[ix.pl_orbper], au: r[ix.pl_orbsmax],
           year: r[ix.disc_year], how: r[ix.discoverymethod] })).sort((a, b) => (a.per || 1e9) - (b.per || 1e9)) };
       o.pos = eqDir(r0[ix.ra], r0[ix.dec]).multiplyScalar(o.ly);
       SYSTEMS.push(o);
@@ -3184,6 +3184,24 @@
       }
     }, true);
   }
+  // Real sizes (light years across). Black holes: far too small to see, so they show at the minimum dot size.
+  // Sources: Orion 24 (radius 12), Crab ~10 (NASA APOD), Eagle 70 x 55 (NASA), Ring ~1 (NASA), Helix 2.5 (Gaia, 0.8 pc), Carina >300 (NASA APOD),
+  // Andromeda 152,000 (D25), LMC 32,200, Pleiades ~2 degrees in our sky (~15.5 ly at 444 ly), Milky Way ~100,000 (NASA).
+  const LM_DIAM = { m42: 24, m1: 10, m16: 70, m57: 1, ngc7293: 2.5, carina: 300, m31: 152000, lmc: 32200, m45: 15.5 };
+  const MIN_PX = 9;                                      // nothing is drawn smaller than this (a small dot)
+  const SUN_DIAM_LY = 1.3927e6 / 9.4607e12;             // the Sun: 1,392,700 km across
+  function sizeMarkers() {                               // every sky picture at its true size as seen from where you are
+    const pxPerRad = (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(worldFov / 2)), minA = MIN_PX / pxPerRad;
+    ALL_DEEP.forEach(o => {
+      if (!o.sprite) return;
+      const d = Math.max(deepDist(o), 1e-9);
+      // home: from inside our solar system it's just a marker toward Saturn (dot size); from outside the galaxy, the Milky Way
+      const diam = o.kind === 'home' ? (deep.here.length() > 60000 ? 100000 : d < 0.001 ? 0 : SUN_DIAM_LY) : (LM_DIAM[o.id] || 0);
+      const ang = diam / d, a = Math.max(ang, minA);
+      o.sprite.scale.setScalar(a * 980 / 0.6);           // (the picture fills ~60% of its square)
+      o.faint = ang > 3 * minA ? 0.55 : 1;               // big, spread-out things (galaxies, nebulae) are faint, not bright
+    });
+  }
   const LM_SIZE = { blackhole: 46, nebula: 72, galaxy: 92, cluster: 60, home: 40 };
   ALL_DEEP.forEach(o => {
     if (o.kind === 'system') return;
@@ -3241,7 +3259,7 @@
     mwGroup.visible = !outside;
     SOL.name = outside ? 'MILKY WAY · SOL' : 'SOL';
     SOL.sprite.material.map = outside ? mwTex : SOL.sprite.userData.tex || (SOL.sprite.userData.tex = SOL.sprite.material.map);
-    if (outside) SOL.sprite.scale.set(110, 110, 1); else SOL.sprite.scale.set(LM_SIZE.home, LM_SIZE.home, 1);
+    // (sizes are set every frame by sizeMarkers)
   }
 
   // ---- what you see where you arrive (artist's impressions from the real numbers) ----
@@ -3321,7 +3339,10 @@
     const addLight = local => { const u = { value: new THREE.Vector3() }; dest.lights.push({ u, local }); return u; };
     if (o.kind === 'solplanet') {                    // one of our planets, lit by the Sun over your shoulder
       const starAt = at(0, 0, 0).addScaledVector(fw, -0.5).addScaledVector(rt, 0.72).addScaledVector(up, 0.48).normalize().multiplyScalar(400);
-      const st = glowSprite('255,255,255', 40, 1), g1 = glowSprite('255,240,210', 200, 0.75), g2 = glowSprite('255,230,190', 600, 0.25);
+      const au = o.pl.a / 149.6, sunAng = (1.3927e6 / (o.pl.a * 1e6));                     // the Sun's true size from this planet
+      const core = 400 * sunAng / 0.36, glare = Math.min(1, 1 / au);                         // core = the bright disc; glare fades with distance
+      // even from Neptune the Sun is by far the brightest thing in the sky: a small, intense point with a halo
+      const st = glowSprite('255,255,255', Math.max(core, 7), 1), g1 = glowSprite('255,240,210', 200 * Math.max(Math.sqrt(glare), 0.3), 0.75 * Math.max(glare, 0.35)), g2 = glowSprite('255,230,190', 600 * Math.sqrt(glare), 0.25 * glare);
       [st, g1, g2].forEach(sp => sp.position.copy(starAt)); destGroup.add(g2, g1, st);
       const re = o.pl.d / 12756, r = 3.5 + 7.5 * Math.min(1, Math.log(Math.max(re, 0.5)) / Math.log(15) + 0.05);
       const m = planetMesh({ name: o.name, re: Math.max(re, 0.6), eqt: 250, tex: solTexture(o.name) }, r, addLight(starAt.clone()));
@@ -3336,8 +3357,11 @@
     if (o.kind === 'system') {
       const col = starColor(o.teff), rgb = [col.r, col.g, col.b].map(v => Math.round(v * 255)).join(',');
       const starAt = at(0, 0, 0).addScaledVector(fw, -0.5).addScaledVector(rt, 0.72).addScaledVector(up, 0.48).normalize().multiplyScalar(400);
-      const st = glowSprite('255,255,255', 40, 1); st.position.copy(starAt);
-      const g1 = glowSprite(rgb, 200, 0.75); g1.position.copy(starAt); const g2 = glowSprite(rgb, 600, 0.25); g2.position.copy(starAt);
+      const mp0 = (planetName && o.planets.find(x => x.name === planetName)) || mainPlanet(o);
+      const starAng = o.strad && mp0.au ? 2 * o.strad * 696000 / (mp0.au * 1.496e8) : 0.0093;   // star radius (suns) and orbit (AU): its true size
+      const glow0 = THREE.MathUtils.clamp(starAng / 0.0093, 0.3, 3);                               // compared with our Sun from Earth
+      const st = glowSprite('255,255,255', Math.max(400 * starAng / 0.36, 3), 1); st.position.copy(starAt);
+      const g1 = glowSprite(rgb, 200 * Math.sqrt(glow0), 0.75); g1.position.copy(starAt); const g2 = glowSprite(rgb, 600 * Math.sqrt(glow0), 0.25); g2.position.copy(starAt);
       destGroup.add(g2, g1, st);
       const ps = o.planets, main = (planetName && ps.find(x => x.name === planetName)) || mainPlanet(o);
       const rad = p => 3.5 + 7.5 * Math.min(1, Math.log(Math.max(p.re || 1, 0.5)) / Math.log(15) + 0.05);
@@ -3615,7 +3639,8 @@
     fwdLocal.set(0, 0, -1).applyQuaternion(spaceRig.quaternion.clone().invert());
     sysMat.uniforms.uFwd.value.copy(fwdLocal); sysMat.uniforms.uLimit.value = deep.limit; sysMat.uniforms.uPx.value = renderer.getPixelRatio();
     const t = performance.now() / 1000;
-    ALL_DEEP.forEach(o => { if (o.sprite) o.sprite.material.opacity = deepVis(o) * 0.9; });
+    sizeMarkers();
+    ALL_DEEP.forEach(o => { if (o.sprite) o.sprite.material.opacity = deepVis(o) * 0.9 * (o.faint || 1); });
     waves.forEach(w => w.material.opacity = w.userData.base * (0.6 + 0.4 * Math.sin(t * w.userData.sp + w.userData.ph)));
     if (dest) {
       dest.anim.forEach(f => f(dt, t));
@@ -4571,7 +4596,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 41';
+    tag.textContent = 'SCREEN 2026-11-23 · 42';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
