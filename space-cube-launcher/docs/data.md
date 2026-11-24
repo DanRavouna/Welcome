@@ -54,6 +54,6 @@ Worked out once when the page loads, for today's date:
 - NASA Exoplanet Archive, table `pscomppars` (exoplanets and their stars)
 - CDS Sesame (landmark positions)
 - JPL Solar System Dynamics, "Approximate Positions of the Planets", Table 1 (our planets' orbits); JPL Horizons (the check)
-- NASA NSSDC planetary fact sheets: Saturn, Jupiter, Earth, the Moon, Saturnian and Jovian satellites
+- NASA NSSDC planetary fact sheets: the Sun, Saturn, Jupiter, Earth, Mars, Uranus, Neptune, the Moon, Saturnian, Jovian, Uranian and Neptunian satellites. The cloud session cannot reach NASA: `fetch_sky.py` (sky-data workflow) prints every sheet as plain text at the END of its run log; read it with the GitHub job-log tool (tail) and copy the numbers by hand, naming the page.
 - PDS Ring-Moon Systems Node (Saturn's ring edges)
 - HyperPhysics (temperature ranges of the star classes)

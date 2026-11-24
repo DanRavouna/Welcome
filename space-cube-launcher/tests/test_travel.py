@@ -23,7 +23,12 @@ with Game() as g:
     g.warp('sol', 'EARTH'); check('warp from a parked spot', g.where() == ('sol', 'EARTH') and g.js('window.__navDebug()')['target'] is None)
     check('Earth has the Moon', [n['name'] for n in g.js('window.__navList()')] == ['EARTH', 'MOON'])
     # a planet with no moons, another star, a hop between its planets
-    g.warp('sol', 'MARS'); check('a planet without moons still has its scene', [n['name'] for n in g.js('window.__navList()')] == ['MARS'])
+    g.warp('sol', 'MERCURY'); check('a planet without moons still has its scene', [n['name'] for n in g.js('window.__navList()')] == ['MERCURY'])
+    for pl, moons in [('MARS', ['PHOBOS', 'DEIMOS']), ('URANUS', ['TITANIA', 'MIRANDA', 'ARIEL', 'UMBRIEL', 'OBERON']), ('NEPTUNE', ['TRITON', 'PROTEUS'])]:
+        g.warp('sol', pl); nl = [n['name'] for n in g.js('window.__navList()')]
+        check(f'{pl}: its moons from NASA, the main one first', nl[0] == pl and nl[1] == moons[0] and set(nl[1:]) == set(moons), nl)
+    g.fly('TRITON'); check('fly to Triton', g.js('window.__navDebug()')['target'] == 'TRITON')
+    g.warp('sol', 'MARS')
     # the arrival grows smoothly: sample the scene's scale through a whole warp (finite, never shrinking once it grows)
     g.js("window.__deepGo('sys:Proxima Cen')"); sc = []
     for i in range(90):
@@ -80,9 +85,9 @@ with Game() as g:
     s = g.state(); check('visited and scanned recorded', {'sol', 'sys:Proxima Cen', 'm42', 'sgra'} <= set(s['visited']) and {'pl:JUPITER', 'pl:EARTH', 'pl:MARS'} <= set(s['scanned']), s)
 # at a star, its planets are seen from where the ship is parked (25 star radii out), not from the star's centre
 with Game() as g:
-    sid = g.js("(() => { const s = CAT.systems.find(s => s.strad && s.planets.some(q => q.au * CAT.KM_AU < 25 * s.strad * 696000 * 0.5)); return s.id; })()")
+    sid = g.js("(() => { const s = CAT.systems.find(s => s.strad && s.planets.some(q => q.au * CAT.KM_AU < 25 * s.strad * 695700 * 0.5)); return s.id; })()")
     g.fresh({'spaceCube.state.v1': {'sys': sid, 'planet': None, 'dir': [0, 0, -1], 'q': [0, 0, 0, 1], 'nav': None, 'limit': 50, 'visited': ['sol', sid], 'scanned': [], 'seen': []}})
-    d = g.js('window.__localDebug()'); R = g.js(f"CAT.byId.get('{sid}').strad") * 696000
+    d = g.js('window.__localDebug()'); R = g.js(f"CAT.byId.get('{sid}').strad") * 695700
     check('parked 25 star radii out', abs(d['shipKm'] - 25 * R) < 1e-6 * R, (d['shipKm'], 25 * R))
     close = [b for b in d['bodies'] if b['centreKm'] < d['shipKm'] / 2]
     check('a planet orbits inside the parking spot', len(close) > 0, sid)

@@ -11,6 +11,6 @@ with Game() as g:
     check('real distances are near the orbit sizes', all(abs(p[2] / a - 1) < 0.25 for p, a in zip(sol, g.js('CAT.sol.planets.map(q => q.au)'))))
     m1 = g.js("CAT.sol.planets.filter(q => q.moons).flatMap(q => q.moons.map(m => [m.name, m.ph]))")
     g.reload(); m2 = g.js("CAT.sol.planets.filter(q => q.moons).flatMap(q => q.moons.map(m => [m.name, m.ph]))")
-    check('moons are placed by the date, not at random', len(m1) == 12 and all(abs(a[1] - b[1]) < 5 or abs(abs(a[1] - b[1]) - 360) < 5 for a, b in zip(m1, m2)), (m1[:3], m2[:3]))
+    check('moons are placed by the date, not at random', len(m1) == 21 and all(abs(a[1] - b[1]) < 5 or abs(abs(a[1] - b[1]) - 360) < 5 for a, b in zip(m1, m2)), (m1[:3], m2[:3]))
     check('other stars\' planets are marked as not real positions', g.js("!CAT.byId.get('pl:Proxima Cen b').phReal"))
 done()

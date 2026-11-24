@@ -443,7 +443,7 @@
     }
     // moons: on circles in the planet's equator plane. Time is sped up a lot when they're set to move:
     // the main moon goes round in ~30 min, the others faster or slower by Kepler's law.
-    const moons = (q.moons || []).map(m => ({ name: m.name, ph: m.ph, a: m.aKm, r: m.rKm, col: m.col, haze: m.haze, look: m.look, major: m.major, side: m.side }));
+    const moons = (q.moons || []).map(m => ({ name: m.name, ph: m.ph, a: m.aKm, r: m.rKm, col: m.col, haze: m.haze, look: m.look, major: m.major, side: m.side, retro: m.retro }));
     const main = moons.find(m => m.major) || moons[0];
     moonObjs = moons.map(m => {
       const body = new THREE.Mesh(new THREE.SphereGeometry(m.r * k, 64, 40), moonMat(m.col, m.haze, moonTexture(m)));
@@ -454,7 +454,7 @@
       g.add(holder);
       const period = MAIN_MOON_PERIOD_S * Math.pow(m.a / main.a, 1.5);
       const th0 = m.ph * Math.PI / 180;         // where it is today (the catalogue's time model)
-      return { m, holder, glow, body, th: th0, w: 2 * Math.PI / period };
+      return { m, holder, glow, body, th: th0, w: (m.retro ? -2 : 2) * Math.PI / period };
     });
     // name tags and flight targets: the planet, its main moon, then the rest
     const km = v => Math.round(v).toLocaleString('en-US') + ' KM';
@@ -2555,7 +2555,8 @@
   const landmarkTex = o => new THREE.CanvasTexture(SKY.picture(o));     // the catalogue's picture of a place (the map shows the same one)
   // Real sizes come from the catalogue (diamLy). Black holes are far too small to see, so they show at the minimum dot size.
   const MIN_PX = 9;                                      // nothing is drawn smaller than this (a small dot)
-  const SUN_DIAM_LY = 1.3927e6 / 9.4607e12;             // the Sun: 1,392,700 km across
+  const SUN_R_KM = 695700;                               // the Sun's volumetric mean radius (NASA NSSDC Sun fact sheet, updated 2024-05-09)
+  const SUN_DIAM_LY = 2 * SUN_R_KM / 9.4607e12;         // ...its diameter in light-years
   function sizeMarkers() {                               // every sky picture at its true size as seen from where you are
     const pxPerRad = (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(worldFov / 2)), minA = MIN_PX / pxPerRad;
     SPRITED.forEach(o => {
@@ -2633,7 +2634,7 @@
   const destGroup = new THREE.Group(); sysRig.add(destGroup);
   const destStar = new THREE.Group(); sysRig.add(destStar);   // the star of the system you're at: fixed in its real direction
   const DEST_D = 60, STAR_D = 400;                    // how far the close-up (and its star's glow) sit from you, in scene units
-  const SUN_R_KM = 696000, SUN_FROM_EARTH = 0.0093;   // the Sun's radius; its size in Earth's sky (radians)
+  const SUN_FROM_EARTH = 2 * SUN_R_KM / KM_AU;         // the Sun's size in Earth's sky (radians)
   let dest = null;                                     // { solids: [{mesh, r}], tick(dt, t), lights: [{u, local}] , center radius}
   function planetTexture(cls, eqt, seed) {
     const R = rng(seed), W = 512, H = 256, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
@@ -3966,7 +3967,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-24 · 56';
+    tag.textContent = 'SCREEN 2026-11-24 · 57';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);

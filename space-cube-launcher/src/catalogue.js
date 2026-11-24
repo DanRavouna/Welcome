@@ -78,7 +78,7 @@ window.CAT = (() => {
   systems.forEach(s => s.planets.forEach(q => {
     if (q.orbit) { const h = helio(q.orbit, DAYS); q.ph = (((h.lon - homeLon) * 180 / Math.PI) % 360 + 360) % 360; q.auNow = h.r; q.phReal = true; }
     else q.ph = turn(q.ph, q.per);
-    (q.moons || []).forEach(m => { m.ph = turn(startDeg(m.name), m.perDays); });
+    (q.moons || []).forEach(m => { m.ph = turn(startDeg(m.name), m.retro ? -m.perDays : m.perDays); });   // retro: it orbits backwards (Triton)
   }));
   systems.forEach(s => s.planets.sort((a, b) => a.au - b.au));
   const homePlanet = sol.planets.find(p => p.home).name;

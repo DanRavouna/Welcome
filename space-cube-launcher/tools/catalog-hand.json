@@ -136,6 +136,44 @@
      19140.30268499,
      0.44441088,
      -0.29257343
+    ],
+    "eqRKm": 3396.2,
+    "polRKm": 3376.2,
+    "tiltDeg": 25.19,
+    "moons": [
+     {
+      "name": "Phobos",
+      "aKm": 9378,
+      "rKm": 11.0,
+      "col": [
+       0.45,
+       0.42,
+       0.4
+      ],
+      "look": "bigcrater",
+      "major": true,
+      "side": [
+       1,
+       -1
+      ],
+      "perDays": 0.31891
+     },
+     {
+      "name": "Deimos",
+      "aKm": 23459,
+      "rKm": 6.2,
+      "col": [
+       0.55,
+       0.5,
+       0.46
+      ],
+      "look": "cratered",
+      "side": [
+       -1,
+       1
+      ],
+      "perDays": 1.26244
+     }
     ]
    },
    {
@@ -415,6 +453,92 @@
      428.48202785,
      0.40805281,
      0.04240589
+    ],
+    "eqRKm": 25559,
+    "polRKm": 24973,
+    "tiltDeg": 97.77,
+    "moons": [
+     {
+      "name": "Miranda",
+      "aKm": 129900,
+      "rKm": 235.7,
+      "col": [
+       0.75,
+       0.75,
+       0.76
+      ],
+      "look": "canyon",
+      "side": [
+       -1,
+       -1
+      ],
+      "perDays": 1.413479
+     },
+     {
+      "name": "Ariel",
+      "aKm": 190900,
+      "rKm": 578.9,
+      "col": [
+       0.82,
+       0.82,
+       0.84
+      ],
+      "look": "ice",
+      "side": [
+       1,
+       1
+      ],
+      "perDays": 2.520379
+     },
+     {
+      "name": "Umbriel",
+      "aKm": 266000,
+      "rKm": 584.7,
+      "col": [
+       0.45,
+       0.45,
+       0.47
+      ],
+      "look": "cratered",
+      "side": [
+       1,
+       1
+      ],
+      "perDays": 4.144176
+     },
+     {
+      "name": "Titania",
+      "aKm": 436300,
+      "rKm": 788.9,
+      "col": [
+       0.72,
+       0.7,
+       0.68
+      ],
+      "look": "ice",
+      "major": true,
+      "side": [
+       1,
+       -1
+      ],
+      "perDays": 8.705867
+     },
+     {
+      "name": "Oberon",
+      "aKm": 583500,
+      "rKm": 761.4,
+      "col": [
+       0.62,
+       0.58,
+       0.55
+      ],
+      "look": "cratered",
+      "side": [
+       -1,
+       -1
+      ],
+      "perDays": 13.463234
+     }
     ]
    },
    {
@@ -442,6 +566,45 @@
      218.45945325,
      -0.32241464,
      -0.00508664
+    ],
+    "eqRKm": 24764,
+    "polRKm": 24341,
+    "tiltDeg": 28.32,
+    "moons": [
+     {
+      "name": "Proteus",
+      "aKm": 117647,
+      "rKm": 209.9,
+      "col": [
+       0.42,
+       0.4,
+       0.4
+      ],
+      "look": "cratered",
+      "side": [
+       1,
+       1
+      ],
+      "perDays": 1.122315
+     },
+     {
+      "name": "Triton",
+      "aKm": 354760,
+      "rKm": 1353.4,
+      "col": [
+       0.88,
+       0.8,
+       0.78
+      ],
+      "look": "ice",
+      "major": true,
+      "retro": true,
+      "side": [
+       1,
+       -1
+      ],
+      "perDays": 5.876854
+     }
     ]
    }
   ],
@@ -722,6 +885,6 @@
   }
  ],
  "_looks": "look: what the close-up shows. jet / companion (a star it pulls gas from) / crowd (dense stars around it) / ring / pulsar / dim (fainter clouds) / irregular / tilt (degrees, as we see it) / squash (how flat its sky picture is).",
- "_planetExtras": "Optional planet fields: eqRKm, polRKm (km, equator and pole radius), tiltDeg (spin axis tilt), rings (edges in km from the centre: C0 inner edge, C1/B1/A0 ring boundaries, A1 outer edge), moons [{name, aKm orbit radius, rKm body radius, col 0..1, look, haze, major, side}], side (which way the name tag points: [right=1/left=-1, down=1/up=-1]). Saturn: NASA Saturn and Saturnian satellite fact sheets; ring edges: PDS Rings Node. Earth, Moon, Jupiter and its four large moons: NASA NSSDC fact sheets (Earth/Jupiter/Moon/Jovian satellites), checked 2026-11-23. Moon colours and looks are artistic. cls: the planet's class when its size alone would put it in the wrong one (rocky, subneptune, neptune, giant).",
+ "_planetExtras": "Optional planet fields: eqRKm, polRKm (km, equator and pole radius), tiltDeg (spin axis tilt), rings (edges in km from the centre: C0 inner edge, C1/B1/A0 ring boundaries, A1 outer edge), moons [{name, aKm orbit radius, rKm body radius, col 0..1, look, haze, major, side, retro (orbits backwards, NASA's 'R')}], side (which way the name tag points: [right=1/left=-1, down=1/up=-1]). Saturn: NASA Saturn and Saturnian satellite fact sheets; ring edges: PDS Rings Node. Earth, Moon, Jupiter and its four large moons: NASA NSSDC fact sheets (Earth/Jupiter/Moon/Jovian satellites), checked 2026-11-23. Moon colours and looks are artistic. cls: the planet's class when its size alone would put it in the wrong one (rocky, subneptune, neptune, giant). Mars, Uranus, Neptune and their moons (Phobos, Deimos; Miranda, Ariel, Umbriel, Titania, Oberon; Proteus, Triton): NASA NSSDC fact sheets (Mars, Uranus, Neptune, Uranian and Neptunian satellites), fetched by the sky-data workflow and read 2026-11-24; where NASA gives three axes the radius is the volume-equivalent one (cube root of their product). Nereid is left out: its orbit is very eccentric and moons are drawn on circles.",
  "_time": "ONE time model (see the catalogue script): every orbiting body's place is worked out for today's date. Our planets: real, from `orbit` = JPL 'Approximate Positions of the Planets' Table 1 (a, e, I, L, long.peri, long.node, then their rates per century; Earth uses the Earth-Moon barycentre row). Moons: real orbit periods (`perDays`, NASA NSSDC satellite fact sheets) but an INVENTED starting point. Other stars' planets: real periods where the archive has them, INVENTED starting point."
 }
