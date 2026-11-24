@@ -704,12 +704,6 @@ window.CAT = (() => {
     x.fillStyle = gr; x.fillRect(0,0,256,256);
     return new THREE.CanvasTexture(c);
   }
-  function nebula(color, x, y, z, s, op) {
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glowTexture(color), blending: THREE.AdditiveBlending,
-      transparent: true, depthWrite: false, opacity: op }));
-    sp.position.set(x, y, z); sp.scale.set(s, s, 1); sky.add(sp);
-  }
 
   // =========================================================
   //  NEAR SPACE: real floating particles at many depths around the cubes.
@@ -3119,7 +3113,7 @@ window.CAT = (() => {
   const curPlace = () => PLACE.get(deep.sys);
   // ---- inside a star system: every planet on its orbit (orbitPos), so from the planet you're at you see the others
   //      in their true directions and sizes, and can lock on and jump between them. The same for every system, ours included.
-  let LOCAL = [];
+  let LOCAL = [], ACTIVE = [], SPRITED = [];
   const distText = o => (o.distKm / KM_AU).toFixed(o.distKm < 10 * KM_AU ? 2 : 1) + ' AU';
   const mainPlanet = o => o.planets.reduce((a, p) => ((p.re || 0) > (a.re || 0) ? p : a), o.planets[0]);
   const defaultPlanet = o => o.planets.find(p => p.home) || mainPlanet(o);          // where you arrive when you jump to a star
@@ -3157,7 +3151,8 @@ window.CAT = (() => {
   ALL_DEEP.forEach(o => o.facts = deepFacts(o));
 
   // ---- exoplanet markers: one glowing point per star ----
-  const SHELL = 950;
+  const SHELL = 950;                                 // the sky shells (scene units): star dots at 950, pictures and planet dots just outside
+  const MARK_R = 980, PIC_FILL = 0.6;                // a picture's glow fills about 60% of its square
   const sysGeo = new THREE.BufferGeometry();
   const sysPos = new Float32Array(SYSTEMS.length * 3), sysCol = new Float32Array(SYSTEMS.length * 3), sysDist = new Float32Array(SYSTEMS.length);
   SYSTEMS.forEach((o, i) => { const c = starColor(o.teff); sysCol.set([c.r, c.g, c.b], i * 3); });
@@ -3229,13 +3224,12 @@ window.CAT = (() => {
   const SUN_DIAM_LY = 1.3927e6 / 9.4607e12;             // the Sun: 1,392,700 km across
   function sizeMarkers() {                               // every sky picture at its true size as seen from where you are
     const pxPerRad = (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(worldFov / 2)), minA = MIN_PX / pxPerRad;
-    ALL_DEEP.forEach(o => {
-      if (!o.sprite) return;
-      if (o.kind === 'planet') { o.sprite.scale.setScalar(Math.max(o.diamKm / Math.max(o.distKm, 1), minA) * 980 / 0.6); o.faint = 1; return; }   // inside a star system: km
+    SPRITED.forEach(o => {
+      if (o.kind === 'planet') { o.sprite.scale.setScalar(Math.max(o.diamKm / Math.max(o.distKm, 1), minA) * MARK_R / PIC_FILL); o.faint = 1; return; }   // inside a star system: km
       const d = deepDist(o); if (d < 1e-6) return;       // (the place you're in)
       const diam = o.diamLy || 0;
       const ang = diam / d, a = Math.max(ang, minA);
-      o.sprite.scale.setScalar(a * 980 / 0.6);           // (the picture fills ~60% of its square)
+      o.sprite.scale.setScalar(a * MARK_R / PIC_FILL);
       o.faint = ang > 3 * minA ? 0.55 : 1;               // big, spread-out things (galaxies, nebulae) are faint, not bright
     });
   }
@@ -3291,7 +3285,10 @@ window.CAT = (() => {
     SYSTEMS.forEach((o, i) => { const d = deepDist(o); relDir(o, v).multiplyScalar(SHELL); sysPos.set([v.x, v.y, v.z], i * 3); sysDist[i] = d; });
     sysGeo.attributes.position.needsUpdate = true; sysGeo.attributes.aDist.needsUpdate = true;
     const outside = deep.here.length() > 60000;                     // far outside our galaxy
-    ALL_DEEP.forEach(o => { if (!o.sprite) return; relDir(o, o.sprite.position).multiplyScalar(980); });
+    ALL_DEEP.forEach(o => { if (!o.sprite) return; relDir(o, o.sprite.position).multiplyScalar(MARK_R); });
+    // the few things worth checking every frame: what can be seen and reached from anywhere, this system's planets, and the stars within warp range
+    ACTIVE = ALL_DEEP.filter(o => o.always || o.kind === 'planet' || deepDist(o) <= WARP_LY);
+    SPRITED = ACTIVE.filter(o => o.sprite);
     mwGroup.visible = !outside;
     SOL.name = outside ? 'MILKY WAY · SOL' : 'SOL'; SOL.diamLy = outside ? 100000 : SUN_DIAM_LY;   // from outside the galaxy, home is the Milky Way
     SOL.sprite.material.map = outside ? mwTex : SOL.sprite.userData.tex || (SOL.sprite.userData.tex = SOL.sprite.material.map);
@@ -3497,7 +3494,7 @@ window.CAT = (() => {
     if (!tgt) { deepRoute.visible = false; deepRouteFor = null; return; }
     if (deepRouteFor !== tgt) { deepRouteFor = tgt; deepRouteT = performance.now(); }
     if (deepJump) drDir.copy(deepJump.dir); else relDir(tgt, drDir);
-    drDown.set(0, -1, 0).applyQuaternion(spaceRig.quaternion.clone().invert());
+    drDown.set(0, -1, 0).applyQuaternion(qInvTmp.copy(spaceRig.quaternion).invert());
     const now = performance.now(), reveal = Math.min(1, (now - deepRouteT) / 450), ph = now / 1000;
     const fade = deepJump ? Math.max(0, 1 - Math.max(0, deepJump.t - deepJump.turn) / 0.8) : 1;   // gone soon after the punch
     deepRoute.visible = true;
@@ -3550,7 +3547,7 @@ window.CAT = (() => {
     const hold = same || dly <= WARP_LY ? 0 : THREE.MathUtils.clamp(2 + 2 * (lg(dly) - lg(400)) / (lg(5.5e7) - lg(400)), 2, 4);
     const pxPerRad = (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(55 / 2));
     const mark = (lb || o).sprite;                     // how big it looked before the jump: its picture, or a star's dot
-    const a0 = mark ? 0.6 * mark.scale.x / 980 : 0.6 * (3 + 6 * Math.max(0, 1 - dly / deep.limit)) / pxPerRad;
+    const a0 = mark ? PIC_FILL * mark.scale.x / MARK_R : 0.6 * (3 + 6 * Math.max(0, 1 - dly / deep.limit)) / pxPerRad;
     deepJump = { o, planet: planetName || null, dir, t: 0, turn: same ? 0.5 : 1.0, warp: same ? 1.6 : 2.6, arrive: same ? 2.2 : 3.0, hold, a0 };
     factsT = -1; factsG.style.display = 'none';
   }
@@ -3618,7 +3615,7 @@ window.CAT = (() => {
     const r = o.center && dest ? (dest.r / Math.max(dist, 1)) * pxPerRad : 0;
     return [(dTmp.x + 1) / 2 * innerWidth, (1 - dTmp.y) / 2 * innerHeight, r, front, dist];
   }
-  const fwdLocal = new THREE.Vector3();
+  const fwdLocal = new THREE.Vector3(), qInvTmp = new THREE.Quaternion();
   function deepVis(o) {                                // how visible a marker is right now (0..1)
     if (o.id === deep.sys) return 0;                   // the place you're in
     if (o.kind === 'planet' && deep.atHome) return 1;  // (at home the planets are the bright points of the Saturn scene)
@@ -3628,7 +3625,7 @@ window.CAT = (() => {
   }
   function deepPick(x, y) {
     let best = null, bestD = 34;
-    ALL_DEEP.forEach(o => {
+    ACTIVE.forEach(o => {
       if (deepVis(o) < (o.sprite ? 0.3 : 0.35)) return;
       const [sx, sy, , front] = deepScreenOf(o); if (!front) return;
       const d = Math.hypot(x - sx, y - sy); if (d < bestD) { best = o; bestD = d; }
@@ -3643,18 +3640,20 @@ window.CAT = (() => {
   function deepLabels() {
     const cx = innerWidth / 2, cy = innerHeight / 2, R2 = Math.min(innerWidth, innerHeight) * 0.3, picks = [];
     const body = dest && !deep.atHome ? deepScreenOf({ center: true }) : null;      // no name tags over the close-up in front of you
-    if (!deepJump) ALL_DEEP.forEach(o => {
-      if (o === navLock || (o.kind === 'planet' && deep.atHome)) return;
-      const v = deepVis(o); if (v < 0.55) return;
+    if (!deepJump) ACTIVE.forEach(o => {
+      if (o.vis < 0.55 || o === navLock || (o.kind === 'planet' && deep.atHome)) return;
       const [x, y, , front] = deepScreenOf(o); if (!front) return;
       if (body && body[3] && Math.hypot(x - body[0], y - body[1]) < body[2] + 6) return;
       const d = Math.hypot(x - cx, y - cy); if (d < R2) picks.push({ o, x, y, d });
     });
     picks.sort((a, b) => a.d - b.d);
     DLABELS.forEach((L, i) => {
-      const p = picks[i]; if (!p) { L.g.style.display = 'none'; return; }
-      L.g.style.display = ''; L.c.setAttribute('cx', p.x.toFixed(1)); L.c.setAttribute('cy', p.y.toFixed(1));
-      L.t.textContent = p.o.name + '  ' + (p.o.kind === 'planet' ? distText(p.o) : fmtLy(deepDist(p.o))); reportSeen(p.o);
+      const p = picks[i]; if (!p) { if (L.key != null) { L.g.style.display = 'none'; L.key = L.o = null; } return; }
+      const key = p.o.id + '|' + p.x.toFixed(1) + '|' + p.y.toFixed(1);
+      if (L.key === key) return;                         // nothing moved: leave the page alone
+      if (L.key == null) L.g.style.display = '';
+      L.key = key; L.c.setAttribute('cx', p.x.toFixed(1)); L.c.setAttribute('cy', p.y.toFixed(1));
+      if (L.o !== p.o) { L.o = p.o; L.t.textContent = p.o.name + '  ' + (p.o.kind === 'planet' ? distText(p.o) : fmtLy(deepDist(p.o))); reportSeen(p.o); }
       L.t.setAttribute('x', (p.x + 10).toFixed(1)); L.t.setAttribute('y', (p.y - 8).toFixed(1));
     });
   }
@@ -3663,11 +3662,12 @@ window.CAT = (() => {
   function deepUpdate(dt) {
     if (!SKY) return;
     if (deepJump) deepJumpUpdate(dt);
-    fwdLocal.set(0, 0, -1).applyQuaternion(spaceRig.quaternion.clone().invert());
+    fwdLocal.set(0, 0, -1).applyQuaternion(qInvTmp.copy(spaceRig.quaternion).invert());
     sysMat.uniforms.uFwd.value.copy(fwdLocal); sysMat.uniforms.uLimit.value = deep.limit; sysMat.uniforms.uPx.value = renderer.getPixelRatio();
     const t = performance.now() / 1000;
     sizeMarkers();
-    ALL_DEEP.forEach(o => { if (o.sprite) o.sprite.material.opacity = deepVis(o) * 0.9 * (o.faint || 1) * (o.kind === 'planet' && deep.atHome ? 0 : 1); });   // (at home the planets are the bright points already in the sky)
+    ACTIVE.forEach(o => { o.vis = deepVis(o); });       // once per frame, for the pictures and the name tags
+    SPRITED.forEach(o => { o.sprite.material.opacity = o.vis * 0.9 * (o.faint || 1) * (o.kind === 'planet' && deep.atHome ? 0 : 1); });   // (at home the planets are the bright points already in the sky)
     waves.forEach(w => w.material.opacity = w.userData.base * (0.6 + 0.4 * Math.sin(t * w.userData.sp + w.userData.ph)));
     if (dest) {
       dest.anim.forEach(f => f(dt, t));
@@ -3685,19 +3685,19 @@ window.CAT = (() => {
     updateDeepRoute();
     deepLabels();
   }
-  window.__deepDebug = () => ({ at: deep.at, sys: deep.sys, planet: deep.planet, local: LOCAL.map(o => o.id), here: deep.here.toArray().map(v => +v.toFixed(2)), limit: deep.limit, jumping: !!deepJump,
+  window.__deepDebug = () => ({ at: deep.at, sys: deep.sys, planet: deep.planet, local: LOCAL.map(o => o.id), active: ACTIVE.length, all: ALL_DEEP.length, here: deep.here.toArray().map(v => +v.toFixed(2)), limit: deep.limit, jumping: !!deepJump,
     systems: SYSTEMS.length, landmarks: LANDMARKS.length, satLonDeg: +(satLon / DEG).toFixed(2),
     shown: SYSTEMS.filter(o => deepDist(o) <= deep.limit).length });
-  window.__deepScr = id => { const o = ALL_DEEP.find(x => x.id === id); return o ? deepScreenOf(o).map(v => typeof v === 'number' ? +v.toFixed(1) : v) : null; };
+  window.__deepScr = id => { const o = (PLACE.get(id) || LOCAL.find(x => x.id === id)); return o ? deepScreenOf(o).map(v => typeof v === 'number' ? +v.toFixed(1) : v) : null; };
   window.__eqEcl = (ra, de) => { const d = eqDir(ra, de); return [+(Math.atan2(d.dot(EQY), d.dot(EQX)) / DEG).toFixed(2), +(Math.asin(d.dot(N)) / DEG).toFixed(2)]; };
   window.__galLB = id => { const d = relDir(ALL_DEEP.find(x => x.id === id), new THREE.Vector3()); return [+(Math.atan2(d.dot(GY), d.dot(GC)) / DEG).toFixed(1), +(Math.asin(d.dot(GP)) / DEG).toFixed(1)]; };
   // the star map's JUMP lands here: the normal warp, to a star (or one of its planets)
   window.SpaceJump = (id, planetName) => {
-    const o = ALL_DEEP.find(x => x.id === id); if (o) { cancelLock(); deepGo(o, planetName); }
+    const o = (PLACE.get(id) || LOCAL.find(x => x.id === id)); if (o) { cancelLock(); deepGo(o, planetName); }
   };
   window.__deepSync = () => { try { window.SpaceMap.arrived(deep.sys, deep.planet, true); } catch (e) {} };
-  window.__deepGo = id => { const o = ALL_DEEP.find(x => x.id === id); if (o) deepGo(o); return !!o; };
-  window.__deepFace = id => { const o = ALL_DEEP.find(x => x.id === id); if (o) { faceQuat(relDir(o, new THREE.Vector3()), qFace); spaceRig.quaternion.copy(qFace); syncSysRig(); } return !!o; };
+  window.__deepGo = id => { const o = (PLACE.get(id) || LOCAL.find(x => x.id === id)); if (o) deepGo(o); return !!o; };
+  window.__deepFace = id => { const o = (PLACE.get(id) || LOCAL.find(x => x.id === id)); if (o) { faceQuat(relDir(o, new THREE.Vector3()), qFace); spaceRig.quaternion.copy(qFace); syncSysRig(); } return !!o; };
 
   // ---- back where you left off ----
   if (SKY) {
@@ -4624,7 +4624,7 @@ window.CAT = (() => {
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 46';
+    tag.textContent = 'SCREEN 2026-11-23 · 47';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
@@ -4799,7 +4799,7 @@ window.CAT = (() => {
   // ============ data ============
   const CAT = window.CAT, CATS = CAT.starCats;         // the one catalogue, shared with the game
   const screen = document.getElementById('mapScreen');
-  const DEG = Math.PI / 180, REVEAL_LY = 20, SAVE = 'spaceCubeMap.v1';
+  const DEG = Math.PI / 180, GLOW_LY = 20, SAVE = 'spaceCubeMap.v1';   // GLOW_LY: the size of the glow drawn around each place you've been
   // equatorial (J2000) -> galactic, the standard rotation matrix; the map lies flat on the Milky Way's plane
   const MG = [[-0.0548755604, -0.8734370902, -0.4838350155], [0.4941094279, -0.4448296300, 0.7469822445], [-0.8676661490, -0.1980763734, 0.4559837762]];
   function galDir(ra, dec) {
@@ -4826,7 +4826,6 @@ window.CAT = (() => {
 
   // ============ saved progress ============
   let visited = ['sol'], here = 'sol', beenPl = new Set(), seen = new Set();
-  const SIGHT_LY = 20;                                // (unused now: the map adds what the game showed you)
   try { const s = JSON.parse(localStorage.getItem(SAVE)); if (s && s.visited && s.visited.length) { visited = s.visited.filter(id => byId.has(id)); here = byId.has(s.here) ? s.here : 'sol'; if (s.planets) beenPl = new Set(s.planets.filter(id => byId.has(id))); if (s.seen2) seen = new Set(s.seen2.filter(id => byId.has(id))); } } catch (e) {}   // (the old 'seen' list counted stars you never saw: dropped)
   if (!visited.includes('sol')) visited.unshift('sol');
   // You know a place's name and details only once you've been there yourself (our solar system is known)
@@ -4842,7 +4841,6 @@ window.CAT = (() => {
   // The map only shows where you've been: it grows as you explore. Far landmarks stay as ? markers to aim for.
   // Arriving somewhere, you see everything the sky shows from there: it goes on the map as ??? until you've been there.
   // Far landmarks show in the sky from anywhere, so they're always seen.
-  function lookAround() {}                            // (seen now comes only from name tags shown in the game: SpaceMap.saw)
   function isRevealed(p) { return p.home || visited.includes(p.id) || seen.has(p.id); }   // landmarks too: only once seen
 
   // ============ scene ============
@@ -4892,7 +4890,8 @@ window.CAT = (() => {
   const bubbleTex = canvasTex(128, (x) => glow(x, 64, 64, 64, '40,160,170', .35));
   const bubbles = new THREE.Group(); sc.add(bubbles);
   const routeLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0x7dffc6, dashSize: .8, gapSize: .6, transparent: true, opacity: .7 })); sc.add(routeLine);
-  function bubbleR(p) { return Math.max(0.6, (C(p.ly + REVEAL_LY) - C(Math.max(0, p.ly - REVEAL_LY))) / 2); }
+  let SHOWN = [], spritesFor;                          // the places on the map; which system the sprites are currently hidden for
+  function bubbleR(p) { return Math.max(0.6, (C(p.ly + GLOW_LY) - C(Math.max(0, p.ly - GLOW_LY))) / 2); }
   function rebuild() {
     while (bubbles.children.length) { const c = bubbles.children.pop(); c.geometry && c.geometry.dispose(); }
     visited.forEach(id => {
@@ -4906,7 +4905,7 @@ window.CAT = (() => {
       p.sp.material.opacity = p.been || p.planets ? 1 : 0.6;
       if (!p.planets) { const m = known(p) ? ICON[p.kind] : ICON.unknown; if (p.sp.material.map !== m) { p.sp.material.map = m; p.sp.material.needsUpdate = true; } } });
     routeLine.geometry.setFromPoints(visited.map(id => byId.get(id).pos)); routeLine.computeLineDistances();
-    const sysN = PLACES.filter(p => p.planets && !p.home && p.shown).length;
+    SHOWN = PLACES.filter(p => p.shown); spritesFor = undefined;
     document.getElementById('mp-stat').textContent = visited.length + ' VISITED · ' + Math.max(0, seen.size - visited.filter(id => seen.has(id)).length) + ' SEEN, NOT VISITED';
   }
 
@@ -5050,15 +5049,15 @@ window.CAT = (() => {
     window.SpaceMap.close();
     if (window.SpaceJump) setTimeout(() => window.SpaceJump(star.id, target.kind === 'planet' ? target.name : null), 380);
   });
-  window.__mapDbg = { places: PLACES.length, systems: PLACES.filter(p => p.kind === 'system').length, get visited() { return visited.slice(); }, get here() { return here; },
-    jump: id => { const p = byId.get(id); if (p) { sel = p; document.getElementById('mp-jump').click(); } return !!p; }, zoom: d => { goalD = clampD(d); }, look: id => { const p = byId.get(id); goal.copy(p.pos); },
-    sys: () => sysFor && sysFor.name, cats: () => { const n = {}; PLACES.forEach(p => { if (p.cat) n[p.cat] = (n[p.cat] || 0) + 1; }); return n; }, revealed: () => PLACES.filter(p => p.shown && p.planets && !p.home).length, groups: () => groups.map(g => [Math.round(g.x), Math.round(g.y), g.m.length, nameOf(g.m[0]), !!g.planet, g.m[0].name]),
-    sgr: () => byId.get('sgra').dir.toArray().map(v => +v.toFixed(3)) };
 
   // ============ every frame ============
   rebuild(); goal.copy(starOf(here).pos); tgt.copy(goal);
   const pr = new THREE.Vector3();
-  let running = false;
+  let running = false, lastHtml = '';
+  const lvlEl = document.getElementById('mp-lvl'), knobEl = document.getElementById('mp-knob');
+  const retEl = document.createElement('div'); retEl.className = 'ret'; retEl.style.display = 'none'; retEl.style.pointerEvents = 'none';      // the selection brackets
+  retEl.innerHTML = '<i style="left:0;top:0;border-width:2px 0 0 2px"></i><i style="right:0;top:0;border-width:2px 2px 0 0"></i><i style="right:0;bottom:0;border-width:0 2px 2px 0"></i><i style="left:0;bottom:0;border-width:0 0 2px 2px"></i>';
+  screen.appendChild(retEl);
   function frame() {
     if (!running) return;
     requestAnimationFrame(frame);
@@ -5066,19 +5065,19 @@ window.CAT = (() => {
     if (touches.size === 0 && !sel) yaw += 0.0007;                 // a slow idle turn
     cam.position.set(tgt.x + dist * Math.cos(pitch) * Math.sin(yaw), tgt.y + dist * Math.sin(pitch), tgt.z + dist * Math.cos(pitch) * Math.cos(yaw));
     cam.lookAt(tgt); cam.near = Math.max(0.005, dist * 0.01); cam.updateProjectionMatrix();
-    const lv = LV.find(l => dist >= l[0] && dist < l[1]); document.getElementById('mp-lvl').textContent = lv[2];
-    document.getElementById('mp-knob').style.top = (100 - 100 * Math.log(dist / MIN_D) / Math.log(MAX_D / MIN_D)) + '%';
+    const lv = LV.find(l => dist >= l[0] && dist < l[1]); if (lvlEl.textContent !== lv[2]) lvlEl.textContent = lv[2];
+    knobEl.style.top = (100 - 100 * Math.log(dist / MIN_D) / Math.log(MAX_D / MIN_D)).toFixed(1) + '%';
     const t = performance.now() / 1000;
     bubbles.children.forEach(c => {                               // fade out a bubble you're inside or right next to, so it doesn't fill the screen
       const k = THREE.MathUtils.smoothstep(cam.position.distanceTo(c.position), c.userData.r * 0.9, c.userData.r * 2.6);
       if (c.isMesh) { c.rotation.y = t * 0.05; c.material.opacity = 0.1 * k; } else c.material.opacity = 0.25 + 0.75 * k;
     });
     // system close-up: the nearest star system to the view centre when zoomed right in
-    const want = dist < 5 ? PLACES.reduce((a, p) => p.shown && p.planets && (p.home || visited.includes(p.id)) && (!a || p.pos.distanceTo(tgt) < a.pos.distanceTo(tgt)) ? p : a, null) : null;
+    const want = dist < 5 ? SHOWN.reduce((a, p) => p.planets && (p.home || p.been) && (!a || p.pos.distanceTo(tgt) < a.pos.distanceTo(tgt)) ? p : a, null) : null;
     if (want !== sysFor) buildSystem(want);
     if (sysFor && freeZoom) goal.lerp(sysFor.pos, 0.12);                         // inside a system: centre on its star
     sysG.visible = !!sysFor;
-    PLACES.forEach(p => { p.sp.visible = p.shown && (!sysFor || p === sysFor); });
+    if (spritesFor !== sysFor) { spritesFor = sysFor; PLACES.forEach(p => { p.sp.visible = p.shown && (!sysFor || p === sysFor); }); }   // only when it changes
     sysG.children.forEach(c => { if (c.isSprite) { if (!c.userData.col0) c.userData.col0 = c.material.color.getHex(); c.material.color.setHex(known(c.userData.q) ? c.userData.col0 : 0x6d7f80); const u = c.userData, a = u.ph + t * u.sp; c.position.set(Math.cos(a) * u.r, 0, Math.sin(a) * u.r); } });
     {                                                                 // the ship: same size on screen at every zoom, bobbing gently beside the star
       const hp = byId.get(here), h = starOf(here), k = dist * (hp.kind === 'planet' && sysFor === h ? 0.022 : 0.03);
@@ -5089,31 +5088,33 @@ window.CAT = (() => {
       shipG.userData.eng.material.opacity = 0.6 + 0.4 * Math.sin(t * 9);
     }
     // labels: places close together on screen merge into one bubble with a count
-    const W = innerWidth, H = innerHeight, items = [];
-    PLACES.forEach(p => {
-      if (!p.shown || (sysFor && p !== sysFor)) return; pr.copy(p.pos).project(cam);
+    const W = innerWidth, H = innerHeight, items = [], hereStar = starOf(here);
+    SHOWN.forEach(p => {
+      if (sysFor && p !== sysFor) return; pr.copy(p.pos).project(cam);
       if (pr.z > 1 || pr.x < -1.1 || pr.x > 1.1 || pr.y < -1.1 || pr.y > 1.1) return;
-      items.push({ p, x: (pr.x + 1) / 2 * W, y: (1 - pr.y) / 2 * H, imp: p.rank + (p === starOf(here) ? 20 : 0) + (p.been ? 2 : 0) });
+      items.push({ p, x: (pr.x + 1) / 2 * W, y: (1 - pr.y) / 2 * H, imp: p.rank + (p === hereStar ? 20 : 0) + (p.been ? 2 : 0) });
     });
     items.sort((a, b) => b.imp - a.imp); groups = [];
     const MERGE = sysFor ? 0 : 58;
     items.forEach(it => { const g = MERGE && groups.find(g => Math.hypot(g.x - it.x, g.y - it.y) < MERGE); if (g) g.m.push(it.p); else groups.push({ x: it.x, y: it.y, m: [it.p] }); });
     let html = '';
     groups.forEach(g => {
-      const p = g.m[0], cls = p === starOf(here) ? 'lb here' : (!p.been && !p.planets) ? 'lb dim' : 'lb';
-      if (g.m.length === 1) html += `<div class="${cls}" style="left:${g.x + 10}px;top:${g.y - 15}px">${nameOf(p)}</div>`;
-      else html += `<div class="cl" style="left:${g.x}px;top:${g.y}px">${g.m.length}</div><div class="${cls}" style="left:${g.x + 19}px;top:${g.y - 7}px">${nameOf(p)} +${g.m.length - 1}</div>`;
+      const p = g.m[0], cls = p === hereStar ? 'lb here' : (!p.been && !p.planets) ? 'lb dim' : 'lb';
+      if (g.m.length === 1) html += `<div class="${cls}" style="left:${Math.round(g.x + 10)}px;top:${Math.round(g.y - 15)}px">${nameOf(p)}</div>`;
+      else html += `<div class="cl" style="left:${Math.round(g.x)}px;top:${Math.round(g.y)}px">${g.m.length}</div><div class="${cls}" style="left:${Math.round(g.x + 19)}px;top:${Math.round(g.y - 7)}px">${nameOf(p)} +${g.m.length - 1}</div>`;
     });
     if (sysFor) sysG.children.forEach(c => { if (!c.isSprite) return; pr.copy(c.position).add(sysG.position).project(cam); if (pr.z > 1) return;
       groups.push({ x: (pr.x + 1) / 2 * W, y: (1 - pr.y) / 2 * H, m: [c.userData.q], planet: true });
       const q = c.userData.q;
-      html += `<div class="lb" style="left:${(pr.x + 1) / 2 * W + 8}px;top:${(1 - pr.y) / 2 * H - 13}px;font-size:8.5px;color:${q.id === here ? '#7dffc6' : q.tag ? '#9fe8c8' : '#8fcabb'}">${nameOf(q)}${q.au && known(q) ? ' · ' + q.au + ' AU' : ''}${q.id === here ? ' · YOU' : q.tag ? ' · ' + q.tag : ''}${beenPl.has(q.id) && q.id !== here ? ' ✓' : ''}</div>`; });
+      html += `<div class="lb" style="left:${Math.round((pr.x + 1) / 2 * W + 8)}px;top:${Math.round((1 - pr.y) / 2 * H - 13)}px;font-size:8.5px;color:${q.id === here ? '#7dffc6' : q.tag ? '#9fe8c8' : '#8fcabb'}">${nameOf(q)}${q.au && known(q) ? ' · ' + q.au + ' AU' : ''}${q.id === here ? ' · YOU' : q.tag ? ' · ' + q.tag : ''}${beenPl.has(q.id) && q.id !== here ? ' ✓' : ''}</div>`; });
     if (lv[2] !== 'SYSTEM') ringLabels.forEach(r => { pr.copy(r.p).project(cam); if (pr.z > 1 || Math.abs(pr.x) > 1 || Math.abs(pr.y) > 1) return;
-      html += `<div class="lb" style="left:${(pr.x + 1) / 2 * W}px;top:${(1 - pr.y) / 2 * H}px;font-size:8px;color:#2f7d70">${r.t}</div>`; });
+      html += `<div class="lb" style="left:${Math.round((pr.x + 1) / 2 * W)}px;top:${Math.round((1 - pr.y) / 2 * H)}px;font-size:8px;color:#2f7d70">${r.t}</div>`; });
     const selPos = sel && (sel.kind === 'planet' ? (sysFor === sel.host && sel.sprite ? sel.sprite.position.clone().add(sysG.position) : null) : sel.shown ? sel.pos : null);
-    if (selPos) { pr.copy(selPos).project(cam); if (pr.z < 1) { const x = (pr.x + 1) / 2 * W, y = (1 - pr.y) / 2 * H, s = 1 + 0.12 * Math.sin(t * 6);
-      html += `<div class="ret" style="left:${x}px;top:${y}px;transform:scale(${s})"><i style="left:0;top:0;border-width:2px 0 0 2px"></i><i style="right:0;top:0;border-width:2px 2px 0 0"></i><i style="right:0;bottom:0;border-width:0 2px 2px 0"></i><i style="left:0;bottom:0;border-width:0 0 2px 2px"></i></div>`; } }
-    ov.innerHTML = html;
+    let retOn = false;
+    if (selPos) { pr.copy(selPos).project(cam); if (pr.z < 1) { retOn = true;
+      retEl.style.left = ((pr.x + 1) / 2 * W).toFixed(1) + 'px'; retEl.style.top = ((1 - pr.y) / 2 * H).toFixed(1) + 'px'; retEl.style.transform = 'scale(' + (1 + 0.12 * Math.sin(t * 6)).toFixed(3) + ')'; } }
+    retEl.style.display = retOn ? '' : 'none';
+    if (html !== lastHtml) { ov.innerHTML = html; lastHtml = html; }   // the labels are rebuilt only when one of them moved
     rd.render(sc, cam);
   }
   // ============ the launcher talks to the map through this ============
@@ -5124,7 +5125,7 @@ window.CAT = (() => {
     here = q ? q.id : star.id;
     if (!visited.includes(star.id)) visited.push(star.id);
     if (q) beenPl.add(q.id);
-    lookAround(star); save(); rebuild();
+    save(); rebuild();
     if (!quiet) { goal.copy(star.pos); goalD = star.planets ? 3.2 : 8; freeZoom = false; }
   }
   window.SpaceMap = {
