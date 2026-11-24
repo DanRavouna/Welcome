@@ -2,8 +2,12 @@
  "_about": "Everything Space Cube knows that does not come from the NASA download. One place: edit here, then run build_catalog.py.",
  "units": "distances between stars: light years (ly). Inside a star system: AU. Sizes: km (planets), ly (landmarks).",
  "warpLy": 20,
- "_skyScale": "How big and bright the points you can warp to look (0 to warpLy). Decided with Dan one end at a time. far: a star at the warp range (20 ly). near: not decided yet. Not used by the page until both ends are set.",
+ "_skyScale": "How big and bright the points you can warp to look (0 to warpLy). Decided with Dan one end at a time. near: the closest point (50 px, full brightness). far: a star at the warp range, 20 ly (5 px, 80%). How it changes in between: not decided yet. Not used by the page yet.",
  "skyScale": {
+  "near": {
+   "px": 50,
+   "bright": 1.0
+  },
   "far": {
    "px": 5,
    "bright": 0.8
