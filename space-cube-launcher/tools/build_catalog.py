@@ -19,7 +19,7 @@ systems, planets = [], []
 sol = hand['sol']
 systems.append([sol['name'], None, None, 0, sol['teff'], sol['strad'], sol['spec'], {'id': sol['id'], 'ecliptic': True, 'always': True, 'home': True}])
 for p in sol['planets']:
-    x = {k: p[k] for k in ('diamKm', 'rgb', 'look', 'tag', 'moon', 'major', 'home', 'side', 'eqRKm', 'polRKm', 'tiltDeg', 'rings', 'moons') if k in p}
+    x = {k: p[k] for k in ('diamKm', 'rgb', 'look', 'tag', 'cls', 'major', 'home', 'side', 'eqRKm', 'polRKm', 'tiltDeg', 'rings', 'moons') if k in p}
     planets.append([0, p['name'], p['au'], 0, None, round(p['diamKm'] / 12756, 3), None, None, None, None, p['ph'], x])
 hosts = {}
 for r in raw['planets']:

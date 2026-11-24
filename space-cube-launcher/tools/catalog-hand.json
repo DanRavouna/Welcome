@@ -43,10 +43,30 @@
     "rgb": "170,200,255",
     "look": "earth",
     "tag": "HOME PLANET",
-    "moon": true,
     "side": [
      -1,
      -1
+    ],
+    "eqRKm": 6378.1,
+    "polRKm": 6356.8,
+    "tiltDeg": 23.44,
+    "moons": [
+     {
+      "name": "Moon",
+      "aKm": 384400,
+      "rKm": 1737.4,
+      "col": [
+       0.78,
+       0.78,
+       0.76
+      ],
+      "look": "cratered",
+      "major": true,
+      "side": [
+       1,
+       -1
+      ]
+     }
     ]
    },
    {
@@ -72,7 +92,74 @@
     "side": [
      1,
      -1
-    ]
+    ],
+    "eqRKm": 71492,
+    "polRKm": 66854,
+    "tiltDeg": 3.13,
+    "moons": [
+     {
+      "name": "Io",
+      "aKm": 421800,
+      "rKm": 1821.5,
+      "col": [
+       0.95,
+       0.85,
+       0.45
+      ],
+      "look": "cratered",
+      "side": [
+       -1,
+       1
+      ]
+     },
+     {
+      "name": "Europa",
+      "aKm": 671100,
+      "rKm": 1560.8,
+      "col": [
+       0.92,
+       0.88,
+       0.8
+      ],
+      "look": "ice",
+      "side": [
+       -1,
+       -1
+      ]
+     },
+     {
+      "name": "Ganymede",
+      "aKm": 1070400,
+      "rKm": 2631.2,
+      "col": [
+       0.7,
+       0.66,
+       0.6
+      ],
+      "look": "cratered",
+      "major": true,
+      "side": [
+       1,
+       -1
+      ]
+     },
+     {
+      "name": "Callisto",
+      "aKm": 1882700,
+      "rKm": 2410.3,
+      "col": [
+       0.5,
+       0.46,
+       0.42
+      ],
+      "look": "cratered",
+      "side": [
+       1,
+       1
+      ]
+     }
+    ],
+    "cls": "giant"
    },
    {
     "name": "SATURN",
@@ -205,7 +292,8 @@
        -1
       ]
      }
-    ]
+    ],
+    "cls": "giant"
    },
    {
     "name": "URANUS",
@@ -217,7 +305,8 @@
     "side": [
      1,
      -1
-    ]
+    ],
+    "cls": "neptune"
    },
    {
     "name": "NEPTUNE",
@@ -229,7 +318,8 @@
     "side": [
      -1,
      1
-    ]
+    ],
+    "cls": "neptune"
    }
   ],
   "always": true
@@ -509,5 +599,5 @@
   }
  ],
  "_looks": "look: what the close-up shows. jet / companion (a star it pulls gas from) / crowd (dense stars around it) / ring / pulsar / dim (fainter clouds) / irregular / tilt (degrees, as we see it) / squash (how flat its sky picture is).",
- "_planetExtras": "Optional planet fields: eqRKm, polRKm (km, equator and pole radius), tiltDeg (spin axis tilt), rings (edges in km from the centre: C0 inner edge, C1/B1/A0 ring boundaries, A1 outer edge), moons [{name, aKm orbit radius, rKm body radius, col 0..1, look, haze, major, side}], side (which way the name tag points: [right=1/left=-1, down=1/up=-1]). Saturn: NASA Saturn and Saturnian satellite fact sheets; ring edges: PDS Rings Node."
+ "_planetExtras": "Optional planet fields: eqRKm, polRKm (km, equator and pole radius), tiltDeg (spin axis tilt), rings (edges in km from the centre: C0 inner edge, C1/B1/A0 ring boundaries, A1 outer edge), moons [{name, aKm orbit radius, rKm body radius, col 0..1, look, haze, major, side}], side (which way the name tag points: [right=1/left=-1, down=1/up=-1]). Saturn: NASA Saturn and Saturnian satellite fact sheets; ring edges: PDS Rings Node. Earth, Moon, Jupiter and its four large moons: NASA NSSDC fact sheets (Earth/Jupiter/Moon/Jovian satellites), checked 2026-11-23. Moon colours and looks are artistic. cls: the planet's class when its size alone would put it in the wrong one (rocky, subneptune, neptune, giant)."
 }
