@@ -2472,7 +2472,7 @@
     const s = curPlace(); if (!s.planets) return;
     const here = planetOf(s, deep.planet), P = here ? orbitPos(s, here) : new THREE.Vector3();
     if (here) {                                          // the star: its glow is drawn by buildDest, so it needs no dot of its own
-      const o = { deep: true, local: true, kind: 'star', id: 'star:' + s.id, name: s.name, host: s, q: null, pos: s.pos, ly: s.ly,
+      const o = { deep: true, local: true, kind: 'star', id: 'star:' + s.id, name: SKY.byId.get(s.id).name, host: s, q: null, pos: s.pos, ly: s.ly,
         distKm: P.length(), dirLocal: P.clone().negate().normalize(), facts: deepFacts(s) };
       ALL_DEEP.push(o); LOCAL.push(o);
     }
@@ -2701,7 +2701,7 @@
       buildBody(o, q0, fw);                            // the planet itself, with its rings and moons: the one real-scale scene
     } else if (o.planets) {                            // at the star itself: the same scene, with the star as the body (no radius in the catalogue: drawn as the Sun's)
       const c = starColor(o.teff);
-      buildBody(o, { star: true, name: o.name, eqRKm: (o.strad || 1) * SUN_R_KM, col: [c.r, c.g, c.b], facts: SKY.placeFacts(o) }, fw);
+      buildBody(o, { star: true, name: SKY.byId.get(o.id).name, eqRKm: (o.strad || 1) * SUN_R_KM, col: [c.r, c.g, c.b], facts: SKY.placeFacts(o) }, fw);
     } else clearBody();
     if (o.planets) { dest.group = BODY.group; dest.D = KM_SCENE; dest.r = BODY.eqKm * k; dest.ext = BODY.fitKm * k; dest.off = 0; }
     destGroup.position.copy(fw).multiplyScalar(DEST_D); destGroup.scale.setScalar(1);

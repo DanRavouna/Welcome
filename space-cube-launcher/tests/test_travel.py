@@ -43,10 +43,17 @@ with Game() as g:
     check('the star is a body you can jump back to', 'star:sys:Proxima Cen' in g.js('window.__deepDebug()')['local'])
     tap2('star:sys:Proxima Cen'); check('tap the star twice: back at the star', g.where() == ('sys:Proxima Cen', None))
     g.reload(); check('reload at a star', g.where() == ('sys:Proxima Cen', None) and [n['name'] for n in g.js('window.__navList()')] == ['PROXIMA CEN'])
+    g.fly('PROXIMA CEN'); check('fly closer to the star you are at', g.js('window.__navDebug()')['target'] == 'PROXIMA CEN')
+    g.reload(); check('reload: still parked close to the star', g.where() == ('sys:Proxima Cen', None) and g.js('window.__navDebug()')['target'] == 'PROXIMA CEN')
     g.js("window.__deepFace('sol')"); g.wait(600); check('home is tagged from there', any(t.startswith('SOL') for t in g.tags()), g.tags())
     # out of range, landmarks, home
     far = g.js("CAT.systems.find(s => !s.always && CAT.dist(s, CAT.byId.get(CAT.state.sys)) > CAT.warpLy + 5).id")
     g.pg.evaluate('i => window.__deepGo(i)', far); g.wait(300); check('a star beyond the warp range cannot be jumped to', not g.js('window.__deepDebug()')['jumping'], far)
+    # from outside the galaxy home shows as the Milky Way; arriving, the Sun is still named SOL
+    g.js("window.__deepGo('m31')"); g.wait_warp(); g.warp('sol', 'EARTH')
+    g.js("window.__deepFace('star:sol')"); g.wait(600); check('from far away to a planet: the star is tagged SOL', any(t.startswith('SOL ') for t in g.tags()) and not any('MILKY' in t for t in g.tags()), g.tags())
+    g.js("window.__deepGo('m31')"); g.wait_warp(); g.js("window.__deepGo('sol')"); g.wait_warp()
+    check('from far away to the Sun: the body is named SOL', [n['name'] for n in g.js('window.__navList()')] == ['SOL'], g.js('window.__navList()'))
     for lm in ['m42', 'sgra']:
         g.js(f"window.__deepGo('{lm}')"); g.wait_warp(); check(f'warp to landmark {lm}', g.where() == (lm, None))
     check('no flight targets at a landmark', g.js('window.__navList()') == [])

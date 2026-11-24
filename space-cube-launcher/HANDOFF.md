@@ -63,6 +63,8 @@ Done in screen 55: the star's tag can be tapped and locked on; the map's JUMP to
 4. Never checked on the phone since screen 47: speed, the arrival in motion, and Dan's real save converting. Also new and unseen on the phone (screen 55): parking at a star.
 5. An old stand-alone star map artifact from the mockup phase still exists in Dan's Claude artifacts, stale. He has not asked to delete it.
 6. The two Sun sizes in the code (see "What is real") should become one constant, checked against NASA.
+7. **At a star, close planets point the wrong way.** `setupLocal` measures every planet from the star's centre, but you park 25 star radii out. 287 of the 1008 planets orbit inside that distance (close-in planets of red dwarfs, hot Jupiters), so from the parking spot their real direction differs from the one drawn. Fix: measure from the ship's real spot (this also changes the planet case). Dan's call; not started.
+8. From Saturn the Sun and the inner planets sit within a few pixels of each other, so which one a tap picks there cannot be judged from here.
 
 ## Watch items
 - `clearBody()` resets the flight state (`nav`, `shipPos`, `travel`). Anything that rebuilds the scene loses the parking spot unless it is restored afterwards (see the block "back where you left off").
