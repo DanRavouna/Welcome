@@ -1140,10 +1140,7 @@ window.CAT = (() => {
     const km = v => Math.round(v).toLocaleString('en-US') + ' KM';
     const add = (name, obj, mo, side, minor) => {
       const t = { name, obj, rKm: mo ? mo.m.r : eqKm * 1.12, minor, sx: (side || [1, -1])[0], sy: (side || [1, -1])[1] };   // (the planet's line starts just off its edge)
-      t.g = document.createElementNS(SVGNS, 'g'); if (minor) t.g.setAttribute('class', 'minor');
-      t.ring = document.createElementNS(SVGNS, 'circle'); t.path = document.createElementNS(SVGNS, 'path');
-      t.text = document.createElementNS(SVGNS, 'text'); t.text.textContent = name;
-      t.g.append(t.ring, t.path, t.text); hudEl.prepend(t.g); t.w = tagW(name, minor);
+      makeTag(t, hudEl); hudEl.prepend(t.g);
       HUD_TARGETS.push(t);
       const n = { t, name, moon: mo,
         bodyR: (mo ? mo.m.r : eqKm) * k,               // the solid body
@@ -1966,6 +1963,25 @@ window.CAT = (() => {
   };
   // Each tag has ONE fixed side (sx: 1 right / -1 left, sy: -1 up / 1 down), from the catalogue.
   let HUD_TARGETS = [];                       // the planet you're at and its moons (filled by buildBody)
+  const DLABELS = [];                         // the tags of the sky places near the middle of your view (a small pool, made further down)
+  // ONE name tag for everything: a small ring on the thing, a short line, the name on the line.
+  function makeTag(t, parent) {               // t: { name, minor, sx, sy }
+    t.g = document.createElementNS(SVGNS, 'g'); if (t.minor) t.g.setAttribute('class', 'minor');
+    t.ring = document.createElementNS(SVGNS, 'circle'); t.path = document.createElementNS(SVGNS, 'path'); t.text = document.createElementNS(SVGNS, 'text');
+    t.g.append(t.ring, t.path, t.text); parent.append(t.g); setTagText(t, t.name || ''); return t;
+  }
+  function setTagText(t, txt) { t.text.textContent = txt; t.w = tagW(txt, t.minor); }
+  function tagBox(t, x, y, rPx, extra) {      // where the tag's line and name go (extra: a longer line, to step past another tag)
+    const sx = t.sx, sy = t.sy, x0 = x + sx * (rPx * 0.72 + 3), y0 = y + sy * (rPx * 0.72 + 3);
+    const leg = (t.minor ? CFG.tagLineLength * 0.67 : CFG.tagLineLength) + (extra || 0);
+    const x1 = x0 + sx * leg, y1 = y0 + sy * leg, x2 = x1 + sx * (t.w + 10);
+    return { x0, y0, x1, y1, x2, l: Math.min(x1, x2), r: Math.max(x1, x2) };
+  }
+  function drawTag(t, x, y, rPx, b, ringR) {
+    t.ring.setAttribute('cx', x.toFixed(1)); t.ring.setAttribute('cy', y.toFixed(1)); t.ring.setAttribute('r', ringR);
+    t.path.setAttribute('d', `M${b.x0.toFixed(1)},${b.y0.toFixed(1)} L${b.x1.toFixed(1)},${b.y1.toFixed(1)} L${b.x2.toFixed(1)},${b.y1.toFixed(1)}`);
+    t.text.setAttribute('x', (b.l + 5).toFixed(1)); t.text.setAttribute('y', (b.y1 - 5).toFixed(1));
+  }
 
   // =========================================================
   //  PASSING SHIPS: 8 original low-poly craft (flat-shaded, 90s style).
@@ -2727,7 +2743,7 @@ window.CAT = (() => {
     spaceRig.quaternion.setFromUnitVectors(best, new THREE.Vector3(0, 0, -1));
   }
   // re-measure once the font has loaded so the underline matches the word exactly
-  const remeasure = () => HUD_TARGETS.forEach(t => t.w = tagW(t.name, t.minor));
+  const remeasure = () => { HUD_TARGETS.forEach(t => t.w = tagW(t.name, t.minor)); DLABELS.forEach(L => L.w = tagW(L.text.textContent, true)); };
   remeasure(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(remeasure);
 
   const hp = new THREE.Vector3(), camFwd = new THREE.Vector3();
@@ -2752,22 +2768,13 @@ window.CAT = (() => {
         return toObj.angleTo(hudOcc.sub(camera.position)) < Math.asin(Math.min(1, n.bodyR / dn));
       })) { t.g.style.display = 'none'; return; }
       const rPx = t.rKm ? Math.max((t.rKm * k / dist) * pxPerRad, 3) : 4;
-      const sx = t.sx, sy = t.sy;
-      const x0 = x + sx * (rPx * 0.72 + 3), y0 = y + sy * (rPx * 0.72 + 3);
-      const leg = t.minor ? CFG.tagLineLength * 0.67 : CFG.tagLineLength;
-      const x1 = x0 + sx * leg, y1 = y0 + sy * leg;
-      const x2 = x1 + sx * (t.w + 10);
+      const b = tagBox(t, x, y, rPx);
       // hide only once the WHOLE tag (object, line and name) has left the screen,
       // so it slides off the edge together with its object instead of popping away
-      const l = Math.min(x - 8, x2), r = Math.max(x + 8, x2), top = Math.min(y - 8, y1 - 16), bot = Math.max(y + 8, y1 + 3);
+      const l = Math.min(x - 8, b.x2), r = Math.max(x + 8, b.x2), top = Math.min(y - 8, b.y1 - 16), bot = Math.max(y + 8, b.y1 + 3);
       if (r < 0 || l > W || bot < 0 || top > H) { t.g.style.display = 'none'; return; }
-
       t.g.style.display = '';
-      t.ring.setAttribute('cx', x.toFixed(1)); t.ring.setAttribute('cy', y.toFixed(1));
-      t.ring.setAttribute('r', t.rKm && rPx > 6 ? 0 : (t.minor ? 4 : 6));            // small target ring on point-like bodies
-      t.path.setAttribute('d', `M${x0.toFixed(1)},${y0.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} L${x2.toFixed(1)},${y1.toFixed(1)}`);
-      t.text.setAttribute('x', (sx > 0 ? x1 + 5 : x2 + 5).toFixed(1));
-      t.text.setAttribute('y', (y1 - 5).toFixed(1));
+      drawTag(t, x, y, rPx, b, t.rKm && rPx > 6 ? 0 : (t.minor ? 4 : 6));            // small target ring on point-like bodies
     });
   }
 
@@ -3656,8 +3663,7 @@ window.CAT = (() => {
 
   // ---- labels near the middle of the view ----
   const deepLabelG = document.createElementNS(SVGNS, 'g'); hudEl.append(deepLabelG);
-  const DLABELS = [0, 1, 2, 3, 4, 5].map(() => { const g = document.createElementNS(SVGNS, 'g'), c = document.createElementNS(SVGNS, 'circle'), t = document.createElementNS(SVGNS, 'text');
-    g.setAttribute('class', 'minor'); c.setAttribute('r', 5); g.append(c, t); deepLabelG.append(g); g.style.display = 'none'; return { g, c, t }; });
+  for (let i = 0; i < 6; i++) { const L = makeTag({ name: '', minor: true, sx: 1, sy: -1 }, deepLabelG); L.g.style.display = 'none'; DLABELS.push(L); }
   const starTag = { deep: true, kind: 'star' };
   function deepLabels() {
     const cx = innerWidth / 2, cy = innerHeight / 2, R2 = Math.min(innerWidth, innerHeight) * 0.3, picks = [];
@@ -3678,15 +3684,15 @@ window.CAT = (() => {
     const placed = [];
     DLABELS.forEach((L, i) => {
       const p = picks[i]; if (!p) { if (L.key != null) { L.g.style.display = 'none'; L.key = L.o = null; } return; }
-      let ty = p.y - 8; const tx = p.x + 10, tw = (L.o === p.o ? L.w : 0) || 150;
-      for (let n = 0; n < 6 && placed.some(r => Math.abs(r.y - ty) < 13 && tx < r.x + r.w && r.x < tx + tw); n++) ty += 13;   // step down past a tag already there
-      placed.push({ x: tx, y: ty, w: tw });
-      const key = p.o.id + '|' + p.x.toFixed(1) + '|' + ty.toFixed(1);
+      if (L.o !== p.o) { L.o = p.o; [L.sx, L.sy] = (p.o.q && p.o.q.side) || [1, -1];
+        setTagText(L, p.o.name + '  ' + (p.o.distKm != null ? distText(p.o) : fmtLy(deepDist(p.o)))); reportSeen(p.o); }
+      let b = tagBox(L, p.x, p.y, 4, 0);
+      for (let n = 1; n < 6 && placed.some(r => Math.abs(r.y - b.y1) < 13 && b.l < r.r && r.l < b.r); n++) b = tagBox(L, p.x, p.y, 4, n * 13);   // a longer line steps past a tag already there
+      placed.push({ y: b.y1, l: b.l, r: b.r });
+      const key = p.o.id + '|' + p.x.toFixed(1) + '|' + p.y.toFixed(1) + '|' + b.y1.toFixed(1);
       if (L.key === key) return;                         // nothing moved: leave the page alone
       if (L.key == null) L.g.style.display = '';
-      L.key = key; L.c.setAttribute('cx', p.x.toFixed(1)); L.c.setAttribute('cy', p.y.toFixed(1));
-      if (L.o !== p.o) { L.o = p.o; L.t.textContent = p.o.name + '  ' + (p.o.distKm != null ? distText(p.o) : fmtLy(deepDist(p.o))); L.w = L.t.getComputedTextLength() + 6; reportSeen(p.o); }
-      L.t.setAttribute('x', tx.toFixed(1)); L.t.setAttribute('y', ty.toFixed(1));
+      L.key = key; drawTag(L, p.x, p.y, 4, b, 4);
     });
   }
 
@@ -4660,7 +4666,7 @@ window.CAT = (() => {
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 50';
+    tag.textContent = 'SCREEN 2026-11-23 · 51';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
