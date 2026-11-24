@@ -30,12 +30,14 @@ The phone loads the page live from GitHub Pages (`/space-cube/`), so pushing to 
 ```bash
 # 1. edit space-cube-launcher/src/*  (or tools/catalog-hand.json for data)
 # 2. bump the build tag in src/game.js:  tag.textContent = 'SCREEN <date> · <n+1>'
-bash space-cube-launcher/tests/run.sh          # builds, then runs every test (about 3 minutes)
+bash space-cube-launcher/tests/run.sh test_travel.py   # while working: only the test of what you touched
+bash space-cube-launcher/tests/run.sh          # once, before pushing: builds, then runs every test (about 3 minutes)
 # 3. commit the sources AND the built app/src/main/assets/index.html together, push to main
 gh run list --workflow pages.yml -L 1          # the deploy; if it failed start a FRESH run, do not re-run:
 gh api -X POST repos/DanRavouna/Welcome/actions/workflows/pages.yml/dispatches -f ref=main
 ```
 - To look at it in a browser: `python3 space-cube-launcher/tools/build.py --preview /tmp/space-cube.html` (loads three.js and the font from the web).
+- Docs: update this file every time; `docs/rules.md` only when Dan decides something; `docs/architecture.md` / `docs/data.md` only when the structure or data shape changes.
 - Old saves must keep loading: `tests/test_saves.py` plants every old form. Add a case there whenever the saved shape changes.
 - Report to Dan in plain words: what changed, what is verified, what is not. **Headless tests cannot judge feel, speed or how motion looks on the phone. Say so every time.**
 

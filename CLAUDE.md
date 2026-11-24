@@ -26,6 +26,7 @@ A separate project in this repository: an Android home screen whose 3D page is a
 3. **Never edit `app/src/main/assets/index.html` by hand.** Edit `space-cube-launcher/src/` (or `tools/catalog-hand.json`), bump the build tag in `src/game.js`, then `bash space-cube-launcher/tests/run.sh` (builds, then runs every test). Commit the sources and the built page together.
 4. The phone loads the page from GitHub Pages: after pushing, check the "Deploy to GitHub Pages" run; if it failed start a fresh run, do not re-run it.
 5. Say plainly in every report that feel, speed and motion on the phone cannot be judged from here.
+6. **Test lean, docs lean** (Dan, 2026-11-24). While working, run only the test of what you touched (`bash space-cube-launcher/tests/run.sh test_travel.py`); run them all once, before pushing. Update `HANDOFF.md` every time; `docs/rules.md` only when Dan decides something; `docs/architecture.md` and `docs/data.md` only when the code's structure or the data's shape changes.
 
 ## Supabase (public values, safe in client code)
 - Project URL: `https://xuawpknnmozcfzgnflel.supabase.co`
