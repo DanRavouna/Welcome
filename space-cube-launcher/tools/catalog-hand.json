@@ -35,7 +35,8 @@
      149472.67411175,
      0.16047689,
      -0.12534081
-    ]
+    ],
+    "albedo": 0.142
    },
    {
     "name": "VENUS",
@@ -61,7 +62,8 @@
      58517.81538729,
      0.00268329,
      -0.27769418
-    ]
+    ],
+    "albedo": 0.689
    },
    {
     "name": "EARTH",
@@ -110,7 +112,8 @@
      35999.37244981,
      0.32327364,
      0.0
-    ]
+    ],
+    "albedo": 0.434
    },
    {
     "name": "MARS",
@@ -174,7 +177,8 @@
       ],
       "perDays": 1.26244
      }
-    ]
+    ],
+    "albedo": 0.17
    },
    {
     "name": "JUPITER",
@@ -272,7 +276,8 @@
      3034.74612775,
      0.21252668,
      0.20469106
-    ]
+    ],
+    "albedo": 0.538
    },
    {
     "name": "SATURN",
@@ -426,7 +431,8 @@
      1222.49362201,
      -0.41897216,
      -0.28867794
-    ]
+    ],
+    "albedo": 0.499
    },
    {
     "name": "URANUS",
@@ -539,7 +545,8 @@
       ],
       "perDays": 13.463234
      }
-    ]
+    ],
+    "albedo": 0.488
    },
    {
     "name": "NEPTUNE",
@@ -605,7 +612,8 @@
       ],
       "perDays": 5.876854
      }
-    ]
+    ],
+    "albedo": 0.442
    }
   ],
   "always": true
@@ -885,6 +893,6 @@
   }
  ],
  "_looks": "look: what the close-up shows. jet / companion (a star it pulls gas from) / crowd (dense stars around it) / ring / pulsar / dim (fainter clouds) / irregular / tilt (degrees, as we see it) / squash (how flat its sky picture is).",
- "_planetExtras": "Optional planet fields: eqRKm, polRKm (km, equator and pole radius), tiltDeg (spin axis tilt), rings (edges in km from the centre: C0 inner edge, C1/B1/A0 ring boundaries, A1 outer edge), moons [{name, aKm orbit radius, rKm body radius, col 0..1, look, haze, major, side, retro (orbits backwards, NASA's 'R')}], side (which way the name tag points: [right=1/left=-1, down=1/up=-1]). Saturn: NASA Saturn and Saturnian satellite fact sheets; ring edges: PDS Rings Node. Earth, Moon, Jupiter and its four large moons: NASA NSSDC fact sheets (Earth/Jupiter/Moon/Jovian satellites), checked 2026-11-23. Moon colours and looks are artistic. cls: the planet's class when its size alone would put it in the wrong one (rocky, subneptune, neptune, giant). Mars, Uranus, Neptune and their moons (Phobos, Deimos; Miranda, Ariel, Umbriel, Titania, Oberon; Proteus, Triton): NASA NSSDC fact sheets (Mars, Uranus, Neptune, Uranian and Neptunian satellites), fetched by the sky-data workflow and read 2026-11-24; where NASA gives three axes the radius is the volume-equivalent one (cube root of their product). Nereid is left out: its orbit is very eccentric and moons are drawn on circles.",
+ "_planetExtras": "Optional planet fields: eqRKm, polRKm (km, equator and pole radius), tiltDeg (spin axis tilt), rings (edges in km from the centre: C0 inner edge, C1/B1/A0 ring boundaries, A1 outer edge), moons [{name, aKm orbit radius, rKm body radius, col 0..1, look, haze, major, side, retro (orbits backwards, NASA's 'R')}], side (which way the name tag points: [right=1/left=-1, down=1/up=-1]). Saturn: NASA Saturn and Saturnian satellite fact sheets; ring edges: PDS Rings Node. Earth, Moon, Jupiter and its four large moons: NASA NSSDC fact sheets (Earth/Jupiter/Moon/Jovian satellites), checked 2026-11-23. Moon colours and looks are artistic. cls: the planet's class when its size alone would put it in the wrong one (rocky, subneptune, neptune, giant). Mars, Uranus, Neptune and their moons (Phobos, Deimos; Miranda, Ariel, Umbriel, Titania, Oberon; Proteus, Triton): NASA NSSDC fact sheets (Mars, Uranus, Neptune, Uranian and Neptunian satellites), fetched by the sky-data workflow and read 2026-11-24; where NASA gives three axes the radius is the volume-equivalent one (cube root of their product). Nereid is left out: its orbit is very eccentric and moons are drawn on circles. albedo: geometric albedo, how much light it reflects (NASA NSSDC planet fact sheets, read 2026-11-24). Planets without one (every exoplanet: the archive has none) are drawn with 0.3, an ASSUMPTION, not data.",
  "_time": "ONE time model (see the catalogue script): every orbiting body's place is worked out for today's date. Our planets: real, from `orbit` = JPL 'Approximate Positions of the Planets' Table 1 (a, e, I, L, long.peri, long.node, then their rates per century; Earth uses the Earth-Moon barycentre row). Moons: real orbit periods (`perDays`, NASA NSSDC satellite fact sheets) but an INVENTED starting point. Other stars' planets: real periods where the archive has them, INVENTED starting point."
 }

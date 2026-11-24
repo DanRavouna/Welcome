@@ -2557,10 +2557,24 @@
   const MIN_PX = 9;                                      // nothing is drawn smaller than this (a small dot)
   const SUN_R_KM = 695700;                               // the Sun's volumetric mean radius (NASA NSSDC Sun fact sheet, updated 2024-05-09)
   const SUN_DIAM_LY = 2 * SUN_R_KM / 9.4607e12;         // ...its diameter in light-years
+  // The bodies of the system you're in (Dan, 2026-11-24, "D"): nearly all are far under a pixel, so a plain floor made them all alike.
+  //  size: their real size in the sky, compressed. 0.001 px or less -> 6 px, 0.1 px -> 84 px (log scale between); past 84 px, the real size.
+  //  (Calibrated by Dan: Jupiter seen from Saturn, really 0.056 px, is drawn about 74 px, five times the first try: a close target must really show.)
+  //  brightness: the light they really send you, from the star's light (radius^2 x temperature^4), their distance from it, their size,
+  //  their albedo (NASA for ours; 0.3, an assumption, for the rest) and their distance from you. On a log scale, 1e2 -> 0.35, 1e6 -> 1.
+  const LOCAL_PX = [6, 84], ALBEDO_GUESS = 0.3;
+  function localLook(o, pxPerRad) {
+    const tp = o.diamKm / Math.max(o.distKm, 1) * pxPerRad, cl = THREE.MathUtils.clamp;
+    const px = tp >= LOCAL_PX[1] ? tp : LOCAL_PX[0] + (LOCAL_PX[1] - LOCAL_PX[0]) * cl((Math.log10(tp) + 3) / 2, 0, 1);
+    const s = o.host, q = o.q, lum = Math.pow(s.strad || 1, 2) * Math.pow((s.teff || 5772) / 5772, 4);
+    const rs = q.auNow || q.au, d = o.distKm / KM_AU, R = o.diamKm / 2;
+    const flux = lum * (q.albedo || ALBEDO_GUESS) * R * R / (rs * rs * d * d);
+    return { px, bright: 0.35 + 0.65 * cl((Math.log10(flux) - 2) / 4, 0, 1) };
+  }
   function sizeMarkers() {                               // every sky picture at its true size as seen from where you are
     const pxPerRad = (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(worldFov / 2)), minA = MIN_PX / pxPerRad;
     SPRITED.forEach(o => {
-      if (o.local) { o.sprite.scale.setScalar(Math.max(o.diamKm / Math.max(o.distKm, 1), minA) * MARK_R / PIC_FILL); o.faint = 1; return; }   // inside a star system: km
+      if (o.local) { const L = localLook(o, pxPerRad); o.sprite.scale.setScalar(L.px / pxPerRad * MARK_R / PIC_FILL); o.faint = L.bright; return; }   // inside a star system: see localLook
       const d = deepDist(o); if (d < 1e-6) return;       // (the place you're in)
       const diam = o.diamLy || 0;
       const ang = diam / d, a = Math.max(ang, minA);
@@ -3032,7 +3046,7 @@
     const o = (PLACE.get(id) || LOCAL.find(x => x.id === id)); if (o) { cancelLock(); deepGo(o, planetName); }
   };
 
-  window.__localDebug = () => ({ shipKm: localShip.length(), bodies: LOCAL.map(o => ({ id: o.id, distKm: o.distKm, centreKm: o.q ? orbitPos(o.host, o.q).length() : 0 })) });
+  window.__localDebug = () => ({ shipKm: localShip.length(), bodies: LOCAL.map(o => ({ id: o.id, distKm: o.distKm, centreKm: o.q ? orbitPos(o.host, o.q).length() : 0, ...(o.q ? localLook(o, (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(55 / 2))) : {}) })) });
   window.__deepGo = id => { const o = (PLACE.get(id) || LOCAL.find(x => x.id === id)); if (o) deepGo(o); return !!o; };
   window.__deepFace = id => { const o = (PLACE.get(id) || LOCAL.find(x => x.id === id)); if (o) { faceQuat(relDir(o, new THREE.Vector3()), qFace); spaceRig.quaternion.copy(qFace); syncSysRig(); } return !!o; };
 
@@ -3967,7 +3981,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-24 · 57';
+    tag.textContent = 'SCREEN 2026-11-24 · 58';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);

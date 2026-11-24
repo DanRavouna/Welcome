@@ -3,6 +3,12 @@ from sc import Game, check, done
 with Game() as g:
     g.fresh()
     check('a first start is at the home planet', g.where() == ('sol', 'SATURN'))
+    L = {b['id'][3:]: b for b in g.js('window.__localDebug()')['bodies'] if 'px' in b}
+    check('albedo from the data', g.js("CAT.byId.get('pl:VENUS').albedo") == 0.689)
+    check('Jupiter from Saturn is about 74 px (Dan\'s mark)', 70 < L['JUPITER']['px'] < 78, round(L['JUPITER']['px'], 1))
+    check('sky dots of our planets: 6 to 84 px', all(6 <= b['px'] <= 84 for b in L.values()), {k: round(b['px'], 1) for k, b in L.items()})
+    check('...bigger where bigger in the real sky (Jupiter > Uranus > Neptune > Earth > Mercury)', L['JUPITER']['px'] > L['URANUS']['px'] > L['NEPTUNE']['px'] > L['EARTH']['px'] > L['MERCURY']['px'])
+    check('...brighter where more light reaches you (Jupiter and Venus bright, Neptune faint)', min(L['JUPITER']['bright'], L['VENUS']['bright']) > L['MARS']['bright'] > L['NEPTUNE']['bright'], {k: round(b['bright'], 2) for k, b in L.items()})
     nav = [n['name'] for n in g.js('window.__navList()')]
     check('home planet scene: the planet and its 7 moons are flight targets', nav[0] == 'SATURN' and len(nav) == 8 and 'TITAN' in nav, nav)
     # tap a sibling planet twice: lock, then warp
