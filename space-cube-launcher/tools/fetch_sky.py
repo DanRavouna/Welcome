@@ -70,15 +70,18 @@ for name in FACT_PAGES:
         print('fact sheet', name, len(facts[name]), 'chars')
     except Exception as e:
         print('fact sheet FAILED', name, e)
-FACTS = OUT.parent / 'fact-sheets.json'
-FACTS.write_text(json.dumps({'fetched': data['fetched'], 'source': 'NASA NSSDC planetary fact sheets', 'pages': facts}))
-import base64, gzip
-print('FACTS-BEGIN'); b = base64.b64encode(gzip.compress(FACTS.read_bytes())).decode()
-for i in range(0, len(b), 3000): print('FACT:' + b[i:i + 3000])
-print('FACTS-END')
-
 # The sandbox that builds the screen cannot download artifacts, so the data is also printed (gzip + base64).
 import base64, gzip
 print('SKYDATA-BEGIN'); b = base64.b64encode(gzip.compress(OUT.read_bytes())).decode()
 for i in range(0, len(b), 3000): print('SKY:' + b[i:i + 3000])
 print('SKYDATA-END')
+
+# The fact sheets go last in the log, as plain text, so the cloud session can read them from the end of the run log.
+def text(h):
+    h = re.sub(r'(?is)<(script|style).*?</\1>', ' ', h); h = re.sub(r'(?i)<br\s*/?>|</(p|tr|h\d|li|table)>', '\n', h)
+    h = re.sub(r'<[^>]+>', ' ', h).replace('&nbsp;', ' ').replace('&amp;', '&')
+    return '\n'.join(l for l in (re.sub(r'[ \t]+', ' ', x).strip() for x in h.split('\n')) if l)
+print('FACTS-BEGIN', data['fetched'])
+for name in FACT_PAGES:
+    if name in facts: print('=== PAGE', name, 'https://nssdc.gsfc.nasa.gov/planetary/factsheet/' + name + '.html'); print(text(facts[name]))
+print('FACTS-END')
