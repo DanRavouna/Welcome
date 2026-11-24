@@ -15,11 +15,10 @@ concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
-  deploy:
+  # Two jobs, as in GitHub's own Pages template: the deploy job only starts once the build job has finished
+  # and its upload is registered. (In one job, deploy-pages sometimes found "0 artifacts" right after the upload.)
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - name: Assemble the site (the shelf, the engine, the player, the studio, the games and the vendored library)
@@ -33,6 +32,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
         with:
