@@ -54,6 +54,17 @@ with Game() as g:
     g.js("window.__deepFace('star:sol')"); g.wait(600); check('from far away to a planet: the star is tagged SOL', any(t.startswith('SOL ') for t in g.tags()) and not any('MILKY' in t for t in g.tags()), g.tags())
     g.js("window.__deepGo('m31')"); g.wait_warp(); g.js("window.__deepGo('sol')"); g.wait_warp()
     check('from far away to the Sun: the body is named SOL', [n['name'] for n in g.js('window.__navList()')] == ['SOL'], g.js('window.__navList()'))
+    # a far jump holds in hyperspace: dark, with bright streaks (no white light)
+    import io; from PIL import Image
+    g.js("window.__deepGo('m42')")
+    for i in range(80):
+        g.wait(50)
+        if g.js('window.__deepDebug()')['hyper'] >= 1: break
+    im = Image.open(io.BytesIO(g.pg.screenshot())).convert('L'); px = list(im.getdata()); mean = sum(px) / len(px)
+    check('far jump: in hyperspace', g.js('window.__deepDebug()')['hyper'] >= 1)
+    check('hyperspace is dark, not white', mean < 70, round(mean, 1))
+    check('hyperspace has bright streaks', sum(1 for v in px if v > 150) > 2000, sum(1 for v in px if v > 150))
+    g.wait_warp(); check('...and arrives', g.where() == ('m42', None) and g.js('window.__deepDebug()')['veil'] == 0)
     for lm in ['m42', 'sgra']:
         g.js(f"window.__deepGo('{lm}')"); g.wait_warp(); check(f'warp to landmark {lm}', g.where() == (lm, None))
     check('no flight targets at a landmark', g.js('window.__navList()') == [])
@@ -67,4 +78,16 @@ with Game() as g:
     g.pg.mouse.click(x, y); g.wait_warp(); check('...and jumped to', g.where() == ('sol', None))
     tap2('pl:SATURN'); g.reload(); check('reload at home', g.where() == ('sol', 'SATURN'))
     s = g.state(); check('visited and scanned recorded', {'sol', 'sys:Proxima Cen', 'm42', 'sgra'} <= set(s['visited']) and {'pl:JUPITER', 'pl:EARTH', 'pl:MARS'} <= set(s['scanned']), s)
+# at a star, its planets are seen from where the ship is parked (25 star radii out), not from the star's centre
+with Game() as g:
+    sid = g.js("(() => { const s = CAT.systems.find(s => s.strad && s.planets.some(q => q.au * CAT.KM_AU < 25 * s.strad * 696000 * 0.5)); return s.id; })()")
+    g.fresh({'spaceCube.state.v1': {'sys': sid, 'planet': None, 'dir': [0, 0, -1], 'q': [0, 0, 0, 1], 'nav': None, 'limit': 50, 'visited': ['sol', sid], 'scanned': [], 'seen': []}})
+    d = g.js('window.__localDebug()'); R = g.js(f"CAT.byId.get('{sid}').strad") * 696000
+    check('parked 25 star radii out', abs(d['shipKm'] - 25 * R) < 1e-6 * R, (d['shipKm'], 25 * R))
+    close = [b for b in d['bodies'] if b['centreKm'] < d['shipKm'] / 2]
+    check('a planet orbits inside the parking spot', len(close) > 0, sid)
+    check('...seen from the ship: its distance is at least the gap to its orbit', all(b['distKm'] >= d['shipKm'] - b['centreKm'] - 1 for b in close), close)
+    g.warp(sid, g.js(f"CAT.byId.get('{sid}').planets[0].name")); d = g.js('window.__localDebug()')
+    star = [b for b in d['bodies'] if b['id'].startswith('star:')]
+    check('at a planet, the star is measured from the ship too', len(star) == 1 and abs(star[0]['distKm'] - d['shipKm']) < 1, (star, d['shipKm']))
 done()

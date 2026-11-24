@@ -18,7 +18,7 @@ These came out of long back-and-forth. Do not reopen them without asking him. Qu
 - Stars beyond 20 ly are plain dots: no tag, cannot be tapped. ("If the name tag is dimmer i can still see it !": a dimmed tag still counts as seen, so far stars get no tag at all.)
 - **Sizes in the sky are real** ("Real sky sizes"), with a smallest dot of 9 px. (See the open scale question in `HANDOFF.md`.)
 - Every star system shows its star and its planets on their orbits; you can see, lock on and jump between them. The same for our system and all others ("Uniformize all planets").
-- **Warp visuals**: a route line is drawn, also for far jumps. Far jumps hold in white light 2 to 4 s by distance ("to show we re traveling far"). On arrival the target starts at the size it had on screen before the jump and only grows. The sky picture of a landmark cross-fades into its 3D close-up.
+- **Warp visuals**: a route line is drawn, also for far jumps. Far jumps hold in hyperspace 2 to 4 s by distance ("to show we re traveling far"): dense blue-white streaks over a dark veil, a small glow where you're heading. No white light (2026-11-24: "it hurts the eyes"; his reference: a classic hyperspace star-streak picture). On arrival the target starts at the size it had on screen before the jump and only grows. The sky picture of a landmark cross-fades into its 3D close-up.
 - Ships and squadrons are left behind when you warp. They steer around the whale and each other.
 
 ## The star map

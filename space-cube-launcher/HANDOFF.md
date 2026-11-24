@@ -12,7 +12,7 @@ Read this first. It is the short version; the three files in `docs/` hold the de
 ## What it is
 An Android home screen. The phone app (`app/`, Kotlin) is a thin shell around one web page: a 3D view from a ship in space, with your apps as floating cubes. The page is also a small space game: you sit at a planet, see the real sky around you, fly to its moons and warp to other planets, stars and landmarks. A star map shows where you have been.
 
-The phone loads the page live from GitHub Pages (`/space-cube/`), so pushing to `main` updates the phone. Triple-tap the clock to reload; Settings shows the build tag (`SCREEN 2026-11-24 · 55`).
+The phone loads the page live from GitHub Pages (`/space-cube/`), so pushing to `main` updates the phone. Triple-tap the clock to reload; Settings shows the build tag (`SCREEN 2026-11-24 · 56`).
 
 ## The one rule right now
 **Uniformity.** Dan, 2026-11-23: "we cant have multiple parallel systems" and "uniformity is the main rule for now as this will be the base we ll be iterating from". Every place, planet, tag, save and rule goes through ONE path. Before adding anything, find the existing path and extend it. A check on a name (`if (name === 'SATURN')`) is a bug; the data gets a field instead.
@@ -48,7 +48,7 @@ gh api -X POST repos/DanRavouna/Welcome/actions/workflows/pages.yml/dispatches -
 | Where you park at a planet | 25 of its radii out (`PARK_RADII`), drawn 400 scene units away (`KM_SCENE`), 50° off its star so it is mostly lit (`parkDir`) |
 | Smallest dot in the sky | 9 px (`MIN_PX`). Everything else is its true angular size. |
 | Sky shells (scene units) | star dots 950, pictures 980 (`SHELL`, `MARK_R`) |
-| Warp timing | turn 1.0 s, warp 2.6 s, arrive 3.0 s (0.5 / 1.6 / 2.2 inside one system); far jumps hold in white 2 to 4 s |
+| Warp timing | turn 1.0 s, warp 2.6 s, arrive 3.0 s (0.5 / 1.6 / 2.2 inside one system); far jumps hold in hyperspace (dark veil, dense streaks: `warpVeil`, `warpDeep`, `veilScene`) 2 to 4 s |
 | Catalogue size | 642 other star systems, 1000 exoplanets, 8 planets of ours, 12 landmarks |
 
 ## What is real and what is not
@@ -58,6 +58,7 @@ gh api -X POST repos/DanRavouna/Welcome/actions/workflows/pages.yml/dispatches -
 - Planet spin axes lean by the real amount but around an arbitrary line, not toward the real pole.
 
 ## Open items (nothing here is started)
+Done in screen 56: every body of a system is measured from where the ship is parked (`localShip`), not from the body's centre, so at a star the close planets point the right way; the white warp flash is replaced by hyperspace.
 Done in screen 55: the star's tag can be tapped and locked on; the map's JUMP to the star you are in works (it lands at the star); Saturn's `YOUR SHIP` tag is gone.
 1. **Sky scale.** Dan, 2026-11-23: nearby planets look the same size as far objects. Cause: nearly everything is under 1 px, so the 9 px floor catches it all. Options given to him: brightness by real apparent brightness (my pick), a compressed size scale, both, or true size only when locked on. He answered "for now none".
 2. Moons exist only for Earth, Jupiter and Saturn. Adding more is data only (`docs/data.md`).
@@ -65,12 +66,11 @@ Done in screen 55: the star's tag can be tapped and locked on; the map's JUMP to
 4. Never checked on the phone since screen 47: speed, the arrival in motion, and Dan's real save converting. Also new and unseen on the phone (screen 55): parking at a star.
 5. An old stand-alone star map artifact from the mockup phase still exists in Dan's Claude artifacts, stale. He has not asked to delete it.
 6. The two Sun sizes in the code (see "What is real") should become one constant, checked against NASA.
-7. **At a star, close planets point the wrong way.** `setupLocal` measures every planet from the star's centre, but you park 25 star radii out. 287 of the 1008 planets orbit inside that distance (close-in planets of red dwarfs, hot Jupiters), so from the parking spot their real direction differs from the one drawn. Fix: measure from the ship's real spot (this also changes the planet case). Dan's call; not started.
-8. From Saturn the Sun and the inner planets sit within a few pixels of each other, so which one a tap picks there cannot be judged from here.
+7. From Saturn the Sun and the inner planets sit within a few pixels of each other, so which one a tap picks there cannot be judged from here.
 
 ## Watch items
 - `clearBody()` resets the flight state (`nav`, `shipPos`, `travel`). Anything that rebuilds the scene loses the parking spot unless it is restored afterwards (see the block "back where you left off").
 - `k` (km to scene units) changes with the planet you are at. Never cache something multiplied by `k` across a rebuild.
 - A `const` used inside `buildBody`/`clearBody` must be declared before the first build at the bottom of the DEEP SKY section, or the page dies on load (temporal dead zone). `node --check` does not catch this; the tests do.
-- The sky jumps during the white flash of a warp, because you come out at the parking spot facing the planet. The flash is not opaque at the screen corners.
+- The sky jumps while the warp's veil is up, because you come out at the parking spot facing the planet. The veil is about 93% opaque, so the jump may show faintly.
 - `git pull --rebase` refuses with unstaged files: commit first.

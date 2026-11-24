@@ -2390,27 +2390,43 @@
       n.occNear.quaternion.copy(occQ); n.occNear.scale.copy(n.occ.scale).multiplyScalar(nearD / dist);
     });
   }
-  const STREAK_N = 260;
-  const streakGeo = new THREE.BufferGeometry(), streakPos = new Float32Array(STREAK_N * 6), streakSeed = [];
-  streakGeo.setAttribute('position', new THREE.BufferAttribute(streakPos, 3));
-  const streakMat = new THREE.LineBasicMaterial({ color: 0xbff6ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+  // Warp streaks: blue-white lines rushing past, each with a bright head and a tail fading to nothing.
+  // While a far jump holds in hyperspace (warpDeep 0..1) there are more of them, longer, over a dark veil (no white light).
+  const STREAK_N = 260, STREAK_DEEP_N = 900;
+  const streakGeo = new THREE.BufferGeometry(), streakPos = new Float32Array(STREAK_DEEP_N * 6), streakCol = new Float32Array(STREAK_DEEP_N * 6), streakSeed = [];
+  streakGeo.setAttribute('position', new THREE.BufferAttribute(streakPos, 3)); streakGeo.setAttribute('color', new THREE.BufferAttribute(streakCol, 3));
+  const streakMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
   const streaks = new THREE.LineSegments(streakGeo, streakMat); streaks.frustumCulled = false; scene.add(streaks);
-  for (let i = 0; i < STREAK_N; i++) {
-    const a = Math.random() * Math.PI * 2, r = 1.5 + Math.pow(Math.random(), 0.6) * 22;
-    streakSeed.push({ x: Math.cos(a) * r, y: Math.sin(a) * r, z: -Math.random() * 90 });
+  const seedStreak = s => { const a = Math.random() * Math.PI * 2, r = 1.5 + Math.pow(Math.random(), 0.6) * 22; s.x = Math.cos(a) * r; s.y = Math.sin(a) * r; return s; };
+  for (let i = 0; i < STREAK_DEEP_N; i++) {
+    const s = seedStreak({ z: -Math.random() * 90, b: 0.45 + 0.55 * Math.pow(Math.random(), 2) });          // b: how bright this one is
+    const c = [0.62 + 0.38 * s.b, 0.75 + 0.25 * s.b, 1].map(v => v * s.b);                                   // blue-white, the brightest nearly white
+    streakCol.set([...c, 0, 0, 0.12 * s.b], i * 6); streakSeed.push(s);                                       // head bright, tail fading out
   }
+  let warpDeep = 0, warpVeil = 0;                      // set by the warp: hyperspace hold (0..1), dark veil over the far layers (0..1)
   function updateStreaks(dt) {
-    streakMat.opacity = Math.min(0.85, travelV * 1.2);
+    streakMat.opacity = Math.min(0.9, Math.max(travelV * 1.2, warpVeil));
     streaks.visible = streakMat.opacity > 0.01;
     if (!streaks.visible) return;
     streaks.position.copy(camera.position); streaks.quaternion.copy(camera.quaternion);
-    const sp = 140 * travelV * dt, len = 2 + 26 * travelV;
-    streakSeed.forEach((s, i) => {
-      s.z += sp; if (s.z > 0) { s.z -= 90; const a = Math.random() * Math.PI * 2, r = 1.5 + Math.pow(Math.random(), 0.6) * 22; s.x = Math.cos(a) * r; s.y = Math.sin(a) * r; }
-      streakPos.set([s.x, s.y, s.z, s.x, s.y, s.z - len], i * 6);
-    });
-    streakGeo.attributes.position.needsUpdate = true;
+    const v = Math.max(travelV, warpVeil), n = Math.round(STREAK_N + (STREAK_DEEP_N - STREAK_N) * warpDeep);
+    const sp = (140 + 110 * warpDeep) * v * dt, len = 2 + (26 + 34 * warpDeep) * v;
+    for (let i = 0; i < n; i++) {
+      const s = streakSeed[i];
+      s.z += sp; if (s.z > 0) { s.z -= 90; seedStreak(s); }
+      streakPos.set([s.x, s.y, s.z, s.x, s.y, s.z - len * (0.6 + 0.8 * s.b)], i * 6);
+    }
+    streakGeo.setDrawRange(0, n * 2); streakGeo.attributes.position.needsUpdate = true;
   }
+  // the veil: deep blue-black over the sky while you are in hyperspace, a small blue-white glow where you're heading
+  const veilScene = new THREE.Scene(), veilCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const veilMat = new THREE.ShaderMaterial({ transparent: true, depthTest: false, depthWrite: false, uniforms: { k: { value: 0 }, aspect: { value: 1 } },
+    vertexShader: `varying vec2 vP; void main() { vP = position.xy; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+    fragmentShader: `uniform float k, aspect; varying vec2 vP;
+      void main() { float r = length(vec2(vP.x * aspect, vP.y)), g = exp(-r * r * 90.0) + 0.35 * exp(-r * r * 9.0);
+        vec3 c = mix(vec3(0.012, 0.025, 0.07), vec3(0.6, 0.78, 1.0), clamp(g, 0.0, 1.0));
+        gl_FragColor = vec4(c, k * clamp(0.93 + g, 0.0, 1.0)); }` });
+  veilScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), veilMat));
   // =========================================================
   //  DEEP SKY: the real sky around you.
   //  - The 1000 nearest known exoplanets (NASA Exoplanet Archive, pscomppars, fetched 2026-11-23),
@@ -2466,11 +2482,13 @@
   let LOCAL = [], ACTIVE = [], SPRITED = [];
   const distText = o => (o.distKm / KM_AU).toFixed(o.distKm < 10 * KM_AU ? 2 : 1) + ' AU';
   const planetOf = SKY.planetOf;                        // (the named planet, or null: the star)
+  const localShip = new THREE.Vector3();               // where the ship is parked in the system you're in (km from its star)
   function setupLocal() {
     LOCAL.forEach(o => { const i = ALL_DEEP.indexOf(o); if (i >= 0) ALL_DEEP.splice(i, 1); if (o.sprite) { skyRig.remove(o.sprite); o.sprite.material.dispose(); } });
     LOCAL = [];
     const s = curPlace(); if (!s.planets) return;
-    const here = planetOf(s, deep.planet), P = here ? orbitPos(s, here) : new THREE.Vector3();
+    const here = planetOf(s, deep.planet), C = here ? orbitPos(s, here) : new THREE.Vector3();          // the body you're at (the star: the centre)
+    const P = localShip.copy(C).addScaledVector(BODY.group.position, -1 / k);                            // the ship, parked beside it (km): every body is seen from here
     if (here) {                                          // the star: its glow is drawn by buildDest, so it needs no dot of its own
       const o = { deep: true, local: true, kind: 'star', id: 'star:' + s.id, name: SKY.byId.get(s.id).name, host: s, q: null, pos: s.pos, ly: s.ly,
         distKm: P.length(), dirLocal: P.clone().negate().normalize(), facts: deepFacts(s) };
@@ -2840,13 +2858,10 @@
   function arriveAt(o, dir, planetName) {
     deep.here.copy(o.pos); deep.dir = dir.toArray(); SKY.arrive(o.id, planetName);
     deep.nav = null;
-    setupLocal(); buildDest(o, dir, deep.planet); sysWorld.visible = !!o.planets; refreshMarkers();
+    buildDest(o, dir, deep.planet); setupLocal(); sysWorld.visible = !!o.planets; refreshMarkers();   // (setupLocal needs the body scene: it measures from the ship)
   }
   function saveDeep() { deep.q = spaceRig.quaternion.toArray(); SKY.save(); }
   const destOcc = [0, 1, 2, 3].map(() => { const a = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), occMat), b = new THREE.Mesh(a.geometry, occMat); a.renderOrder = b.renderOrder = -10; occluders.add(a); nearOcc.add(b); a.visible = b.visible = false; return [a, b]; });
-  const jumpFlash = document.createElement('div');
-  jumpFlash.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,1) 0%,rgba(190,240,255,.85) 35%,rgba(120,200,255,.2) 75%,rgba(0,0,0,0) 100%)';
-  document.body.appendChild(jumpFlash);
 
   function deepGo(o, planetName) {
     if (o.local) return deepGo(o.host, o.q ? o.q.name : null);
@@ -2856,7 +2871,7 @@
     if (same && (!o.planets || planetName === deep.planet)) return;
     const lb = same ? LOCAL.find(x => x.q === q) : null;
     const dir = lb ? lb.dirLocal.clone() : relDir(o, new THREE.Vector3());     // another planet of this system: its real direction
-    // far jumps hold in white light for a while (2 s for the nearest landmarks, up to 4 s for M87): you're travelling far
+    // far jumps hold in hyperspace for a while (2 s for the nearest landmarks, up to 4 s for M87): you're travelling far
     const dly = o.pos.distanceTo(deep.here), lg = Math.log10;
     const hold = same || dly <= WARP_LY ? 0 : THREE.MathUtils.clamp(2 + 2 * (lg(dly) - lg(400)) / (lg(5.5e7) - lg(400)), 2, 4);
     const pxPerRad = (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(55 / 2));
@@ -2868,11 +2883,11 @@
   function deepJumpUpdate(dt) {
     const j = deepJump; j.t += dt;
     skyVelX = skyVelY = 0;
-    const H = j.hold || 0, T1 = j.turn, T2 = T1 + j.warp + H, T3 = T2 + j.arrive, tf = T1 + j.warp * 0.55, ta = tf + H;   // white from tf to ta
+    const H = j.hold || 0, T1 = j.turn, T2 = T1 + j.warp + H, T3 = T2 + j.arrive, tf = T1 + j.warp * 0.55, ta = tf + H;   // in hyperspace (dark veil, dense streaks) from tf to ta
     faceQuat(j.dir, qFace); spaceRig.quaternion.slerp(qFace, Math.min(1, dt * (j.t < T1 ? 4.5 : 8)));
     const charge = j.t < T1 ? Math.max(0, (j.t - (T1 - 0.45)) / 0.45) : 0, ch = charge * charge;
     let v = 0;
-    if (j.t >= T1 && j.t < T2) { const u = (j.t - T1) / j.warp; v = u < 0.15 ? Math.pow(u / 0.15, 1.5) : 1; }   // (u > 1 while holding in white: still full warp)
+    if (j.t >= T1 && j.t < T2) { const u = (j.t - T1) / j.warp; v = u < 0.15 ? Math.pow(u / 0.15, 1.5) : 1; }   // (u > 1 while holding in hyperspace: still full warp)
     else if (j.t >= T2) v = Math.pow(1 - Math.min(1, (j.t - T2) / j.arrive), 2.2);
     navWarp = j.t < T1 ? 1 - 2.6 * ch : 1 + 70 * v; travelV = v;
     const since = j.t - T1, over = since >= 0 ? Math.max(0, 1 - since / 0.6) : 0;
@@ -2880,9 +2895,9 @@
     camMove.pitch = 0.035 * ch;
     if (since >= 0 && !j.shook) { j.shook = true; camMove.shake = 1; try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(35); } catch (e) {} }
     const fl = j.t < tf ? Math.pow(Math.max(0, 1 - (tf - j.t) / 0.35), 1.5)
-             : j.t < ta ? 0.9 + 0.06 * Math.sin(j.t * 7) + 0.04 * Math.sin(j.t * 17)                 // holding in white: a gentle shimmer, streaks faintly behind
+             : j.t < ta ? 1                                                                              // holding in hyperspace: the veil stays, the streaks rush on
              : Math.pow(Math.max(0, 1 - (j.t - ta) / (H ? 0.6 : 0.35)), 1.5);
-    jumpFlash.style.opacity = fl.toFixed(3);
+    warpVeil = fl; warpDeep = H && j.t >= tf - 0.35 && j.t < ta + 0.6 ? Math.min(1, (j.t - tf + 0.35) / 0.6, (ta + 0.6 - j.t) / 0.6) : 0;
     if (!j.swapped && j.t >= tf + H / 2) { j.swapped = true;
       const q = planetOf(j.o, j.planet);
       if (q) {                                          // you come out of the warp at the planet's parking spot, facing it (at a star: straight on, the way you came)
@@ -2891,7 +2906,7 @@
       }
       arriveAt(j.o, j.dir, j.planet); }
     if (j.swapped) {                        // the destination rushes in from far away, then slows to a stop
-      const ga = ta + (H ? 0.45 : 0.25);                                                        // start growing once the white has mostly cleared
+      const ga = ta + (H ? 0.45 : 0.25);                                                        // start growing once the veil has mostly cleared
       const u = THREE.MathUtils.clamp((j.t - ga) / (T3 - ga), 0, 1), e = 1 - Math.pow(1 - u, 3);
       // it starts exactly as big on screen as it looked before you left, and only grows from there
       const ext = dest.ext || 10, off = dest.off || 0, G = dest.group, DEST_D = dest.D;
@@ -2916,7 +2931,7 @@
       }
     }
     if (j.t >= T3) {
-      deepJump = null; navWarp = 1; worldFov = 55; travelV = 0; jumpFlash.style.opacity = 0; dest.group.scale.setScalar(1); deepBeacon.visible = false; deepPicture.visible = false; setDestFade(1); if (dest && dest.pts) dest.pts.forEach(p => p.m.size = p.s);
+      deepJump = null; navWarp = 1; worldFov = 55; travelV = 0; warpVeil = warpDeep = 0; dest.group.scale.setScalar(1); deepBeacon.visible = false; deepPicture.visible = false; setDestFade(1); if (dest && dest.pts) dest.pts.forEach(p => p.m.size = p.s);
       saveDeep(); factsFor = { deep: true, center: true, name: deep.planet ? deep.planet.toUpperCase() : j.o.name, facts: deepFacts(j.o, deep.planet) }; factsT = performance.now();
       try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(20); } catch (e) {}
     }
@@ -3005,7 +3020,7 @@
     updateDeepRoute();
     deepLabels();
   }
-  window.__deepDebug = () => ({ scale: dest ? dest.group.scale.x : null, jumping: !!deepJump, at: deep.at, sys: deep.sys, planet: deep.planet, local: LOCAL.map(o => o.id), active: ACTIVE.length, all: ALL_DEEP.length, here: deep.here.toArray().map(v => +v.toFixed(2)), limit: deep.limit, jumping: !!deepJump,
+  window.__deepDebug = () => ({ scale: dest ? dest.group.scale.x : null, jumping: !!deepJump, veil: +warpVeil.toFixed(3), hyper: +warpDeep.toFixed(3), at: deep.at, sys: deep.sys, planet: deep.planet, local: LOCAL.map(o => o.id), active: ACTIVE.length, all: ALL_DEEP.length, here: deep.here.toArray().map(v => +v.toFixed(2)), limit: deep.limit, jumping: !!deepJump,
     systems: SYSTEMS.length, landmarks: LANDMARKS.length, satLonDeg: +(satLon / DEG).toFixed(2),
     shown: SYSTEMS.filter(o => deepDist(o) <= deep.limit).length });
   window.__deepScr = id => { const o = (PLACE.get(id) || LOCAL.find(x => x.id === id)); return o ? deepScreenOf(o).map(v => typeof v === 'number' ? +v.toFixed(1) : v) : null; };
@@ -3016,6 +3031,7 @@
     const o = (PLACE.get(id) || LOCAL.find(x => x.id === id)); if (o) { cancelLock(); deepGo(o, planetName); }
   };
 
+  window.__localDebug = () => ({ shipKm: localShip.length(), bodies: LOCAL.map(o => ({ id: o.id, distKm: o.distKm, centreKm: o.q ? orbitPos(o.host, o.q).length() : 0 })) });
   window.__deepGo = id => { const o = (PLACE.get(id) || LOCAL.find(x => x.id === id)); if (o) deepGo(o); return !!o; };
   window.__deepFace = id => { const o = (PLACE.get(id) || LOCAL.find(x => x.id === id)); if (o) { faceQuat(relDir(o, new THREE.Vector3()), qFace); spaceRig.quaternion.copy(qFace); syncSysRig(); } return !!o; };
 
@@ -3651,6 +3667,7 @@
     renderer.clearDepth();
     camera.near = sysNear; camera.updateProjectionMatrix();
     renderer.render(sysScene, camera);
+    if (warpVeil > 0.003) { veilMat.uniforms.k.value = warpVeil; veilMat.uniforms.aspect.value = innerWidth / innerHeight; renderer.render(veilScene, veilCam); }
     camera.near = n0; camera.far = f0; camera.updateProjectionMatrix();
     renderer.clearDepth();
     appLayer.visible = false; if (dash) dash.g.visible = false;
@@ -3949,7 +3966,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-24 · 55';
+    tag.textContent = 'SCREEN 2026-11-24 · 56';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
