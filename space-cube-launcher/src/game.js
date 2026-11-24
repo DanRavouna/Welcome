@@ -374,6 +374,21 @@
     if (planet) dir.addScaledVector(axis, 0.3);
     return dir.normalize();
   }
+  // A star seen close: a disk in its own colour, darker toward its edge, inside a soft glow that scales with it
+  function starMesh(q, r) {
+    const col = new THREE.Color(...q.col);
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 64, 40), new THREE.ShaderMaterial({
+      uniforms: { col: { value: col } },
+      vertexShader: `varying vec3 vN, vV; void main() { vN = normalize(mat3(modelMatrix) * normal); vec4 w = modelMatrix * vec4(position, 1.0); vV = normalize(cameraPosition - w.xyz); gl_Position = projectionMatrix * viewMatrix * w; }`,
+      fragmentShader: `uniform vec3 col; varying vec3 vN, vV; void main() { float mu = max(0.0, dot(normalize(vN), normalize(vV)));
+        gl_FragColor = vec4(mix(col, vec3(1.0), 0.55 * mu) * (0.55 + 0.45 * sqrt(mu)), 1.0); }` }));
+    const rgb = q.col.map(v => Math.round(v * 255)).join(',');
+    [[2.6, 0.9], [7, 0.35]].forEach(([s, op]) => {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: pointTexture(rgb), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: op }));
+      sp.scale.set(r * s * 2, r * s * 2, 1); m.add(sp);
+    });
+    return m;
+  }
   function bodyTexture(q) { return q.look === 'saturn' ? saturnTexture() : q.look ? solTexture(q.look) : null; }
   function clearBody() {
     const g = BODY.group;
@@ -390,10 +405,11 @@
     const eqKm = q.eqRKm || q.diamKm / 2, polKm = q.polRKm || eqKm, pl = orbitPlane(sys), g = BODY.group;
     k = KM_SCENE / (PARK_RADII * eqKm);
     BODY.sys = sys; BODY.q = q; BODY.eqKm = BODY.fitKm = eqKm;
-    const fr = bodyFrame(sys, q); BODY.starDir.copy(fr.starDir); BODY.axis.copy(fr.axis);
+    const fr = q.star ? { starDir: dir.clone().negate().normalize(), axis: orbitPlane(sys).n.clone() } : bodyFrame(sys, q);   // a star: its own light, its system's north
+    BODY.starDir.copy(fr.starDir); BODY.axis.copy(fr.axis);
     g.position.copy(dir).normalize().multiplyScalar(KM_SCENE); g.scale.setScalar(1);
     g.quaternion.setFromUnitVectors(V(0, 1, 0), BODY.axis);
-    const mesh = planetMesh(Object.assign({}, q, { tex: bodyTexture(q) }), eqKm * k, sunDirU);
+    const mesh = q.star ? starMesh(q, eqKm * k) : planetMesh(Object.assign({}, q, { tex: bodyTexture(q) }), eqKm * k, sunDirU);
     mesh.scale.y = polKm / eqKm;               // flattened at the poles, where the data says so
     g.add(mesh); BODY.mesh = mesh;
     if (q.rings) {
@@ -450,7 +466,7 @@
         bodyR: (mo ? mo.m.r : eqKm) * k,               // the solid body
         fitR: (mo ? mo.m.r : BODY.fitKm) * k,          // what has to fit on screen (a ringed planet: its rings)
         facts: mo ? ['DIAMETER ' + km(2 * mo.m.r), 'ORBIT ' + km(mo.m.a) + ' FROM ' + q.name.toUpperCase()]
-                  : ['DIAMETER ' + km(2 * eqKm), ...(q.rings ? ['RINGS ' + km(2 * q.rings.A1) + ' ACROSS'] : [])] };
+                  : q.facts || ['DIAMETER ' + km(2 * eqKm), ...(q.rings ? ['RINGS ' + km(2 * q.rings.A1) + ' ACROSS'] : [])] };
       n.occ = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), occMat); n.occ.renderOrder = -10; occluders.add(n.occ);
       n.occNear = new THREE.Mesh(n.occ.geometry, occMat); n.occNear.renderOrder = -10; nearOcc.add(n.occNear);
       NAV.push(n);
@@ -2339,7 +2355,7 @@
         lockCorners[i].setAttribute('d', `M${(cx - sx * L).toFixed(1)},${cy.toFixed(1)} L${cx.toFixed(1)},${cy.toFixed(1)} L${cx.toFixed(1)},${(cy - sy * L).toFixed(1)}`);
       });
       const here = navLock.deep ? deep.sys === navLock.id : nav.target === navLock.name;
-      lockName.textContent = navLock.name + (here ? '' : '  ' + (navLock.kind === 'planet' ? distText(navLock) : navLock.deep ? fmtLy(deepDist(navLock)) : fmtKm(Math.max(0, dist - navLock.bodyR) / k)));
+      lockName.textContent = navLock.name + (here ? '' : '  ' + (navLock.local ? distText(navLock) : navLock.deep ? fmtLy(deepDist(navLock)) : fmtKm(Math.max(0, dist - navLock.bodyR) / k)));
       lockName.setAttribute('x', (x - sz).toFixed(1)); lockName.setAttribute('y', (y + sz + 16).toFixed(1));
       lockHint.textContent = here ? 'YOU ARE HERE' : navLock.deep ? (inRange(navLock) ? 'TAP AGAIN TO JUMP' : 'OUT OF RANGE · MAX ' + WARP_LY + ' LY') : 'TAP AGAIN TO ENGAGE';
       lockHint.setAttribute('x', (x - sz).toFixed(1)); lockHint.setAttribute('y', (y + sz + 30).toFixed(1));
@@ -2404,7 +2420,7 @@
   //  - The Milky Way band along the real galactic plane, with slow coloured waves of gas.
   //  The sky is turned so the Sun sits where it really is against those stars, from the home planet's real
   //  place on its orbit today (the catalogue's time model).
-  //  Tap to lock on, tap again to jump there. SOL brings you home.
+  //  Tap to lock on, tap again to jump there. A jump to a star lands at the star; from there you jump on to its planets.
   //  Landmark close-ups and planet surfaces are artist's impressions built from each object's real numbers.
   // =========================================================
   // Where you are: a place (a star system or a landmark) and, in a star system, the planet you're at.
@@ -2418,7 +2434,7 @@
   deep.limit = Math.max(deep.limit, WARP_LY);          // star dots are always drawn at least as far as you can jump
   // the star map records a place as seen (???) only when its name tag shows on your screen, or you lock on to it
   const reportSeen = o => window.CAT.saw(o.id);
-  const inRange = o => !o.deep || o.kind === 'planet' || window.CAT.inReach(window.CAT.byId.get(o.id));
+  const inRange = o => !o.deep || o.local || window.CAT.inReach(window.CAT.byId.get(o.id));
   const SKY = window.CAT;                             // the one catalogue (see the top of the page)
   const DEG = Math.PI / 180;
   const satLon = SKY.homeLon;                         // the home planet's real longitude today (the catalogue's time model)
@@ -2444,20 +2460,26 @@
   const ALL_DEEP = [...SYSTEMS, ...LANDMARKS, SOL];
   const PLACE = new Map(ALL_DEEP.map(o => [o.id, o]));
   const curPlace = () => PLACE.get(deep.sys);
-  // ---- inside a star system: every planet on its orbit (orbitPos), so from the planet you're at you see the others
+  // ---- inside a star system: its bodies (the star and every planet on its orbit, orbitPos), so from where you are you see the others
   //      in their true directions and sizes, and can lock on and jump between them. The same for every system, ours included.
+  //      `local`: a body of the system you're in (q: its planet, or null for the star).
   let LOCAL = [], ACTIVE = [], SPRITED = [];
   const distText = o => (o.distKm / KM_AU).toFixed(o.distKm < 10 * KM_AU ? 2 : 1) + ' AU';
-  const mainPlanet = SKY.mainPlanet, defaultPlanet = SKY.defaultPlanet, planetOf = SKY.planetOf;
+  const planetOf = SKY.planetOf;                        // (the named planet, or null: the star)
   function setupLocal() {
-    LOCAL.forEach(o => { const i = ALL_DEEP.indexOf(o); if (i >= 0) ALL_DEEP.splice(i, 1); skyRig.remove(o.sprite); o.sprite.material.dispose(); });
+    LOCAL.forEach(o => { const i = ALL_DEEP.indexOf(o); if (i >= 0) ALL_DEEP.splice(i, 1); if (o.sprite) { skyRig.remove(o.sprite); o.sprite.material.dispose(); } });
     LOCAL = [];
     const s = curPlace(); if (!s.planets) return;
-    const P = orbitPos(s, planetOf(s, deep.planet));
+    const here = planetOf(s, deep.planet), P = here ? orbitPos(s, here) : new THREE.Vector3();
+    if (here) {                                          // the star: its glow is drawn by buildDest, so it needs no dot of its own
+      const o = { deep: true, local: true, kind: 'star', id: 'star:' + s.id, name: s.name, host: s, q: null, pos: s.pos, ly: s.ly,
+        distKm: P.length(), dirLocal: P.clone().negate().normalize(), facts: deepFacts(s) };
+      ALL_DEEP.push(o); LOCAL.push(o);
+    }
     s.planets.forEach(q => {
-      if (q.name === deep.planet) return;
+      if (q === here) return;
       const v = orbitPos(s, q).sub(P), cls = q.cls;
-      const o = { deep: true, kind: 'planet', id: q.id, name: q.name.toUpperCase() + (q.home ? ' · HOME' : ''), host: s, q, pos: s.pos, ly: s.ly,
+      const o = { deep: true, local: true, kind: 'planet', id: q.id, name: q.name.toUpperCase() + (q.home ? ' · HOME' : ''), host: s, q, pos: s.pos, ly: s.ly,
         distKm: v.length(), dirLocal: v.normalize(), diamKm: q.diamKm, facts: deepFacts(s, q.name) };
       o.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: pointTexture(q.rgb || (cls === 'giant' ? '255,225,180' : cls === 'rocky' ? '230,200,170' : '170,210,255')), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
       skyRig.add(o.sprite); ALL_DEEP.push(o); LOCAL.push(o);
@@ -2467,7 +2489,8 @@
   const relDir = (o, out) => o.dirLocal ? out.copy(o.dirLocal) : out.copy(o.pos).sub(deep.here).normalize();
   const planetClass = SKY.planetClass, CLASS_NAME = SKY.CLASS_NAME;
   function deepFacts(o, planetName) {
-    return o.planets ? [...SKY.placeFacts(o), ...SKY.planetFacts(planetOf(o, planetName))] : SKY.placeFacts(o);
+    const q = planetOf(o, planetName);
+    return q ? [...SKY.placeFacts(o), ...SKY.planetFacts(q)] : SKY.placeFacts(o);
   }
   ALL_DEEP.forEach(o => o.facts = deepFacts(o));
 
@@ -2518,7 +2541,7 @@
   function sizeMarkers() {                               // every sky picture at its true size as seen from where you are
     const pxPerRad = (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(worldFov / 2)), minA = MIN_PX / pxPerRad;
     SPRITED.forEach(o => {
-      if (o.kind === 'planet') { o.sprite.scale.setScalar(Math.max(o.diamKm / Math.max(o.distKm, 1), minA) * MARK_R / PIC_FILL); o.faint = 1; return; }   // inside a star system: km
+      if (o.local) { o.sprite.scale.setScalar(Math.max(o.diamKm / Math.max(o.distKm, 1), minA) * MARK_R / PIC_FILL); o.faint = 1; return; }   // inside a star system: km
       const d = deepDist(o); if (d < 1e-6) return;       // (the place you're in)
       const diam = o.diamLy || 0;
       const ang = diam / d, a = Math.max(ang, minA);
@@ -2580,7 +2603,7 @@
     const outside = deep.here.length() > 60000;                     // far outside our galaxy
     ALL_DEEP.forEach(o => { if (!o.sprite) return; relDir(o, o.sprite.position).multiplyScalar(MARK_R); });
     // the few things worth checking every frame: what can be seen and reached from anywhere, this system's planets, and the stars within warp range
-    ACTIVE = ALL_DEEP.filter(o => o.always || o.kind === 'planet' || deepDist(o) <= WARP_LY);
+    ACTIVE = ALL_DEEP.filter(o => o.always || o.local || deepDist(o) <= WARP_LY);
     SPRITED = ACTIVE.filter(o => o.sprite);
     mwGroup.visible = !outside;
     SOL.name = outside ? 'MILKY WAY · SOL' : 'SOL'; SOL.diamLy = outside ? 100000 : SUN_DIAM_LY;   // from outside the galaxy, home is the Milky Way
@@ -2659,7 +2682,7 @@
   }
   function buildDest(o, dir, planetName) {
     clearDest();
-    const q0 = o.planets && planetOf(o, planetName);
+    const q0 = planetOf(o, planetName);
     const R = rng(hash(o.id));
     const fw = dir.clone().normalize();
     const upL = new THREE.Vector3(0, 1, 0).applyQuaternion(spaceRig.quaternion.clone().invert());
@@ -2676,10 +2699,13 @@
       const g1 = glowSprite(rgb, 200 * Math.max(Math.sqrt(g), 0.3), 0.75 * THREE.MathUtils.clamp(g, 0.35, 1)), g2 = glowSprite(rgb, 600 * Math.sqrt(g), 0.25 * Math.min(g, 1));
       [st, g1, g2].forEach(sp => sp.position.copy(starDir).multiplyScalar(STAR_D)); destStar.add(g2, g1, st);
       buildBody(o, q0, fw);                            // the planet itself, with its rings and moons: the one real-scale scene
-      dest.group = BODY.group; dest.D = KM_SCENE; dest.r = BODY.eqKm * k; dest.ext = BODY.fitKm * k; dest.off = 0;
+    } else if (o.planets) {                            // at the star itself: the same scene, with the star as the body (no radius in the catalogue: drawn as the Sun's)
+      const c = starColor(o.teff);
+      buildBody(o, { star: true, name: o.name, eqRKm: (o.strad || 1) * SUN_R_KM, col: [c.r, c.g, c.b], facts: SKY.placeFacts(o) }, fw);
     } else clearBody();
+    if (o.planets) { dest.group = BODY.group; dest.D = KM_SCENE; dest.r = BODY.eqKm * k; dest.ext = BODY.fitKm * k; dest.off = 0; }
     destGroup.position.copy(fw).multiplyScalar(DEST_D); destGroup.scale.setScalar(1);
-    if (q0) {}
+    if (o.planets) {}                                  // (a star system: its body scene is built above)
     else if (o.kind === 'blackhole') {
       const bh = new THREE.Group(); bh.position.copy(at(0, 0, 90)); destGroup.add(bh);
       const hole = new THREE.Mesh(new THREE.SphereGeometry(7, 48, 32), new THREE.MeshBasicMaterial({ color: 0x000000 }));
@@ -2823,12 +2849,12 @@
   document.body.appendChild(jumpFlash);
 
   function deepGo(o, planetName) {
-    if (o.kind === 'planet') return deepGo(o.host, o.q.name);
+    if (o.local) return deepGo(o.host, o.q ? o.q.name : null);
     if (deepJump || travel || !inRange(o)) return;
-    const same = o.id === deep.sys;
-    if (o.planets) planetName = planetOf(o, planetName).name;
+    const same = o.id === deep.sys, q = planetOf(o, planetName);
+    planetName = q ? q.name : null;                    // a planet of that system, or null: its star (a jump to a star lands at the star)
     if (same && (!o.planets || planetName === deep.planet)) return;
-    const lb = same ? LOCAL.find(x => x.q.name === planetName) : null;
+    const lb = same ? LOCAL.find(x => x.q === q) : null;
     const dir = lb ? lb.dirLocal.clone() : relDir(o, new THREE.Vector3());     // another planet of this system: its real direction
     // far jumps hold in white light for a while (2 s for the nearest landmarks, up to 4 s for M87): you're travelling far
     const dly = o.pos.distanceTo(deep.here), lg = Math.log10;
@@ -2858,8 +2884,9 @@
              : Math.pow(Math.max(0, 1 - (j.t - ta) / (H ? 0.6 : 0.35)), 1.5);
     jumpFlash.style.opacity = fl.toFixed(3);
     if (!j.swapped && j.t >= tf + H / 2) { j.swapped = true;
-      if (j.o.planets) {                                // you come out of the warp at the planet's parking spot, facing it
-        const fr = bodyFrame(j.o, planetOf(j.o, j.planet));
+      const q = planetOf(j.o, j.planet);
+      if (q) {                                          // you come out of the warp at the planet's parking spot, facing it (at a star: straight on, the way you came)
+        const fr = bodyFrame(j.o, q);
         j.dir = parkDir(j.dir.clone().negate(), fr.starDir, fr.axis, true).negate(); faceQuat(j.dir, qFace); spaceRig.quaternion.copy(qFace);
       }
       arriveAt(j.o, j.dir, j.planet); }
@@ -2911,7 +2938,7 @@
   function deepVis(o) {                                // how visible a marker is right now (0..1)
     if (o.id === deep.sys) return 0;                   // the place you're in
     const c = THREE.MathUtils.smoothstep(relDir(o, dTmp2).dot(fwdLocal), CONE[0], CONE[1]);
-    if (o.always || o.kind === 'planet') return 0.35 + 0.65 * c;
+    if (o.always || o.local) return 0.35 + 0.65 * c;
     return deepDist(o) > WARP_LY ? 0 : c;              // ordinary stars: named and reachable within warp range only
   }
   function deepPick(x, y) {
@@ -2927,7 +2954,6 @@
   // ---- labels near the middle of the view ----
   const deepLabelG = document.createElementNS(SVGNS, 'g'); hudEl.append(deepLabelG);
   for (let i = 0; i < 6; i++) { const L = makeTag({ name: '', minor: true, sx: 1, sy: -1 }, deepLabelG); L.g.style.display = 'none'; DLABELS.push(L); }
-  const starTag = { deep: true, kind: 'star' };
   function deepLabels() {
     const cx = innerWidth / 2, cy = innerHeight / 2, R2 = Math.min(innerWidth, innerHeight) * 0.3, picks = [];
     const body = dest ? deepScreenOf({ center: true }) : null;      // no name tags over the close-up in front of you
@@ -2937,12 +2963,6 @@
       if (body && body[3] && Math.hypot(x - body[0], y - body[1]) < body[2] + 6) return;
       const d = Math.hypot(x - cx, y - cy); if (d < R2) picks.push({ o, x, y, d });
     });
-    if (!deepJump && BODY.q) {                          // the star of the system you're in
-      if (starTag.sys !== BODY.sys) Object.assign(starTag, { sys: BODY.sys, id: 'star:' + BODY.sys.id, name: BODY.sys.name, dirLocal: BODY.starDir });
-      starTag.distKm = (BODY.q.auNow || BODY.q.au) * KM_AU;
-      const [x, y, , front] = deepScreenOf(starTag), d = Math.hypot(x - cx, y - cy);
-      if (front && d < R2) picks.push({ o: starTag, x, y, d });
-    }
     picks.sort((a, b) => a.d - b.d);
     const placed = [];
     DLABELS.forEach((L, i) => {
@@ -2981,7 +3001,7 @@
       occDir.copy(a.position).sub(camera.position); const dist = occDir.length();
       b.visible = dist > rs * 1.02; b.position.copy(camera.position).addScaledVector(occDir, 0.5 / dist); b.scale.setScalar(rs * 0.985 * 0.5 / dist);
     });
-    if (!deep.planet) sysNear = 0.5;
+    if (!BODY.q) sysNear = 0.5;                         // (no body scene: a landmark)
     updateDeepRoute();
     deepLabels();
   }
@@ -3582,7 +3602,7 @@
     updateMoons(dt);
     if (active !== 'sky' && !travel && !deepJump) {
       spaceRig.rotation.y += skyVelY * dt; spaceRig.rotation.x += skyVelX * dt;
-      skyVelY += ((nav.target || !deep.planet ? 0 : CFG.skyTurnSpeed) - skyVelY) * Math.min(0.6 * dt, 1);   // parked at a body: no slow drift
+      skyVelY += ((nav.target || !BODY.q ? 0 : CFG.skyTurnSpeed) - skyVelY) * Math.min(0.6 * dt, 1);   // parked at a body: no slow drift
       skyVelX *= Math.pow(0.4, dt);
     }
     appFade += ((appsVisible ? 1 : 0) - appFade) * Math.min(6 * dt, 1);
@@ -3929,7 +3949,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 54';
+    tag.textContent = 'SCREEN 2026-11-24 · 55';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);

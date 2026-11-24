@@ -12,11 +12,12 @@ These came out of long back-and-forth. Do not reopen them without asking him. Qu
 - Fix things for the whole game, never for one case. ("Are you hard fixing only the solar system or is this applying to the whole game ?")
 
 ## The game
-- **Where you are** = a place (a star system or a landmark) + in a star system, the planet you are at. Home is Saturn in our system. Nothing else is special about it.
+- **Where you are** = a place (a star system or a landmark) + in a star system, the planet you are at, or the star itself. Home is Saturn in our system. Nothing else is special about it.
+- **A jump to a star lands at the star**, for every star, ours included (2026-11-24: "when jumping to sol it should go to the sun not saturn", then "Y" to every star). From the star you jump on to its planets. The star is a body of its system like a planet: tagged, locked on and jumped to the same way.
 - **Warp range**: you can jump to stars within 20 ly of where you are. Our own system and the landmarks can be reached from anywhere.
 - Stars beyond 20 ly are plain dots: no tag, cannot be tapped. ("If the name tag is dimmer i can still see it !": a dimmed tag still counts as seen, so far stars get no tag at all.)
 - **Sizes in the sky are real** ("Real sky sizes"), with a smallest dot of 9 px. (See the open scale question in `HANDOFF.md`.)
-- Every star system shows its planets on their orbits; you can see, lock on and jump between sibling planets. The same for our system and all others ("Uniformize all planets").
+- Every star system shows its star and its planets on their orbits; you can see, lock on and jump between them. The same for our system and all others ("Uniformize all planets").
 - **Warp visuals**: a route line is drawn, also for far jumps. Far jumps hold in white light 2 to 4 s by distance ("to show we re traveling far"). On arrival the target starts at the size it had on screen before the jump and only grows. The sky picture of a landmark cross-fades into its 3D close-up.
 - Ships and squadrons are left behind when you warp. They steer around the whale and each other.
 

@@ -38,9 +38,9 @@ Find a section by searching for its title (the words in capitals); line numbers 
 
 ### DEEP SKY section
 - **State**: `deep` is `CAT.state` plus `deep.here` (where you are among the stars, ly) and the getters `atHome` / `at`.
-- **Objects**: `SOL`, `SYSTEMS` (642), `LANDMARKS`, `ALL_DEEP`, `PLACE` (id to object). `LOCAL`: the other planets of the system you are in (`kind: 'planet'`, with `dirLocal`, `distKm`), rebuilt by `setupLocal()`. `ACTIVE` / `SPRITED`: the short lists checked every frame, rebuilt by `refreshMarkers()`.
+- **Objects**: `SOL`, `SYSTEMS` (642), `LANDMARKS`, `ALL_DEEP`, `PLACE` (id to object). `LOCAL`: the other bodies of the system you are in, each marked `local: true` with `dirLocal`, `distKm` and `q` (its planet, or null for the star, `kind: 'star'`, id `star:<system id>`, no sprite: its glow is `destStar`), rebuilt by `setupLocal()`. Every rule about "a body of this system" checks `o.local`, never a kind. `ACTIVE` / `SPRITED`: the short lists checked every frame, rebuilt by `refreshMarkers()`.
 - **Rules of the sky**: `inRange(o)`, `deepVis(o)` (how visible a marker is), `relDir(o)`, `sizeMarkers()` (true angular size, 9 px floor).
-- **Arriving**: `arriveAt(o, dir, planetName)` = `CAT.arrive` + `setupLocal` + `buildDest` + `refreshMarkers`. `buildDest` draws the star's glow and then either calls `buildBody` (a planet) or builds a landmark close-up by `kind` and `look` in `destGroup`. `dest.group` / `dest.D` say what rushes in on arrival and how far it ends up.
+- **Arriving**: `arriveAt(o, dir, planetName)` = `CAT.arrive` + `setupLocal` + `buildDest` + `refreshMarkers`. `buildDest` either draws the star's glow and calls `buildBody` (a planet), calls `buildBody` with the star as the body (`q.star`: drawn by `starMesh`, radius `strad` x the Sun's, no planet name), or builds a landmark close-up by `kind` and `look` in `destGroup`. `dest.group` / `dest.D` say what rushes in on arrival and how far it ends up.
 - **Warping**: `deepGo(o, planetName)` starts it; `deepJumpUpdate(dt)` runs it: turn, charge, warp, white hold, the swap (`arriveAt`) in the middle of the white, then the growth from the size it had before the jump. At the swap a planet's direction becomes `parkDir(...)` and the view snaps to face it.
 - **Tags of sky places**: `deepLabels()` (a pool of 6, `DLABELS`); it also tags the star you are near and reports "seen" to the catalogue.
 - `deepUpdate(dt)` is the per-frame entry. `window.SpaceJump(id, planetName)` is what the map calls.
@@ -53,7 +53,7 @@ Find a section by searching for its title (the words in capitals); line numbers 
 `systems, sol, landmarks, byId, starCats, warpLy, planetCount, KM_AU, fmtLy, starRGB, starCat, planetClass, CLASS_NAME, CLASS_LONG` (data and helpers);
 `now, homeLon, helio` (time model); `picture(o)` (a canvas);
 `state, save, arrive(sysId, planetName), saw(id), hereId(), atHome(), homePlanet` (state);
-`dist(a, b), inReach(o), known(o), placeFacts(o), planetFacts(q), mainPlanet, defaultPlanet, planetOf` (rules).
+`dist(a, b), inReach(o), known(o), placeFacts(o), planetFacts(q), mainPlanet, defaultPlanet, planetOf` (rules). `planetOf(o, name)` is the named planet or null (the star); `defaultPlanet` is only for converting old saves.
 
 ## The map (`window.SpaceMap`)
 `open, close, isOpen (a getter), back, debug(), groups(), selectId(id), card()`. It keeps its own copies of the places with map positions (distance squeezed: `18 x log10(1 + ly)`), reads `CAT.state` directly and calls `window.SpaceJump` to jump. It never writes where you are.
@@ -64,7 +64,7 @@ Find a section by searching for its title (the words in capitals); line numbers 
 | `__deepDebug()` | `{ sys, planet, jumping, scale, local, active, all, ... }` |
 | `__deepGo(id)` | warp to a place (`'sol'`, `'sys:Proxima Cen'`, `'m42'`) or a sibling planet (`'pl:MARS'`) |
 | `__deepFace(id)`, `__deepScr(id)` | turn to face it; where it is on screen `[x, y, ...]` (to click it) |
-| `__face('body' \| 'star')` | face the planet you are at, or its star |
+| `__face('body' \| 'star')` | face the planet you are at, or its star (at a planet only; at a star use `__deepFace('star:<id>')` from a planet) |
 | `__navList()`, `__navGo(NAME)`, `__navDebug()` | flight targets; fly to one; `{ target, travel, ship }` |
 | `SpaceJump(id, planetName)` | the map's jump |
 

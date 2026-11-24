@@ -24,11 +24,25 @@ with Game() as g:
     check('Earth has the Moon', [n['name'] for n in g.js('window.__navList()')] == ['EARTH', 'MOON'])
     # a planet with no moons, another star, a hop between its planets
     g.warp('sol', 'MARS'); check('a planet without moons still has its scene', [n['name'] for n in g.js('window.__navList()')] == ['MARS'])
-    g.js("window.__deepGo('sys:Proxima Cen')"); g.wait_warp(); check('warp to a star within range', g.where()[0] == 'sys:Proxima Cen')
-    other = 'Proxima Cen d' if g.where()[1] == 'Proxima Cen b' else 'Proxima Cen b'
-    g.js(f"window.__deepFace('pl:{other}')"); g.wait(600)
-    x, y, *_ = g.js(f"window.__deepScr('pl:{other}')"); g.pg.mouse.click(x, y); g.wait(300); g.pg.mouse.click(x, y); g.wait_warp()
-    check('hop to the sibling planet by tapping it', g.where() == ('sys:Proxima Cen', other))
+    # the arrival grows smoothly: sample the scene's scale through a whole warp (finite, never shrinking once it grows)
+    g.js("window.__deepGo('sys:Proxima Cen')"); sc = []
+    for i in range(90):
+        g.wait(60); d = g.js('window.__deepDebug()'); sc.append(d['scale'])
+        if i > 8 and not d['jumping']: break
+    g.wait_warp(); after = [v for v in sc[next((i for i, v in enumerate(sc) if v is not None and v < 1), len(sc)):] if v is not None]
+    check('a jump to a star lands at the star', g.where() == ('sys:Proxima Cen', None))
+    check('the arrival at a star grows smoothly', len(after) > 5 and all(v == v and 0 < v <= 1 for v in after) and all(b >= a - 1e-9 for a, b in zip(after, after[1:])), sc)
+    check('at a star: the star is the body you are at', [n['name'] for n in g.js('window.__navList()')] == ['PROXIMA CEN'], g.js('window.__navList()'))
+    check('at a star: arrival facts name the star', g.facts()[:1] == ['PROXIMA CEN'], g.facts())
+    check('at a star: every planet is a body to jump to', set(g.js('window.__deepDebug()')['local']) == {'pl:Proxima Cen b', 'pl:Proxima Cen d'}, g.js('window.__deepDebug()')['local'])
+    def tap2(id):
+        g.pg.evaluate('i => window.__deepFace(i)', id); g.wait(600)
+        x, y, *_ = g.pg.evaluate('i => window.__deepScr(i)', id); g.pg.mouse.click(x, y); g.wait(300); g.pg.mouse.click(x, y); g.wait_warp()
+    tap2('pl:Proxima Cen b'); check('from the star, tap a planet to go there', g.where() == ('sys:Proxima Cen', 'Proxima Cen b'))
+    tap2('pl:Proxima Cen d'); check('hop to the sibling planet by tapping it', g.where() == ('sys:Proxima Cen', 'Proxima Cen d'))
+    check('the star is a body you can jump back to', 'star:sys:Proxima Cen' in g.js('window.__deepDebug()')['local'])
+    tap2('star:sys:Proxima Cen'); check('tap the star twice: back at the star', g.where() == ('sys:Proxima Cen', None))
+    g.reload(); check('reload at a star', g.where() == ('sys:Proxima Cen', None) and [n['name'] for n in g.js('window.__navList()')] == ['PROXIMA CEN'])
     g.js("window.__deepFace('sol')"); g.wait(600); check('home is tagged from there', any(t.startswith('SOL') for t in g.tags()), g.tags())
     # out of range, landmarks, home
     far = g.js("CAT.systems.find(s => !s.always && CAT.dist(s, CAT.byId.get(CAT.state.sys)) > CAT.warpLy + 5).id")
@@ -36,7 +50,14 @@ with Game() as g:
     for lm in ['m42', 'sgra']:
         g.js(f"window.__deepGo('{lm}')"); g.wait_warp(); check(f'warp to landmark {lm}', g.where() == (lm, None))
     check('no flight targets at a landmark', g.js('window.__navList()') == [])
-    g.js("window.__deepGo('sol')"); g.wait_warp(); check('SOL brings you home', g.where() == ('sol', 'SATURN'))
-    g.reload(); check('reload at home', g.where() == ('sol', 'SATURN'))
+    g.js("window.__deepGo('sol')"); g.wait_warp(); check('SOL brings you to the Sun', g.where() == ('sol', None))
+    check('at the Sun: all 8 planets around you', len(g.js('window.__deepDebug()')['local']) == 8)
+    tap2('pl:SATURN'); check('from the Sun, tap Saturn: home', g.where() == ('sol', 'SATURN') and g.js('CAT.atHome()'))
+    g.js("window.__deepFace('star:sol')"); g.wait(600)
+    check('at a planet, the star is tagged', any(t.startswith('SOL') for t in g.tags()), g.tags())
+    x, y, *_ = g.js("window.__deepScr('star:sol')"); g.pg.mouse.click(x, y); g.wait(400)
+    check('the star can be locked on', 'SOL' in g.lock() and 'TAP AGAIN TO JUMP' in g.lock(), g.lock())
+    g.pg.mouse.click(x, y); g.wait_warp(); check('...and jumped to', g.where() == ('sol', None))
+    tap2('pl:SATURN'); g.reload(); check('reload at home', g.where() == ('sol', 'SATURN'))
     s = g.state(); check('visited and scanned recorded', {'sol', 'sys:Proxima Cen', 'm42', 'sgra'} <= set(s['visited']) and {'pl:JUPITER', 'pl:EARTH', 'pl:MARS'} <= set(s['scanned']), s)
 done()

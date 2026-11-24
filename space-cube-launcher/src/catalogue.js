@@ -89,7 +89,8 @@ window.CAT = (() => {
   const dist = (a, b) => { const p = p3(a), q = p3(b); return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]); };
 
   // ---- THE STATE: where you are and what you know. One save, used by the game and by the map. ----
-  //   sys + planet: the place you're in (a star system or a landmark) and, in a system, the planet you're at. Home = our system's home planet.
+  //   sys + planet: the place you're in (a star system or a landmark) and, in a system, the planet you're at (null: at the star itself).
+//   Home = our system's home planet. A jump to a star lands at the star; its planets are reached from there.
   //   visited: places you've been.  scanned: planets you've been to.  seen: places whose name tag you've seen but not visited.
   //   nav: the body you flew to inside the planet's system ({target, offset}), or null.
   //   dir, q: which way you arrived and were facing.  limit: how far out star dots are drawn (Settings).
@@ -98,7 +99,7 @@ window.CAT = (() => {
   const isPlace = id => { const o = byId.get(id); return !!o && !o.sys; };
   function load() {
     const get = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
-    let d = get(KEY);
+    let d = get(KEY); const v1 = !!d;
     if (!d) {                                          // saves from before the single state: the game's place and the map's lists
       const g = get('spaceCubeDeep.v1') || {}, m = get('spaceCubeMap.v1') || {};
       let sys = g.sys, planet = g.planet;
@@ -107,7 +108,8 @@ window.CAT = (() => {
     }
     if (isPlace(d.sys)) {
       const o = byId.get(d.sys); state.sys = o.id;
-      state.planet = o.planets ? (o.planets.find(p => p.name === d.planet) || o.planets.find(p => p.home) || mainPlanet(o)).name : null;
+      const q = planetOf(o, d.planet);                 // a planet; in this save's form null means the star; older forms were always at a planet
+      state.planet = q ? q.name : o.planets && !(v1 && d.planet === null) ? defaultPlanet(o).name : null;
       state.dir = d.dir || null; state.q = d.q || null; state.nav = d.nav || null;
     }
     if (d.nav === undefined && state.sys === sol.id && state.planet === homePlanet) {   // flights saved before the single state
@@ -124,13 +126,13 @@ window.CAT = (() => {
       visited: state.visited, scanned: [...state.scanned], seen: [...state.seen] })); } catch (e) {}
   }
   const mainPlanet = o => o.planets.reduce((a, p) => ((p.re || 0) > (a.re || 0) ? p : a), o.planets[0]);
-  const defaultPlanet = o => o.planets.find(p => p.home) || mainPlanet(o);              // where you arrive when you jump to a star
-  const planetOf = (o, name) => (name && o.planets.find(p => p.name === name)) || defaultPlanet(o);
+  const defaultPlanet = o => o.planets.find(p => p.home) || mainPlanet(o);              // only for saves from before you could be at a star
+  const planetOf = (o, name) => (name && o.planets && o.planets.find(p => p.name === name)) || null;   // the named planet of a place, or null: the star itself
   const hereId = () => state.planet ? 'pl:' + state.planet : state.sys;
   const atHome = () => state.sys === sol.id && state.planet === homePlanet;
   function arrive(sysId, planetName, quiet) {          // you are now at this place (and planet): it counts as visited (and scanned)
     const o = byId.get(sysId); if (!o) return;
-    state.sys = o.id; state.planet = o.planets ? planetOf(o, planetName).name : null;
+    const q = planetOf(o, planetName); state.sys = o.id; state.planet = q ? q.name : null;
     if (!state.visited.includes(o.id)) state.visited.push(o.id);
     state.seen.delete(o.id);
     if (state.planet) state.scanned.add('pl:' + state.planet);

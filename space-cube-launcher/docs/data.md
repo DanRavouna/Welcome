@@ -43,7 +43,7 @@ Worked out once when the page loads, for today's date:
 
 ## The saved state (`spaceCube.state.v1`)
 `{ sys, planet, dir, q, nav, limit, visited[], scanned[], seen[] }`
-- `sys` + `planet`: where you are. `dir`: the way you arrived (ship to planet). `q`: which way you were facing.
+- `sys` + `planet`: where you are. In a star system `planet: null` means at the star (screen 55); older save forms with no planet are read as the home or largest planet, where they really were. `dir`: the way you arrived (ship to body). `q`: which way you were facing.
 - `nav`: `{ target, offset }` when you have flown to a body in the planet's system, else null.
 - `limit`: how far out star dots are drawn (the Deep Sky setting, never below `warpLy`).
 - `visited`: places you have been. `scanned`: planets you have been to. `seen`: places whose tag you saw but have not visited.

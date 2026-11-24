@@ -12,7 +12,7 @@ Read this first. It is the short version; the three files in `docs/` hold the de
 ## What it is
 An Android home screen. The phone app (`app/`, Kotlin) is a thin shell around one web page: a 3D view from a ship in space, with your apps as floating cubes. The page is also a small space game: you sit at a planet, see the real sky around you, fly to its moons and warp to other planets, stars and landmarks. A star map shows where you have been.
 
-The phone loads the page live from GitHub Pages (`/space-cube/`), so pushing to `main` updates the phone. Triple-tap the clock to reload; Settings shows the build tag (`SCREEN 2026-11-23 · 54`).
+The phone loads the page live from GitHub Pages (`/space-cube/`), so pushing to `main` updates the phone. Triple-tap the clock to reload; Settings shows the build tag (`SCREEN 2026-11-24 · 55`).
 
 ## The one rule right now
 **Uniformity.** Dan, 2026-11-23: "we cant have multiple parallel systems" and "uniformity is the main rule for now as this will be the base we ll be iterating from". Every place, planet, tag, save and rule goes through ONE path. Before adding anything, find the existing path and extend it. A check on a name (`if (name === 'SATURN')`) is a bug; the data gets a field instead.
@@ -20,7 +20,8 @@ The phone loads the page live from GitHub Pages (`/space-cube/`), so pushing to 
 ## How it is built (one of everything)
 - **One data file**: `tools/catalog.json`, made from `tools/nasa-snapshot.json` (NASA download) + `tools/catalog-hand.json` (everything written by hand).
 - **One catalogue** (`src/catalogue.js`, `window.CAT`), shared by the game and the map. It owns: every place; the **one saved state** (`spaceCube.state.v1`); the **rules** (reach, known, fact text); the **time model** (where every orbiting body is today); the **pictures** of places.
-- **One planet scene** (`buildBody` in `src/game.js`): the planet you are at, at real scale, with rings and moons if its data has them. Home (Saturn) is just one more planet.
+- **One body scene** (`buildBody` in `src/game.js`): the planet you are at, at real scale, with rings and moons if its data has them, or the star itself when you are at a star. Home (Saturn) is just one more planet.
+- **A jump to a star lands at the star** (every star, ours included). The star is one more body of its system (`LOCAL`, `local: true`): tagged, locked on and jumped to like a planet.
 - **One name tag** (`makeTag` / `tagBox` / `drawTag`), for moons, planets, stars and landmarks.
 - **Two ways to travel**, each used everywhere: *flights* inside a planet's system (planet and moons), *warps* between planets, stars and landmarks.
 - **One build**: `python3 space-cube-launcher/tools/build.py` assembles `src/` + data into `app/src/main/assets/index.html`. Never edit that file by hand.
@@ -50,18 +51,18 @@ gh api -X POST repos/DanRavouna/Welcome/actions/workflows/pages.yml/dispatches -
 
 ## What is real and what is not
 - **Real**: star positions and distances, planet sizes/orbits/temperatures (NASA Exoplanet Archive); landmark positions (CDS Sesame); where our 8 planets are today (JPL elements, checked against JPL Horizons); sizes of Saturn, Jupiter, Earth and their moons, moon orbit sizes and periods (NASA fact sheets).
-- **Invented, and marked so in the data**: where a moon or an exoplanet starts on its orbit; the tilt of other stars' orbit planes; every surface picture and landmark close-up (artist's impressions); moon colours.
+- **Invented, and marked so in the data**: where a moon or an exoplanet starts on its orbit; the tilt of other stars' orbit planes; every surface picture and landmark close-up (artist's impressions); moon colours; the look of a star up close (disk and glow; its colour comes from its real temperature, its size from its real radius). 9 of the 643 stars have no radius in the catalogue and are drawn at the Sun's.
+- Not checked against a source in this session: the Sun's radius in the code (696,000 km in `SUN_R_KM`, 1,392,700 km across in `SUN_DIAM_LY`). The NASA fact sheet site was not reachable from the cloud session.
 - Planet spin axes lean by the real amount but around an arbitrary line, not toward the real pole.
 
 ## Open items (nothing here is started)
+Done in screen 55: the star's tag can be tapped and locked on; the map's JUMP to the star you are in works (it lands at the star); Saturn's `YOUR SHIP` tag is gone.
 1. **Sky scale.** Dan, 2026-11-23: nearby planets look the same size as far objects. Cause: nearly everything is under 1 px, so the 9 px floor catches it all. Options given to him: brightness by real apparent brightness (my pick), a compressed size scale, both, or true size only when locked on. He answered "for now none".
 2. Moons exist only for Earth, Jupiter and Saturn. Adding more is data only (`docs/data.md`).
 3. Moon starting points are invented. Real ones need satellite elements and the planet's real pole.
-4. The star's tag (SOL) cannot be tapped or locked on.
-5. On the map, selecting SOL while you are in it shows a JUMP button that does nothing.
-6. Saturn's `tag` in the data still says `YOUR SHIP`.
-7. Never checked on the phone since screen 47: speed, the arrival in motion, and Dan's real save converting.
-8. An old stand-alone star map artifact from the mockup phase still exists in Dan's Claude artifacts, stale. He has not asked to delete it.
+4. Never checked on the phone since screen 47: speed, the arrival in motion, and Dan's real save converting. Also new and unseen on the phone (screen 55): parking at a star.
+5. An old stand-alone star map artifact from the mockup phase still exists in Dan's Claude artifacts, stale. He has not asked to delete it.
+6. The two Sun sizes in the code (see "What is real") should become one constant, checked against NASA.
 
 ## Watch items
 - `clearBody()` resets the flight state (`nav`, `shipPos`, `travel`). Anything that rebuilds the scene loses the parking spot unless it is restored afterwards (see the block "back where you left off").

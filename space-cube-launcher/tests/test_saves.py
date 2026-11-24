@@ -24,6 +24,11 @@ with Game() as g:
     check('screen-49 save: flight taken from the old key', g.js('window.__navDebug()')['target'] == 'MIMAS')
     g.fresh({'spaceCube.state.v1': dict(st, planet='MARS', dir=[0, 0, -1], q=[0, 0, 0, 1]), 'spaceCubeNav.v1': {'target': 'MIMAS', 'offset': [1, 0.5, 2]}})
     check('...but not when you are somewhere else', g.where() == ('sol', 'MARS') and g.js('window.__navDebug()')['target'] is None)
-    # 4) the Deep Sky setting never goes below the warp range
+    # 4) at a star (screen 55): in this save, planet null in a star system means the star itself
+    for sys_ in ['sol', 'sys:Proxima Cen']:
+        g.fresh({'spaceCube.state.v1': dict(st, sys=sys_, planet=None, dir=[0, 0, -1], q=[0, 0, 0, 1])}); check(f'saved at the star of {sys_}: still there', g.where() == (sys_, None), g.where())
+    g.fresh({'spaceCube.state.v1': {k: v for k, v in st.items() if k != 'planet'}}); check('a save with no planet at all: the home planet', g.where() == ('sol', 'SATURN'), g.where())
+    g.fresh({'spaceCubeDeep.v1': {'limit': 50, 'at': 'sys:Proxima Cen', 'planet': None}}); check('old save at a star: still at a planet, as it was', g.where()[0] == 'sys:Proxima Cen' and g.where()[1] is not None, g.where())
+    # 5) the Deep Sky setting never goes below the warp range
     g.fresh({'spaceCube.state.v1': dict(st, limit=10)}); check('range setting clamped to the warp range', g.state()['limit'] == g.js('CAT.warpLy'))
 done()
