@@ -15,31 +15,59 @@
     "name": "MERCURY",
     "au": 0.387,
     "diamKm": 4879,
-    "ph": 60,
+    "ph": 0,
     "rgb": "200,190,180",
     "look": "cratered",
     "side": [
      -1,
      1
+    ],
+    "orbit": [
+     0.38709927,
+     0.20563593,
+     7.00497902,
+     252.2503235,
+     77.45779628,
+     48.33076593,
+     3.7e-07,
+     1.906e-05,
+     -0.00594749,
+     149472.67411175,
+     0.16047689,
+     -0.12534081
     ]
    },
    {
     "name": "VENUS",
     "au": 0.723,
     "diamKm": 12104,
-    "ph": 300,
+    "ph": 0,
     "rgb": "255,245,220",
     "look": "venus",
     "side": [
      1,
      1
+    ],
+    "orbit": [
+     0.72333566,
+     0.00677672,
+     3.39467605,
+     181.9790995,
+     131.60246718,
+     76.67984255,
+     3.9e-06,
+     -4.107e-05,
+     -0.0007889,
+     58517.81538729,
+     0.00268329,
+     -0.27769418
     ]
    },
    {
     "name": "EARTH",
     "au": 1.0,
     "diamKm": 12756,
-    "ph": 200,
+    "ph": 0,
     "rgb": "170,200,255",
     "look": "earth",
     "tag": "HOME PLANET",
@@ -65,27 +93,56 @@
       "side": [
        1,
        -1
-      ]
+      ],
+      "perDays": 27.3217
      }
+    ],
+    "orbit": [
+     1.00000261,
+     0.01671123,
+     -1.531e-05,
+     100.46457166,
+     102.93768193,
+     0.0,
+     5.62e-06,
+     -4.392e-05,
+     -0.01294668,
+     35999.37244981,
+     0.32327364,
+     0.0
     ]
    },
    {
     "name": "MARS",
     "au": 1.524,
     "diamKm": 6792,
-    "ph": 120,
+    "ph": 0,
     "rgb": "255,170,120",
     "look": "mars",
     "side": [
      -1,
      -1
+    ],
+    "orbit": [
+     1.52371034,
+     0.0933941,
+     1.84969142,
+     -4.55343205,
+     -23.94362959,
+     49.55953891,
+     1.847e-05,
+     7.882e-05,
+     -0.00813131,
+     19140.30268499,
+     0.44441088,
+     -0.29257343
     ]
    },
    {
     "name": "JUPITER",
     "au": 5.203,
     "diamKm": 142984,
-    "ph": 40,
+    "ph": 0,
     "rgb": "255,235,200",
     "look": "jupiter",
     "major": true,
@@ -110,7 +167,8 @@
       "side": [
        -1,
        1
-      ]
+      ],
+      "perDays": 1.769
      },
      {
       "name": "Europa",
@@ -125,7 +183,8 @@
       "side": [
        -1,
        -1
-      ]
+      ],
+      "perDays": 3.551
      },
      {
       "name": "Ganymede",
@@ -141,7 +200,8 @@
       "side": [
        1,
        -1
-      ]
+      ],
+      "perDays": 7.155
      },
      {
       "name": "Callisto",
@@ -156,10 +216,25 @@
       "side": [
        1,
        1
-      ]
+      ],
+      "perDays": 16.689
      }
     ],
-    "cls": "giant"
+    "cls": "giant",
+    "orbit": [
+     5.202887,
+     0.04838624,
+     1.30439695,
+     34.39644051,
+     14.72847983,
+     100.47390909,
+     -0.00011607,
+     -0.00013253,
+     -0.00183714,
+     3034.74612775,
+     0.21252668,
+     0.20469106
+    ]
    },
    {
     "name": "SATURN",
@@ -198,7 +273,8 @@
       "side": [
        -1,
        1
-      ]
+      ],
+      "perDays": 0.9424218
      },
      {
       "name": "Enceladus",
@@ -213,7 +289,8 @@
       "side": [
        -1,
        -1
-      ]
+      ],
+      "perDays": 1.370218
      },
      {
       "name": "Tethys",
@@ -228,7 +305,8 @@
       "side": [
        1,
        1
-      ]
+      ],
+      "perDays": 1.887802
      },
      {
       "name": "Dione",
@@ -243,7 +321,8 @@
       "side": [
        1,
        -1
-      ]
+      ],
+      "perDays": 2.736915
      },
      {
       "name": "Rhea",
@@ -258,7 +337,8 @@
       "side": [
        -1,
        -1
-      ]
+      ],
+      "perDays": 4.5175
      },
      {
       "name": "Titan",
@@ -275,7 +355,8 @@
       "side": [
        1,
        -1
-      ]
+      ],
+      "perDays": 15.945421
      },
      {
       "name": "Iapetus",
@@ -290,36 +371,79 @@
       "side": [
        1,
        -1
-      ]
+      ],
+      "perDays": 79.330183
      }
     ],
-    "cls": "giant"
+    "cls": "giant",
+    "orbit": [
+     9.53667594,
+     0.05386179,
+     2.48599187,
+     49.95424423,
+     92.59887831,
+     113.66242448,
+     -0.0012506,
+     -0.00050991,
+     0.00193609,
+     1222.49362201,
+     -0.41897216,
+     -0.28867794
+    ]
    },
    {
     "name": "URANUS",
     "au": 19.19,
     "diamKm": 51118,
-    "ph": 75,
+    "ph": 0,
     "rgb": "180,235,240",
     "look": "uranus",
     "side": [
      1,
      -1
     ],
-    "cls": "neptune"
+    "cls": "neptune",
+    "orbit": [
+     19.18916464,
+     0.04725744,
+     0.77263783,
+     313.23810451,
+     170.9542763,
+     74.01692503,
+     -0.00196176,
+     -4.397e-05,
+     -0.00242939,
+     428.48202785,
+     0.40805281,
+     0.04240589
+    ]
    },
    {
     "name": "NEPTUNE",
     "au": 30.07,
     "diamKm": 49528,
-    "ph": 140,
+    "ph": 0,
     "rgb": "140,170,255",
     "look": "neptune",
     "side": [
      -1,
      1
     ],
-    "cls": "neptune"
+    "cls": "neptune",
+    "orbit": [
+     30.06992276,
+     0.00859048,
+     1.77004347,
+     -55.12002969,
+     44.96476227,
+     131.78422574,
+     0.00026291,
+     5.105e-05,
+     0.00035372,
+     218.45945325,
+     -0.32241464,
+     -0.00508664
+    ]
    }
   ],
   "always": true
@@ -599,5 +723,6 @@
   }
  ],
  "_looks": "look: what the close-up shows. jet / companion (a star it pulls gas from) / crowd (dense stars around it) / ring / pulsar / dim (fainter clouds) / irregular / tilt (degrees, as we see it) / squash (how flat its sky picture is).",
- "_planetExtras": "Optional planet fields: eqRKm, polRKm (km, equator and pole radius), tiltDeg (spin axis tilt), rings (edges in km from the centre: C0 inner edge, C1/B1/A0 ring boundaries, A1 outer edge), moons [{name, aKm orbit radius, rKm body radius, col 0..1, look, haze, major, side}], side (which way the name tag points: [right=1/left=-1, down=1/up=-1]). Saturn: NASA Saturn and Saturnian satellite fact sheets; ring edges: PDS Rings Node. Earth, Moon, Jupiter and its four large moons: NASA NSSDC fact sheets (Earth/Jupiter/Moon/Jovian satellites), checked 2026-11-23. Moon colours and looks are artistic. cls: the planet's class when its size alone would put it in the wrong one (rocky, subneptune, neptune, giant)."
+ "_planetExtras": "Optional planet fields: eqRKm, polRKm (km, equator and pole radius), tiltDeg (spin axis tilt), rings (edges in km from the centre: C0 inner edge, C1/B1/A0 ring boundaries, A1 outer edge), moons [{name, aKm orbit radius, rKm body radius, col 0..1, look, haze, major, side}], side (which way the name tag points: [right=1/left=-1, down=1/up=-1]). Saturn: NASA Saturn and Saturnian satellite fact sheets; ring edges: PDS Rings Node. Earth, Moon, Jupiter and its four large moons: NASA NSSDC fact sheets (Earth/Jupiter/Moon/Jovian satellites), checked 2026-11-23. Moon colours and looks are artistic. cls: the planet's class when its size alone would put it in the wrong one (rocky, subneptune, neptune, giant).",
+ "_time": "ONE time model (see the catalogue script): every orbiting body's place is worked out for today's date. Our planets: real, from `orbit` = JPL 'Approximate Positions of the Planets' Table 1 (a, e, I, L, long.peri, long.node, then their rates per century; Earth uses the Earth-Moon barycentre row). Moons: real orbit periods (`perDays`, NASA NSSDC satellite fact sheets) but an INVENTED starting point. Other stars' planets: real periods where the archive has them, INVENTED starting point."
 }
