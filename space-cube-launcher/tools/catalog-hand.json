@@ -1,44 +1,361 @@
 {
-  "_about": "Everything Space Cube knows that does not come from the NASA download. One place: edit here, then run build_catalog.py.",
-  "units": "distances between stars: light years (ly). Inside a star system: AU. Sizes: km (planets), ly (landmarks).",
-  "warpLy": 20,
-  "sol": {
-    "id": "sol", "name": "SOL", "teff": 5772, "strad": 1, "spec": "G2V", "ecliptic": true,
-    "_planets": "au: JPL approximate positions, Table 1. diamKm: NASA planetary fact sheets. ph: place along the orbit in degrees from the Sun-Saturn line: INVENTED, not today's real positions (Saturn's own longitude is computed for today in the screen).",
-    "planets": [
-      { "name": "MERCURY", "au": 0.387, "diamKm": 4879,   "ph": 60,  "rgb": "200,190,180", "look": "cratered" },
-      { "name": "VENUS",   "au": 0.723, "diamKm": 12104,  "ph": 300, "rgb": "255,245,220", "look": "venus" },
-      { "name": "EARTH",   "au": 1.0,   "diamKm": 12756,  "ph": 200, "rgb": "170,200,255", "look": "earth", "tag": "HOME PLANET", "moon": true },
-      { "name": "MARS",    "au": 1.524, "diamKm": 6792,   "ph": 120, "rgb": "255,170,120", "look": "mars" },
-      { "name": "JUPITER", "au": 5.203, "diamKm": 142984, "ph": 40,  "rgb": "255,235,200", "look": "jupiter", "major": true },
-      { "name": "SATURN",  "au": 9.537, "diamKm": 120536, "ph": 0,   "rgb": "232,214,168", "look": "saturn", "tag": "YOUR SHIP", "home": true },
-      { "name": "URANUS",  "au": 19.19, "diamKm": 51118,  "ph": 75,  "rgb": "180,235,240", "look": "uranus" },
-      { "name": "NEPTUNE", "au": 30.07, "diamKm": 49528,  "ph": 140, "rgb": "140,170,255", "look": "neptune" }
-    ]
+ "_about": "Everything Space Cube knows that does not come from the NASA download. One place: edit here, then run build_catalog.py.",
+ "units": "distances between stars: light years (ly). Inside a star system: AU. Sizes: km (planets), ly (landmarks).",
+ "warpLy": 20,
+ "sol": {
+  "id": "sol",
+  "name": "SOL",
+  "teff": 5772,
+  "strad": 1,
+  "spec": "G2V",
+  "ecliptic": true,
+  "_planets": "au: JPL approximate positions, Table 1. diamKm: NASA planetary fact sheets. ph: place along the orbit in degrees from the Sun-Saturn line: INVENTED, not today's real positions (Saturn's own longitude is computed for today in the screen).",
+  "planets": [
+   {
+    "name": "MERCURY",
+    "au": 0.387,
+    "diamKm": 4879,
+    "ph": 60,
+    "rgb": "200,190,180",
+    "look": "cratered"
+   },
+   {
+    "name": "VENUS",
+    "au": 0.723,
+    "diamKm": 12104,
+    "ph": 300,
+    "rgb": "255,245,220",
+    "look": "venus"
+   },
+   {
+    "name": "EARTH",
+    "au": 1.0,
+    "diamKm": 12756,
+    "ph": 200,
+    "rgb": "170,200,255",
+    "look": "earth",
+    "tag": "HOME PLANET",
+    "moon": true
+   },
+   {
+    "name": "MARS",
+    "au": 1.524,
+    "diamKm": 6792,
+    "ph": 120,
+    "rgb": "255,170,120",
+    "look": "mars"
+   },
+   {
+    "name": "JUPITER",
+    "au": 5.203,
+    "diamKm": 142984,
+    "ph": 40,
+    "rgb": "255,235,200",
+    "look": "jupiter",
+    "major": true
+   },
+   {
+    "name": "SATURN",
+    "au": 9.537,
+    "diamKm": 120536,
+    "ph": 0,
+    "rgb": "232,214,168",
+    "look": "saturn",
+    "tag": "YOUR SHIP",
+    "home": true
+   },
+   {
+    "name": "URANUS",
+    "au": 19.19,
+    "diamKm": 51118,
+    "ph": 75,
+    "rgb": "180,235,240",
+    "look": "uranus"
+   },
+   {
+    "name": "NEPTUNE",
+    "au": 30.07,
+    "diamKm": 49528,
+    "ph": 140,
+    "rgb": "140,170,255",
+    "look": "neptune"
+   }
+  ],
+  "always": true
+ },
+ "starCats": {
+  "_about": "From the catalogued spectral type, else from temperature (HyperPhysics ranges). size: icon size on the map.",
+  "red": {
+   "name": "RED DWARF",
+   "note": "SMALL, COOL, THE MOST COMMON STAR",
+   "size": 0.026
   },
-  "starCats": {
-    "_about": "From the catalogued spectral type, else from temperature (HyperPhysics ranges). size: icon size on the map.",
-    "red":    { "name": "RED DWARF",           "note": "SMALL, COOL, THE MOST COMMON STAR",      "size": 0.026 },
-    "orange": { "name": "ORANGE DWARF",        "note": "A BIT SMALLER AND COOLER THAN THE SUN",  "size": 0.03 },
-    "sun":    { "name": "SUN-LIKE STAR",       "note": "YELLOW, LIKE OUR SUN",                   "size": 0.034 },
-    "white":  { "name": "YELLOW-WHITE STAR",   "note": "A BIT HOTTER THAN THE SUN",              "size": 0.036 },
-    "hot":    { "name": "HOT BLUE-WHITE STAR", "note": "MUCH HOTTER AND BRIGHTER THAN THE SUN",  "size": 0.042 },
-    "giant":  { "name": "GIANT STAR",          "note": "AN OLD STAR THAT HAS SWOLLEN UP",        "size": 0.05 },
-    "wd":     { "name": "WHITE DWARF",         "note": "THE HOT LEFTOVER CORE OF A DEAD STAR",   "size": 0.022 },
-    "brown":  { "name": "BROWN DWARF",         "note": "TOO SMALL TO SHINE LIKE A STAR",         "size": 0.024 }
+  "orange": {
+   "name": "ORANGE DWARF",
+   "note": "A BIT SMALLER AND COOLER THAN THE SUN",
+   "size": 0.03
   },
-  "landmarks": [
-    { "id": "sgra",    "name": "SAGITTARIUS A*",  "kind": "blackhole", "query": "Sgr A*",   "ra": 266.41684, "dec": -29.00782, "ly": 26670,    "distSource": "GRAVITY Collaboration 2019, A&A 625 L10: 8178 pc", "type": "SUPERMASSIVE BLACK HOLE", "note": "MILKY WAY CENTRE", "mass": "4.3 MILLION SUNS" },
-    { "id": "m87",     "name": "M87* BLACK HOLE", "kind": "blackhole", "query": "M87",      "ra": 187.70593, "dec": 12.39112,  "ly": 55000000, "distSource": "NASA Chandra: about 55 million ly", "type": "SUPERMASSIVE BLACK HOLE", "note": "FIRST ONE IMAGED (EHT)", "mass": "6.5 BILLION SUNS" },
-    { "id": "cygx1",   "name": "CYGNUS X-1",      "kind": "blackhole", "query": "Cyg X-1",  "ra": 299.59032, "dec": 35.20161,  "ly": 7240,     "distSource": "Miller-Jones et al. 2021, Science 371:1046: 2.22 kpc", "type": "STELLAR BLACK HOLE", "note": "IN A BINARY", "mass": "21 SUNS" },
-    { "id": "m42",     "name": "ORION NEBULA",    "kind": "nebula",    "query": "M42",      "ra": 83.82208,  "dec": -5.39111,  "ly": 1344,     "distSource": "1,344 +/- 20 ly (412 pc)", "diamLy": 24,     "type": "NEBULA", "note": "NEAREST REGION OF MASSIVE STAR BIRTH", "pal": ["255,90,150", "230,70,70", "90,210,220", "255,170,120"] },
-    { "id": "m1",      "name": "CRAB NEBULA",     "kind": "nebula",    "query": "M1",       "ra": 83.63308,  "dec": 22.0145,   "ly": 6500,     "distSource": "NASA Hubble Messier catalog: 6,500 ly", "diamLy": 10, "type": "SUPERNOVA REMNANT", "note": "SEEN EXPLODING IN 1054", "pal": ["235,85,60", "110,160,255", "255,190,140"] },
-    { "id": "m16",     "name": "EAGLE NEBULA",    "kind": "nebula",    "query": "M16",      "ra": 274.7,     "dec": -13.80694, "ly": 6500,     "distSource": "NASA Webb: 6,500 ly", "diamLy": 70,     "type": "NEBULA", "note": "PILLARS OF CREATION", "pal": ["235,175,80", "70,175,160", "200,120,60"] },
-    { "id": "m57",     "name": "RING NEBULA",     "kind": "nebula",    "query": "M57",      "ra": 283.39616, "dec": 33.02918,  "ly": 2570,     "distSource": "parallax: 2,567 +/- 115 ly", "diamLy": 1,   "type": "PLANETARY NEBULA", "note": "A DYING SUN-LIKE STAR", "pal": ["90,220,210", "240,90,70"] },
-    { "id": "ngc7293", "name": "HELIX NEBULA",    "kind": "nebula",    "query": "NGC 7293", "ra": 337.41066, "dec": -20.83711, "ly": 655,      "distSource": "Gaia: 655 +/- 13 ly", "diamLy": 2.5,    "type": "PLANETARY NEBULA", "note": "ONE OF THE CLOSEST", "pal": ["90,200,230", "235,80,70"] },
-    { "id": "carina",  "name": "CARINA NEBULA",   "kind": "nebula",    "query": "NGC 3372", "ra": 161.265,   "dec": -59.86778, "ly": 7500,     "distSource": "NASA Hubble: 7,500 ly", "diamLy": 300,  "type": "NEBULA", "note": "OVER 300 LY ACROSS", "pal": ["245,145,60", "90,140,245", "220,70,70"] },
-    { "id": "m31",     "name": "ANDROMEDA",       "kind": "galaxy",    "query": "M31",      "ra": 10.68471,  "dec": 41.26875,  "ly": 2500000,  "distSource": "NASA Hubble: 2.5 million ly", "diamLy": 152000, "type": "GALAXY", "note": "NEAREST MAJOR GALAXY" },
-    { "id": "lmc",     "name": "LARGE MAGELLANIC CLOUD", "kind": "galaxy", "query": "LMC",  "ra": 80.89417,  "dec": -69.75611, "ly": 163000,   "distSource": "163,000 ly (49.97 kpc)", "diamLy": 32200, "type": "GALAXY", "note": "SATELLITE OF THE MILKY WAY" },
-    { "id": "m45",     "name": "PLEIADES",        "kind": "cluster",   "query": "M45",      "ra": 56.75,     "dec": 24.11667,  "ly": 444,      "distSource": "444 ly (136.2 pc)", "diamLy": 15.5,      "type": "STAR CLUSTER", "note": "OVER 1,000 STARS", "pal": ["130,170,255", "200,220,255"] }
-  ]
+  "sun": {
+   "name": "SUN-LIKE STAR",
+   "note": "YELLOW, LIKE OUR SUN",
+   "size": 0.034
+  },
+  "white": {
+   "name": "YELLOW-WHITE STAR",
+   "note": "A BIT HOTTER THAN THE SUN",
+   "size": 0.036
+  },
+  "hot": {
+   "name": "HOT BLUE-WHITE STAR",
+   "note": "MUCH HOTTER AND BRIGHTER THAN THE SUN",
+   "size": 0.042
+  },
+  "giant": {
+   "name": "GIANT STAR",
+   "note": "AN OLD STAR THAT HAS SWOLLEN UP",
+   "size": 0.05
+  },
+  "wd": {
+   "name": "WHITE DWARF",
+   "note": "THE HOT LEFTOVER CORE OF A DEAD STAR",
+   "size": 0.022
+  },
+  "brown": {
+   "name": "BROWN DWARF",
+   "note": "TOO SMALL TO SHINE LIKE A STAR",
+   "size": 0.024
+  }
+ },
+ "landmarks": [
+  {
+   "id": "sgra",
+   "name": "SAGITTARIUS A*",
+   "kind": "blackhole",
+   "query": "Sgr A*",
+   "ra": 266.41684,
+   "dec": -29.00782,
+   "ly": 26670,
+   "distSource": "GRAVITY Collaboration 2019, A&A 625 L10: 8178 pc",
+   "type": "SUPERMASSIVE BLACK HOLE",
+   "note": "MILKY WAY CENTRE",
+   "mass": "4.3 MILLION SUNS",
+   "always": true,
+   "look": {
+    "crowd": true
+   }
+  },
+  {
+   "id": "m87",
+   "name": "M87* BLACK HOLE",
+   "kind": "blackhole",
+   "query": "M87",
+   "ra": 187.70593,
+   "dec": 12.39112,
+   "ly": 55000000,
+   "distSource": "NASA Chandra: about 55 million ly",
+   "type": "SUPERMASSIVE BLACK HOLE",
+   "note": "FIRST ONE IMAGED (EHT)",
+   "mass": "6.5 BILLION SUNS",
+   "always": true,
+   "look": {
+    "jet": true
+   }
+  },
+  {
+   "id": "cygx1",
+   "name": "CYGNUS X-1",
+   "kind": "blackhole",
+   "query": "Cyg X-1",
+   "ra": 299.59032,
+   "dec": 35.20161,
+   "ly": 7240,
+   "distSource": "Miller-Jones et al. 2021, Science 371:1046: 2.22 kpc",
+   "type": "STELLAR BLACK HOLE",
+   "note": "IN A BINARY",
+   "mass": "21 SUNS",
+   "always": true,
+   "look": {
+    "companion": true
+   }
+  },
+  {
+   "id": "m42",
+   "name": "ORION NEBULA",
+   "kind": "nebula",
+   "query": "M42",
+   "ra": 83.82208,
+   "dec": -5.39111,
+   "ly": 1344,
+   "distSource": "1,344 +/- 20 ly (412 pc)",
+   "diamLy": 24,
+   "type": "NEBULA",
+   "note": "NEAREST REGION OF MASSIVE STAR BIRTH",
+   "pal": [
+    "255,90,150",
+    "230,70,70",
+    "90,210,220",
+    "255,170,120"
+   ],
+   "always": true
+  },
+  {
+   "id": "m1",
+   "name": "CRAB NEBULA",
+   "kind": "nebula",
+   "query": "M1",
+   "ra": 83.63308,
+   "dec": 22.0145,
+   "ly": 6500,
+   "distSource": "NASA Hubble Messier catalog: 6,500 ly",
+   "diamLy": 10,
+   "type": "SUPERNOVA REMNANT",
+   "note": "SEEN EXPLODING IN 1054",
+   "pal": [
+    "235,85,60",
+    "110,160,255",
+    "255,190,140"
+   ],
+   "always": true,
+   "look": {
+    "pulsar": true,
+    "dim": 0.12
+   }
+  },
+  {
+   "id": "m16",
+   "name": "EAGLE NEBULA",
+   "kind": "nebula",
+   "query": "M16",
+   "ra": 274.7,
+   "dec": -13.80694,
+   "ly": 6500,
+   "distSource": "NASA Webb: 6,500 ly",
+   "diamLy": 70,
+   "type": "NEBULA",
+   "note": "PILLARS OF CREATION",
+   "pal": [
+    "235,175,80",
+    "70,175,160",
+    "200,120,60"
+   ],
+   "always": true
+  },
+  {
+   "id": "m57",
+   "name": "RING NEBULA",
+   "kind": "nebula",
+   "query": "M57",
+   "ra": 283.39616,
+   "dec": 33.02918,
+   "ly": 2570,
+   "distSource": "parallax: 2,567 +/- 115 ly",
+   "diamLy": 1,
+   "type": "PLANETARY NEBULA",
+   "note": "A DYING SUN-LIKE STAR",
+   "pal": [
+    "90,220,210",
+    "240,90,70"
+   ],
+   "always": true,
+   "look": {
+    "ring": true
+   }
+  },
+  {
+   "id": "ngc7293",
+   "name": "HELIX NEBULA",
+   "kind": "nebula",
+   "query": "NGC 7293",
+   "ra": 337.41066,
+   "dec": -20.83711,
+   "ly": 655,
+   "distSource": "Gaia: 655 +/- 13 ly",
+   "diamLy": 2.5,
+   "type": "PLANETARY NEBULA",
+   "note": "ONE OF THE CLOSEST",
+   "pal": [
+    "90,200,230",
+    "235,80,70"
+   ],
+   "always": true,
+   "look": {
+    "ring": true
+   }
+  },
+  {
+   "id": "carina",
+   "name": "CARINA NEBULA",
+   "kind": "nebula",
+   "query": "NGC 3372",
+   "ra": 161.265,
+   "dec": -59.86778,
+   "ly": 7500,
+   "distSource": "NASA Hubble: 7,500 ly",
+   "diamLy": 300,
+   "type": "NEBULA",
+   "note": "OVER 300 LY ACROSS",
+   "pal": [
+    "245,145,60",
+    "90,140,245",
+    "220,70,70"
+   ],
+   "always": true
+  },
+  {
+   "id": "m31",
+   "name": "ANDROMEDA",
+   "kind": "galaxy",
+   "query": "M31",
+   "ra": 10.68471,
+   "dec": 41.26875,
+   "ly": 2500000,
+   "distSource": "NASA Hubble: 2.5 million ly",
+   "diamLy": 152000,
+   "type": "GALAXY",
+   "note": "NEAREST MAJOR GALAXY",
+   "always": true,
+   "look": {
+    "tilt": 77,
+    "squash": 0.32
+   }
+  },
+  {
+   "id": "lmc",
+   "name": "LARGE MAGELLANIC CLOUD",
+   "kind": "galaxy",
+   "query": "LMC",
+   "ra": 80.89417,
+   "dec": -69.75611,
+   "ly": 163000,
+   "distSource": "163,000 ly (49.97 kpc)",
+   "diamLy": 32200,
+   "type": "GALAXY",
+   "note": "SATELLITE OF THE MILKY WAY",
+   "always": true,
+   "look": {
+    "irregular": true,
+    "tilt": 35,
+    "squash": 0.6
+   }
+  },
+  {
+   "id": "m45",
+   "name": "PLEIADES",
+   "kind": "cluster",
+   "query": "M45",
+   "ra": 56.75,
+   "dec": 24.11667,
+   "ly": 444,
+   "distSource": "444 ly (136.2 pc)",
+   "diamLy": 15.5,
+   "type": "STAR CLUSTER",
+   "note": "OVER 1,000 STARS",
+   "pal": [
+    "130,170,255",
+    "200,220,255"
+   ],
+   "always": true
+  }
+ ],
+ "_looks": "look: what the close-up shows. jet / companion (a star it pulls gas from) / crowd (dense stars around it) / ring / pulsar / dim (fainter clouds) / irregular / tilt (degrees, as we see it) / squash (how flat its sky picture is)."
 }

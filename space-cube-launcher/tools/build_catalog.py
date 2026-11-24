@@ -17,7 +17,7 @@ PL_COLS = ['sys', 'name', 'au', 'aue', 'per', 're', 'me', 'eqt', 'year', 'how', 
 systems, planets = [], []
 # our own system first, same shape as the others
 sol = hand['sol']
-systems.append([sol['name'], None, None, 0, sol['teff'], sol['strad'], sol['spec'], {'id': sol['id'], 'ecliptic': True}])
+systems.append([sol['name'], None, None, 0, sol['teff'], sol['strad'], sol['spec'], {'id': sol['id'], 'ecliptic': True, 'always': True, 'home': True}])
 for p in sol['planets']:
     x = {k: p[k] for k in ('diamKm', 'rgb', 'look', 'tag', 'moon', 'major', 'home') if k in p}
     planets.append([0, p['name'], p['au'], 0, None, round(p['diamKm'] / 12756, 3), None, None, None, None, p['ph'], x])
@@ -34,7 +34,7 @@ for r in raw['planets']:
 pos = {l['id']: l for l in raw.get('landmarks', [])}
 landmarks = []
 for l in hand['landmarks']:
-    o = {k: v for k, v in l.items() if k not in ('query',)}
+    o = {k: v for k, v in l.items() if k not in ('query',) and not k.startswith('_')}
     if l['id'] in pos: o['ra'], o['dec'] = pos[l['id']]['ra'], pos[l['id']]['dec']       # positions: CDS Sesame
     landmarks.append(o)
 cat = {'v': 2, 'fetched': raw['fetched'], 'sources': {'exoplanets': 'NASA Exoplanet Archive, pscomppars', 'positions': 'CDS Sesame', 'sol': 'JPL approximate positions (au), NASA fact sheets (diameters)'},
