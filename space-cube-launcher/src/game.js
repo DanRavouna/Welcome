@@ -56,9 +56,9 @@
   // from a ship; the near dots also fly toward you along the rig's own forward axis.
   const spaceRig = new THREE.Group();
   scene.add(spaceRig);
-  // The far things (stars, Sun, planets, Saturn and its moons) live in their own scene, drawn first:
+  // The far things (the stars, the star you're near, the planet you're at and its moons) live in their own scene, drawn first:
   // so when you travel right up to a moon it still sits BEHIND the dots, the ships and your cubes.
-  // sysRig always copies spaceRig (same place, same turn); sysWorld is where the ship is in the Saturn system.
+  // sysRig always copies spaceRig (same place, same turn); sysWorld is where the ship is in the system of the planet you're at.
   const sysScene = new THREE.Scene();
   const sysRig = new THREE.Group(); sysScene.add(sysRig);
   const sysWorld = new THREE.Group(); sysRig.add(sysWorld);
@@ -170,12 +170,11 @@
   spaceRig.add(field);
 
   // =========================================================
-  //  THE SOLAR SYSTEM, AS SEEN FROM A SHIP PARKED NEAR SATURN
-  //  Real sizes and distances (NASA planetary fact sheets) set every planet's
-  //  apparent size. From 1.5 million km away Saturn is a clear disk with its
-  //  rings; everything else is so far away it shows up as a point of light,
-  //  the Sun included (a blinding point, not a disk). Orbital positions are
-  //  illustrative, not today's real sky.
+  //  A STAR SYSTEM, AS SEEN FROM A SHIP PARKED NEAR ONE OF ITS PLANETS
+  //  Real sizes and distances (from the catalogue) set how big everything looks. From 25 of its
+  //  radii away the planet you're at is a clear disk (with its rings, if it has any); the other
+  //  planets and the star are so far away they show up as points of light. Where each one is
+  //  comes from the catalogue's time model (our planets: where they really are today).
   // =========================================================
   const KM_SCENE = 400;                       // how far the planet you're at sits from you when you arrive (scene units)
   const PARK_RADII = 25;                      // ...which stands for 25 of its own radii: a clear disk, rings and all
@@ -185,13 +184,13 @@
   const P = V(-0.05, 0.30, -1).normalize();    // where the home planet sits on a first start (near the top of the screen)
   // Ecliptic (the plane the planets orbit in): tilted a little against the screen
   const N = V(0.15, 1, 0.25).normalize();      // ecliptic "north"
-  // Sun direction: ~50° phase angle so Saturn is mostly lit with a visible night edge
+  // Sun direction: ~50° phase angle so the home planet is mostly lit with a visible night edge on a first start
   const toShip = P.clone().negate();
   const side = new THREE.Vector3().crossVectors(N, toShip).normalize();
   const S = toShip.clone().multiplyScalar(Math.cos(0.87)).addScaledVector(side, Math.sin(0.87));
   S.addScaledVector(N, -S.dot(N)).normalize(); // keep the Sun on the ecliptic
 
-  // ---- Saturn ----
+  // ---- pictures painted for a planet's `look` (see also solTexture) ----
   function saturnTexture() {
     const W = 1024, H = 512, c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
@@ -235,7 +234,7 @@
   }
 
   const sunDirU = { value: S.clone() };       // the light of the star you're near, for every body's shader
-  const TITAN_PERIOD_S = 1800;
+  const MAIN_MOON_PERIOD_S = 1800;
   const moonMat = (col, haze, map) => new THREE.ShaderMaterial({
     uniforms: { sunDir: sunDirU, col: { value: new THREE.Vector3(...col) }, haze: { value: haze ? 1 : 0 }, map: { value: map } },
     vertexShader: `
@@ -300,7 +299,7 @@
     const t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
   }
   const moonGlowTex = pointTexture('255,245,225');
-  const titanGlowTex = pointTexture('255,175,90');     // Titan's haze makes it distinctly orange
+  const hazeGlowTex = pointTexture('255,175,90');     // a hazy moon glows orange (Titan)
   const tmpQ = new THREE.Vector3();
   function moonLocal(a, th, out) { return out.set(Math.cos(th) * a * k, 0, Math.sin(th) * a * k); }
 
@@ -308,12 +307,12 @@
 
   function updateMoons(dt) {
     moonObjs.forEach(o => {
-      if (CFG.moonsMove) o.th += o.w * (TITAN_PERIOD_S / CFG.titanOrbitSec) * dt;
+      if (CFG.moonsMove) o.th += o.w * (MAIN_MOON_PERIOD_S / CFG.titanOrbitSec) * dt;
       moonLocal(o.m.a, o.th, o.holder.position);
       // glow sized from distance so it stays a visible point but never swamps the disk
       o.holder.getWorldPosition(tmpQ);
       const dist = tmpQ.distanceTo(camera.position);
-      // From inside Saturn's system these moons outshine every background star,
+      // From inside the planet's system its moons outshine every background star,
       // so their glow is sized to read clearly brighter than the stars (bigger moons = bigger glow)
       const px = dist * 0.0045;                       // ~2 px at this distance
       const g = Math.max(o.m.r * k * 3.2, px * (2.2 + 1.6 * Math.min(o.m.r / 800, 1)));
@@ -336,7 +335,7 @@
   const T = new THREE.Vector3().crossVectors(N, S).normalize();
   // Where a planet is around its star (km): its orbit size and its place on the orbit, both from the catalogue.
   // Our system lies on the ecliptic; other systems get a fixed invented tilt (unknown for nearly all of them).
-  const SOLSYS = window.CAT.sol, KM_AU = window.CAT.KM_AU, orbitPlanes = new Map();
+  const KM_AU = window.CAT.KM_AU, orbitPlanes = new Map();
   function orbitPlane(sys) {                  // -> { u, v: the plane's axes, n: its north, tilt: the line a planet's spin axis leans around }
     let pl = orbitPlanes.get(sys.id);
     if (!pl) {
@@ -433,11 +432,11 @@
     moonObjs = moons.map(m => {
       const body = new THREE.Mesh(new THREE.SphereGeometry(m.r * k, 64, 40), moonMat(m.col, m.haze, moonTexture(m)));
       // a small glow so far-away moons still read as points of light (never smaller than ~2 px)
-      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: m.haze ? titanGlowTex : moonGlowTex, transparent: true, depthWrite: false,
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: m.haze ? hazeGlowTex : moonGlowTex, transparent: true, depthWrite: false,
         blending: THREE.AdditiveBlending, opacity: 1 }));
       const holder = new THREE.Group(); holder.add(body, glow);
       g.add(holder);
-      const period = TITAN_PERIOD_S * Math.pow(m.a / main.a, 1.5);
+      const period = MAIN_MOON_PERIOD_S * Math.pow(m.a / main.a, 1.5);
       const th0 = m.ph * Math.PI / 180;         // where it is today (the catalogue's time model)
       return { m, holder, glow, body, th: th0, w: 2 * Math.PI / period };
     });
@@ -2024,7 +2023,7 @@
 
   // ---- Start looking at an empty patch of sky ----
   // Test ~4000 evenly spread directions and pick the one farthest from every
-  // planet, moon and the Sun (Saturn counts with its rings). Then turn space so
+  // planet, moon and the star (a ringed planet counts with its rings). Then turn space so
   // that direction is straight ahead. Bodies drift into view later as space turns.
   function startInEmptySky() {
     spaceRig.updateMatrixWorld(true); syncSysRig();
@@ -2084,7 +2083,7 @@
   }
 
   // =========================================================
-  //  TRAVEL: tap Saturn or a moon (or its label) to lock on, tap again to go there.
+  //  FLIGHTS: tap the planet you're at or one of its moons (or its label) to lock on, tap again to go there.
   //  The ship turns to face it, warps across, and parks with it lit in front of you.
   //  You stay there (remembered across restarts).
   // =========================================================
@@ -2161,7 +2160,7 @@
     routeShowT = performance.now();
   }
   // The route to a body: parking spot ~50 degrees off the Sun, a curve that leaves heading at it,
-  // swings wide of Saturn if needed, and ends with a straight run in.
+  // swings wide of the planet if needed, and ends with a straight run in.
   function planRoute(n) {
     const tp = navLocal(n, new THREE.Vector3());
     const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
@@ -2403,17 +2402,16 @@
   //    fainter with distance, and only near the middle of the view.
   //  - Black holes, nebulae, galaxies and a star cluster at their real positions (CDS Sesame).
   //  - The Milky Way band along the real galactic plane, with slow coloured waves of gas.
-  //  The sky is turned so the Sun sits where it really is against those stars, from Saturn's real
-  //  place on its orbit today (JPL approximate planet positions, Table 1).
+  //  The sky is turned so the Sun sits where it really is against those stars, from the home planet's real
+  //  place on its orbit today (the catalogue's time model).
   //  Tap to lock on, tap again to jump there. SOL brings you home.
-  //  Close-ups are artist's impressions built from each object's real numbers (size, temperature, star colour).
+  //  Landmark close-ups and planet surfaces are artist's impressions built from each object's real numbers.
   // =========================================================
   // Where you are: a place (a star system or a landmark) and, in a star system, the planet you're at.
-  // Home is simply the home planet (Saturn) of SOL: there the real-scale Saturn scene is shown instead of a close-up.
+  // Home is simply the home planet of our system: a place like any other.
   var deep = window.CAT.state, deepJump = null;       // the one state (see the catalogue), plus what only the game needs:
   Object.defineProperties(deep, { atHome: { get: window.CAT.atHome }, at: { get() { return window.CAT.atHome() ? null : this.sys; } } });
   deep.here = new THREE.Vector3();                   // where you are among the stars (ly, in the sky's frame)
-  const HOME_PLANET = window.CAT.homePlanet;
   // Warp range: you can see stars farther out, but only jump to stars within 20 ly of where you are.
   // Places marked `always` (our own system, and the far landmarks) can be seen and reached from anywhere; so can the planets of the system you're in.
   const WARP_LY = window.CAT.warpLy;
@@ -2769,7 +2767,7 @@
 
   // ---- arriving somewhere ----
 
-  // the route to a far destination: glowing dots from your nose straight out toward it (same look as the Saturn routes)
+  // the route to a far destination: glowing dots from your nose straight out toward it (same look as the flight routes)
   const DEEP_ROUTE_N = 60;
   const deepRoute = new THREE.Group(); deepRoute.visible = false; sysRig.add(deepRoute);
   const deepRouteDots = [];
@@ -3621,7 +3619,7 @@
     deepUpdate(dt);
     updateStreaks(dt);
     updateRoute();
-    // 1) far pass: stars, Sun, planets, Saturn system   2) space layer: dots, ships, whale (hidden behind planets)
+    // 1) far pass: stars, the star and planet you're at, its moons   2) space layer: dots, ships, whale (hidden behind planets)
     // 3) UI layer: your cubes (and the checklist ship), always on top
     renderer.autoClear = false; renderer.clear();
     const n0 = camera.near, f0 = camera.far, fov0 = camera.fov;
@@ -3931,7 +3929,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 53';
+    tag.textContent = 'SCREEN 2026-11-23 · 54';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
