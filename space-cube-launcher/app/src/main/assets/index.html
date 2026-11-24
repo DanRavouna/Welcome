@@ -2736,7 +2736,7 @@ window.CAT = (() => {
   const lockName = document.createElementNS(SVGNS, 'text'), lockHint = document.createElementNS(SVGNS, 'text');
   lockHint.setAttribute('class', 'hint'); lockG.append(lockName, lockHint);
   const factsG = document.createElementNS(SVGNS, 'g'); factsG.setAttribute('class', 'facts'); factsG.style.display = 'none';
-  const factLines = [0, 1, 2, 3, 4, 5].map(() => { const tx = document.createElementNS(SVGNS, 'text'); factsG.append(tx); return tx; });
+  const factLines = [0, 1, 2, 3, 4, 5, 6].map(() => { const tx = document.createElementNS(SVGNS, 'text'); factsG.append(tx); return tx; });
   hudEl.append(lockG, factsG);
   const fmtKm = km => km >= 1e6 ? (km / 1e6).toFixed(1) + 'M KM' : km >= 1e4 ? Math.round(km / 1e3) + 'K KM' : Math.round(km).toLocaleString('en-US') + ' KM';
   function screenOf(n, out) {                         // -> [x, y, radiusPx, inFront, distScene]
@@ -2978,8 +2978,8 @@ window.CAT = (() => {
         const cx = x + sx * sz, cy = y + sy * sz;
         lockCorners[i].setAttribute('d', `M${(cx - sx * L).toFixed(1)},${cy.toFixed(1)} L${cx.toFixed(1)},${cy.toFixed(1)} L${cx.toFixed(1)},${(cy - sy * L).toFixed(1)}`);
       });
-      const here = navLock.deep ? (deep.at || 'sol') === navLock.id : nav.target === navLock.name;
-      lockName.textContent = navLock.name + (here ? '' : '  ' + (navLock.kind === 'localplanet' || (navLock.kind === 'solplanet' && spNow()) ? distText(navLock) : navLock.kind === 'solplanet' ? (navLock.pl.distKm / 1.496e8).toFixed(1) + ' AU' : navLock.deep ? fmtLy(deepDist(navLock)) : fmtKm(Math.max(0, dist - navLock.bodyR) / k)));
+      const here = navLock.deep ? deep.sys === navLock.id : nav.target === navLock.name;
+      lockName.textContent = navLock.name + (here ? '' : '  ' + (navLock.kind === 'planet' ? distText(navLock) : navLock.deep ? fmtLy(deepDist(navLock)) : fmtKm(Math.max(0, dist - navLock.bodyR) / k)));
       lockName.setAttribute('x', (x - sz).toFixed(1)); lockName.setAttribute('y', (y + sz + 16).toFixed(1));
       lockHint.textContent = here ? 'YOU ARE HERE' : navLock.deep ? (inRange(navLock) ? 'TAP AGAIN TO JUMP' : 'OUT OF RANGE · MAX ' + WARP_LY + ' LY') : 'TAP AGAIN TO ENGAGE';
       lockHint.setAttribute('x', (x - sz).toFixed(1)); lockHint.setAttribute('y', (y + sz + 30).toFixed(1));
@@ -3065,14 +3065,19 @@ window.CAT = (() => {
   //  Tap to lock on, tap again to jump there. SOL brings you home.
   //  Close-ups are artist's impressions built from each object's real numbers (size, temperature, star colour).
   // =========================================================
-  var deep = { at: null, here: new THREE.Vector3(), limit: 50, dir: null }, deepJump = null;
+  // Where you are: a place (a star system or a landmark) and, in a star system, the planet you're at.
+  // Home is simply the home planet (Saturn) of SOL: there the real-scale Saturn scene is shown instead of a close-up.
+  var deep = { sys: 'sol', planet: window.CAT.sol.planets.find(p => p.home).name, here: new THREE.Vector3(), limit: 50, dir: null,
+    get atHome() { return this.sys === 'sol' && this.planet === HOME_PLANET; },
+    get at() { return this.atHome ? null : this.sys; } }, deepJump = null;
+  const HOME_PLANET = deep.planet;
   // Warp range: you can see stars farther out, but only jump to stars within 20 ly of where you are.
-  // Home (SOL) and the far landmarks (black holes, nebulae, galaxies) can always be reached.
+  // Places marked `always` (our own system, and the far landmarks) can be seen and reached from anywhere; so can the planets of the system you're in.
   const WARP_LY = window.CAT.warpLy;
   // the star map records a place as seen (???) only when its name tag shows on your screen, or you lock on to it
   const seenSent = new Set();
   function reportSeen(o) { if (!o || seenSent.has(o.id) || !window.SpaceMap) return; seenSent.add(o.id); try { window.SpaceMap.saw(o.id); } catch (e) {} }
-  const inRange = o => !o.deep || o.kind !== 'system' || o.pos.distanceTo(deep.here) <= WARP_LY;
+  const inRange = o => !o.deep || o.always || o.kind === 'planet' || o.pos.distanceTo(deep.here) <= WARP_LY;
   const SKY = window.CAT;                             // the one catalogue (see the top of the page)
   const DEEP_KEY = 'spaceCubeDeep.v1', DEG = Math.PI / 180;
   function saturnLongitude(date) {                    // heliocentric ecliptic longitude (rad), JPL Table 1 (1800-2050)
@@ -3105,69 +3110,49 @@ window.CAT = (() => {
 
   // ---- the catalogue ----
   const SYSTEMS = [], LANDMARKS = [];
-  const SOL = { deep: true, kind: 'home', id: 'sol', name: 'SOL', ly: 0, pos: new THREE.Vector3() };
+  const SOL = { ...SKY.sol, deep: true, kind: 'system', always: true, pos: new THREE.Vector3() };      // our own system: one more star system
   SKY.systems.forEach(s => { if (s !== SKY.sol) SYSTEMS.push({ ...s, deep: true, kind: 'system', pos: eqDir(s.ra, s.dec).multiplyScalar(s.ly) }); });
-  SKY.landmarks.forEach(l => LANDMARKS.push({ ...l, deep: true, pos: eqDir(l.ra, l.dec).multiplyScalar(l.ly) }));
+  SKY.landmarks.forEach(l => LANDMARKS.push({ ...l, deep: true, always: true, pos: eqDir(l.ra, l.dec).multiplyScalar(l.ly) }));
   const ALL_DEEP = [...SYSTEMS, ...LANDMARKS, SOL];
-  // Our own planets (Saturn is home): lock on in the sky, jump, arrive at the planet. Numbers: NASA (the PLANETS table above).
-  const SOLP = PLANETS.map(pl => ({ deep: true, kind: 'solplanet', id: 'sp:' + pl.name.toUpperCase(), name: pl.name.toUpperCase(), pl, pos: new THREE.Vector3(), ly: 0,
-    diamKm: pl.d, facts: ['DIAMETER ' + pl.d.toLocaleString('en-US') + ' KM', (+pl.a.toFixed(1)).toLocaleString('en-US') + ' MILLION KM FROM THE SUN'] }));
-  ALL_DEEP.push(...SOLP);
-  const spNow = () => deep.at && deep.at.startsWith('sp:') ? SOLP.find(x => x.id === deep.at) : null;
-  // ---- inside a star system: every planet on its real orbit, so from wherever you are you see the star and the
-  //      other planets in their true directions and sizes, and can lock on and jump between them.
-  //      Orbit sizes are real; where along the orbit each planet is comes from the catalogue (invented, except as noted there).
+  const PLACE = new Map(ALL_DEEP.map(o => [o.id, o]));
+  const curPlace = () => PLACE.get(deep.sys);
+  // ---- inside a star system: every planet on its orbit (orbitPos), so from the planet you're at you see the others
+  //      in their true directions and sizes, and can lock on and jump between them. The same for every system, ours included.
   let LOCAL = [];
-  function hereKm() {                                  // where you are inside your star system (km from its star), or null
-    const sp = spNow(); if (sp) return sp.pl.helio.clone();
-    if (deep.at && deep.at.startsWith('sys:')) { const s = ALL_DEEP.find(x => x.id === deep.at); const q = s.planets.find(x => x.name === deep.planet) || mainPlanet(s); return orbitPos(s, q); }
-    return null;
-  }
   const distText = o => (o.distKm / KM_AU).toFixed(o.distKm < 10 * KM_AU ? 2 : 1) + ' AU';
+  const mainPlanet = o => o.planets.reduce((a, p) => ((p.re || 0) > (a.re || 0) ? p : a), o.planets[0]);
+  const defaultPlanet = o => o.planets.find(p => p.home) || mainPlanet(o);          // where you arrive when you jump to a star
+  const planetOf = (o, name) => (name && o.planets.find(p => p.name === name)) || defaultPlanet(o);
   function setupLocal() {
     LOCAL.forEach(o => { const i = ALL_DEEP.indexOf(o); if (i >= 0) ALL_DEEP.splice(i, 1); skyRig.remove(o.sprite); o.sprite.material.dispose(); });
     LOCAL = [];
-    const P = hereKm(); if (!P) return;
-    const sp = spNow();
-    if (sp) {                                          // our planets, and home (Saturn), seen from this planet
-      SOLP.forEach(o => { const v = o.pl.helio.clone().sub(P); o.distKm = v.length(); o.dirLocal = v.normalize(); });
-      const v = satHelio.clone().sub(P); SOL.distKm = v.length(); SOL.dirLocal = v.normalize();
-      return;
-    }
-    const s = ALL_DEEP.find(x => x.id === deep.at);
+    const s = curPlace(); if (!s.planets) return;
+    const P = orbitPos(s, planetOf(s, deep.planet));
     s.planets.forEach(q => {
       if (q.name === deep.planet) return;
       const v = orbitPos(s, q).sub(P), cls = planetClass(q.re);
-      const o = { deep: true, kind: 'localplanet', id: 'pl:' + q.name, name: q.name.toUpperCase(), host: s, q, pos: s.pos, ly: s.ly, distKm: v.length(), dirLocal: v.normalize(),
-        diamKm: q.diamKm, facts: deepFacts(s, q.name) };
-      o.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: pointTexture(cls === 'giant' ? '255,225,180' : cls === 'rocky' ? '230,200,170' : '170,210,255'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+      const o = { deep: true, kind: 'planet', id: q.id, name: q.name.toUpperCase() + (q.home ? ' · HOME' : ''), host: s, q, pos: s.pos, ly: s.ly,
+        distKm: v.length(), dirLocal: v.normalize(), diamKm: q.diamKm, facts: deepFacts(s, q.name) };
+      o.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: pointTexture(q.rgb || (cls === 'giant' ? '255,225,180' : cls === 'rocky' ? '230,200,170' : '170,210,255')), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
       skyRig.add(o.sprite); ALL_DEEP.push(o); LOCAL.push(o);
     });
   }
   const deepDist = o => o.pos.distanceTo(deep.here);
-  const relDir = (o, out) => {
-    if (o.kind === 'localplanet') return out.copy(o.dirLocal);              // a planet of the system you're in
-    if (o.pl) return out.copy(spNow() ? o.dirLocal : o.pl.dir);             // our planets: from another planet, or as seen from Saturn
-    if (o.kind === 'home' && spNow()) return out.copy(SOL.dirLocal);        // at one of our planets: home is toward Saturn
-    return out.copy(o.pos).sub(deep.here).normalize();
-  };
-  const mainPlanet = o => o.planets.reduce((a, p) => ((p.re || 0) > (a.re || 0) ? p : a), o.planets[0]);
+  const relDir = (o, out) => o.kind === 'planet' ? out.copy(o.dirLocal) : out.copy(o.pos).sub(deep.here).normalize();
   const planetClass = SKY.planetClass, CLASS_NAME = SKY.CLASS_NAME;
   function deepFacts(o, planetName) {
-    if (o.kind === 'home') return ['THE SUN', 'HOME · SATURN SYSTEM'];
-    if (o.kind === 'solplanet') return o.facts;
-    if (o.kind === 'system') {
-      const p = (planetName && o.planets.find(x => x.name === planetName)) || mainPlanet(o), n = o.planets.length;
-      const lines = [fmtLy(o.ly) + ' FROM THE SUN · ' + n + ' PLANET' + (n > 1 ? 'S' : '')];
+    if (o.planets) {
+      const p = planetOf(o, planetName), n = o.planets.length;
+      const lines = [(o.ly ? fmtLy(o.ly) + ' FROM THE SUN' : 'OUR SOLAR SYSTEM') + ' · ' + n + ' PLANET' + (n > 1 ? 'S' : '')];
       lines.push('STAR ' + (o.spec ? o.spec.toUpperCase() + ' · ' : '') + (o.teff ? Math.round(o.teff).toLocaleString('en-US') + ' K' : 'TEMP. UNKNOWN'));
       lines.push(p.name.toUpperCase() + ' · ' + CLASS_NAME[planetClass(p.re)] + (p.re ? ' · ' + p.re.toFixed(2) + ' × EARTH' : ''));
+      lines.push('ORBIT ' + (p.aue ? 'ABOUT ' : '') + p.au + ' AU FROM ITS STAR');
       if (p.eqt) lines.push('ABOUT ' + Math.round(p.eqt).toLocaleString('en-US') + ' K (' + Math.round(p.eqt - 273).toLocaleString('en-US') + ' °C)');
       if (p.year) lines.push('FOUND ' + p.year + (p.how ? ' · ' + p.how.toUpperCase() : ''));
       return lines;
     }
     return [fmtLy(o.ly) + ' FROM THE SUN', [o.type, o.note].filter(Boolean).join(' · '), o.mass ? 'MASS ' + o.mass : ''].filter(Boolean);
   }
-  SOL.facts = deepFacts(SOL);
   ALL_DEEP.forEach(o => o.facts = deepFacts(o));
 
   // ---- exoplanet markers: one glowing point per star ----
@@ -3229,7 +3214,7 @@ window.CAT = (() => {
       } else if (o.kind === 'cluster') {
         blob(x, c, c, c, '120,160,255', 0.3);
         for (let i = 0; i < 9; i++) blob(x, c + (R() - 0.5) * c * 1.1, c + (R() - 0.5) * c * 0.8, 14 + R() * 10, '210,225,255', 1);
-      } else if (o.kind === 'home') {
+      } else if (o.planets) {
         blob(x, c, c, c, '255,220,150', 0.5); blob(x, c, c, c * 0.25, '255,250,235', 1);
       } else {
         const pal = o.pal || ['200,120,255'];
@@ -3245,12 +3230,9 @@ window.CAT = (() => {
     const pxPerRad = (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(worldFov / 2)), minA = MIN_PX / pxPerRad;
     ALL_DEEP.forEach(o => {
       if (!o.sprite) return;
-      const d = Math.max(deepDist(o), 1e-9);
-      if (o.kind === 'localplanet' || (o.kind === 'solplanet' && spNow()) || (o.kind === 'home' && spNow())) {   // inside a star system: km
-        const ang = (o.kind === 'home' ? 120536 : o.diamKm) / Math.max(o.distKm || 1, 1); o.sprite.scale.setScalar(Math.max(ang, minA) * 980 / 0.6); o.faint = 1; return;
-      }
-      // home: from inside our solar system it's just a marker toward Saturn (dot size); from outside the galaxy, the Milky Way
-      const diam = o.kind === 'home' ? (deep.here.length() > 60000 ? 100000 : d < 0.001 ? 0 : SUN_DIAM_LY) : (o.diamLy || 0);
+      if (o.kind === 'planet') { o.sprite.scale.setScalar(Math.max(o.diamKm / Math.max(o.distKm, 1), minA) * 980 / 0.6); o.faint = 1; return; }   // inside a star system: km
+      const d = deepDist(o); if (d < 1e-6) return;       // (the place you're in)
+      const diam = o.diamLy || 0;
       const ang = diam / d, a = Math.max(ang, minA);
       o.sprite.scale.setScalar(a * 980 / 0.6);           // (the picture fills ~60% of its square)
       o.faint = ang > 3 * minA ? 0.55 : 1;               // big, spread-out things (galaxies, nebulae) are faint, not bright
@@ -3258,8 +3240,8 @@ window.CAT = (() => {
   }
   const LM_SIZE = { blackhole: 46, nebula: 72, galaxy: 92, cluster: 60, home: 40 };
   ALL_DEEP.forEach(o => {
-    if (o.kind === 'system') return;
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: o.kind === 'solplanet' ? pointTexture(o.pl.rgb) : landmarkTex(o), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+    if (!o.always) return;                              // (ordinary stars are drawn together as one cloud of points)
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: landmarkTex(o), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
     const s = o.id === 'lmc' ? 150 : LM_SIZE[o.kind] || 60; sp.scale.set(s, s, 1); o.sprite = sp; skyRig.add(sp);
   });
   // "MILKY WAY" seen from outside it (from Andromeda, the LMC or M87)
@@ -3311,7 +3293,7 @@ window.CAT = (() => {
     const outside = deep.here.length() > 60000;                     // far outside our galaxy
     ALL_DEEP.forEach(o => { if (!o.sprite) return; relDir(o, o.sprite.position).multiplyScalar(980); });
     mwGroup.visible = !outside;
-    SOL.name = outside ? 'MILKY WAY · SOL' : spNow() ? 'SATURN · HOME' : 'SOL';
+    SOL.name = outside ? 'MILKY WAY · SOL' : 'SOL'; SOL.diamLy = outside ? 100000 : SUN_DIAM_LY;   // from outside the galaxy, home is the Milky Way
     SOL.sprite.material.map = outside ? mwTex : SOL.sprite.userData.tex || (SOL.sprite.userData.tex = SOL.sprite.material.map);
     // (sizes are set every frame by sizeMarkers)
   }
@@ -3319,7 +3301,8 @@ window.CAT = (() => {
   // ---- what you see where you arrive (artist's impressions from the real numbers) ----
   const destGroup = new THREE.Group(); sysRig.add(destGroup);
   const destStar = new THREE.Group(); sysRig.add(destStar);   // the star of the system you're at: fixed in its real direction
-  const DEST_D = 60;
+  const DEST_D = 60, STAR_D = 400;                    // how far the close-up (and its star's glow) sit from you, in scene units
+  const SUN_R_KM = 696000, SUN_FROM_EARTH = 0.0093;   // the Sun's radius; its size in Earth's sky (radians)
   let dest = null;                                     // { solids: [{mesh, r}], tick(dt, t), lights: [{u, local}] , center radius}
   function planetTexture(cls, eqt, seed) {
     const R = rng(seed), W = 512, H = 256, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
@@ -3340,18 +3323,18 @@ window.CAT = (() => {
     }
     return new THREE.CanvasTexture(c);
   }
-  function solTexture(name) {                         // our planets: their well-known looks, painted
-    const R = rng(hash(name)), W = 512, H = 256, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  function solTexture(look) {                         // well-known looks, painted (a planet's `look` in the catalogue)
+    const R = rng(hash(look)), W = 512, H = 256, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
     const bands = (pal, min, max) => { let y = 0, i = 0; while (y < H) { const hh = min + R() * (max - min); x.fillStyle = pal[(i++ + (R() * 2 | 0)) % pal.length]; x.fillRect(0, y, W, hh + 1); y += hh; } };
     const blobs = (cols, n, rmin, rmax, a) => { for (let k = 0; k < n; k++) { x.globalAlpha = a; x.fillStyle = cols[k % cols.length]; x.beginPath(); x.ellipse(R() * W, H * (0.12 + R() * 0.76), rmin + R() * (rmax - rmin), (rmin + R() * (rmax - rmin)) * 0.6, R() * 3, 0, Math.PI * 2); x.fill(); } x.globalAlpha = 1; };
     const caps = col => { const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, col); g.addColorStop(0.07, col); g.addColorStop(0.13, 'rgba(255,255,255,0)'); g.addColorStop(0.87, 'rgba(255,255,255,0)'); g.addColorStop(0.93, col); g.addColorStop(1, col); x.fillStyle = g; x.fillRect(0, 0, W, H); };
-    if (name === 'JUPITER') { bands(['#e8d8bc', '#c99a6b', '#f2e6d0', '#a8774f', '#d9b48c', '#efe0c6'], 6, 22); x.fillStyle = '#b5523a'; x.globalAlpha = 0.85; x.beginPath(); x.ellipse(W * 0.62, H * 0.64, 34, 15, 0, 0, Math.PI * 2); x.fill(); x.globalAlpha = 1; }
-    else if (name === 'EARTH') { x.fillStyle = '#1f4f8f'; x.fillRect(0, 0, W, H); blobs(['#3f7a3a', '#6b8a46', '#9c8a5a', '#4d7f3e'], 26, 18, 70, 0.95); caps('#f2f6fa'); blobs(['#ffffff'], 40, 10, 50, 0.38); }
-    else if (name === 'MARS') { x.fillStyle = '#b5532e'; x.fillRect(0, 0, W, H); blobs(['#7e3a22', '#c8693c', '#8f4428'], 40, 10, 60, 0.6); caps('#f4ede6'); }
-    else if (name === 'VENUS') { bands(['#efdcae', '#e6cf98', '#f6e8c4', '#dcc187'], 14, 40); blobs(['#fff5dc'], 20, 30, 90, 0.18); }
-    else if (name === 'MERCURY' || name === 'MOON') { x.fillStyle = name === 'MOON' ? '#9a9a96' : '#8c8580'; x.fillRect(0, 0, W, H); for (let k = 0; k < 260; k++) { const cx = R() * W, cy = R() * H, rr = 2 + Math.pow(R(), 3) * 26; x.fillStyle = 'rgba(40,36,34,0.35)'; x.beginPath(); x.arc(cx, cy, rr, 0, 7); x.fill(); x.strokeStyle = 'rgba(220,215,210,0.25)'; x.beginPath(); x.arc(cx - 1, cy - 1, rr, 0, 7); x.stroke(); } }
-    else if (name === 'URANUS') { bands(['#b8e6ea', '#acdfe5', '#c4ecef'], 30, 60); }
-    else if (name === 'NEPTUNE') { bands(['#3f63d6', '#3557c4', '#4a70e0', '#2f4fb5'], 12, 34); x.fillStyle = 'rgba(20,30,90,0.7)'; x.beginPath(); x.ellipse(W * 0.4, H * 0.62, 26, 12, 0, 0, 7); x.fill(); }
+    if (look === 'jupiter') { bands(['#e8d8bc', '#c99a6b', '#f2e6d0', '#a8774f', '#d9b48c', '#efe0c6'], 6, 22); x.fillStyle = '#b5523a'; x.globalAlpha = 0.85; x.beginPath(); x.ellipse(W * 0.62, H * 0.64, 34, 15, 0, 0, Math.PI * 2); x.fill(); x.globalAlpha = 1; }
+    else if (look === 'earth') { x.fillStyle = '#1f4f8f'; x.fillRect(0, 0, W, H); blobs(['#3f7a3a', '#6b8a46', '#9c8a5a', '#4d7f3e'], 26, 18, 70, 0.95); caps('#f2f6fa'); blobs(['#ffffff'], 40, 10, 50, 0.38); }
+    else if (look === 'mars') { x.fillStyle = '#b5532e'; x.fillRect(0, 0, W, H); blobs(['#7e3a22', '#c8693c', '#8f4428'], 40, 10, 60, 0.6); caps('#f4ede6'); }
+    else if (look === 'venus') { bands(['#efdcae', '#e6cf98', '#f6e8c4', '#dcc187'], 14, 40); blobs(['#fff5dc'], 20, 30, 90, 0.18); }
+    else if (look === 'cratered' || look === 'moon') { x.fillStyle = look === 'moon' ? '#9a9a96' : '#8c8580'; x.fillRect(0, 0, W, H); for (let k = 0; k < 260; k++) { const cx = R() * W, cy = R() * H, rr = 2 + Math.pow(R(), 3) * 26; x.fillStyle = 'rgba(40,36,34,0.35)'; x.beginPath(); x.arc(cx, cy, rr, 0, 7); x.fill(); x.strokeStyle = 'rgba(220,215,210,0.25)'; x.beginPath(); x.arc(cx - 1, cy - 1, rr, 0, 7); x.stroke(); } }
+    else if (look === 'uranus') { bands(['#b8e6ea', '#acdfe5', '#c4ecef'], 30, 60); }
+    else if (look === 'neptune') { bands(['#3f63d6', '#3557c4', '#4a70e0', '#2f4fb5'], 12, 34); x.fillStyle = 'rgba(20,30,90,0.7)'; x.beginPath(); x.ellipse(W * 0.4, H * 0.62, 26, 12, 0, 0, 7); x.fill(); }
     return new THREE.CanvasTexture(c);
   }
   function planetMesh(p, r, lightU) {
@@ -3386,7 +3369,8 @@ window.CAT = (() => {
   }
   function buildDest(o, dir, planetName) {
     clearDest();
-    if (o.kind === 'home') return;
+    const q0 = o.planets && planetOf(o, planetName);
+    if (q0 && q0.home) return;                         // home: the real-scale Saturn scene is shown instead
     const R = rng(hash(o.id));
     const fw = dir.clone().normalize();
     const upL = new THREE.Vector3(0, 1, 0).applyQuaternion(spaceRig.quaternion.clone().invert());
@@ -3394,38 +3378,22 @@ window.CAT = (() => {
     const at = (x, y, z, out = new THREE.Vector3()) => out.set(0, 0, 0).addScaledVector(rt, x).addScaledVector(up, y).addScaledVector(fw, z);
     dest = { solids: [], lights: [], anim: [], r: 10 };
     const addLight = local => { const u = { value: new THREE.Vector3() }; dest.lights.push({ u, local }); return u; };
-    if (o.kind === 'solplanet') {                    // one of our planets, lit by the Sun over your shoulder
-      const sunDir = o.pl.helio.clone().negate().normalize(), starAt = sunDir.clone().multiplyScalar(400).addScaledVector(fw, -DEST_D);   // toward the real Sun
-      const au = o.pl.a / 149.6, sunAng = (1.3927e6 / (o.pl.a * 1e6));                     // the Sun's true size from this planet
-      const core = 400 * sunAng / 0.36, glare = Math.min(1, 1 / au);                         // core = the bright disc; glare fades with distance
-      // even from Neptune the Sun is by far the brightest thing in the sky: a small, intense point with a halo
-      const st = glowSprite('255,255,255', Math.max(core, 7), 1), g1 = glowSprite('255,240,210', 200 * Math.max(Math.sqrt(glare), 0.3), 0.75 * Math.max(glare, 0.35)), g2 = glowSprite('255,230,190', 600 * Math.sqrt(glare), 0.25 * glare);
-      [st, g1, g2].forEach(sp => sp.position.copy(sunDir).multiplyScalar(400)); destStar.add(g2, g1, st);
-      const re = o.pl.d / 12756, r = 3.5 + 7.5 * Math.min(1, Math.log(Math.max(re, 0.5)) / Math.log(15) + 0.05);
-      const m = planetMesh({ name: o.name, re: Math.max(re, 0.6), eqt: 250, tex: solTexture(o.name) }, r, addLight(starAt.clone()));
+    if (q0) {                                          // a planet, lit by its star from the star's real direction, at the star's true size
+      const col = starColor(o.teff), rgb = [col.r, col.g, col.b].map(v => Math.round(v * 255)).join(',');
+      const starDir = orbitPos(o, q0).negate().normalize(), starAt = starDir.clone().multiplyScalar(STAR_D).addScaledVector(fw, -DEST_D);
+      const starAng = 2 * (o.strad || 1) * SUN_R_KM / (q0.au * KM_AU), k = starAng / SUN_FROM_EARTH;   // compared with our Sun seen from Earth
+      const g = Math.min(k, 3);                        // glare: a far star is a small, intense point with a soft halo
+      const st = glowSprite('255,255,255', Math.max(STAR_D * starAng / 0.36, 7), 1);
+      const g1 = glowSprite(rgb, 200 * Math.max(Math.sqrt(g), 0.3), 0.75 * THREE.MathUtils.clamp(g, 0.35, 1)), g2 = glowSprite(rgb, 600 * Math.sqrt(g), 0.25 * Math.min(g, 1));
+      [st, g1, g2].forEach(sp => sp.position.copy(starDir).multiplyScalar(STAR_D)); destStar.add(g2, g1, st);
+      const r = 3.5 + 7.5 * Math.min(1, Math.log(Math.max(q0.re || 1, 0.5)) / Math.log(15) + 0.05);
+      const m = planetMesh(q0.look ? { ...q0, tex: solTexture(q0.look) } : q0, r, addLight(starAt.clone()));
       destGroup.add(m); dest.solids.push({ mesh: m, r }); dest.r = r; dest.ext = r; dest.off = 0;
       dest.anim.push(dt => m.rotation.y += dt * 0.05);
-      if (o.name === 'EARTH') {                        // and the Moon
-        const mr = r * 0.27, pos = at(-r * 2.6, r * 0.6, r * 1.5), moon = planetMesh({ name: 'MOON', re: 0.6, eqt: 250, tex: solTexture('MOON') }, mr, addLight(starAt.clone().sub(pos)));
+      if (q0.moon) {                                   // a large moon beside it
+        const mr = r * 0.27, pos = at(-r * 2.6, r * 0.6, r * 1.5), moon = planetMesh({ name: q0.name + ' moon', re: 0.6, tex: solTexture('moon') }, mr, addLight(starAt.clone().sub(pos)));
         moon.position.copy(pos); destGroup.add(moon); dest.solids.push({ mesh: moon, r: mr });
       }
-      return;
-    }
-    if (o.kind === 'system') {
-      const col = starColor(o.teff), rgb = [col.r, col.g, col.b].map(v => Math.round(v * 255)).join(',');
-      const mp0 = (planetName && o.planets.find(x => x.name === planetName)) || mainPlanet(o);
-      const starDir = orbitPos(o, mp0).negate().normalize(), starAt = starDir.clone().multiplyScalar(400).addScaledVector(fw, -DEST_D);   // toward its real star
-      const starAng = o.strad && mp0.au ? 2 * o.strad * 696000 / (mp0.au * 1.496e8) : 0.0093;   // star radius (suns) and orbit (AU): its true size
-      const glow0 = THREE.MathUtils.clamp(starAng / 0.0093, 0.3, 3);                               // compared with our Sun from Earth
-      const st = glowSprite('255,255,255', Math.max(400 * starAng / 0.36, 3), 1); st.position.copy(starDir).multiplyScalar(400);
-      const g1 = glowSprite(rgb, 200 * Math.sqrt(glow0), 0.75); g1.position.copy(st.position); const g2 = glowSprite(rgb, 600 * Math.sqrt(glow0), 0.25); g2.position.copy(st.position);
-      destStar.add(g2, g1, st);
-      const ps = o.planets, main = (planetName && ps.find(x => x.name === planetName)) || mainPlanet(o);
-      const rad = p => 3.5 + 7.5 * Math.min(1, Math.log(Math.max(p.re || 1, 0.5)) / Math.log(15) + 0.05);
-      const light = addLight(starAt.clone());
-      const m = planetMesh(main, rad(main), light); destGroup.add(m); dest.solids.push({ mesh: m, r: rad(main) }); dest.r = rad(main); dest.ext = rad(main); dest.off = 0;
-      dest.anim.push(dt => m.rotation.y += dt * 0.05);
-      // (the system's other planets are real points in the sky now: see setupLocal)
     } else if (o.kind === 'blackhole') {
       const bh = new THREE.Group(); bh.position.copy(at(0, 0, 90)); destGroup.add(bh);
       const hole = new THREE.Mesh(new THREE.SphereGeometry(7, 48, 32), new THREE.MeshBasicMaterial({ color: 0x000000 }));
@@ -3523,7 +3491,7 @@ window.CAT = (() => {
   let deepRouteFor = null, deepRouteT = 0;
   const drDown = new THREE.Vector3(), drDir = new THREE.Vector3();
   function updateDeepRoute() {
-    const lockT0 = navLock && navLock.deep && inRange(navLock) && navLock.id !== (deep.at || 'sol') ? navLock : null;
+    const lockT0 = navLock && navLock.deep && inRange(navLock) && navLock.id !== deep.sys ? navLock : null;
     const tgt = deepJump && !deepJump.swapped ? deepJump.o : lockT0;
     if (!tgt) { deepRoute.visible = false; deepRouteFor = null; return; }
     if (deepRouteFor !== tgt) { deepRouteFor = tgt; deepRouteT = performance.now(); }
@@ -3558,32 +3526,32 @@ window.CAT = (() => {
   }
   const BEACON_COL = { blackhole: 0xffb070, nebula: 0xff8fc0, galaxy: 0xc8d0ff, cluster: 0xa8c4ff };
   function arriveAt(o, dir, planetName) {
-    deep.here.copy(o.pos); deep.at = o.kind === 'home' ? null : o.id; deep.dir = dir.clone();   // (our planets sit at the Sun's position on this scale)
-    deep.planet = o.kind === 'system' ? ((planetName && o.planets.some(x => x.name === planetName)) ? planetName : mainPlanet(o).name) : null;
-    setupLocal(); buildDest(o, dir, deep.planet); setHomeVisible(!deep.at); refreshMarkers();
-    try { if (window.SpaceMap) window.SpaceMap.arrived(o.kind === 'home' || o.kind === 'solplanet' ? 'sol' : o.id, o.kind === 'solplanet' ? o.name : o.kind === 'home' ? 'SATURN' : deep.planet, true); } catch (e) {}   // the star map records where you've been
+    deep.here.copy(o.pos); deep.sys = o.id; deep.dir = dir.clone();
+    deep.planet = o.planets ? planetOf(o, planetName).name : null;
+    setupLocal(); buildDest(o, dir, deep.planet); setHomeVisible(deep.atHome); refreshMarkers();
+    try { if (window.SpaceMap) window.SpaceMap.arrived(deep.sys, deep.planet, true); } catch (e) {}   // the star map records where you've been
   }
-  function saveDeep() { try { localStorage.setItem(DEEP_KEY, JSON.stringify({ limit: deep.limit, at: deep.at, planet: deep.planet || null, dir: deep.dir && deep.dir.toArray(), q: spaceRig.quaternion.toArray() })); } catch (e) {} }
+  function saveDeep() { try { localStorage.setItem(DEEP_KEY, JSON.stringify({ limit: deep.limit, sys: deep.sys, planet: deep.planet || null, dir: deep.dir && deep.dir.toArray(), q: spaceRig.quaternion.toArray() })); } catch (e) {} }
   const destOcc = [0, 1, 2, 3].map(() => { const a = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), occMat), b = new THREE.Mesh(a.geometry, occMat); a.renderOrder = b.renderOrder = -10; occluders.add(a); nearOcc.add(b); a.visible = b.visible = false; return [a, b]; });
   const jumpFlash = document.createElement('div');
   jumpFlash.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,1) 0%,rgba(190,240,255,.85) 35%,rgba(120,200,255,.2) 75%,rgba(0,0,0,0) 100%)';
   document.body.appendChild(jumpFlash);
 
   function deepGo(o, planetName) {
-    if (o.kind === 'localplanet') return deepGo(o.host, o.q.name);
+    if (o.kind === 'planet') return deepGo(o.host, o.q.name);
     if (deepJump || travel || !inRange(o)) return;
-    const same = o.id === (deep.at || 'sol');
-    if (same && (!planetName || planetName === deep.planet)) return;
-    const local = o.kind === 'solplanet' || (o.kind === 'home' && spNow());   // inside our solar system
-    const lb = same && planetName ? LOCAL.find(x => x.q.name === planetName) : null;
-    const dir = lb ? lb.dirLocal.clone() : same ? fwdLocal.clone() : relDir(o, new THREE.Vector3());     // another planet of this system: its real direction
+    const same = o.id === deep.sys;
+    if (o.planets) planetName = planetOf(o, planetName).name;
+    if (same && (!o.planets || planetName === deep.planet)) return;
+    const lb = same ? LOCAL.find(x => x.q.name === planetName) : null;
+    const dir = lb ? lb.dirLocal.clone() : relDir(o, new THREE.Vector3());     // another planet of this system: its real direction
     // far jumps hold in white light for a while (2 s for the nearest landmarks, up to 4 s for M87): you're travelling far
     const dly = o.pos.distanceTo(deep.here), lg = Math.log10;
     const hold = same || dly <= WARP_LY ? 0 : THREE.MathUtils.clamp(2 + 2 * (lg(dly) - lg(400)) / (lg(5.5e7) - lg(400)), 2, 4);
     const pxPerRad = (innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(55 / 2));
-    const a0 = lb ? 0.6 * lb.sprite.scale.x / 980 : o.kind === 'solplanet' && spNow() ? 0.6 * o.sprite.scale.x / 980 : o.kind === 'solplanet' ? 0.6 * o.pl.sprite.scale.x / (KM_SCENE * 1.2) : o.kind === 'system' ? 0.6 * (3 + 6 * Math.max(0, 1 - dly / deep.limit)) / pxPerRad     // its dot, in screen size
-             : o.sprite ? 0.6 * o.sprite.scale.x / 980 : 0.004;                                        // its picture in the sky
-    deepJump = { o, planet: planetName || null, dir, t: 0, turn: same ? 0.5 : 1.0, warp: same ? 1.4 : local ? 1.8 : 2.6, arrive: same || local ? 2.2 : 3.0, hold: local ? 0 : hold, a0 };
+    const mark = (lb || o).sprite;                     // how big it looked before the jump: its picture, or a star's dot
+    const a0 = mark ? 0.6 * mark.scale.x / 980 : 0.6 * (3 + 6 * Math.max(0, 1 - dly / deep.limit)) / pxPerRad;
+    deepJump = { o, planet: planetName || null, dir, t: 0, turn: same ? 0.5 : 1.0, warp: same ? 1.6 : 2.6, arrive: same ? 2.2 : 3.0, hold, a0 };
     factsT = -1; factsG.style.display = 'none';
   }
   function deepJumpUpdate(dt) {
@@ -3604,7 +3572,8 @@ window.CAT = (() => {
              : j.t < ta ? 0.9 + 0.06 * Math.sin(j.t * 7) + 0.04 * Math.sin(j.t * 17)                 // holding in white: a gentle shimmer, streaks faintly behind
              : Math.pow(Math.max(0, 1 - (j.t - ta) / (H ? 0.6 : 0.35)), 1.5);
     jumpFlash.style.opacity = fl.toFixed(3);
-    if (!j.swapped && j.t >= tf + H / 2) { j.swapped = true; arriveAt(j.o, j.dir, j.planet); }
+    if (!j.swapped && j.t >= tf + H / 2) { j.swapped = true; arriveAt(j.o, j.dir, j.planet);
+      if (deep.atHome) { const n = NAV.find(x => x.name === HOME_PLANET); if (n) j.dir = navLocal(n, new THREE.Vector3()).sub(shipPos).normalize(); } }   // home: turn to face Saturn
     if (j.swapped && deep.at) {                        // the destination rushes in from far away, then slows to a stop
       const ga = ta + (H ? 0.45 : 0.25);                                                        // start growing once the white has mostly cleared
       const u = THREE.MathUtils.clamp((j.t - ga) / (T3 - ga), 0, 1), e = 1 - Math.pow(1 - u, 3);
@@ -3616,14 +3585,14 @@ window.CAT = (() => {
       destGroup.scale.setScalar(Math.min(1, a * DEST_D / Math.max(1e-6, 2 * ext - a * off)));
       if (dest && !dest.pts) { dest.pts = []; destGroup.traverse(o => { if (o.isPoints) dest.pts.push({ m: o.material, s: o.material.size }); }); }
       if (dest) dest.pts.forEach(p => p.m.size = p.s * destGroup.scale.x);                       // star dots shrink with the rest while it's far
-      if (j.o.kind !== 'system' && j.o.sprite) {                                               // a landmark: its sky picture first, blending into the 3D view
+      if (!j.o.planets && j.o.sprite) {                                               // a landmark: its sky picture first, blending into the 3D view
         if (!j.picSet) { j.picSet = true; deepPicture.material.map = j.o.sprite.material.map; deepPicture.material.needsUpdate = true; }
         deepPicture.visible = true; deepPicture.position.copy(destGroup.position).addScaledVector(j.dir, off * destGroup.scale.x);
         deepPicture.scale.setScalar(a * (DEST_D + off * destGroup.scale.x) / 0.6);
         deepPicture.material.opacity = 0.9 * (1 - THREE.MathUtils.smoothstep(e, 0.15, 0.7));
         setDestFade(THREE.MathUtils.smoothstep(e, 0.05, 0.55));
       }
-      if (j.o.kind === 'system') {                                                              // a star: its dot carries on, then hands over to the planet
+      if (j.o.planets) {                                                                        // a star or planet: its dot carries on, then hands over to the planet
         if (!j.beaconSet) { j.beaconSet = true; deepBeacon.material.color.setHex(starColor(j.o.teff).getHex()); }
         deepBeacon.visible = true; deepBeacon.position.copy(destGroup.position);
         deepBeacon.scale.setScalar(Math.max(j.a0, a) * DEST_D / 0.45);
@@ -3651,18 +3620,16 @@ window.CAT = (() => {
   }
   const fwdLocal = new THREE.Vector3();
   function deepVis(o) {                                // how visible a marker is right now (0..1)
-    if (o.id === (deep.at || 'sol')) return 0;
-    const cc = () => THREE.MathUtils.smoothstep(relDir(o, dTmp2).dot(fwdLocal), CONE[0], CONE[1]);
-    if (o.kind === 'solplanet') return !deep.at ? 1 : spNow() ? 0.35 + 0.65 * cc() : 0;
-    if (o.kind === 'localplanet') return deep.at === o.host.id ? 0.35 + 0.65 * cc() : 0;
+    if (o.id === deep.sys) return 0;                   // the place you're in
+    if (o.kind === 'planet' && deep.atHome) return 1;  // (at home the planets are the bright points of the Saturn scene)
     const c = THREE.MathUtils.smoothstep(relDir(o, dTmp2).dot(fwdLocal), CONE[0], CONE[1]);
-    if (o.kind === 'system') { const d = deepDist(o); return d > deep.limit || d > WARP_LY ? 0 : c; }   // beyond warp range: just a dot in the sky
-    return o.kind === 'home' && !deep.at ? 0 : 0.35 + 0.65 * c;
+    if (o.always || o.kind === 'planet') return 0.35 + 0.65 * c;
+    const d = deepDist(o); return d > deep.limit || d > WARP_LY ? 0 : c;   // ordinary stars: named and reachable within warp range only
   }
   function deepPick(x, y) {
     let best = null, bestD = 34;
     ALL_DEEP.forEach(o => {
-      if (deepVis(o) < (o.kind === 'system' ? 0.35 : 0.3)) return;
+      if (deepVis(o) < (o.sprite ? 0.3 : 0.35)) return;
       const [sx, sy, , front] = deepScreenOf(o); if (!front) return;
       const d = Math.hypot(x - sx, y - sy); if (d < bestD) { best = o; bestD = d; }
     });
@@ -3675,17 +3642,19 @@ window.CAT = (() => {
     g.setAttribute('class', 'minor'); c.setAttribute('r', 5); g.append(c, t); deepLabelG.append(g); g.style.display = 'none'; return { g, c, t }; });
   function deepLabels() {
     const cx = innerWidth / 2, cy = innerHeight / 2, R2 = Math.min(innerWidth, innerHeight) * 0.3, picks = [];
+    const body = dest && !deep.atHome ? deepScreenOf({ center: true }) : null;      // no name tags over the close-up in front of you
     if (!deepJump) ALL_DEEP.forEach(o => {
-      if (o === navLock || (o.kind === 'solplanet' && !deep.at)) return;
+      if (o === navLock || (o.kind === 'planet' && deep.atHome)) return;
       const v = deepVis(o); if (v < 0.55) return;
       const [x, y, , front] = deepScreenOf(o); if (!front) return;
+      if (body && body[3] && Math.hypot(x - body[0], y - body[1]) < body[2] + 6) return;
       const d = Math.hypot(x - cx, y - cy); if (d < R2) picks.push({ o, x, y, d });
     });
     picks.sort((a, b) => a.d - b.d);
     DLABELS.forEach((L, i) => {
       const p = picks[i]; if (!p) { L.g.style.display = 'none'; return; }
       L.g.style.display = ''; L.c.setAttribute('cx', p.x.toFixed(1)); L.c.setAttribute('cy', p.y.toFixed(1));
-      L.t.textContent = p.o.name + '  ' + (p.o.distKm != null && (p.o.kind === 'localplanet' || p.o.kind === 'solplanet' || (p.o.kind === 'home' && spNow())) ? distText(p.o) : fmtLy(deepDist(p.o))); reportSeen(p.o);
+      L.t.textContent = p.o.name + '  ' + (p.o.kind === 'planet' ? distText(p.o) : fmtLy(deepDist(p.o))); reportSeen(p.o);
       L.t.setAttribute('x', (p.x + 10).toFixed(1)); L.t.setAttribute('y', (p.y - 8).toFixed(1));
     });
   }
@@ -3698,7 +3667,7 @@ window.CAT = (() => {
     sysMat.uniforms.uFwd.value.copy(fwdLocal); sysMat.uniforms.uLimit.value = deep.limit; sysMat.uniforms.uPx.value = renderer.getPixelRatio();
     const t = performance.now() / 1000;
     sizeMarkers();
-    ALL_DEEP.forEach(o => { if (o.sprite) o.sprite.material.opacity = deepVis(o) * 0.9 * (o.faint || 1) * (o.kind === 'solplanet' && !deep.at ? 0 : 1); });   // (at home our planets are the bright points already in the sky)
+    ALL_DEEP.forEach(o => { if (o.sprite) o.sprite.material.opacity = deepVis(o) * 0.9 * (o.faint || 1) * (o.kind === 'planet' && deep.atHome ? 0 : 1); });   // (at home the planets are the bright points already in the sky)
     waves.forEach(w => w.material.opacity = w.userData.base * (0.6 + 0.4 * Math.sin(t * w.userData.sp + w.userData.ph)));
     if (dest) {
       dest.anim.forEach(f => f(dt, t));
@@ -3716,7 +3685,7 @@ window.CAT = (() => {
     updateDeepRoute();
     deepLabels();
   }
-  window.__deepDebug = () => ({ at: deep.at, here: deep.here.toArray().map(v => +v.toFixed(2)), limit: deep.limit, jumping: !!deepJump,
+  window.__deepDebug = () => ({ at: deep.at, sys: deep.sys, planet: deep.planet, local: LOCAL.map(o => o.id), here: deep.here.toArray().map(v => +v.toFixed(2)), limit: deep.limit, jumping: !!deepJump,
     systems: SYSTEMS.length, landmarks: LANDMARKS.length, satLonDeg: +(satLon / DEG).toFixed(2),
     shown: SYSTEMS.filter(o => deepDist(o) <= deep.limit).length });
   window.__deepScr = id => { const o = ALL_DEEP.find(x => x.id === id); return o ? deepScreenOf(o).map(v => typeof v === 'number' ? +v.toFixed(1) : v) : null; };
@@ -3724,10 +3693,9 @@ window.CAT = (() => {
   window.__galLB = id => { const d = relDir(ALL_DEEP.find(x => x.id === id), new THREE.Vector3()); return [+(Math.atan2(d.dot(GY), d.dot(GC)) / DEG).toFixed(1), +(Math.asin(d.dot(GP)) / DEG).toFixed(1)]; };
   // the star map's JUMP lands here: the normal warp, to a star (or one of its planets)
   window.SpaceJump = (id, planetName) => {
-    if (id === 'sol') { const o = planetName && planetName !== 'SATURN' ? SOLP.find(x => x.name === planetName) : SOL; if (o) { cancelLock(); deepGo(o); } return; }
     const o = ALL_DEEP.find(x => x.id === id); if (o) { cancelLock(); deepGo(o, planetName); }
   };
-  window.__deepSync = () => { try { window.SpaceMap.arrived(deep.at || 'sol', deep.planet, true); } catch (e) {} };
+  window.__deepSync = () => { try { window.SpaceMap.arrived(deep.sys, deep.planet, true); } catch (e) {} };
   window.__deepGo = id => { const o = ALL_DEEP.find(x => x.id === id); if (o) deepGo(o); return !!o; };
   window.__deepFace = id => { const o = ALL_DEEP.find(x => x.id === id); if (o) { faceQuat(relDir(o, new THREE.Vector3()), qFace); spaceRig.quaternion.copy(qFace); syncSysRig(); } return !!o; };
 
@@ -3736,13 +3704,15 @@ window.CAT = (() => {
     try {
       const d = JSON.parse(localStorage.getItem(DEEP_KEY));
       if (d && d.limit) deep.limit = d.limit;
-      const o = d && d.at && ALL_DEEP.find(x => x.id === d.at);
-      if (o && d.dir) {
+      let sysId = d && d.sys, pl = d && d.planet;
+      if (d && !sysId && d.at) { if (d.at.startsWith('sp:')) { sysId = 'sol'; pl = d.at.slice(3); } else sysId = d.at; }   // saves from before
+      const o = sysId && PLACE.get(sysId);
+      if (o && d.dir && !(o === SOL && planetOf(o, pl).home)) {
         if (d.q) spaceRig.quaternion.fromArray(d.q);
-        arriveAt(o, new THREE.Vector3().fromArray(d.dir), d.planet); destGroup.position.copy(deep.dir).multiplyScalar(DEST_D);
+        arriveAt(o, new THREE.Vector3().fromArray(d.dir), pl); destGroup.position.copy(deep.dir).multiplyScalar(DEST_D);
         syncSysRig();
-      } else refreshMarkers();
-    } catch (e) { refreshMarkers(); }
+      } else { setupLocal(); refreshMarkers(); }
+    } catch (e) { setupLocal(); refreshMarkers(); }
   }
 
   window.__navDebug = () => ({ target: nav.target, lock: navLock && navLock.name, travel: !!travel, ship: shipPos.toArray().map(v => +v.toFixed(2)) });
@@ -4654,7 +4624,7 @@ window.CAT = (() => {
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-23 · 44';
+    tag.textContent = 'SCREEN 2026-11-23 · 45';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
