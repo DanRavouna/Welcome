@@ -17,7 +17,11 @@
     "diamKm": 4879,
     "ph": 60,
     "rgb": "200,190,180",
-    "look": "cratered"
+    "look": "cratered",
+    "side": [
+     -1,
+     1
+    ]
    },
    {
     "name": "VENUS",
@@ -25,7 +29,11 @@
     "diamKm": 12104,
     "ph": 300,
     "rgb": "255,245,220",
-    "look": "venus"
+    "look": "venus",
+    "side": [
+     1,
+     1
+    ]
    },
    {
     "name": "EARTH",
@@ -35,7 +43,11 @@
     "rgb": "170,200,255",
     "look": "earth",
     "tag": "HOME PLANET",
-    "moon": true
+    "moon": true,
+    "side": [
+     -1,
+     -1
+    ]
    },
    {
     "name": "MARS",
@@ -43,7 +55,11 @@
     "diamKm": 6792,
     "ph": 120,
     "rgb": "255,170,120",
-    "look": "mars"
+    "look": "mars",
+    "side": [
+     -1,
+     -1
+    ]
    },
    {
     "name": "JUPITER",
@@ -52,7 +68,11 @@
     "ph": 40,
     "rgb": "255,235,200",
     "look": "jupiter",
-    "major": true
+    "major": true,
+    "side": [
+     1,
+     -1
+    ]
    },
    {
     "name": "SATURN",
@@ -62,7 +82,130 @@
     "rgb": "232,214,168",
     "look": "saturn",
     "tag": "YOUR SHIP",
-    "home": true
+    "home": true,
+    "side": [
+     1,
+     -1
+    ],
+    "eqRKm": 60268,
+    "polRKm": 54364,
+    "tiltDeg": 26.7,
+    "rings": {
+     "C0": 74491,
+     "C1": 91975,
+     "B1": 117580,
+     "A0": 122050,
+     "A1": 136770
+    },
+    "moons": [
+     {
+      "name": "Mimas",
+      "aKm": 185520,
+      "rKm": 198,
+      "col": [
+       0.8,
+       0.8,
+       0.8
+      ],
+      "look": "bigcrater",
+      "side": [
+       -1,
+       1
+      ]
+     },
+     {
+      "name": "Enceladus",
+      "aKm": 238020,
+      "rKm": 252,
+      "col": [
+       1.0,
+       1.0,
+       1.0
+      ],
+      "look": "ice",
+      "side": [
+       -1,
+       -1
+      ]
+     },
+     {
+      "name": "Tethys",
+      "aKm": 294660,
+      "rKm": 531,
+      "col": [
+       0.92,
+       0.92,
+       0.9
+      ],
+      "look": "canyon",
+      "side": [
+       1,
+       1
+      ]
+     },
+     {
+      "name": "Dione",
+      "aKm": 377400,
+      "rKm": 561,
+      "col": [
+       0.85,
+       0.85,
+       0.84
+      ],
+      "look": "wisps",
+      "side": [
+       1,
+       -1
+      ]
+     },
+     {
+      "name": "Rhea",
+      "aKm": 527040,
+      "rKm": 764,
+      "col": [
+       0.84,
+       0.83,
+       0.8
+      ],
+      "look": "cratered",
+      "side": [
+       -1,
+       -1
+      ]
+     },
+     {
+      "name": "Titan",
+      "aKm": 1221870,
+      "rKm": 2575,
+      "col": [
+       0.95,
+       0.65,
+       0.3
+      ],
+      "look": "haze",
+      "haze": true,
+      "major": true,
+      "side": [
+       1,
+       -1
+      ]
+     },
+     {
+      "name": "Iapetus",
+      "aKm": 3560850,
+      "rKm": 735,
+      "col": [
+       0.65,
+       0.58,
+       0.5
+      ],
+      "look": "twotone",
+      "side": [
+       1,
+       -1
+      ]
+     }
+    ]
    },
    {
     "name": "URANUS",
@@ -70,7 +213,11 @@
     "diamKm": 51118,
     "ph": 75,
     "rgb": "180,235,240",
-    "look": "uranus"
+    "look": "uranus",
+    "side": [
+     1,
+     -1
+    ]
    },
    {
     "name": "NEPTUNE",
@@ -78,7 +225,11 @@
     "diamKm": 49528,
     "ph": 140,
     "rgb": "140,170,255",
-    "look": "neptune"
+    "look": "neptune",
+    "side": [
+     -1,
+     1
+    ]
    }
   ],
   "always": true
@@ -357,5 +508,6 @@
    "always": true
   }
  ],
- "_looks": "look: what the close-up shows. jet / companion (a star it pulls gas from) / crowd (dense stars around it) / ring / pulsar / dim (fainter clouds) / irregular / tilt (degrees, as we see it) / squash (how flat its sky picture is)."
+ "_looks": "look: what the close-up shows. jet / companion (a star it pulls gas from) / crowd (dense stars around it) / ring / pulsar / dim (fainter clouds) / irregular / tilt (degrees, as we see it) / squash (how flat its sky picture is).",
+ "_planetExtras": "Optional planet fields: eqRKm, polRKm (km, equator and pole radius), tiltDeg (spin axis tilt), rings (edges in km from the centre: C0 inner edge, C1/B1/A0 ring boundaries, A1 outer edge), moons [{name, aKm orbit radius, rKm body radius, col 0..1, look, haze, major, side}], side (which way the name tag points: [right=1/left=-1, down=1/up=-1]). Saturn: NASA Saturn and Saturnian satellite fact sheets; ring edges: PDS Rings Node."
 }
