@@ -1,0 +1,71 @@
+# Space Cube Launcher: handoff
+
+Read this first. It is the short version; the three files in `docs/` hold the detail and are meant to be searched, not read whole.
+
+| When you need | Read |
+|---|---|
+| What Dan has decided, and how to work with him | `docs/rules.md` |
+| Where things are in the code, the test hooks, what runs every frame | `docs/architecture.md` |
+| The data: shapes, sources, how to add a moon or a landmark | `docs/data.md` |
+| Installing the Android app | `README.md` |
+
+## What it is
+An Android home screen. The phone app (`app/`, Kotlin) is a thin shell around one web page: a 3D view from a ship in space, with your apps as floating cubes. The page is also a small space game: you sit at a planet, see the real sky around you, fly to its moons and warp to other planets, stars and landmarks. A star map shows where you have been.
+
+The phone loads the page live from GitHub Pages (`/space-cube/`), so pushing to `main` updates the phone. Triple-tap the clock to reload; Settings shows the build tag (`SCREEN 2026-11-23 · 54`).
+
+## The one rule right now
+**Uniformity.** Dan, 2026-11-23: "we cant have multiple parallel systems" and "uniformity is the main rule for now as this will be the base we ll be iterating from". Every place, planet, tag, save and rule goes through ONE path. Before adding anything, find the existing path and extend it. A check on a name (`if (name === 'SATURN')`) is a bug; the data gets a field instead.
+
+## How it is built (one of everything)
+- **One data file**: `tools/catalog.json`, made from `tools/nasa-snapshot.json` (NASA download) + `tools/catalog-hand.json` (everything written by hand).
+- **One catalogue** (`src/catalogue.js`, `window.CAT`), shared by the game and the map. It owns: every place; the **one saved state** (`spaceCube.state.v1`); the **rules** (reach, known, fact text); the **time model** (where every orbiting body is today); the **pictures** of places.
+- **One planet scene** (`buildBody` in `src/game.js`): the planet you are at, at real scale, with rings and moons if its data has them. Home (Saturn) is just one more planet.
+- **One name tag** (`makeTag` / `tagBox` / `drawTag`), for moons, planets, stars and landmarks.
+- **Two ways to travel**, each used everywhere: *flights* inside a planet's system (planet and moons), *warps* between planets, stars and landmarks.
+- **One build**: `python3 space-cube-launcher/tools/build.py` assembles `src/` + data into `app/src/main/assets/index.html`. Never edit that file by hand.
+
+## Work loop
+```bash
+# 1. edit space-cube-launcher/src/*  (or tools/catalog-hand.json for data)
+# 2. bump the build tag in src/game.js:  tag.textContent = 'SCREEN <date> · <n+1>'
+bash space-cube-launcher/tests/run.sh          # builds, then runs every test (about 3 minutes)
+# 3. commit the sources AND the built app/src/main/assets/index.html together, push to main
+gh run list --workflow pages.yml -L 1          # the deploy; if it failed start a FRESH run, do not re-run:
+gh api -X POST repos/DanRavouna/Welcome/actions/workflows/pages.yml/dispatches -f ref=main
+```
+- To look at it in a browser: `python3 space-cube-launcher/tools/build.py --preview /tmp/space-cube.html` (loads three.js and the font from the web).
+- Old saves must keep loading: `tests/test_saves.py` plants every old form. Add a case there whenever the saved shape changes.
+- Report to Dan in plain words: what changed, what is verified, what is not. **Headless tests cannot judge feel, speed or how motion looks on the phone. Say so every time.**
+
+## Key numbers
+| | |
+|---|---|
+| Warp range for ordinary stars | 20 ly (`warpLy` in the data). Our system and the landmarks are always reachable (`always`). |
+| Where you park at a planet | 25 of its radii out (`PARK_RADII`), drawn 400 scene units away (`KM_SCENE`), 50° off its star so it is mostly lit (`parkDir`) |
+| Smallest dot in the sky | 9 px (`MIN_PX`). Everything else is its true angular size. |
+| Sky shells (scene units) | star dots 950, pictures 980 (`SHELL`, `MARK_R`) |
+| Warp timing | turn 1.0 s, warp 2.6 s, arrive 3.0 s (0.5 / 1.6 / 2.2 inside one system); far jumps hold in white 2 to 4 s |
+| Catalogue size | 642 other star systems, 1000 exoplanets, 8 planets of ours, 12 landmarks |
+
+## What is real and what is not
+- **Real**: star positions and distances, planet sizes/orbits/temperatures (NASA Exoplanet Archive); landmark positions (CDS Sesame); where our 8 planets are today (JPL elements, checked against JPL Horizons); sizes of Saturn, Jupiter, Earth and their moons, moon orbit sizes and periods (NASA fact sheets).
+- **Invented, and marked so in the data**: where a moon or an exoplanet starts on its orbit; the tilt of other stars' orbit planes; every surface picture and landmark close-up (artist's impressions); moon colours.
+- Planet spin axes lean by the real amount but around an arbitrary line, not toward the real pole.
+
+## Open items (nothing here is started)
+1. **Sky scale.** Dan, 2026-11-23: nearby planets look the same size as far objects. Cause: nearly everything is under 1 px, so the 9 px floor catches it all. Options given to him: brightness by real apparent brightness (my pick), a compressed size scale, both, or true size only when locked on. He answered "for now none".
+2. Moons exist only for Earth, Jupiter and Saturn. Adding more is data only (`docs/data.md`).
+3. Moon starting points are invented. Real ones need satellite elements and the planet's real pole.
+4. The star's tag (SOL) cannot be tapped or locked on.
+5. On the map, selecting SOL while you are in it shows a JUMP button that does nothing.
+6. Saturn's `tag` in the data still says `YOUR SHIP`.
+7. Never checked on the phone since screen 47: speed, the arrival in motion, and Dan's real save converting.
+8. An old stand-alone star map artifact from the mockup phase still exists in Dan's Claude artifacts, stale. He has not asked to delete it.
+
+## Watch items
+- `clearBody()` resets the flight state (`nav`, `shipPos`, `travel`). Anything that rebuilds the scene loses the parking spot unless it is restored afterwards (see the block "back where you left off").
+- `k` (km to scene units) changes with the planet you are at. Never cache something multiplied by `k` across a rebuild.
+- A `const` used inside `buildBody`/`clearBody` must be declared before the first build at the bottom of the DEEP SKY section, or the page dies on load (temporal dead zone). `node --check` does not catch this; the tests do.
+- The sky jumps during the white flash of a warp, because you come out at the parking spot facing the planet. The flash is not opaque at the screen corners.
+- `git pull --rebase` refuses with unstaged files: commit first.

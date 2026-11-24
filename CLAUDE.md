@@ -19,6 +19,14 @@ The game has a greater meaning, the quest sits inside it, and every place sits i
 5. **Commit and push tested changes directly to `main`** so GitHub Pages updates the site.
 6. **Report in plain words** what changed, what is verified and what is not.
 
+## Space Cube Launcher (`space-cube-launcher/`)
+A separate project in this repository: an Android home screen whose 3D page is also a small space game. The Critter Roll rules above about meaning, `critter-roll-handoff.md` and `src/run-tests.sh` are for Critter Roll; rules 3 to 6 (old saves, no secrets, push tested changes to `main`, report in plain words) apply here too.
+1. **Read `space-cube-launcher/HANDOFF.md` first** (short). It points to `docs/rules.md` (what Dan has decided), `docs/architecture.md` (where things are, test hooks) and `docs/data.md` (data shapes, sources, the saved state): search those, do not read them whole.
+2. **Uniformity is the main rule**: one path for every place, planet, tag, save and rule. Extend the existing path; never add a second one or a check on a name.
+3. **Never edit `app/src/main/assets/index.html` by hand.** Edit `space-cube-launcher/src/` (or `tools/catalog-hand.json`), bump the build tag in `src/game.js`, then `bash space-cube-launcher/tests/run.sh` (builds, then runs every test). Commit the sources and the built page together.
+4. The phone loads the page from GitHub Pages: after pushing, check the "Deploy to GitHub Pages" run; if it failed start a fresh run, do not re-run it.
+5. Say plainly in every report that feel, speed and motion on the phone cannot be judged from here.
+
 ## Supabase (public values, safe in client code)
 - Project URL: `https://xuawpknnmozcfzgnflel.supabase.co`
 - Publishable key: `sb_publishable_iLcZK_HKfm1inXYG5MPxnQ_3ut-Hq7Z`
