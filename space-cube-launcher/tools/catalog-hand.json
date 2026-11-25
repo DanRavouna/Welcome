@@ -2,7 +2,7 @@
  "_about": "Everything Space Cube knows that does not come from the NASA download. One place: edit here, then run build_catalog.py.",
  "units": "distances between stars: light years (ly). Inside a star system: AU. Sizes: km (planets), ly (landmarks).",
  "warpLy": 20,
- "_skyScale": "How big and bright the points you can warp to look (0 to warpLy). Decided with Dan one end at a time. near: the closest point (50 px, full brightness). far: a star at the warp range, 20 ly (5 px, 80%). How it changes in between: not decided yet. Not used by the page yet.",
+ "_skyScale": "PAUSED design (Dan, 2026-11-24/25), not used by the page. near/far were first meant as the two ends of one size curve for the points you can warp to (closest 50 px full brightness; a star at 20 ly 5 px 80%; between them a curve 70% straight line + 30% exponential). Then Dan decided: warpable stars can all be ONE size (they are far by concept), and the distance scale is for FLIGHTS only. Open: what size the stars get (likely 'far'), and whether your system's other planets stay warps (one size) or become flights (on the distance scale). See HANDOFF open items.",
  "skyScale": {
   "near": {
    "px": 50,

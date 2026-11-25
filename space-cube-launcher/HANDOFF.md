@@ -68,6 +68,7 @@ Done in screen 55: the star's tag can be tapped and locked on; the map's JUMP to
 5. Nereid (Neptune) is left out: its orbit is very eccentric and moons are drawn on circles.
 6. From Saturn the Sun and the inner planets sit within a few pixels of each other, so which one a tap picks there cannot be judged from here.
 7. **The star is not on the planets' size curve.** From Saturn, Earth and Venus (about 40 px) now look about as big as the Sun's glow. Putting the star through `localLook` too would keep one rule. Dan's call.
+8. **Sky scale, paused by Dan (2026-11-25).** Goal: you must clearly see the closest things, to picture what is around you. Decided: warpable stars all one size (far by concept); size by distance is for flights only. Stored, not built: `skyScale` in `catalog-hand.json` (closest 50 px 100%, star at 20 ly 5 px 80%, curve 70% linear + 30% exponential). Open: the stars' one size; whether your system's other planets stay warps (one size) or become flights (distance scale). What is live meanwhile (screen 58, `localLook`): planets of your system on a compressed real-size curve, Jupiter from Saturn about 74 px; it is to be replaced when this is settled. Ask one question at a time.
 
 ## Watch items
 - `clearBody()` resets the flight state (`nav`, `shipPos`, `travel`). Anything that rebuilds the scene loses the parking spot unless it is restored afterwards (see the block "back where you left off").
