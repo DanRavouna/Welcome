@@ -61,6 +61,15 @@ with Game(init=SRC) as g:
     d = D(g); check('a reminder draws the event in the window', d['holo'] == 'reminder' and g.js("document.getElementById('remTitle').textContent") == 'Dentist'
                     and g.js("document.getElementById('remWhen').textContent") == 'IN 10 MIN', d)
     g.pg.click('#remOk'); settle(g); check('GOT IT folds it away', D(g)['holo'] is None)
+    ev2b = g.js("window.__calState.events[1].begin")
+    g.pg.evaluate('([a, b]) => { window.showEventReminder(1, a, "30"); window.showEventReminder(2, b, "day"); window.showEventReminder(1, a, "30"); }', [ev1['begin'], ev2b]); settle(g)
+    check('two reminders at once: the first shows, the other waits (a repeat of one is not added)', D(g)['holo'] == 'reminder' and D(g)['pending'] == 1
+          and g.js("document.getElementById('remTitle').textContent") == 'Dentist', D(g))
+    g.wait(2500); check('...the one showing stays until GOT IT', g.js("document.getElementById('remTitle').textContent") == 'Dentist' and D(g)['holo'] == 'reminder')
+    g.pg.click('#remOk'); settle(g, 3800)
+    check('...then the next one shows', D(g)['holo'] == 'reminder' and g.js("document.getElementById('remTitle').textContent") == 'Car service'
+          and g.js("document.getElementById('remWhen').textContent") == 'TODAY · ALL DAY' and D(g)['pending'] == 0, D(g))
+    g.pg.click('#remOk'); settle(g)
     g.pg.click('#clock', force=True); settle(g)
     g.pg.evaluate('b => window.showEventReminder(1, b, "0")', ev1['begin']); settle(g, 3600)
     check('a reminder while the calendar is open: the calendar closes, the reminder shows', D(g)['holo'] == 'reminder'
@@ -79,6 +88,14 @@ with Game(init=SRC) as g:
     check('Settings has its own Reload button', g.js("!!document.getElementById('reloadBtn')"))
     g.js('window.__beforeReload = 1'); g.js("document.getElementById('reloadBtn').click()"); g.wait(4500)
     check('...and it reloads the screen', g.js('window.__beforeReload') is None)
+# a busy day: the window stays between the clock and the console, the day's list scrolls, both buttons show
+with Game(init='window.__calBusyDay = true;\n' + SRC) as g:
+    g.fresh(); g.pg.click('#clock', force=True); settle(g)
+    fr = g.js("document.getElementById('rFrame').getBoundingClientRect().bottom"), g.js("document.getElementById('console').getBoundingClientRect().top")
+    btns = g.js("[...document.querySelectorAll('#calMain .rFoot button')].map(b => b.getBoundingClientRect().bottom)")
+    check('a busy day: the window stays above the console', fr[0] <= fr[1] + 1, fr)
+    check('...both buttons inside the window', len(btns) == 2 and max(btns) < fr[0], (btns, fr))
+    check('...and the day\'s list scrolls', g.js("(() => { const e = document.getElementById('calEvents'); return e.scrollHeight > e.clientHeight + 20; })()"))
 # no access yet: ask, then show
 with Game(init='window.__calNoAccess = true;\n' + SRC) as g:
     g.fresh(); g.pg.click('#clock', force=True); settle(g)

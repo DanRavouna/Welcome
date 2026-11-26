@@ -12,6 +12,8 @@ with Game() as g:
     check('it first appears at the line\'s full width', seen and seen[0][1] < 0.02 * W, seen[:3])
     check('...then narrows to its place (5% in from each side)', seen and abs(seen[-1][1] - 0.05 * W) < 2 and seen[-1][2] > 100, seen[-1:])
     check('it never jumps back wider while opening', all(b[1] >= a[1] - 0.5 for a, b in zip(seen, seen[1:])), [round(x[1], 1) for x in seen])
+    rows = g.js("[...document.querySelectorAll('#rList .rItem')].map(b => Math.round(b.getBoundingClientRect().height))")
+    check('checklist rows keep their size (a finger-sized row each)', rows and min(rows) >= 34, rows)
     g.pg.click('#rClose'); g.wait(2200)
     check('CLOSE folds it away', not g.js("document.getElementById('rWrap').classList.contains('live')"))
 done()

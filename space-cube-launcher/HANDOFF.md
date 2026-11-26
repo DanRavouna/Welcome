@@ -12,7 +12,7 @@ Read this first. It is the short version; the three files in `docs/` hold the de
 ## What it is
 An Android home screen. The phone app (`app/`, Kotlin) is a thin shell around one web page: a 3D view from a ship in space, with your apps as floating cubes. The page is also a small space game: you sit at a planet, see the real sky around you, fly to its moons and warp to other planets, stars and landmarks. A star map shows where you have been.
 
-The phone loads the page live from GitHub Pages (`/space-cube/`), so pushing to `main` updates the phone. Triple-tap the clock to reload; Settings shows the build tag (`SCREEN 2026-11-26 · 60`).
+The phone loads the page live from GitHub Pages (`/space-cube/`), so pushing to `main` updates the phone. Settings > Reload fetches the newest; Settings shows the build tag (`SCREEN 2026-11-26 · 60`).
 
 ## The one rule right now
 **Uniformity.** Dan, 2026-11-23: "we cant have multiple parallel systems" and "uniformity is the main rule for now as this will be the base we ll be iterating from". Every place, planet, tag, save and rule goes through ONE path. Before adding anything, find the existing path and extend it. A check on a name (`if (name === 'SATURN')`) is a bug; the data gets a field instead.

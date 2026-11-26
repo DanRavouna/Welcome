@@ -229,8 +229,8 @@
   #rInner [hidden] { display: none !important; }
   body.routine #clock { z-index: 31; }                 /* the window is open: the clock stays on top, tapping it closes the calendar */
   /* ---- the calendar and event reminders, in the same window ---- */
-  #rInner button { font: inherit; color: inherit; background: none; border: 0; text-shadow: inherit; cursor: pointer; padding: 0; }
-  #rInner .rBtn { background: rgba(90,255,190,.08); border: 1px solid rgba(150,255,215,.6); font: 700 11px 'Orbitron', system-ui, sans-serif; letter-spacing: .18em; padding: 11px 6px; }
+  #rCal button, #rRemind button { font: inherit; color: inherit; background: none; border: 0; text-shadow: inherit; cursor: pointer; padding: 0; }
+  #rCal .rBtn, #rRemind .rBtn { background: rgba(90,255,190,.08); border: 1px solid rgba(150,255,215,.6); font: 700 11px 'Orbitron', system-ui, sans-serif; letter-spacing: .18em; padding: 11px 6px; }
   .calNav { display: flex; gap: 10px; align-items: baseline; }
   .calArrow { font-size: 18px !important; padding: 0 6px !important; }
   .calTabs { display: flex; gap: 6px; margin-bottom: 6px; }
@@ -266,7 +266,7 @@
   .calName { min-width: 0; overflow-wrap: anywhere; }
   .calC { font: 700 8px 'Orbitron', system-ui, sans-serif; letter-spacing: .15em; opacity: .55; margin-top: 2px; }
   .calMsg { font: 500 14px system-ui, sans-serif; opacity: .75; padding: 8px 2px; margin: 0; }
-  #calResults { max-height: 46vh; overflow-y: auto; }
+  #calResults, #calEvents { overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
   .calLbl { font: 700 9px 'Orbitron', system-ui, sans-serif; letter-spacing: .18em; opacity: .6; display: block; margin: 8px 0 5px; }
   .calIn { width: 100%; box-sizing: border-box; border: 1px solid rgba(150,255,215,.5) !important; height: 40px; padding: 0 12px !important; font: 500 15px system-ui, sans-serif !important;
     background: rgba(0,30,25,.25) !important; color: #c9ffe9; text-shadow: inherit; color-scheme: dark; border-radius: 0; }

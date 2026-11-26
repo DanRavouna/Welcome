@@ -190,6 +190,10 @@ class LauncherBridge(private val activity: MainActivity) {
         activity.runOnUiThread { activity.requestPermissions(arrayOf(android.Manifest.permission.READ_CALENDAR, android.Manifest.permission.WRITE_CALENDAR), MainActivity.CAL_REQUEST) }
     }
 
+    /** {"calendars": how many the phone shows, "error": the last thing that went wrong, or ""} */
+    @JavascriptInterface
+    fun calStatus(): String = JSONObject().put("calendars", PhoneCalendars.calendars(activity).length()).put("error", PhoneCalendars.lastError).toString()
+
     @JavascriptInterface
     fun calCalendars(): String = PhoneCalendars.calendars(activity).toString()
 

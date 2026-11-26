@@ -24,6 +24,10 @@ import java.util.TimeZone
  * Everything goes to the page as JSON. Times are milliseconds; days are Julian day numbers (the store's own START_DAY / END_DAY).
  */
 object PhoneCalendars {
+    /** The last thing that went wrong reading or writing the store (shown in the calendar window, for diagnosis). */
+    @Volatile var lastError: String = ""
+    private fun fail(e: Exception) { lastError = (e.javaClass.simpleName + ": " + (e.message ?: "")).take(200) }
+
     fun canRead(ctx: Context) = ctx.checkSelfPermission(Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
     fun canWrite(ctx: Context) = ctx.checkSelfPermission(Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED
 
@@ -34,14 +38,16 @@ object PhoneCalendars {
         val proj = arrayOf(CalendarContract.Calendars._ID, CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
             CalendarContract.Calendars.ACCOUNT_NAME, CalendarContract.Calendars.CALENDAR_COLOR,
             CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL, CalendarContract.Calendars.VISIBLE)
-        ctx.contentResolver.query(CalendarContract.Calendars.CONTENT_URI, proj, null, null, null)?.use { c ->
-            while (c.moveToNext()) {
-                if (c.getInt(5) != 1) continue                       // hidden in the phone's calendar apps: hidden here too
-                out.put(JSONObject().put("id", c.getLong(0)).put("name", c.getString(1) ?: "")
-                    .put("account", c.getString(2) ?: "").put("color", hex(c.getInt(3)))
-                    .put("write", c.getInt(4) >= CalendarContract.Calendars.CAL_ACCESS_CONTRIBUTOR && canWrite(ctx)))
+        try {
+            ctx.contentResolver.query(CalendarContract.Calendars.CONTENT_URI, proj, null, null, null)?.use { c ->
+                while (c.moveToNext()) {
+                    if (c.getInt(5) != 1) continue                       // hidden in the phone's calendar apps: hidden here too
+                    out.put(JSONObject().put("id", c.getLong(0)).put("name", c.getString(1) ?: "")
+                        .put("account", c.getString(2) ?: "").put("color", hex(c.getInt(3)))
+                        .put("write", c.getInt(4) >= CalendarContract.Calendars.CAL_ACCESS_CONTRIBUTOR && canWrite(ctx)))
+                }
             }
-        }
+        } catch (e: Exception) { fail(e) }
         return out
     }
 
@@ -69,7 +75,7 @@ object PhoneCalendars {
                         .put("title", c.getString(6) ?: "").put("cal", c.getLong(7)).put("color", hex(c.getInt(8))))
                 }
             }
-        } catch (e: Exception) { }
+        } catch (e: Exception) { fail(e) }
         return out
     }
 
@@ -100,7 +106,7 @@ object PhoneCalendars {
                         .put("color", hex(c.getInt(6))).put("repeats", !c.getString(7).isNullOrEmpty()))
                 }
             }
-        } catch (e: Exception) { }
+        } catch (e: Exception) { fail(e) }
         return out
     }
 
@@ -120,7 +126,7 @@ object PhoneCalendars {
             val uri = ctx.contentResolver.insert(CalendarContract.Events.CONTENT_URI, v) ?: return -1
             EventReminders.schedule(ctx)
             uri.lastPathSegment?.toLongOrNull() ?: -1
-        } catch (e: Exception) { -1 }
+        } catch (e: Exception) { fail(e); -1 }
     }
 
     private fun hex(c: Int) = String.format("#%06x", c and 0xffffff)

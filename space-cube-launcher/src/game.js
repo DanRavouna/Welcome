@@ -3791,10 +3791,19 @@
   setInterval(checkRoutines, 15000);
   setTimeout(checkRoutines, 2500);
   // where the window sits for its content: centred a little above the middle, never over the clock
+  //  (it never goes over the console: a long list inside it scrolls instead, so its buttons always show)
+  const HOLO_SCROLL = ['calEvents', 'calResults'];
   function holoPlace() {
     const clockB = document.getElementById('clock').getBoundingClientRect().bottom;
-    const H = Math.min(innerHeight * 0.74, rInner.offsetHeight + 4);
-    const Y = Math.max(H / 2 + clockB + 14, innerHeight * 0.46);
+    const room = Math.max(160, consoleEl.getBoundingClientRect().top - clockB - 28);
+    HOLO_SCROLL.forEach(id => { document.getElementById(id).style.maxHeight = ''; });
+    let need = rInner.offsetHeight + 4;
+    if (need > room) {                                  // too tall: the visible list gives up the difference
+      const list = HOLO_SCROLL.map(id => document.getElementById(id)).find(e => e.offsetParent);
+      if (list) { list.style.maxHeight = Math.max(60, list.offsetHeight - (need - room)) + 'px'; need = rInner.offsetHeight + 4; }
+    }
+    const H = Math.min(room, need);
+    const Y = Math.max(H / 2 + clockB + 14, Math.min(innerHeight * 0.46, clockB + 14 + room - H / 2));
     return { H, Y };
   }
   function openHolo(who) {
@@ -4023,8 +4032,10 @@
     document.getElementById('calDay').hidden = calView === 'year';
     document.getElementById('calDayH').textContent = CAL_WD[calSel.getDay()] + ' ' + calSel.getDate() + ' ' + CAL_MN[calSel.getMonth()];
     const list = document.getElementById('calEvents'); list.textContent = '';
-    const ev = evOn(calSel);
-    if (!ev.length) list.appendChild(calEl('p', 'calMsg', 'Nothing on this day.'));
+    const ev = evOn(calSel), st = calCall('calStatus');
+    if (st && !st.calendars) list.appendChild(calEl('p', 'calMsg', 'No calendars found on this phone.'));
+    else if (!ev.length) list.appendChild(calEl('p', 'calMsg', 'Nothing on this day.'));
+    if (st && st.error) list.appendChild(calEl('p', 'calMsg', 'Calendar error: ' + st.error));
     ev.forEach(e => list.appendChild(eventRow(e, e.allDay ? 'ALL DAY' : hm(e.begin) + '\n' + hm(e.end), 'calT')));
     [...document.getElementById('calTabs').children].forEach(b => b.classList.toggle('on', b.dataset.v === calView));
     calShow('calMain');
@@ -4040,6 +4051,7 @@
   function openCalendar() {
     calView = 'month'; calSel = dayOf(new Date());            // always opens on Month, today
     renderCal();
+    if ((calCall('calAccess') || {}).read) askNotify();
     openHolo('calendar');
   }
   window.toggleCalendar = () => {
@@ -4048,7 +4060,8 @@
     if (holo) { holoNext = openCalendar; closeWindow(); return; }   // a checklist or a reminder is showing: it closes, then the calendar opens
     openCalendar();
   };
-  window.calendarAccessChanged = () => { if (holo === 'calendar') renderCal(); };
+  const askNotify = () => { try { if (NATIVE && window.Launcher.askNotifications) window.Launcher.askNotifications(); } catch (e) {} };   // reminders off screen are notifications (Android 13+ asks)
+  window.calendarAccessChanged = () => { if ((calCall('calAccess') || {}).read) askNotify(); if (holo === 'calendar') renderCal(); };
   document.getElementById('calAllow').addEventListener('click', () => { const s = calSrc(); try { s && s.calAsk && s.calAsk(); } catch (e) {} });
   document.getElementById('calBody').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
@@ -4138,18 +4151,26 @@
     calSel = new Date(Y, M - 1, D); renderCal();
   });
   // ---- event reminders: the phone buzzes and the event is drawn in, like the wake-up checklist ----
-  let pendingReminder = null;
+  const pendingReminders = [];                         // every reminder that has come and not been shown yet, in order
+  let remRetry = 0, remShowing = '';                   // remShowing: the reminder in the window (id:begin:kind)
   const REM_WHEN = { '30': 'IN 30 MIN', '10': 'IN 10 MIN', '0': 'STARTING NOW', day: 'TODAY · ALL DAY' };
   window.showEventReminder = (id, begin, kind) => {
     if (!REM_WHEN[kind]) return;
     const e = calCall('calEvent', id, begin); if (!e) return;
-    pendingReminder = { e, kind }; window.tryEventReminder();
+    const k = e.id + ':' + e.begin + ':' + kind;
+    if (!(holo === 'reminder' && remShowing === k) && !pendingReminders.some(r => r.e.id + ':' + r.e.begin + ':' + r.kind === k)) pendingReminders.push({ e, kind });
+    window.tryEventReminder();
   };
-  window.tryEventReminder = () => {                      // -> true if it is being shown (or the window is making room for it)
-    if (!pendingReminder || holoBusy) return !!pendingReminder && holoBusy;
-    if (holo === 'calendar' || holo === 'reminder') { holoNext = window.tryEventReminder; closeHolo(); return true; }
-    if (routineBlocked()) return false;                  // a checklist, Settings, the arrival...: it waits (checked every 15 s and when the window closes)
-    const { e, kind } = pendingReminder; pendingReminder = null;
+  window.tryEventReminder = () => {                      // -> true if one is being shown (or the window is making room for it)
+    if (!pendingReminders.length) return false;
+    if (holoBusy) return true;
+    if (holo === 'calendar') { holoNext = window.tryEventReminder; closeHolo(); return true; }
+    if (holo === 'reminder') return false;               // the one showing stays until GOT IT; the next follows when it closes
+    if (routineBlocked()) {                              // a checklist, Settings, the arrival...: it waits, trying again every second
+      if (!remRetry) remRetry = setTimeout(() => { remRetry = 0; window.tryEventReminder(); }, 1000);
+      return false;
+    }
+    const { e, kind } = pendingReminders.shift(); remShowing = e.id + ':' + e.begin + ':' + kind;
     document.getElementById('remWhen').textContent = REM_WHEN[kind];
     document.getElementById('remAt').textContent = e.allDay ? 'ALL DAY' : hm(e.begin);
     document.getElementById('remTitle').textContent = e.title || '(no title)';
@@ -4168,7 +4189,7 @@
     holoNext = () => { renderCal(); openHolo('calendar'); }; closeHolo();
   });
   window.__calDebug = () => ({ holo, busy: holoBusy, view: calView, sel: dKey(calSel), part: calPart, label: document.getElementById('calLabel').textContent,
-    pending: !!pendingReminder, frame: (() => { const b = rFrame.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)]; })() });
+    pending: pendingReminders.length, frame: (() => { const b = rFrame.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)]; })() });
 
   // The dashing ship: one of the passing-ship models, flown across just in front of the cubes
   function startDash(yPx, done) {
