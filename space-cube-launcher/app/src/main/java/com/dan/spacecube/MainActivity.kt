@@ -245,7 +245,7 @@ class MainActivity : ComponentActivity() {
 
     @Deprecated("Activity result API not needed for two permissions")
     @Suppress("DEPRECATION")
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == CAL_REQUEST) {
             js("window.calendarAccessChanged && window.calendarAccessChanged()")
