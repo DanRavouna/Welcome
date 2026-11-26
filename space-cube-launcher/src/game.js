@@ -3827,11 +3827,12 @@
     rFrame.style.transition = 'none'; rFrame.className = ''; rFrame.style.top = (Y - 2) + 'px'; rFrame.style.height = '0px'; void rFrame.offsetWidth; rFrame.style.transition = '';
     // 1) a ship dashes across, the line trails behind it
     startDash(Y, () => {
-      // 2) the line splits: top and bottom edges move apart into the frame
-      rFrame.classList.add('on');
+      // 2) the line becomes the frame at the line's full width, then splits and narrows (the closing, in reverse)
+      rFrame.style.transition = 'none'; rFrame.className = 'on collapse'; void rFrame.offsetWidth; rFrame.style.transition = '';
+      rLine.classList.remove('on');
       requestAnimationFrame(() => {
+        rFrame.classList.remove('collapse');
         rFrame.style.top = (Y - H / 2 - 2) + 'px'; rFrame.style.height = H + 'px';
-        rLine.classList.remove('on');
       });
       // 3) the hologram comes on
       setTimeout(() => { rFrame.classList.add('ready'); routineBusy = false; }, 520);
@@ -3981,7 +3982,7 @@
     }
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-24 · 58';
+    tag.textContent = 'SCREEN 2026-11-26 · 59';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);

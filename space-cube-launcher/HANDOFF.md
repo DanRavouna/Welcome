@@ -12,7 +12,7 @@ Read this first. It is the short version; the three files in `docs/` hold the de
 ## What it is
 An Android home screen. The phone app (`app/`, Kotlin) is a thin shell around one web page: a 3D view from a ship in space, with your apps as floating cubes. The page is also a small space game: you sit at a planet, see the real sky around you, fly to its moons and warp to other planets, stars and landmarks. A star map shows where you have been.
 
-The phone loads the page live from GitHub Pages (`/space-cube/`), so pushing to `main` updates the phone. Triple-tap the clock to reload; Settings shows the build tag (`SCREEN 2026-11-24 · 58`).
+The phone loads the page live from GitHub Pages (`/space-cube/`), so pushing to `main` updates the phone. Triple-tap the clock to reload; Settings shows the build tag (`SCREEN 2026-11-26 · 59`).
 
 ## The one rule right now
 **Uniformity.** Dan, 2026-11-23: "we cant have multiple parallel systems" and "uniformity is the main rule for now as this will be the base we ll be iterating from". Every place, planet, tag, save and rule goes through ONE path. Before adding anything, find the existing path and extend it. A check on a name (`if (name === 'SATURN')`) is a bug; the data gets a field instead.
@@ -57,6 +57,7 @@ gh api -X POST repos/DanRavouna/Welcome/actions/workflows/pages.yml/dispatches -
 - Planet spin axes lean by the real amount but around an arbitrary line, not toward the real pole.
 
 ## Open items (nothing here is started)
+Done in screen 59: the wake-up/sleep window opens from the ship's full-width line and narrows into place (the closing in reverse); `tests/test_routines.py` samples it over time. A calendar (tap the clock; Google + Samsung via Android's calendar store; month on top, day below; add events with a calendar picker; reload moves to its own Settings button) is in mockup review: https://claude.ai/artifact/LQDrRvnGGk73yVJrVNt4Yd. Not built.
 Done in screen 58: the planets of the system you're in are sized by their real sky size (compressed) and shine by the real light they send you (Dan chose "D"). Exoplanet albedo is an assumption (0.3).
 Done in screen 57: moons for Mars, Uranus and Neptune and those planets' radii and tilts, the Sun's radius as one constant, all from NASA (fetched through the sky-data workflow, see `docs/data.md`).
 Done in screen 56: every body of a system is measured from where the ship is parked (`localShip`), not from the body's centre, so at a star the close planets point the right way; the white warp flash is replaced by hyperspace.
