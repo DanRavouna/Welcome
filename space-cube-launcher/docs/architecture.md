@@ -11,7 +11,7 @@ Find a section by searching for its title (the words in capitals); line numbers 
 | `src/map.js` (300 lines) | The star map, `window.SpaceMap`. Its own three.js scene on its own canvas. |
 | `tools/build.py` | The build. Also runs `build_catalog.py` and syntax-checks each script with node. |
 | `tests/` | `run.sh` builds and runs everything; `sc.py` is the shared helper. |
-| `app/` | The Android shell (Kotlin): `MainActivity.kt` hosts the page, `LauncherBridge.kt` is `window.Launcher`, `Routines.kt`, `SpaceWallpaper.kt`. Not touched by the web work; see `README.md`. |
+| `app/` | The Android shell (Kotlin): `MainActivity.kt` hosts the page, `LauncherBridge.kt` is `window.Launcher`, `Routines.kt` (checklist alarms, and the one receiver for all alarms), `Calendars.kt` (`PhoneCalendars`: Android's calendar store; `EventReminders`: one alarm for the next reminder, notification or page), `SpaceWallpaper.kt`. See `README.md`. |
 
 ## `game.js`, in order
 | Section title | What is in it |
@@ -46,6 +46,11 @@ Find a section by searching for its title (the words in capitals); line numbers 
 - `deepUpdate(dt)` is the per-frame entry. `window.SpaceJump(id, planetName)` is what the map calls.
 - "back where you left off" (end of the section): the first `arriveAt` of the page, then the saved flight spot.
 
+### THE WINDOW and THE CALENDAR (after the checklists)
+- One hologram window (`rWrap` / `rFrame` / `rInner`) for three things: a checklist (`rRoutine`), the calendar (`rCal`), an event reminder (`rRemind`). `holo` = what it shows, `holoBusy` while it opens or closes, `holoNext` = what opens once it has closed. `openHolo(who)`, `closeHolo()`, `holoRefit()` (content changed size), `closeWindow()` (a checklist also records it was closed). It fits its content and sits below the clock.
+- Only one at a time: a checklist or reminder that comes while something else shows waits (`routineBlocked`, `checkRoutines` every 15 s and when the window closes); a reminder closes the calendar to show itself.
+- Calendar data: `calCall(name, ...)` on `window.Launcher` (app 1.5+) or `window.__calSource`. No source, or no access: a note in the window (with ALLOW). Event titles only ever go in as text (`calEl`, `textContent`); colours are checked (`safeColor`).
+
 ### Every frame (`animate`)
 `updateField`, `updateShips`, `updateDash`, `navUpdate` (flights, `sysWorld` position, near plane), star light and ring uniforms, `updateMoons`, sky drift, cubes, `updateHud`, `navHud`, `syncSysRig`, `updateOccluders`, `deepUpdate`, `updateStreaks`, `updateRoute`, then the render passes.
 
@@ -67,10 +72,13 @@ Find a section by searching for its title (the words in capitals); line numbers 
 | `__face('body' \| 'star')` | face the planet you are at, or its star (at a planet only; at a star use `__deepFace('star:<id>')` from a planet) |
 | `__navList()`, `__navGo(NAME)`, `__navDebug()` | flight targets; fly to one; `{ target, travel, ship }` |
 | `SpaceJump(id, planetName)` | the map's jump |
+| `__calDebug()` | the window and the calendar: `{ holo, busy, view, sel, part, label, pending, frame }` |
+| `window.__calSource` | set before the page loads (tests): a stand-in for the app's calendar bridge, same method names and JSON (`tests/calsource.js`) |
+| `toggleCalendar()`, `showEventReminder(id, begin, kind)`, `showRoutine(kind)` | what the clock, the app (reminders) and the checklist notification call |
 
 ## Other saved keys (the launcher's, untouched by the space work)
-`spaceCubeGroups.v2` / `spaceCubeGroups.phone.v1` (app groups), `spaceCubeRecents.v2` / `.phone.v2`, `spaceCubeRoutines.v1`, `spaceCubeRoutineState.v1`.
+`spaceCubeGroups.v2` / `spaceCubeGroups.phone.v1` (app groups), `spaceCubeRecents.v2` / `.phone.v2`, `spaceCubeRoutines.v1`, `spaceCubeRoutineState.v1`, `spaceCubeCalendar.v1` (`{ lastCal }`: the calendar new events go into by default).
 
 ## What the tests cover, and what they do not
-- `test_saves.py`: every old save form. `test_travel.py`: taps, warps, the planet scene, flights, landmarks, reloads. `test_map.py`: the ??? rules, cards, jumping from the map. `test_time.py`: the time model against JPL Horizons.
-- Not covered: how anything looks, feel and tempo, speed on a phone, the launcher part (cubes, groups, search, routines), the Android shell. For animation, log a value against the clock over real time (for an arrival: `__deepDebug().scale` sampled every 100 ms must only grow) and still say that feel cannot be judged from a headless browser.
+- `test_saves.py`: every old save form. `test_travel.py`: taps, warps, the planet scene, flights, landmarks, reloads. `test_map.py`: the ??? rules, cards, jumping from the map. `test_time.py`: the time model against JPL Horizons. `test_routines.py`: the window opening over real time. `test_calendar.py`: the calendar, search, adding, reminders and what waits for what, against `calsource.js`. `test_bridge.py`: every `cal*` method the page calls exists in `LauncherBridge.kt` and in the stand-in.
+- Not covered: how anything looks, feel and tempo, speed on a phone, the launcher part (cubes, groups, search), the Android shell (it is only compiled, by the "Build Space Cube APK" workflow: real calendars, permissions, alarms and notifications are only seen on the phone). For animation, log a value against the clock over real time (for an arrival: `__deepDebug().scale` sampled every 100 ms must only grow) and still say that feel cannot be judged from a headless browser.

@@ -23,6 +23,14 @@ These came out of long back-and-forth. Do not reopen them without asking him. Qu
 - **Warp visuals**: a route line is drawn, also for far jumps. Far jumps hold in hyperspace 2 to 4 s by distance ("to show we re traveling far"): dense blue-white streaks over a dark veil, a small glow where you're heading. No white light (2026-11-24: "it hurts the eyes"; his reference: a classic hyperspace star-streak picture). On arrival the target starts at the size it had on screen before the jump and only grows. The sky picture of a landmark cross-fades into its 3D close-up.
 - Ships and squadrons are left behind when you warp. They steer around the whale and each other.
 
+## The calendar (2026-11-26)
+- Tap the clock to open it, tap again to close it; no close button. The screen reload is its own button in Settings.
+- It lives in the wake-up / sleep window: the same window, the same opening (the ship's line, full width, then splitting and narrowing) and closing (folding into a line that leaves with sparks).
+- Opens on Month at today, with the chosen day's events below. WEEK / MONTH / YEAR switch; the arrows move by month, week or year; in YEAR a month opens it.
+- Google and Samsung calendars through Android's calendar store. The add form picks among the phone's calendars that take new events, by their own names and colours (no check on a name), the last used first.
+- SEARCH by name through everything the calendars hold; coming up first, then the past. A result opens its day.
+- Reminders: 30 min before, 10 min before and at the start. The phone vibrates and the event is drawn in like the wake-up window; if the launcher is not on screen, an Android notification (tapping it opens the reminder), like the checklists. All-day events: once, at the wake-up checklist's time.
+
 ## The star map
 - "This is only a map not the game." It records and shows; the game is where things happen.
 - A place appears on the map as **???** only once its **name tag was shown on screen** in the game (or you locked on to it). It is revealed (name, facts, picture) when you **visit** it. Never seen = not on the map at all. Landmarks follow the same rule.

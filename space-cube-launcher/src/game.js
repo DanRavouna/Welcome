@@ -26,17 +26,14 @@
     document.getElementById('date').textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONS[d.getMonth()];
   }
   updateClock(); setInterval(updateClock, 1000);
-  // triple-tap the clock: reload, to pick up the newest version of this screen
-  let clockTaps = [];
-  document.getElementById('clock').addEventListener('click', () => {
-    const now = Date.now(); clockTaps = clockTaps.filter(t => now - t < 700); clockTaps.push(now);
-    if (clockTaps.length >= 3) {                     // reload, asking for a fresh copy (a new address skips GitHub's 10-minute cache)
-      clockTaps = [];
-      if (window.Launcher && window.Launcher.reloadLive) window.Launcher.reloadLive();   // phone: fetch the newest from the website
-      else if (location.protocol === 'https:' && location.hostname.endsWith('github.io')) location.replace(location.pathname + '?v=' + Date.now());
-      else location.reload();
-    }
-  });
+  // Settings > Reload: pick up the newest version of this screen (a new address skips GitHub's 10-minute cache)
+  function reloadScreen() {
+    if (window.Launcher && window.Launcher.reloadLive) window.Launcher.reloadLive();   // phone: fetch the newest from the website
+    else if (location.protocol === 'https:' && location.hostname.endsWith('github.io')) location.replace(location.pathname + '?v=' + Date.now());
+    else location.reload();
+  }
+  // the clock: tap to open the calendar, tap again to close it
+  document.getElementById('clock').addEventListener('click', () => { if (window.toggleCalendar) window.toggleCalendar(); });
 
   if (!window.THREE) { document.getElementById('err').style.display = 'flex'; return; }
 
@@ -3771,16 +3768,21 @@
     return best;
   }
 
-  // ---- the window ----
+  // ---- THE WINDOW: one hologram window for the checklists, the calendar and event reminders ----
+  //  It opens from the ship's line (full width, then splitting and narrowing into place), fits what it shows,
+  //  and folds back into a line that leaves with sparks. Only one thing at a time: what comes while it is busy waits.
   const rWrap = document.getElementById('rWrap'), rLine = document.getElementById('rLine'), rFrame = document.getElementById('rFrame');
-  const rList = document.getElementById('rList'), rDone = document.getElementById('rDone');
-  let routineOpen = null, routineBusy = false, pendingRoutine = null;
+  const rInner = document.getElementById('rInner'), rList = document.getElementById('rList'), rDone = document.getElementById('rDone');
+  const HOLO_PART = { routine: 'rRoutine', calendar: 'rCal', reminder: 'rRemind' };
+  let holo = null, holoBusy = false, holoNext = null;   // what the window shows; opening or closing; what to open once it has closed
+  let routineOpen = null, pendingRoutine = null;         // routineOpen: which checklist the window shows
   var dash = null;                                  // the ship crossing the screen
   function routineBlocked() {
-    return paused || routineBusy || routineOpen || document.body.classList.contains('arriving') || arrivalT < 1 ||
+    return paused || holoBusy || holo || document.body.classList.contains('arriving') || arrivalT < 1 ||
       cfgEl.classList.contains('show') || settingsEl.classList.contains('show') || opening;
   }
   function checkRoutines() {
+    if (window.tryEventReminder && window.tryEventReminder()) return;
     if (pendingRoutine && !routineBlocked()) { const k = pendingRoutine; pendingRoutine = null; showRoutine(k, true); return; }
     if (routineBlocked()) return;
     const k = dueRoutine(Date.now());
@@ -3788,41 +3790,20 @@
   }
   setInterval(checkRoutines, 15000);
   setTimeout(checkRoutines, 2500);
-  function renderRoutine(kind) {
-    const r = ROUTINES[kind], st = stateFor(kind, Date.now());
-    document.getElementById('rTitle').textContent = RNAMES[kind];
-    document.getElementById('rTime').textContent = r.time;
-    rList.innerHTML = '';
-    r.items.forEach((txt, i) => {
-      const li = document.createElement('li');
-      const b = document.createElement('button'); b.className = 'rItem' + (st.done.includes(i) ? ' done' : '');
-      b.innerHTML = '<i class="rBox"></i><span></span>'; b.querySelector('span').textContent = txt;
-      b.addEventListener('click', () => {
-        const at = st.done.indexOf(i);
-        if (at >= 0) st.done.splice(at, 1); else st.done.push(i);
-        b.classList.toggle('done', at < 0); saveRState();
-        try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(12); } catch (e) {}
-        if (r.items.every((_, j) => st.done.includes(j))) {          // all done: say so, then fold away
-          rDone.classList.add('show'); st.closed = true; saveRState();
-          setTimeout(() => closeRoutine(), 900);
-        }
-      });
-      li.appendChild(b); rList.appendChild(li);
-    });
-    rDone.classList.remove('show');
+  // where the window sits for its content: centred a little above the middle, never over the clock
+  function holoPlace() {
+    const clockB = document.getElementById('clock').getBoundingClientRect().bottom;
+    const H = Math.min(innerHeight * 0.74, rInner.offsetHeight + 4);
+    const Y = Math.max(H / 2 + clockB + 14, innerHeight * 0.46);
+    return { H, Y };
   }
-  function showRoutine(kind, force) {
-    if (!ROUTINES[kind]) return;
-    if (routineBlocked()) { if (force) pendingRoutine = kind; return; }
-    const st = stateFor(kind, Date.now());
-    if (force) { st.closed = false; st.snooze = 0; saveRState(); }
-    routineOpen = kind; routineBusy = true;
+  function openHolo(who) {
+    holo = who; holoBusy = true;
     document.body.classList.add('routine');
     closeEverything();
-    renderRoutine(kind);
+    Object.entries(HOLO_PART).forEach(([k, id]) => { document.getElementById(id).hidden = k !== who; });
     rWrap.classList.add('live');
-    const H = Math.min(innerHeight * 0.66, 150 + ROUTINES[kind].items.length * 44);
-    const Y = Math.max(H / 2 + 70, innerHeight * 0.46);
+    const { H, Y } = holoPlace();
     rLine.className = ''; rLine.style.top = Y + 'px'; rLine.style.width = '0px';
     rFrame.style.transition = 'none'; rFrame.className = ''; rFrame.style.top = (Y - 2) + 'px'; rFrame.style.height = '0px'; void rFrame.offsetWidth; rFrame.style.transition = '';
     // 1) a ship dashes across, the line trails behind it
@@ -3835,15 +3816,18 @@
         rFrame.style.top = (Y - H / 2 - 2) + 'px'; rFrame.style.height = H + 'px';
       });
       // 3) the hologram comes on
-      setTimeout(() => { rFrame.classList.add('ready'); routineBusy = false; }, 520);
+      setTimeout(() => { rFrame.classList.add('ready'); holoBusy = false; }, 520);
     });
   }
-  function closeRoutine(snoozeMin) {
-    if (!routineOpen || routineBusy) return;
-    const kind = routineOpen, st = stateFor(kind, Date.now());
-    if (snoozeMin) st.snooze = Date.now() + snoozeMin * 60e3; else st.closed = true;
-    saveRState();
-    routineBusy = true;
+  // the content changed size while open: the frame follows
+  function holoRefit() {
+    if (!holo || holoBusy) return;
+    const { H, Y } = holoPlace();
+    rFrame.style.top = (Y - H / 2 - 2) + 'px'; rFrame.style.height = H + 'px';
+  }
+  function closeHolo() {
+    if (!holo || holoBusy) return;
+    holoBusy = true;
     rFrame.classList.remove('ready');                               // text fades...
     setTimeout(() => {                                              // ...top and bottom edges close in and meet in one line...
       const mid = parseFloat(rFrame.style.top) + parseFloat(rFrame.style.height) / 2;
@@ -3875,7 +3859,10 @@
           if (finished) return; finished = true;
           rFrame.removeEventListener('transitionend', onEnd);
           rFrame.style.transition = 'none'; rFrame.className = ''; void rFrame.offsetWidth; rFrame.style.transition = '';   // reset instantly, unseen (no ghost sliding back)
-          rLine.className = ''; rWrap.classList.remove('live'); document.body.classList.remove('routine'); routineOpen = null; routineBusy = false;
+          rLine.className = ''; rWrap.classList.remove('live'); document.body.classList.remove('routine');
+          holo = null; routineOpen = null; holoBusy = false;
+          const next = holoNext; holoNext = null;
+          if (next) next(); else checkRoutines();            // a reminder or a checklist that came due meanwhile
         };
         const onEnd = e => { if (e.target === rFrame && e.propertyName === 'left' && rFrame.getBoundingClientRect().left >= innerWidth - 2) finish(); };   // only once the line is really off screen
         rFrame.addEventListener('transitionend', onEnd);
@@ -3883,9 +3870,305 @@
       }, 500);
     }, 250);
   }
+  // whatever the window shows, closed the way that thing closes (a checklist also records that it was closed)
+  function closeWindow() { if (holo === 'routine') closeRoutine(); else closeHolo(); }
+
+  function renderRoutine(kind) {
+    const r = ROUTINES[kind], st = stateFor(kind, Date.now());
+    document.getElementById('rTitle').textContent = RNAMES[kind];
+    document.getElementById('rTime').textContent = r.time;
+    rList.innerHTML = '';
+    r.items.forEach((txt, i) => {
+      const li = document.createElement('li');
+      const b = document.createElement('button'); b.className = 'rItem' + (st.done.includes(i) ? ' done' : '');
+      b.innerHTML = '<i class="rBox"></i><span></span>'; b.querySelector('span').textContent = txt;
+      b.addEventListener('click', () => {
+        const at = st.done.indexOf(i);
+        if (at >= 0) st.done.splice(at, 1); else st.done.push(i);
+        b.classList.toggle('done', at < 0); saveRState();
+        try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(12); } catch (e) {}
+        if (r.items.every((_, j) => st.done.includes(j))) {          // all done: say so, then fold away
+          rDone.classList.add('show'); st.closed = true; saveRState();
+          setTimeout(() => closeRoutine(), 900);
+        }
+      });
+      li.appendChild(b); rList.appendChild(li);
+    });
+    rDone.classList.remove('show');
+  }
+  function showRoutine(kind, force) {
+    if (!ROUTINES[kind]) return;
+    if (routineBlocked()) { if (force) pendingRoutine = kind; return; }
+    const st = stateFor(kind, Date.now());
+    if (force) { st.closed = false; st.snooze = 0; saveRState(); }
+    routineOpen = kind;
+    renderRoutine(kind);
+    openHolo('routine');
+  }
+  function closeRoutine(snoozeMin) {
+    if (holo !== 'routine' || holoBusy) return;
+    const st = stateFor(routineOpen, Date.now());
+    if (snoozeMin) st.snooze = Date.now() + snoozeMin * 60e3; else st.closed = true;
+    saveRState();
+    closeHolo();
+  }
   window.showRoutine = kind => showRoutine(kind, true);
   document.getElementById('rClose').addEventListener('click', () => closeRoutine());
   document.getElementById('rSnooze').addEventListener('click', () => closeRoutine(10));
+
+  // =========================================================
+  //  THE CALENDAR: the phone's calendars (Google, Samsung... through Android's calendar store), in the window above.
+  //  Tap the clock to open it (Month, today), again to close it. Week / Month / Year, search by name, add events.
+  //  Event reminders (30 and 10 min before, at the start; all-day events at the wake-up time) are set by the app and
+  //  drawn here when the launcher is on screen (else Android shows a notification, which opens them here).
+  //  Data: window.Launcher.cal* (app 1.5+), or window.__calSource (same methods, same JSON: the tests' stand-in).
+  //  Event titles come from anyone who sends an invite: they only ever go into the page as text.
+  // =========================================================
+  const CAL_KEY = 'spaceCubeCalendar.v1';                // { lastCal }: the calendar new events go into by default
+  const CAL_MN = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+  const CAL_WD = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const DAY_MS = 86400000;
+  const calSrc = () => (window.Launcher && window.Launcher.calEvents) ? window.Launcher : (window.__calSource || null);
+  function calCall(name, ...args) {                     // -> parsed JSON, or null
+    const src = calSrc(); if (!src || !src[name]) return null;
+    try { const r = src[name](...args); return typeof r === 'string' ? (r ? JSON.parse(r) : null) : r; } catch (e) { return null; }
+  }
+  const calEl = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const safeColor = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c : '#9fe8c8';
+  const dot = (cls, color) => { const i = calEl('i', cls); i.style.background = safeColor(color); i.style.boxShadow = '0 0 5px ' + safeColor(color); return i; };
+  const dayOf = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
+  const dKey = d => d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+  const two = n => String(n).padStart(2, '0');
+  const hm = ms => { const d = new Date(ms); return two(d.getHours()) + ':' + two(d.getMinutes()); };
+  // the days an event covers (all-day events are stored at midnight UTC, the end being the day after)
+  function eventDays(e) {
+    const out = [];
+    if (e.allDay) {
+      const a = new Date(e.begin), b = new Date(Math.max(e.end, e.begin + DAY_MS));
+      for (let t = Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate()); t < b.getTime() && out.length < 400; t += DAY_MS) {
+        const u = new Date(t); out.push(new Date(u.getUTCFullYear(), u.getUTCMonth(), u.getUTCDate()));
+      }
+    } else {
+      for (let d = dayOf(new Date(e.begin)); d.getTime() <= Math.max(e.begin, e.end - 1) && out.length < 400; d = addDays(d, 1)) out.push(d);
+    }
+    return out;
+  }
+  const calDayOf = e => eventDays(e)[0] || dayOf(new Date(e.begin));
+  let calView = 'month', calSel = dayOf(new Date()), calByDay = new Map(), calPart = 'calMain', calAllDay = false, calPickId = null;
+  function calLoad(from, to) {                          // events between two days, filed by day
+    calByDay = new Map();
+    (calCall('calEvents', from.getTime(), to.getTime()) || []).forEach(e => {
+      eventDays(e).forEach(d => { const k = dKey(d); if (!calByDay.has(k)) calByDay.set(k, []); calByDay.get(k).push(e); });
+    });
+    calByDay.forEach(list => list.sort((a, b) => (b.allDay - a.allDay) || (a.begin - b.begin)));
+  }
+  const evOn = d => calByDay.get(dKey(d)) || [];
+  function dotsFor(d) { const s = calEl('span', 'calDots'); evOn(d).slice(0, 3).forEach(e => s.appendChild(dot('', e.color))); return s; }
+  function calShow(part) {
+    ['calMain', 'calSearch', 'calAdd', 'calNote'].forEach(id => { document.getElementById(id).hidden = id !== part; });
+    calPart = part; holoRefit();
+  }
+  // no calendars to read here: an old app, a browser, or access not given yet
+  function calBlocked() {
+    const note = document.getElementById('calNoteText'), allow = document.getElementById('calAllow');
+    if (!calSrc()) { note.textContent = NATIVE ? 'Update the Space Cube app (1.5 or newer) to see your calendars here.' : 'Your phone\'s calendars show here, on the phone.'; allow.hidden = true; return true; }
+    const acc = calCall('calAccess') || {};
+    if (!acc.read) { note.textContent = 'Space Cube needs access to your calendars to show them here.'; allow.hidden = false; return true; }
+    return false;
+  }
+  function renderCal() {
+    if (calBlocked()) { calShow('calNote'); return; }
+    const today = dayOf(new Date()), y = calSel.getFullYear(), m = calSel.getMonth();
+    const body = document.getElementById('calBody'), label = document.getElementById('calLabel');
+    body.textContent = '';
+    if (calView === 'month') {
+      const first = mondayOf(new Date(y, m, 1)); calLoad(first, addDays(first, 42));
+      label.textContent = CAL_MN[m].slice(0, 3) + ' ' + y;
+      const wd = calEl('div', 'calWd'); ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].forEach(w => wd.appendChild(calEl('div', '', w)));
+      const g = calEl('div', 'calGrid');
+      for (let i = 0; i < 42; i++) {
+        const d = addDays(first, i), out = d.getMonth() !== m;
+        const b = calEl('button', (out ? 'calOut ' : '') + (dKey(d) === dKey(calSel) ? 'calSel ' : '') + (dKey(d) === dKey(today) ? 'calToday' : ''), String(d.getDate()));
+        b.dataset.t = d.getTime(); if (!out) b.appendChild(dotsFor(d)); g.appendChild(b);
+      }
+      body.append(wd, g);
+    } else if (calView === 'week') {
+      const mo = mondayOf(calSel), su = addDays(mo, 6); calLoad(mo, addDays(mo, 7));
+      label.textContent = mo.getDate() + ' ' + CAL_MN[mo.getMonth()].slice(0, 3) + ' – ' + su.getDate() + ' ' + CAL_MN[su.getMonth()].slice(0, 3);
+      const w = calEl('div', 'calWeek');
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(mo, i), ev = evOn(d);
+        const b = calEl('button', dKey(d) === dKey(calSel) ? 'calSel' : ''); b.dataset.t = d.getTime();
+        b.append(calEl('span', 'calDn', CAL_WD[d.getDay()]), calEl('span', 'calNum' + (dKey(d) === dKey(today) ? ' calToday' : ''), String(d.getDate())), dotsFor(d),
+          calEl('span', 'calSum', ev.length ? ev.map(e => (e.allDay ? '' : hm(e.begin) + ' ') + e.title).join(' · ') : '—'));
+        w.appendChild(b);
+      }
+      body.appendChild(w);
+    } else {
+      calLoad(new Date(y, 0, 1), new Date(y + 1, 0, 1));
+      label.textContent = String(y);
+      const yr = calEl('div', 'calYear');
+      for (let mm = 0; mm < 12; mm++) {
+        const b = calEl('button', mm === m ? 'calCur' : ''); b.dataset.m = mm;
+        b.appendChild(calEl('div', 'calMn', CAL_MN[mm].slice(0, 3)));
+        const mini = calEl('div', 'calMini'), first = mondayOf(new Date(y, mm, 1));
+        for (let i = 0; i < 42; i++) { const d = addDays(first, i);
+          mini.appendChild(calEl('i', d.getMonth() !== mm ? 'calOut' : dKey(d) === dKey(today) ? 'calNow' : evOn(d).length ? 'calHas' : '')); }
+        b.appendChild(mini); yr.appendChild(b);
+      }
+      body.appendChild(yr);
+    }
+    document.getElementById('calDay').hidden = calView === 'year';
+    document.getElementById('calDayH').textContent = CAL_WD[calSel.getDay()] + ' ' + calSel.getDate() + ' ' + CAL_MN[calSel.getMonth()];
+    const list = document.getElementById('calEvents'); list.textContent = '';
+    const ev = evOn(calSel);
+    if (!ev.length) list.appendChild(calEl('p', 'calMsg', 'Nothing on this day.'));
+    ev.forEach(e => list.appendChild(eventRow(e, e.allDay ? 'ALL DAY' : hm(e.begin) + '\n' + hm(e.end), 'calT')));
+    [...document.getElementById('calTabs').children].forEach(b => b.classList.toggle('on', b.dataset.v === calView));
+    calShow('calMain');
+  }
+  const calNames = () => { const m = new Map(); (calCall('calCalendars') || []).forEach(c => m.set(c.id, c)); return m; };
+  function eventRow(e, when, whenCls, names) {
+    const row = calEl('div', 'calEv'), t = calEl('div', whenCls); t.style.whiteSpace = 'pre-line'; t.textContent = when;
+    const bar = calEl('i', 'calBar'); bar.style.background = safeColor(e.color);
+    const nm = calEl('div', 'calName', e.title || '(no title)');
+    const c = (names || calNames()).get(e.cal); if (c) nm.appendChild(calEl('div', 'calC', (c.name || c.account || '').toUpperCase()));
+    row.append(bar, t, nm); return row;
+  }
+  function openCalendar() {
+    calView = 'month'; calSel = dayOf(new Date());            // always opens on Month, today
+    renderCal();
+    openHolo('calendar');
+  }
+  window.toggleCalendar = () => {
+    if (holoBusy) return;
+    if (holo === 'calendar') { closeHolo(); return; }
+    if (holo) { holoNext = openCalendar; closeWindow(); return; }   // a checklist or a reminder is showing: it closes, then the calendar opens
+    openCalendar();
+  };
+  window.calendarAccessChanged = () => { if (holo === 'calendar') renderCal(); };
+  document.getElementById('calAllow').addEventListener('click', () => { const s = calSrc(); try { s && s.calAsk && s.calAsk(); } catch (e) {} });
+  document.getElementById('calBody').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.m != null) { calSel = new Date(calSel.getFullYear(), +b.dataset.m, 1); calView = 'month'; }
+    else if (b.dataset.t) calSel = new Date(+b.dataset.t);
+    renderCal();
+  });
+  document.getElementById('calTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { calView = b.dataset.v; renderCal(); } });
+  const calShift = n => {
+    calSel = calView === 'week' ? addDays(calSel, 7 * n) : calView === 'month' ? new Date(calSel.getFullYear(), calSel.getMonth() + n, 1) : new Date(calSel.getFullYear() + n, calSel.getMonth(), 1);
+    renderCal();
+  };
+  document.getElementById('calPrev').addEventListener('click', () => calShift(-1));
+  document.getElementById('calNext').addEventListener('click', () => calShift(1));
+  // ---- search: by name, through everything the calendars hold; coming up first, then the past ----
+  function calRunSearch() {
+    const q = document.getElementById('calQ').value.trim(), box = document.getElementById('calResults'), hits = document.getElementById('calHits');
+    box.textContent = ''; hits.textContent = '';
+    if (!q) { box.appendChild(calEl('p', 'calMsg', 'Type a name to find events.')); holoRefit(); return; }
+    const now = Date.now(), all = calCall('calSearch', q) || [];
+    const up = all.filter(e => e.end >= now).sort((a, b) => a.begin - b.begin), past = all.filter(e => e.end < now).sort((a, b) => b.begin - a.begin);
+    const list = up.concat(past).slice(0, 100), names = calNames();
+    hits.textContent = all.length + ' FOUND';
+    if (!list.length) box.appendChild(calEl('p', 'calMsg', 'No event with that name.'));
+    list.forEach(e => {
+      const d = calDayOf(e), b = calEl('button', 'calEv'); b.dataset.t = d.getTime();
+      const when = CAL_WD[d.getDay()] + ' ' + d.getDate() + ' ' + CAL_MN[d.getMonth()].slice(0, 3) + '\n' + d.getFullYear() + ' · ' + (e.allDay ? 'ALL DAY' : hm(e.begin)) + (e.repeats ? ' · REPEATS' : '');
+      const row = eventRow(e, when, 'calWhen', names); [...row.childNodes].forEach(n => b.appendChild(n)); box.appendChild(b);
+    });
+    holoRefit();
+  }
+  document.getElementById('calSearchBtn').addEventListener('click', () => { calShow('calSearch'); calRunSearch(); });
+  document.getElementById('calQ').addEventListener('input', calRunSearch);
+  document.getElementById('calBack').addEventListener('click', () => calShow('calMain'));
+  document.getElementById('calResults').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; calSel = new Date(+b.dataset.t); calView = 'month'; renderCal();
+  });
+  // ---- adding an event ----
+  function calPaintAllDay() {
+    const t = document.getElementById('calAllDay'); t.textContent = calAllDay ? 'ON' : 'OFF';
+    document.getElementById('calTimes').hidden = calAllDay; holoRefit();
+  }
+  function calOpenAdd() {
+    const d = calSel, now = new Date();
+    document.getElementById('calAddDay').textContent = CAL_WD[d.getDay()] + ' ' + d.getDate() + ' ' + CAL_MN[d.getMonth()].slice(0, 3);
+    document.getElementById('calTitle').value = '';
+    document.getElementById('calDate').value = d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate());
+    const h = Math.min(22, now.getHours() + 1);
+    document.getElementById('calStart').value = two(h) + ':00'; document.getElementById('calEnd').value = two(h + 1) + ':00';
+    calAllDay = false; document.getElementById('calAddMsg').textContent = '';
+    const pick = document.getElementById('calPick'); pick.textContent = '';
+    const cals = (calCall('calCalendars') || []).filter(c => c.write);
+    let last = null; try { last = (JSON.parse(localStorage.getItem(CAL_KEY)) || {}).lastCal; } catch (e) {}
+    calPickId = cals.some(c => c.id === last) ? last : cals.length ? cals[0].id : null;
+    if (!cals.length) pick.appendChild(calEl('p', 'calMsg', 'No calendar on this phone takes new events.'));
+    cals.forEach(c => {
+      const b = calEl('button', c.id === calPickId ? 'on' : ''); b.type = 'button'; b.dataset.id = c.id;
+      b.append(dot('', c.color), document.createTextNode((c.name || c.account || 'Calendar').toUpperCase()));
+      pick.appendChild(b);
+    });
+    calPaintAllDay(); calShow('calAdd');
+  }
+  document.getElementById('calAddBtn').addEventListener('click', calOpenAdd);
+  document.getElementById('calCancel').addEventListener('click', () => calShow('calMain'));
+  document.getElementById('calAllDay').addEventListener('click', () => { calAllDay = !calAllDay; calPaintAllDay(); });
+  document.getElementById('calPick').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; calPickId = +b.dataset.id;
+    [...document.getElementById('calPick').children].forEach(x => x.classList.toggle('on', x === b));
+  });
+  document.getElementById('calSave').addEventListener('click', () => {
+    const msg = document.getElementById('calAddMsg'), title = document.getElementById('calTitle').value.trim();
+    const [Y, M, D] = (document.getElementById('calDate').value || '').split('-').map(Number);
+    if (!title) { msg.textContent = 'Give the event a name.'; holoRefit(); return; }
+    if (!Y) { msg.textContent = 'Choose a day.'; holoRefit(); return; }
+    if (calPickId == null) { msg.textContent = 'No calendar to add it to.'; holoRefit(); return; }
+    let begin, end;
+    if (calAllDay) { begin = Date.UTC(Y, M - 1, D); end = Date.UTC(Y, M - 1, D + 1); }   // the calendar store's rule for all-day events
+    else {
+      const [sh, sm] = document.getElementById('calStart').value.split(':').map(Number), [eh, em] = document.getElementById('calEnd').value.split(':').map(Number);
+      begin = new Date(Y, M - 1, D, sh || 0, sm || 0).getTime(); end = new Date(Y, M - 1, D, eh || 0, em || 0).getTime();
+      if (!(end > begin)) { msg.textContent = 'The end must be after the start.'; holoRefit(); return; }
+    }
+    const src = calSrc(); let id = -1;
+    try { id = src && src.calAdd ? Number(src.calAdd(calPickId, title, begin, end, calAllDay)) : -1; } catch (e) {}
+    if (!(id >= 0)) { msg.textContent = 'The event could not be added. Check that Space Cube may change your calendars.'; holoRefit(); return; }
+    try { localStorage.setItem(CAL_KEY, JSON.stringify({ lastCal: calPickId })); } catch (e) {}
+    calSel = new Date(Y, M - 1, D); renderCal();
+  });
+  // ---- event reminders: the phone buzzes and the event is drawn in, like the wake-up checklist ----
+  let pendingReminder = null;
+  const REM_WHEN = { '30': 'IN 30 MIN', '10': 'IN 10 MIN', '0': 'STARTING NOW', day: 'TODAY · ALL DAY' };
+  window.showEventReminder = (id, begin, kind) => {
+    if (!REM_WHEN[kind]) return;
+    const e = calCall('calEvent', id, begin); if (!e) return;
+    pendingReminder = { e, kind }; window.tryEventReminder();
+  };
+  window.tryEventReminder = () => {                      // -> true if it is being shown (or the window is making room for it)
+    if (!pendingReminder || holoBusy) return !!pendingReminder && holoBusy;
+    if (holo === 'calendar' || holo === 'reminder') { holoNext = window.tryEventReminder; closeHolo(); return true; }
+    if (routineBlocked()) return false;                  // a checklist, Settings, the arrival...: it waits (checked every 15 s and when the window closes)
+    const { e, kind } = pendingReminder; pendingReminder = null;
+    document.getElementById('remWhen').textContent = REM_WHEN[kind];
+    document.getElementById('remAt').textContent = e.allDay ? 'ALL DAY' : hm(e.begin);
+    document.getElementById('remTitle').textContent = e.title || '(no title)';
+    const meta = document.getElementById('remMeta'); meta.textContent = '';
+    const c = calNames().get(e.cal), d = calDayOf(e);
+    meta.append(dot('', e.color), document.createTextNode([(c && (c.name || c.account) || '').toUpperCase(), CAL_WD[d.getDay()] + ' ' + d.getDate() + ' ' + CAL_MN[d.getMonth()].slice(0, 3),
+      e.allDay ? '' : hm(e.begin) + '–' + hm(e.end)].filter(Boolean).join(' · ')));
+    document.getElementById('remOpen').dataset.t = d.getTime();
+    [0, 320, 640].forEach(t => setTimeout(() => { try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(180); } catch (x) {} }, t));
+    openHolo('reminder');
+    return true;
+  };
+  document.getElementById('remOk').addEventListener('click', () => closeHolo());
+  document.getElementById('remOpen').addEventListener('click', () => {
+    calSel = new Date(+document.getElementById('remOpen').dataset.t); calView = 'month';
+    holoNext = () => { renderCal(); openHolo('calendar'); }; closeHolo();
+  });
+  window.__calDebug = () => ({ holo, busy: holoBusy, view: calView, sel: dKey(calSel), part: calPart, label: document.getElementById('calLabel').textContent,
+    pending: !!pendingReminder, frame: (() => { const b = rFrame.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)]; })() });
 
   // The dashing ship: one of the passing-ship models, flown across just in front of the cubes
   function startDash(yPx, done) {
@@ -3980,9 +4263,14 @@
       rg.addEventListener('input', () => { deep.limit = +rg.value; paint(); saveDeep(); });
       cfgList.appendChild(dc);
     }
+    const rc = document.createElement('div'); rc.className = 'gCard';
+    rc.innerHTML = `<div class="gTop"><span class="rcTitle">SCREEN</span><button class="chromeBtn" id="reloadBtn">RELOAD</button></div>
+      <div class="rcNote">Fetch the newest version of this screen.</div>`;
+    rc.querySelector('#reloadBtn').addEventListener('click', reloadScreen);
+    cfgList.appendChild(rc);
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-26 · 59';
+    tag.textContent = 'SCREEN 2026-11-26 · 60';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
@@ -4053,7 +4341,7 @@
   window.handleBack = () => {
     if (window.SpaceMap && window.SpaceMap.isOpen) { window.SpaceMap.back(); return true; }
     if (navLock) { cancelLock(); return true; }
-    if (routineOpen) { closeRoutine(); return true; }
+    if (holo) { closeWindow(); return true; }
     if (cfgEl.classList.contains('show')) { closeCfg(); return true; }
     if (picker.classList.contains('show')) { picker.classList.remove('show'); return true; }
     if (settingsEl.classList.contains('show')) { closeSettings(); return true; }

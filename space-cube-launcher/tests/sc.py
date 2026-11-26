@@ -21,12 +21,13 @@ def done():
 
 class Game:
     """with Game() as g: ...   g.pg is the Playwright page; g.errors collects page errors."""
-    def __init__(self, touch=False): self.touch = touch
+    def __init__(self, touch=False, init=None): self.touch = touch; self.init = init   # init: JavaScript run before the page loads (e.g. a stand-in calendar)
     def __enter__(self):
         self.pw = sync_playwright().start()
         exe = os.environ.get('SC_CHROME') or ('/usr/bin/google-chrome' if os.path.exists('/usr/bin/google-chrome') else None)
         self.b = self.pw.chromium.launch(executable_path=exe, args=ARGS) if exe else self.pw.chromium.launch(args=ARGS)
         self.ctx = self.b.new_context(viewport={'width': 390, 'height': 800}, has_touch=self.touch)
+        if self.init: self.ctx.add_init_script(self.init)
         self.pg = self.ctx.new_page(); self.errors = []
         self.pg.on('pageerror', lambda e: self.errors.append(str(e)))
         self.pg.goto(PAGE); self.pg.wait_for_timeout(1500)
