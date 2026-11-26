@@ -179,6 +179,34 @@ class LauncherBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun setRoutineAlarms(json: String) { RoutineAlarms.save(activity, json) }
 
+    // ---- the phone's calendars (APK 1.5+). JSON strings in, JSON strings out; times in milliseconds ----
+    /** {"read": bool, "write": bool} */
+    @JavascriptInterface
+    fun calAccess(): String = JSONObject().put("read", PhoneCalendars.canRead(activity)).put("write", PhoneCalendars.canWrite(activity)).toString()
+
+    /** Asks Android for calendar access; the page hears back through window.calendarAccessChanged(). */
+    @JavascriptInterface
+    fun calAsk() {
+        activity.runOnUiThread { activity.requestPermissions(arrayOf(android.Manifest.permission.READ_CALENDAR, android.Manifest.permission.WRITE_CALENDAR), MainActivity.CAL_REQUEST) }
+    }
+
+    @JavascriptInterface
+    fun calCalendars(): String = PhoneCalendars.calendars(activity).toString()
+
+    @JavascriptInterface
+    fun calEvents(from: Double, to: Double): String = PhoneCalendars.events(activity, from.toLong(), to.toLong()).toString()
+
+    @JavascriptInterface
+    fun calEvent(id: Double, begin: Double): String = PhoneCalendars.event(activity, id.toLong(), begin.toLong())?.toString() ?: ""
+
+    @JavascriptInterface
+    fun calSearch(q: String): String = PhoneCalendars.search(activity, q).toString()
+
+    /** Returns the new event's id, or -1. */
+    @JavascriptInterface
+    fun calAdd(cal: Double, title: String, begin: Double, end: Double, allDay: Boolean): Double =
+        PhoneCalendars.add(activity, cal.toLong(), title, begin.toLong(), end.toLong(), allDay).toDouble()
+
     /** Ask once for permission to show notifications (Android 13+). */
     @JavascriptInterface
     fun askNotifications() {
@@ -209,7 +237,7 @@ class LauncherBridge(private val activity: MainActivity) {
         return info.packageName == activity.packageName
     }
 
-    /** Triple-tap on the clock: fetch the newest screen from the website. */
+    /** Settings > Reload: fetch the newest screen from the website. */
     @JavascriptInterface
     fun reloadLive() { activity.runOnUiThread { activity.loadLive() } }
 

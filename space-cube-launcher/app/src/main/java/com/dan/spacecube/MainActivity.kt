@@ -38,11 +38,15 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         // LIVE: the home screen is loaded from the website, so page updates arrive without reinstalling.
-        // Triple-tap the clock to reload. If the site can't be reached, the copy built into the app is used.
+        // Settings > Reload fetches the newest. If the site can't be reached, the copy built into the app is used.
         const val LIVE_URL = "https://danravouna.github.io/Welcome/space-cube/index.html"
         const val LIVE_HOST = "danravouna.github.io"
         const val LOCAL_URL = "https://appassets.androidplatform.net/assets/index.html"
+        const val CAL_REQUEST = 8
+        /** The launcher while it is on screen (event reminders are then drawn by the page instead of a notification). */
+        @Volatile var onScreen: MainActivity? = null
     }
+    private var pendingJs: String? = null               // a reminder or checklist opened from its notification before the page was ready
     private var usingLocal = false
     private var lastLiveTry = 0L
 
@@ -86,6 +90,7 @@ class MainActivity : ComponentActivity() {
             if (cover.visibility == View.VISIBLE) {
                 cover.visibility = View.GONE                         // identical to the live frame: swap instantly
             }
+            pendingJs?.let { pendingJs = null; js(it) }
         }
     }
 
@@ -120,6 +125,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pendingJs = EventReminders.jsFor(intent)
 
         // Draw space edge to edge: under the status bar and the gesture/navigation bar (both transparent).
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -233,10 +239,24 @@ class MainActivity : ComponentActivity() {
         intent.getStringExtra("routine")?.let { kind ->
             if (kind == "sleep" || kind == "wake") js("window.goHome && window.goHome(); window.showRoutine && window.showRoutine('$kind')")
         }
+        // Opened from an event reminder: show that reminder (only numbers and a fixed word reach the page)
+        EventReminders.jsFor(intent)?.let { js(it) }
+    }
+
+    @Deprecated("Activity result API not needed for two permissions")
+    @Suppress("DEPRECATION")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == CAL_REQUEST) {
+            js("window.calendarAccessChanged && window.calendarAccessChanged()")
+            Thread { EventReminders.schedule(this) }.start()
+        }
     }
 
     override fun onResume() {
         super.onResume()
+        onScreen = this
+        Thread { try { EventReminders.schedule(applicationContext) } catch (e: Exception) { } }.start()   // pick up new events
         if (cover.visibility == View.VISIBLE) { handler.removeCallbacks(coverFailsafe); handler.postDelayed(coverFailsafe, 3000) }
         web.onResume()
         // Stuck on the built-in copy (e.g. the phone started without internet)? Try the website again.
@@ -245,6 +265,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onPause() {
+        if (onScreen === this) onScreen = null
         js("window.setPaused && window.setPaused(true)")   // the page stops drawing; the WebView itself stays warm
         super.onPause()
     }

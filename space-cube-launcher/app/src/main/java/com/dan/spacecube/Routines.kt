@@ -23,9 +23,16 @@ object RoutineAlarms {
     const val CHANNEL = "routines"
     val KINDS = listOf("sleep", "wake")
 
+    /** The wake-up checklist's time (also when it is switched off): all-day events remind at this time. 07:00 until one is set. */
+    fun wakeTime(ctx: Context): Pair<Int, Int> {
+        val w = try { JSONObject(ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, "{}") ?: "{}").optJSONObject("wake") } catch (e: Exception) { null }
+        return Pair(w?.optInt("h", 7) ?: 7, w?.optInt("m", 0) ?: 0)
+    }
+
     fun save(ctx: Context, json: String) {
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY, json).apply()
         scheduleAll(ctx)
+        EventReminders.schedule(ctx)                     // all-day reminders follow the wake-up time
     }
 
     private fun pending(ctx: Context, kind: String): PendingIntent {
@@ -77,12 +84,14 @@ object RoutineAlarms {
     }
 }
 
-/** Rings at the checklist times; also re-arms the alarms after a reboot, an update or a clock change. */
+/** Rings at the checklist times and for event reminders; also re-arms both after a reboot, an update or a clock change. */
 class RoutineReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
+        if (intent.action == EventReminders.ACTION) { EventReminders.ring(ctx); return }
         if (intent.action == RoutineAlarms.ACTION) {
             intent.getStringExtra("kind")?.let { RoutineAlarms.notify(ctx, it) }
         }
         RoutineAlarms.scheduleAll(ctx)   // next day's alarm (and after boot / time changes)
+        if (intent.action != RoutineAlarms.ACTION) EventReminders.schedule(ctx)
     }
 }
