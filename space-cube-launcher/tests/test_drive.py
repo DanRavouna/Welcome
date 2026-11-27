@@ -12,7 +12,7 @@ def gyro(g, alpha=0, beta=0, gamma=0, ms=500):    # devicemotion events every 16
 with Game() as g:
     g.fresh(); g.wait(1500)
     d = DD(g); check('home: the pedal and fire buttons show, nothing is driving', not d['hidden'] and not d['driving'] and not d['listening'], d)
-    q0 = DD(g)['q']; gyro(g, gamma=90, ms=400); q1 = DD(g)['q']
+    q0 = DD(g)['q']; gyro(g, beta=90, ms=400); q1 = DD(g)['q']
     check('untouched: turning the phone does nothing (the gyro is not even listened to)', max(abs(a - b) for a, b in zip(q0, q1)) < 0.01 and not DD(g)['listening'], (q0, q1))
     # the pedal, over real time, facing the planet
     g.js("window.__face('body')"); g.wait(300)
@@ -26,11 +26,17 @@ with Game() as g:
     g.wait(1500); d = DD(g)
     check('let go: the ship stops, the dots calm down', d['thr'] == 0 and d['navWarp'] == 1 and not d['owning'], d)
     # gyro while driving: a turn in the camera's frame; and a yaw while looking 80 deg up stays a yaw
-    f0 = DD(g)['fwd']; gyro(g, gamma=90, ms=500); f1 = DD(g)['fwd']
+    dot = lambda a, b: sum(x * y for x, y in zip(a, b))
+    cross = lambda a, b: [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    f0, u0 = DD(g)['fwd'], DD(g)['up']; right0 = cross(f0, u0); gyro(g, beta=90, ms=500); f1 = DD(g)['fwd']
+    check('turning the phone right (positive beta, as Dan\'s phone sends it) turns the view right', dot(f1, right0) > 0.3, dot(f1, right0))
+    f2, u2 = DD(g)['fwd'], DD(g)['up']; gyro(g, gamma=60, ms=300); f3 = DD(g)['fwd']
+    check('tilting the top toward you (positive gamma, by the same quarter turn) turns the view up', dot(f3, u2) > 0.2, dot(f3, u2))
+    gyro(g, gamma=-60, ms=300)
     ang = math.degrees(math.acos(max(-1, min(1, sum(a * b for a, b in zip(f0, f1))))))
     check('driving: turning the phone turns the view (about 45 deg for 90 deg/s over half a second)', 30 < ang < 60, ang)
-    gyro(g, beta=160, ms=500); up = DD(g)['up']
-    fa = DD(g)['fwd']; gyro(g, gamma=90, ms=500); fb = DD(g)['fwd']
+    gyro(g, gamma=160, ms=500); up = DD(g)['up']
+    fa = DD(g)['fwd']; gyro(g, beta=90, ms=500); fb = DD(g)['fwd']
     elev = lambda f: math.degrees(math.asin(max(-1, min(1, sum(a * b for a, b in zip(f, up))))))
     check('...a turn while looking up stays a turn around your own up (no swirl)', abs(elev(fa)) < 3 and abs(elev(fb)) < 3, (elev(fa), elev(fb)))
     # fire and reticle

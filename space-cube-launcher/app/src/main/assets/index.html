@@ -5196,7 +5196,10 @@ window.CAT = (() => {
   //  last arrived or flew to.
   // =========================================================
   const DRIVE_HOLD_MS = 10000;                           // driving (gyro, reticle) lasts this long after the last use
-  const GYRO = { gain: 1, signs: [-1, -1, -1] };         // device rotation rate (deg/s, about x, y, z) -> space turns the other way
+  // Which motion value turns space about each of the camera's axes, and which way (space turns opposite to the phone).
+  // From Dan's phone (2026-11-27): turning it right came in as a positive beta, so the values arrive a quarter turn round
+  // from the spec's reading (beta about the phone's up/down line, gamma about its left/right line); alpha is roll.
+  const GYRO = { gain: 1, x: ['gamma', -1], y: ['beta', 1], z: ['alpha', -1] };
   const drive = { thr: 0, held: false, firing: false, last: 0, owning: false, listening: false, gyroT: 0, gyroSeen: false, since: 0, shotUntil: 0, fireTimer: 0, shots: 0 };
   const pedalEl = document.getElementById('drivePedal'), fireEl = document.getElementById('driveFire');
   const reticleEl = document.getElementById('reticle'), gyroNoteEl = document.getElementById('gyroNote');
@@ -5208,7 +5211,8 @@ window.CAT = (() => {
     drive.gyroT = now; drive.gyroSeen = true;
     if (!dt || travel || deepJump || holo || mapOpen || paused || active === 'sky') return;
     const k = THREE.MathUtils.DEG2RAD * dt * GYRO.gain;
-    gyroE.set(GYRO.signs[0] * (r.beta || 0) * k, GYRO.signs[1] * (r.gamma || 0) * k, GYRO.signs[2] * (r.alpha || 0) * k, 'XYZ');
+    const rate = a => GYRO[a][1] * (r[GYRO[a][0]] || 0) * k;
+    gyroE.set(rate('x'), rate('y'), rate('z'), 'XYZ');
     spaceRig.quaternion.premultiply(gyroQ.setFromEuler(gyroE));
     skyVelX = skyVelY = 0; syncSysRig();
   }
@@ -5374,7 +5378,7 @@ window.CAT = (() => {
     cfgList.appendChild(batCard());
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-27 · 62';
+    tag.textContent = 'SCREEN 2026-11-27 · 63';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
