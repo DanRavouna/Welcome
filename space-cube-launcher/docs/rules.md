@@ -36,6 +36,10 @@ These came out of long back-and-forth. Do not reopen them without asking him. Qu
 - It records the battery (level, charge counter, plugged in or not) and whether Space Cube is on screen: every minute on screen, every 5 minutes otherwise, and at every change. The page records its own work per frame while it draws.
 - Results: on screen against off screen (time, drain per hour, average draw), frame work, worst frame, frames a second, and a graph of the battery with the on-screen stretches shaded and the work per frame below. Plugged-in time is left out.
 
+## Driving the ship (2026-11-27, Dan asleep: the details below are Claude's choices, to confirm)
+- Dan: a forward pedal on the left above the left pod ("it's more of a forward pedal"), a laser button above the right pod (lasers like the chase squadrons'), gyro steering, a reticle in the middle only once you shoot, gone 10 s after the last shot.
+- Chosen: the gyro steers only while you drive (pedal or fire in use, and 10 s after), so the home screen never turns by itself; untouched, nothing listens. Turning the phone turns space the opposite way in the camera's frame (all three axes, roll included), like a window. A tap on FIRE fires once, holding it keeps firing. The buttons show only on the plain home view (not over app cubes, groups or the keyboard). The pedal flies through the planet scene you're at and never into a body; at a landmark it only gives the feeling of thrust. A free position is not saved.
+
 ## The star map
 - "This is only a map not the game." It records and shows; the game is where things happen.
 - A place appears on the map as **???** only once its **name tag was shown on screen** in the game (or you locked on to it). It is revealed (name, facts, picture) when you **visit** it. Never seen = not on the map at all. Landmarks follow the same rule.

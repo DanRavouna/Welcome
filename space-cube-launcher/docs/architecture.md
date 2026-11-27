@@ -51,6 +51,10 @@ Find a section by searching for its title (the words in capitals); line numbers 
 - Only one at a time: a checklist or reminder that comes while something else shows waits (`routineBlocked`, `checkRoutines` every 15 s and when the window closes); a reminder closes the calendar to show itself.
 - Calendar data: `calCall(name, ...)` on `window.Launcher` (app 1.5+) or `window.__calSource`. No source, or no access: a note in the window (with ALLOW). Event titles only ever go in as text (`calEl`, `textContent`); colours are checked (`safeColor`).
 
+### DRIVING (after the battery test)
+- `drive` state; `driveUpdate(dt)` runs first every frame: throttle, moving `shipPos` along the view (speed from the nearest body, never into one), the gyro switching off 10 s after the last use, the reticle, hiding the buttons off the plain home view. It writes `navWarp` / `travelV` / `worldFov` only when no flight or warp owns them, and restores them.
+- Gyro: `devicemotion` listened to only while driving; `GYRO` holds the gain and the signs (one place to flip a direction). `driveRelease()` (from `closeEverything`, pause, screen off) lets go of both buttons.
+
 ### Every frame (`animate`)
 `updateField`, `updateShips`, `updateDash`, `navUpdate` (flights, `sysWorld` position, near plane), star light and ring uniforms, `updateMoons`, sky drift, cubes, `updateHud`, `navHud`, `syncSysRig`, `updateOccluders`, `deepUpdate`, `updateStreaks`, `updateRoute`, then the render passes.
 
@@ -73,6 +77,7 @@ Find a section by searching for its title (the words in capitals); line numbers 
 | `__navList()`, `__navGo(NAME)`, `__navDebug()` | flight targets; fly to one; `{ target, travel, ship }` |
 | `SpaceJump(id, planetName)` | the map's jump |
 | `__calDebug()` | the window and the calendar: `{ holo, busy, view, sel, part, label, pending, frame }` |
+| `__driveDebug()` | driving: `{ thr, held, firing, driving, listening, shots, reticle, gyroNote, hidden, navWarp, ship, fwd, up, q, bodyDist, bolts }` |
 | `window.__batSource`, `__batSummary(status, frames)` | the battery test's stand-in (`tests/batsource.js`); its sums |
 | `window.__calSource` | set before the page loads (tests): a stand-in for the app's calendar bridge, same method names and JSON (`tests/calsource.js`) |
 | `toggleCalendar()`, `showEventReminder(id, begin, kind)`, `showRoutine(kind)` | what the clock, the app (reminders) and the checklist notification call |
@@ -81,5 +86,5 @@ Find a section by searching for its title (the words in capitals); line numbers 
 `spaceCubeGroups.v2` / `spaceCubeGroups.phone.v1` (app groups), `spaceCubeRecents.v2` / `.phone.v2`, `spaceCubeRoutines.v1`, `spaceCubeRoutineState.v1`, `spaceCubeCalendar.v1` (`{ lastCal }`: the calendar new events go into by default), `spaceCubeBattery.v1` (the battery test's frame work by the minute).
 
 ## What the tests cover, and what they do not
-- `test_saves.py`: every old save form. `test_travel.py`: taps, warps, the planet scene, flights, landmarks, reloads. `test_map.py`: the ??? rules, cards, jumping from the map. `test_time.py`: the time model against JPL Horizons. `test_routines.py`: the window opening over real time. `test_calendar.py`: the calendar, search, adding, reminders and what waits for what, against `calsource.js`. `test_battery.py`: the battery test card and its sums on known readings, against `batsource.js`. `test_bridge.py`: every `cal*` and `bat*` method the page calls exists in `LauncherBridge.kt` and in the stand-in.
+- `test_saves.py`: every old save form. `test_travel.py`: taps, warps, the planet scene, flights, landmarks, reloads. `test_map.py`: the ??? rules, cards, jumping from the map. `test_time.py`: the time model against JPL Horizons. `test_routines.py`: the window opening over real time. `test_calendar.py`: the calendar, search, adding, reminders and what waits for what, against `calsource.js`. `test_drive.py`: the pedal, gyro, fire and reticle over real time, and flights / warps / reload after driving. `test_battery.py`: the battery test card and its sums on known readings, against `batsource.js`. `test_bridge.py`: every `cal*` and `bat*` method the page calls exists in `LauncherBridge.kt` and in the stand-in.
 - Not covered: how anything looks, feel and tempo, speed on a phone, the launcher part (cubes, groups, search), the Android shell (it is only compiled, by the "Build Space Cube APK" workflow: real calendars, permissions, alarms and notifications are only seen on the phone). For animation, log a value against the clock over real time (for an arrival: `__deepDebug().scale` sampled every 100 ms must only grow) and still say that feel cannot be judged from a headless browser.

@@ -3621,6 +3621,7 @@
     const dt = Math.min((now - prev) / 1000, 0.05); prev = now;
     const f = Math.pow(Math.pow(CFG.cubeSpinCoast, 60), dt);
 
+    driveUpdate(dt);
     updateField(t, dt);
     updateShips(dt);
     updateDash(dt);
@@ -3631,7 +3632,7 @@
     updateMoons(dt);
     if (active !== 'sky' && !travel && !deepJump) {
       spaceRig.rotation.y += skyVelY * dt; spaceRig.rotation.x += skyVelX * dt;
-      skyVelY += ((nav.target || !BODY.q ? 0 : CFG.skyTurnSpeed) - skyVelY) * Math.min(0.6 * dt, 1);   // parked at a body: no slow drift
+      skyVelY += ((nav.target || !BODY.q || driving() ? 0 : CFG.skyTurnSpeed) - skyVelY) * Math.min(0.6 * dt, 1);   // parked at a body, or driving: no slow drift
       skyVelX *= Math.pow(0.4, dt);
     }
     appFade += ((appsVisible ? 1 : 0) - appFade) * Math.min(6 * dt, 1);
@@ -4313,6 +4314,94 @@
     return card;
   }
 
+  // =========================================================
+  //  DRIVING THE SHIP: hold the pedal (above the left pod) to fly forward; the fire button (above the right pod) shoots twin
+  //  lasers like the chase squadrons' (fireBolt), and shows a reticle in the middle until 10 s after the last shot.
+  //  While you drive (pedal or fire in use, and 10 s after), turning the phone turns the ship: the gyro's turns are applied
+  //  the opposite way in the camera's own frame, so space stays put while the phone moves, like looking through a window.
+  //  Untouched, nothing changes: no gyro listening, no drift, no movement.
+  //  The pedal flies through the planet scene you're at (never into a body); at a landmark there is no scene to fly
+  //  through, so it only gives the feeling of thrust. A free position is not saved: a reload brings you back to where you
+  //  last arrived or flew to.
+  // =========================================================
+  const DRIVE_HOLD_MS = 10000;                           // driving (gyro, reticle) lasts this long after the last use
+  const GYRO = { gain: 1, signs: [-1, -1, -1] };         // device rotation rate (deg/s, about x, y, z) -> space turns the other way
+  const drive = { thr: 0, held: false, firing: false, last: 0, owning: false, listening: false, gyroT: 0, gyroSeen: false, since: 0, shotUntil: 0, fireTimer: 0, shots: 0 };
+  const pedalEl = document.getElementById('drivePedal'), fireEl = document.getElementById('driveFire');
+  const reticleEl = document.getElementById('reticle'), gyroNoteEl = document.getElementById('gyroNote');
+  const driving = () => drive.held || drive.firing || (drive.last > 0 && performance.now() - drive.last < DRIVE_HOLD_MS);
+  const gyroQ = new THREE.Quaternion(), gyroE = new THREE.Euler();
+  function onGyro(e) {
+    const r = e.rotationRate; if (!r || ![r.alpha, r.beta, r.gamma].some(v => typeof v === 'number')) return;   // (events without numbers: no gyro)
+    const now = performance.now(), dt = drive.gyroT ? Math.min(0.1, Math.max(0, (now - drive.gyroT) / 1000)) : 0;
+    drive.gyroT = now; drive.gyroSeen = true;
+    if (!dt || travel || deepJump || holo || mapOpen || paused || active === 'sky') return;
+    const k = THREE.MathUtils.DEG2RAD * dt * GYRO.gain;
+    gyroE.set(GYRO.signs[0] * (r.beta || 0) * k, GYRO.signs[1] * (r.gamma || 0) * k, GYRO.signs[2] * (r.alpha || 0) * k, 'XYZ');
+    spaceRig.quaternion.premultiply(gyroQ.setFromEuler(gyroE));
+    skyVelX = skyVelY = 0; syncSysRig();
+  }
+  function gyroListen(on) {
+    if (on === drive.listening) return;
+    drive.listening = on;
+    if (on) { drive.gyroT = 0; drive.gyroSeen = false; drive.since = performance.now(); addEventListener('devicemotion', onGyro); }
+    else { removeEventListener('devicemotion', onGyro); gyroNoteEl.hidden = true; saveNav(); }   // (keeps the way you're facing)
+  }
+  function driveUse() { drive.last = performance.now(); gyroListen(true); }
+  function driveRelease() {                              // nothing flies or fires on its own (pause, screen off, a window or the map opening...)
+    drive.held = drive.firing = false; clearInterval(drive.fireTimer); drive.fireTimer = 0;
+    pedalEl.classList.remove('on'); fireEl.classList.remove('on');
+  }
+  function shoot() {
+    const fwd = shipTmp.set(0, 0, -1).applyQuaternion(camera.quaternion);
+    const down = new THREE.Vector3(0, -1, 0).applyQuaternion(camera.quaternion);
+    const from = camera.position.clone().addScaledVector(fwd, 3).addScaledVector(down, 0.6);
+    const to = camera.position.clone().addScaledVector(fwd, 60);
+    shipLayer.worldToLocal(from); shipLayer.worldToLocal(to);
+    fireBolt(from, to, 0.35);
+    drive.shots++; drive.shotUntil = performance.now() + DRIVE_HOLD_MS; reticleEl.classList.add('on');
+    try { window.Launcher && window.Launcher.vibrate && window.Launcher.vibrate(12); } catch (e) {}
+  }
+  const hold = (el, down, up) => {
+    el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { el.setPointerCapture(e.pointerId); } catch (x) {} down(); });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => el.addEventListener(t, e => { e.stopPropagation(); up(); }));
+    el.addEventListener('contextmenu', e => e.preventDefault());
+  };
+  hold(pedalEl, () => { drive.held = true; pedalEl.classList.add('on'); driveUse(); }, () => { if (drive.held) { drive.held = false; pedalEl.classList.remove('on'); driveUse(); } });
+  hold(fireEl, () => {                                   // a tap fires once; holding keeps firing
+    if (drive.firing) return; drive.firing = true; fireEl.classList.add('on'); driveUse(); shoot();
+    drive.fireTimer = setInterval(() => { if (drive.firing) { shoot(); driveUse(); } }, 180);
+  }, () => { if (drive.firing) { drive.firing = false; fireEl.classList.remove('on'); clearInterval(drive.fireTimer); drive.fireTimer = 0; driveUse(); } });
+  // every frame, before the flights: the pedal moves the ship; the gyro and reticle switch off when driving ends
+  function driveUpdate(dt) {
+    const now = performance.now();
+    if (drive.listening && !driving()) gyroListen(false);
+    if (drive.listening) gyroNoteEl.hidden = drive.gyroSeen || now - drive.since < 2000;
+    reticleEl.classList.toggle('on', now < drive.shotUntil);
+    const hide = openGroupIdx >= 0 || kbdOpen || !!searchInput.value || homeView === 'groups';   // only on the plain home view: never over app cubes
+    if (hide !== document.body.classList.contains('driveHide')) { document.body.classList.toggle('driveHide', hide); if (hide) driveRelease(); }
+    drive.thr += ((drive.held ? 1 : 0) - drive.thr) * Math.min(1, dt * (drive.held ? 2.5 : 4));
+    if (drive.thr < 0.003) { drive.thr = 0; if (drive.owning) { drive.owning = false; navWarp = 1; travelV = 0; worldFov = 55; } return; }
+    if (travel || deepJump) { drive.owning = false; return; }         // a flight or a warp owns the ship and the view
+    drive.owning = true;
+    navWarp = 1 + 5 * drive.thr; travelV = 0.35 * drive.thr; worldFov = 55 + 6 * drive.thr;
+    if (!BODY.q) return;                                 // a landmark: no scene to fly through
+    if (nav.target) { nav.target = null; navOffset.set(0, 0, 0); }   // leaving the spot you flew to
+    const fwd = navTmp2.set(0, 0, -1).applyQuaternion(qInvTmp.copy(spaceRig.quaternion).invert());
+    let nearest = Infinity;
+    const bodies = NAV.map(n => { const c = navLocal(n, new THREE.Vector3()); nearest = Math.min(nearest, c.distanceTo(shipPos) - n.bodyR); return { c, r: n.bodyR }; });
+    const speed = Math.min(2000, Math.max(0.15, 0.45 * nearest)) * drive.thr;   // faster far from everything, slower close by
+    const next = shipPos.clone().addScaledVector(fwd, speed * dt);
+    if (bodies.some(b => next.distanceTo(b.c) < b.r * 1.08 && next.distanceTo(b.c) < shipPos.distanceTo(b.c))) return;   // never into a planet or moon
+    shipPos.copy(next);
+  }
+  window.__driveDebug = () => ({ thr: +drive.thr.toFixed(3), held: drive.held, firing: drive.firing, driving: driving(), listening: drive.listening, shots: drive.shots,
+    reticle: reticleEl.classList.contains('on'), gyroNote: !gyroNoteEl.hidden, hidden: document.body.classList.contains('driveHide'), navWarp, owning: drive.owning,
+    ship: shipPos.toArray(), target: nav.target, bolts: bolts.length, q: spaceRig.quaternion.toArray(),
+    fwd: new THREE.Vector3(0, 0, -1).applyQuaternion(spaceRig.quaternion.clone().invert()).toArray(),
+    up: new THREE.Vector3(0, 1, 0).applyQuaternion(spaceRig.quaternion.clone().invert()).toArray(),
+    bodyDist: BODY.q ? (() => { const v = new THREE.Vector3(); BODY.group.getWorldPosition(v); return v.distanceTo(camera.position) - BODY.eqKm * k; })() : null });
+
   // The dashing ship: one of the passing-ship models, flown across just in front of the cubes
   function startDash(yPx, done) {
     const g = SHIP_MODELS[Math.floor(Math.random() * SHIP_MODELS.length)]();
@@ -4414,7 +4503,7 @@
     cfgList.appendChild(batCard());
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-27 · 61';
+    tag.textContent = 'SCREEN 2026-11-27 · 62';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
@@ -4472,6 +4561,7 @@
   //  PHONE HOOKS (called by the Android app)
   // =========================================================
   function closeEverything() {
+    driveRelease();
     if (window.SpaceMap && window.SpaceMap.isOpen) window.SpaceMap.close();
     if (typeof cfgEl !== 'undefined' && cfgEl.classList.contains('show')) closeCfg();
     picker.classList.remove('show');
@@ -4510,6 +4600,7 @@
   // Screen turned off: get the fly-in's starting pose ready NOW (empty space, everything tucked away)
   // and draw it, so the first thing you see after unlocking is the start of the fly-in, not the old screen.
   window.onScreenOff = () => {
+    driveRelease();
     closeEverything();
     arrivalT = 0; arrivalHeld = true;
     document.body.classList.add('arriving');
@@ -4533,7 +4624,7 @@
   let pausedAt = 0;
   window.setPaused = p => {
     if (!p) { try { syncPhoneRecents(); updateEmptyHint(); } catch (e) {} }
-    if (p) pausedAt = Date.now();
+    if (p) { pausedAt = Date.now(); driveRelease(); }
     else if (arrivalHeld) releaseArrival();                 // came back after the screen was off
     // older app builds have no screen/unlock signals: treat "back after 20 s or more away" as an unlock
     else if (!window.__hasUnlockHook && pausedAt && Date.now() - pausedAt > 20000) playArrival();
