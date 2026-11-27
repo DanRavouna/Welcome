@@ -11,8 +11,8 @@ android {
         applicationId = "com.dan.spacecube"
         minSdk = 26          // Android 8.0+
         targetSdk = 34       // keeps the system bars outside the app (no edge-to-edge handling needed yet)
-        versionCode = 15
-        versionName = "1.5"
+        versionCode = 16
+        versionName = "1.6"
     }
 
     // One fixed signing key for every build, so a new APK installs OVER the old one

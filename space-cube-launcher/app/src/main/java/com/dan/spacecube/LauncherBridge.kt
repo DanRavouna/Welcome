@@ -211,6 +211,21 @@ class LauncherBridge(private val activity: MainActivity) {
     fun calAdd(cal: Double, title: String, begin: Double, end: Double, allDay: Boolean): Double =
         PhoneCalendars.add(activity, cal.toLong(), title, begin.toLong(), end.toLong(), allDay).toDouble()
 
+    // ---- the battery test (APK 1.6+): Settings > Battery test ----
+    @JavascriptInterface
+    fun batStart() { BatteryLog.start(activity) }
+
+    @JavascriptInterface
+    fun batStop() { BatteryLog.stop(activity) }
+
+    /** {running, start, stop, samples:[{t, level, charge, now, plugged, on}]} */
+    @JavascriptInterface
+    fun batStatus(): String = BatteryLog.status(activity)
+
+    /** One reading now (not stored): {t, level, charge, now, plugged, on} */
+    @JavascriptInterface
+    fun batNow(): String = BatteryLog.reading(activity).toString()
+
     /** Ask once for permission to show notifications (Android 13+). */
     @JavascriptInterface
     fun askNotifications() {

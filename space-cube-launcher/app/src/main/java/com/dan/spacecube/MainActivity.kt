@@ -256,7 +256,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         onScreen = this
-        Thread { try { EventReminders.schedule(applicationContext) } catch (e: Exception) { } }.start()   // pick up new events
+        Thread { try { EventReminders.schedule(applicationContext); BatteryLog.changed(applicationContext) } catch (e: Exception) { } }.start()   // pick up new events; battery test reading
         if (cover.visibility == View.VISIBLE) { handler.removeCallbacks(coverFailsafe); handler.postDelayed(coverFailsafe, 3000) }
         web.onResume()
         // Stuck on the built-in copy (e.g. the phone started without internet)? Try the website again.
@@ -266,6 +266,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         if (onScreen === this) onScreen = null
+        Thread { try { BatteryLog.changed(applicationContext) } catch (e: Exception) { } }.start()   // battery test: Space Cube left the screen
         js("window.setPaused && window.setPaused(true)")   // the page stops drawing; the WebView itself stays warm
         super.onPause()
     }

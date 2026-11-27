@@ -88,10 +88,11 @@ object RoutineAlarms {
 class RoutineReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         if (intent.action == EventReminders.ACTION) { EventReminders.ring(ctx); return }
+        if (intent.action == BatteryLog.ACTION) { BatteryLog.ring(ctx); return }
         if (intent.action == RoutineAlarms.ACTION) {
             intent.getStringExtra("kind")?.let { RoutineAlarms.notify(ctx, it) }
         }
         RoutineAlarms.scheduleAll(ctx)   // next day's alarm (and after boot / time changes)
-        if (intent.action != RoutineAlarms.ACTION) EventReminders.schedule(ctx)
+        if (intent.action != RoutineAlarms.ACTION) { EventReminders.schedule(ctx); BatteryLog.schedule(ctx) }
     }
 }
