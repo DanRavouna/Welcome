@@ -170,6 +170,20 @@
   .dbgTabs button.on { color: #13337a; background: linear-gradient(180deg,#b9fbff 0%,#5fe3f2 45%,#2cc6df 100%); border-color: transparent; }
   .dbgPane { display: flex; flex-wrap: wrap; gap: 8px; }
   .dbgPane[hidden] { display: none; }
+  .batRec { display: inline-flex; align-items: center; gap: 6px; font: 700 11px 'Orbitron', system-ui, sans-serif; letter-spacing: .14em; color: #ffb36b; margin: 0 2px 8px; }
+  .batRec i { width: 8px; height: 8px; border-radius: 50%; background: #ffb36b; box-shadow: 0 0 8px #ffb36b; animation: blink 1.2s steps(1) infinite; }
+  .batLive { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 0 2px 8px; font-variant-numeric: tabular-nums; }
+  .batK { font-size: 11px; color: rgba(200,220,255,.55); letter-spacing: .04em; }
+  .batV { font: 700 18px 'Orbitron', system-ui, sans-serif; color: #e8f1ff; }
+  .batV small { font: 600 11px system-ui, sans-serif; color: rgba(200,220,255,.55); margin-left: 3px; }
+  .batSum { display: grid; grid-template-columns: auto 1fr 1fr; gap: 6px 10px; align-items: baseline; margin: 4px 2px 8px; font-variant-numeric: tabular-nums; }
+  .batH { font: 700 9px 'Orbitron', system-ui, sans-serif; letter-spacing: .14em; color: rgba(200,220,255,.55); }
+  .batR { font-size: 12px; color: rgba(200,220,255,.55); }
+  .batN { font: 700 14px 'Orbitron', system-ui, sans-serif; color: #7d8aa8; }
+  .batN.on { color: #5fe3f2; }
+  .batChart { width: 100%; }
+  .batLegend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: rgba(200,220,255,.55); margin: 4px 2px 6px; }
+  .batLegend i { display: inline-block; width: 12px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
   .rcNote { font-size: 12px; color: rgba(200,220,255,.5); margin: 2px 2px 6px; }
   /* ---- Sleep / wake checklist: a ship draws a line, the line opens into a hologram frame ---- */
   #rWrap { position: fixed; inset: 0; z-index: 30; pointer-events: none; }

@@ -3608,6 +3608,7 @@
   function requestCoverHide() { coverPending = 2; }   // wait 2 drawn frames so the frame is really on screen
   function drawOneFrame() { oneFrame = true; try { tick(); } finally { oneFrame = false; } }
   function tick() {
+    const tickW0 = performance.now();                  // (the battery test measures each frame's work)
     const t = clock.getElapsedTime();
     if (arrivalT < 1) {
       if (!arrivalHeld) arrivalT = Math.min(1, arrivalT + Math.min((performance.now() - prev) / 1000, 0.05) / ARRIVAL_S);
@@ -3701,6 +3702,7 @@
     if (coverPending > 0 && !oneFrame && --coverPending === 0) {
       try { if (window.Launcher && window.Launcher.hideCover) window.Launcher.hideCover(); } catch (e) {}
     }
+    batFrame(tickW0);
     if (!paused && !oneFrame && !mapOpen) requestAnimationFrame(tick);
   }
   let paused = false, mapOpen = false;
@@ -4191,6 +4193,126 @@
   window.__calDebug = () => ({ holo, busy: holoBusy, view: calView, sel: dKey(calSel), part: calPart, label: document.getElementById('calLabel').textContent,
     pending: pendingReminders.length, frame: (() => { const b = rFrame.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)]; })() });
 
+  // =========================================================
+  //  THE BATTERY TEST (Settings > Battery test): what Space Cube costs.
+  //  From Start to Stop the app (1.6+) records the battery (BatteryLog.kt): level, the charge counter, plugged in or not,
+  //  and whether Space Cube is on screen. The page records its own work per frame, by the minute, while it draws.
+  //  Results: on screen against off screen (time, drain per hour, average draw from the charge counter), frame work, and a graph.
+  //  Data: window.Launcher.bat* (app 1.6+), or window.__batSource (same methods, same JSON: the tests' stand-in).
+  // =========================================================
+  const BAT_KEY = 'spaceCubeBattery.v1';                // { start, frames: { minute: [frames, work ms, worst work ms, gaps ms] } }
+  const batSrc = () => (window.Launcher && window.Launcher.batStatus) ? window.Launcher : (window.__batSource || null);
+  function batCall(name, ...args) { const src = batSrc(); if (!src || !src[name]) return null;
+    try { const r = src[name](...args); return typeof r === 'string' ? (r ? JSON.parse(r) : null) : r; } catch (e) { return null; } }
+  let batRec = false, batFrames = {}, batStart0 = 0, batLastW = 0, batDirty = false;
+  try { const d = JSON.parse(localStorage.getItem(BAT_KEY)); if (d) { batFrames = d.frames || {}; batStart0 = d.start || 0; } } catch (e) {}
+  function batSave() { if (!batDirty) return; batDirty = false; try { localStorage.setItem(BAT_KEY, JSON.stringify({ start: batStart0, frames: batFrames })); } catch (e) {} }
+  function batSync() {                                   // is a test running? (the app keeps the truth: Start / Stop can also outlive the page)
+    const st = batCall('batStatus'); batRec = !!(st && st.running);
+    if (st && st.start && st.start !== batStart0) { batStart0 = st.start; batFrames = {}; batDirty = true; batSave(); }
+    return st;
+  }
+  setInterval(() => { batSync(); batSave(); }, 30000); setTimeout(batSync, 3000);
+  function batFrame(w0) {                                // called at the end of every frame
+    if (!batRec) { batLastW = 0; return; }
+    const now = performance.now(), work = now - w0, gap = batLastW ? w0 - batLastW : 0; batLastW = w0;
+    if (gap > 1000) return;                              // the first frame after a pause is not a frame interval
+    const m = Math.floor(Date.now() / 60000), b = batFrames[m] || (batFrames[m] = [0, 0, 0, 0]);
+    b[0]++; b[1] += work; b[2] = Math.max(b[2], work); b[3] += gap; batDirty = true;
+  }
+  // the numbers: readings in pairs, each stretch counted as on or off screen by the reading that starts it; plugged-in stretches left out
+  function batSummary(st, frames) {
+    const S = (st && st.samples || []).slice().sort((a, b) => a.t - b.t);
+    const acc = { true: { h: 0, lvl: 0, uah: 0, hc: 0 }, false: { h: 0, lvl: 0, uah: 0, hc: 0 } };
+    let plugged = 0;
+    for (let i = 0; i + 1 < S.length; i++) {
+      const a = S[i], b = S[i + 1], dt = (b.t - a.t) / 3.6e6;
+      if (!(dt > 0)) continue;
+      if (a.plugged || b.plugged) { plugged += dt; continue; }
+      const c = acc[!!a.on]; c.h += dt; c.lvl += a.level - b.level;
+      if (a.charge > 0 && b.charge > 0) { c.uah += a.charge - b.charge; c.hc += dt; }
+    }
+    const side = c => ({ hours: c.h, perHour: c.h > 0.05 ? c.lvl / c.h : null, mA: c.hc > 0.05 ? c.uah / 1000 / c.hc : null });
+    let n = 0, work = 0, worst = 0, gaps = 0;
+    Object.values(frames || {}).forEach(b => { n += b[0]; work += b[1]; worst = Math.max(worst, b[2]); gaps += b[3]; });
+    return { on: side(acc.true), off: side(acc.false), plugged, start: S.length ? S[0].t : 0, end: S.length ? S[S.length - 1].t : 0,
+      from: S.length ? S[0].level : null, to: S.length ? S[S.length - 1].level : null,
+      frames: n, work: n ? work / n : null, worst: n ? worst : null, fps: gaps > 0 ? n / (gaps / 1000) : null };
+  }
+  window.__batSummary = batSummary;
+  const fmtH = h => Math.floor(h) + ' h ' + String(Math.round((h % 1) * 60)).padStart(2, '0');
+  const fmtClock = t => { const d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  function batGraph(st, frames) {                        // battery % over time, on-screen stretches shaded; frame work per minute below
+    const S = (st.samples || []).slice().sort((a, b) => a.t - b.t); if (S.length < 2) return '';
+    const t0 = S[0].t, t1 = S[S.length - 1].t, W = 340, H = 190, L = 32, R = 10, T1 = 8, H1 = 100, T2 = 128, H2 = 44;
+    const x = t => L + (W - L - R) * (t - t0) / Math.max(1, t1 - t0);
+    const lv = S.map(s => s.level), hi = Math.ceil(Math.max(...lv)), lo = Math.floor(Math.min(...lv)) - (Math.max(...lv) - Math.min(...lv) < 2 ? 1 : 0);
+    const yb = b => T1 + H1 * (hi - b) / Math.max(1, hi - lo);
+    const mins = Object.keys(frames || {}).map(Number).filter(m => m * 60000 >= t0 - 60000 && m * 60000 <= t1).sort((a, b) => a - b);
+    const avg = m => frames[m][1] / frames[m][0], top = Math.max(20, ...mins.map(avg));
+    const yf = f => T2 + H2 * (1 - Math.min(f, top) / top);
+    let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Battery level over the test, with the times Space Cube was on screen shaded, and its work per frame">`;
+    for (let i = 0; i + 1 < S.length; i++) if (S[i].on) g += `<rect x="${x(S[i].t).toFixed(1)}" y="${T1}" width="${(x(S[i + 1].t) - x(S[i].t)).toFixed(1)}" height="${T2 + H2 - T1}" fill="rgba(95,227,242,.13)"/>`;
+    [hi, lo].forEach(b => g += `<line x1="${L}" x2="${W - R}" y1="${yb(b)}" y2="${yb(b)}" stroke="rgba(160,200,255,.14)"/><text x="${L - 4}" y="${yb(b) + 3}" text-anchor="end" fill="rgba(200,220,255,.55)" font-size="10">${b}%</text>`);
+    [0, Math.round(top)].forEach(f => g += `<line x1="${L}" x2="${W - R}" y1="${yf(f)}" y2="${yf(f)}" stroke="rgba(160,200,255,.14)"/><text x="${L - 4}" y="${yf(f) + 3}" text-anchor="end" fill="rgba(200,220,255,.55)" font-size="10">${f}</text>`);
+    g += `<text x="${W - R}" y="${T2 - 4}" text-anchor="end" fill="rgba(200,220,255,.55)" font-size="10">work per frame, ms</text>`;
+    g += `<polyline fill="none" stroke="#a6ffd9" stroke-width="2" points="${S.map(s => x(s.t).toFixed(1) + ',' + yb(s.level).toFixed(1)).join(' ')}"/>`;
+    let seg = [], prevM = null;
+    const flush = () => { if (seg.length > 1) g += `<polyline fill="none" stroke="#ffb36b" stroke-width="1.5" points="${seg.join(' ')}"/>`; else if (seg.length === 1) { const [px, py] = seg[0].split(','); g += `<circle cx="${px}" cy="${py}" r="1.6" fill="#ffb36b"/>`; } seg = []; };
+    mins.forEach(m => { if (prevM != null && m - prevM > 1) flush(); seg.push(x(m * 60000 + 30000).toFixed(1) + ',' + yf(avg(m)).toFixed(1)); prevM = m; }); flush();
+    [t0, (t0 + t1) / 2, t1].forEach((t, i) => g += `<text x="${x(t).toFixed(1)}" y="${H - 2}" text-anchor="${['start', 'middle', 'end'][i]}" fill="rgba(200,220,255,.55)" font-size="10">${fmtClock(t)}</text>`);
+    return g + '</svg>';
+  }
+  function batCard() {
+    const card = document.createElement('div'); card.className = 'gCard'; card.id = 'batCard';
+    const paint = () => {
+      if (!document.body.contains(card) && card.dataset.painted) { clearInterval(card._iv); return; }
+      card.dataset.painted = 1;
+      const src = batSrc(), st = batSync();
+      const top = (btn) => `<div class="gTop"><span class="rcTitle">BATTERY TEST</span>${btn ? `<button class="chromeBtn" id="batBtn">${btn}</button>` : ''}</div>`;
+      if (!src || !st) { card.innerHTML = top('') + `<div class="rcNote">${NATIVE ? 'Update the Space Cube app (1.6 or newer) to run the battery test.' : 'The battery test runs on the phone.'}</div>`; return; }
+      if (st.running) {
+        const now = batCall('batNow') || {}, S = st.samples || [], first = S[0] || now;
+        const withC = S.filter(s => s.charge > 0 && !s.plugged), c2 = withC[withC.length - 1], c1 = withC[withC.length - 2];
+        const draw = c1 && c2 && c2.t > c1.t ? (c1.charge - c2.charge) / 1000 / ((c2.t - c1.t) / 3.6e6) : null;
+        const m = batFrames[Math.floor(Date.now() / 60000) - 1] || batFrames[Math.floor(Date.now() / 60000)];
+        const el = Date.now() - st.start;
+        card.innerHTML = top('Stop') + `<div class="batRec"><i></i>RECORDING · ${Math.floor(el / 3.6e6)}:${String(Math.floor(el / 60000) % 60).padStart(2, '0')}</div>
+          <div class="batLive">
+            <div><div class="batK">BATTERY</div><div class="batV">${now.level != null ? Math.round(now.level) : '—'}<small>%</small></div></div>
+            <div><div class="batK">SINCE START</div><div class="batV">${now.level != null && first.level != null ? (Math.round(now.level - first.level) || 0) : '—'}<small>%</small></div></div>
+            <div><div class="batK">DRAW LATELY</div><div class="batV">${draw != null && draw > 0 ? Math.round(draw) : '—'}<small>mA</small></div></div>
+            <div><div class="batK">FRAME WORK</div><div class="batV">${m ? (m[1] / m[0]).toFixed(1) : '—'}<small>ms</small></div></div>
+          </div>
+          <div class="rcNote">${now.plugged ? 'Plugged in: charging time is left out of the results.' : 'Unplugged.'} A reading every minute while Space Cube is on screen, every 5 minutes otherwise.</div>`;
+        card.querySelector('#batBtn').addEventListener('click', () => { batSave(); try { src.batStop(); } catch (e) {} batRec = false; paint(); });
+        return;
+      }
+      const S = st.samples || [];
+      if (st.stop && S.length > 1) {
+        const r = batSummary(st, batFrames), f = v => v == null ? '—' : v;
+        const day = new Date(r.start).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+        card.innerHTML = top('Start again') + `<div class="rcNote">${day}, ${fmtClock(r.start)} to ${fmtClock(r.end)} · ${fmtH((r.end - r.start) / 3.6e6)} · ${Math.round(r.from)}% → ${Math.round(r.to)}%${r.plugged > 0.05 ? ' · ' + fmtH(r.plugged) + ' plugged in, left out' : ''}</div>
+          <div class="batSum">
+            <span></span><span class="batH">ON SCREEN</span><span class="batH">OFF SCREEN</span>
+            <span class="batR">Time</span><span class="batN on">${fmtH(r.on.hours)}</span><span class="batN">${fmtH(r.off.hours)}</span>
+            <span class="batR">Drain per hour</span><span class="batN on">${f(r.on.perHour != null ? r.on.perHour.toFixed(1) + '%' : null)}</span><span class="batN">${f(r.off.perHour != null ? r.off.perHour.toFixed(1) + '%' : null)}</span>
+            <span class="batR">Average draw</span><span class="batN on">${f(r.on.mA != null ? Math.round(r.on.mA) + ' mA' : null)}</span><span class="batN">${f(r.off.mA != null ? Math.round(r.off.mA) + ' mA' : null)}</span>
+            <span class="batR">Frame work</span><span class="batN on">${f(r.work != null ? r.work.toFixed(1) + ' ms' : null)}</span><span class="batN">—</span>
+            <span class="batR">Worst frame</span><span class="batN on">${f(r.worst != null ? Math.round(r.worst) + ' ms' : null)}</span><span class="batN">—</span>
+            <span class="batR">Frames a second</span><span class="batN on">${f(r.fps != null ? Math.round(r.fps) : null)}</span><span class="batN">—</span>
+          </div>
+          <div class="batChart">${batGraph(st, batFrames)}</div>
+          <div class="batLegend"><span><i style="background:rgba(95,227,242,.25)"></i>Space Cube on screen</span><span><i style="background:#a6ffd9"></i>Battery %</span><span><i style="background:#ffb36b"></i>Work per frame</span></div>
+          <div class="rcNote">${S.some(s => s.charge > 0) ? '' : 'This phone does not report its charge counter, so there is no draw in mA. '}Short tests are rough: the battery level moves in whole percents.</div>`;
+      } else card.innerHTML = top('Start') + `<div class="rcNote">Records the battery and the screen's own work until you stop it, so you can see what Space Cube costs. Leave the phone unplugged and use it as usual.</div>`;
+      card.querySelector('#batBtn').addEventListener('click', () => { try { src.batStart(); } catch (e) {} batFrames = {}; batSync(); batDirty = true; batSave(); paint(); });
+    };
+    paint();
+    card._iv = setInterval(() => { if (!document.body.contains(card)) { clearInterval(card._iv); return; } if (batRec) paint(); }, 5000);
+    return card;
+  }
+
   // The dashing ship: one of the passing-ship models, flown across just in front of the cubes
   function startDash(yPx, done) {
     const g = SHIP_MODELS[Math.floor(Math.random() * SHIP_MODELS.length)]();
@@ -4289,9 +4411,10 @@
       <div class="rcNote">Fetch the newest version of this screen.</div>`;
     rc.querySelector('#reloadBtn').addEventListener('click', reloadScreen);
     cfgList.appendChild(rc);
+    cfgList.appendChild(batCard());
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-26 · 60';
+    tag.textContent = 'SCREEN 2026-11-27 · 61';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);

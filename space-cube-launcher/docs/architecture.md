@@ -11,7 +11,7 @@ Find a section by searching for its title (the words in capitals); line numbers 
 | `src/map.js` (300 lines) | The star map, `window.SpaceMap`. Its own three.js scene on its own canvas. |
 | `tools/build.py` | The build. Also runs `build_catalog.py` and syntax-checks each script with node. |
 | `tests/` | `run.sh` builds and runs everything; `sc.py` is the shared helper. |
-| `app/` | The Android shell (Kotlin): `MainActivity.kt` hosts the page, `LauncherBridge.kt` is `window.Launcher`, `Routines.kt` (checklist alarms, and the one receiver for all alarms), `Calendars.kt` (`PhoneCalendars`: Android's calendar store; `EventReminders`: one alarm for the next reminder, notification or page), `SpaceWallpaper.kt`. See `README.md`. |
+| `app/` | The Android shell (Kotlin): `MainActivity.kt` hosts the page, `LauncherBridge.kt` is `window.Launcher`, `Routines.kt` (checklist alarms, and the one receiver for all alarms), `Calendars.kt` (`PhoneCalendars`: Android's calendar store; `EventReminders`: one alarm for the next reminder, notification or page), `BatteryLog.kt` (the battery test's readings), `SpaceWallpaper.kt`. See `README.md`. |
 
 ## `game.js`, in order
 | Section title | What is in it |
@@ -73,12 +73,13 @@ Find a section by searching for its title (the words in capitals); line numbers 
 | `__navList()`, `__navGo(NAME)`, `__navDebug()` | flight targets; fly to one; `{ target, travel, ship }` |
 | `SpaceJump(id, planetName)` | the map's jump |
 | `__calDebug()` | the window and the calendar: `{ holo, busy, view, sel, part, label, pending, frame }` |
+| `window.__batSource`, `__batSummary(status, frames)` | the battery test's stand-in (`tests/batsource.js`); its sums |
 | `window.__calSource` | set before the page loads (tests): a stand-in for the app's calendar bridge, same method names and JSON (`tests/calsource.js`) |
 | `toggleCalendar()`, `showEventReminder(id, begin, kind)`, `showRoutine(kind)` | what the clock, the app (reminders) and the checklist notification call |
 
 ## Other saved keys (the launcher's, untouched by the space work)
-`spaceCubeGroups.v2` / `spaceCubeGroups.phone.v1` (app groups), `spaceCubeRecents.v2` / `.phone.v2`, `spaceCubeRoutines.v1`, `spaceCubeRoutineState.v1`, `spaceCubeCalendar.v1` (`{ lastCal }`: the calendar new events go into by default).
+`spaceCubeGroups.v2` / `spaceCubeGroups.phone.v1` (app groups), `spaceCubeRecents.v2` / `.phone.v2`, `spaceCubeRoutines.v1`, `spaceCubeRoutineState.v1`, `spaceCubeCalendar.v1` (`{ lastCal }`: the calendar new events go into by default), `spaceCubeBattery.v1` (the battery test's frame work by the minute).
 
 ## What the tests cover, and what they do not
-- `test_saves.py`: every old save form. `test_travel.py`: taps, warps, the planet scene, flights, landmarks, reloads. `test_map.py`: the ??? rules, cards, jumping from the map. `test_time.py`: the time model against JPL Horizons. `test_routines.py`: the window opening over real time. `test_calendar.py`: the calendar, search, adding, reminders and what waits for what, against `calsource.js`. `test_bridge.py`: every `cal*` method the page calls exists in `LauncherBridge.kt` and in the stand-in.
+- `test_saves.py`: every old save form. `test_travel.py`: taps, warps, the planet scene, flights, landmarks, reloads. `test_map.py`: the ??? rules, cards, jumping from the map. `test_time.py`: the time model against JPL Horizons. `test_routines.py`: the window opening over real time. `test_calendar.py`: the calendar, search, adding, reminders and what waits for what, against `calsource.js`. `test_battery.py`: the battery test card and its sums on known readings, against `batsource.js`. `test_bridge.py`: every `cal*` and `bat*` method the page calls exists in `LauncherBridge.kt` and in the stand-in.
 - Not covered: how anything looks, feel and tempo, speed on a phone, the launcher part (cubes, groups, search), the Android shell (it is only compiled, by the "Build Space Cube APK" workflow: real calendars, permissions, alarms and notifications are only seen on the phone). For animation, log a value against the clock over real time (for an arrival: `__deepDebug().scale` sampled every 100 ms must only grow) and still say that feel cannot be judged from a headless browser.

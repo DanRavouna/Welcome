@@ -4,7 +4,7 @@
 cd "$(dirname "$0")" || exit 1
 python3 ../tools/build.py || { echo "BUILD FAILED"; exit 1; }
 fail=0
-for t in ${@:-test_saves.py test_travel.py test_map.py test_time.py test_routines.py test_calendar.py test_bridge.py}; do
+for t in ${@:-test_saves.py test_travel.py test_map.py test_time.py test_routines.py test_calendar.py test_battery.py test_bridge.py}; do
   echo "=== $t"; python3 "$t" > "/tmp/sc-$t.log" 2>&1; rc=$?
   grep -E "^(FAIL|FAILED|all ok|Traceback)" "/tmp/sc-$t.log" || tail -3 "/tmp/sc-$t.log"
   [ $rc -ne 0 ] && { fail=1; echo "    full log: /tmp/sc-$t.log"; }

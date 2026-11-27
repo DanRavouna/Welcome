@@ -31,6 +31,11 @@ These came out of long back-and-forth. Do not reopen them without asking him. Qu
 - SEARCH by name through everything the calendars hold; coming up first, then the past. A result opens its day.
 - Reminders: 30 min before, 10 min before and at the start. The phone vibrates and the event is drawn in like the wake-up window; if the launcher is not on screen, an Android notification (tapping it opens the reminder), like the checklists. All-day events: once, at the wake-up checklist's time.
 
+## The battery test (2026-11-27)
+- A card in Settings: Start, use the phone as usual, Stop. The results stay until the next test.
+- It records the battery (level, charge counter, plugged in or not) and whether Space Cube is on screen: every minute on screen, every 5 minutes otherwise, and at every change. The page records its own work per frame while it draws.
+- Results: on screen against off screen (time, drain per hour, average draw), frame work, worst frame, frames a second, and a graph of the battery with the on-screen stretches shaded and the work per frame below. Plugged-in time is left out.
+
 ## The star map
 - "This is only a map not the game." It records and shows; the game is where things happen.
 - A place appears on the map as **???** only once its **name tag was shown on screen** in the game (or you locked on to it). It is revealed (name, facts, picture) when you **visit** it. Never seen = not on the map at all. Landmarks follow the same rule.
