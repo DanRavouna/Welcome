@@ -4326,9 +4326,10 @@
   // =========================================================
   const DRIVE_HOLD_MS = 10000;                           // driving (gyro, reticle) lasts this long after the last use
   // Which motion value turns space about each of the camera's axes, and which way (space turns opposite to the phone).
-  // From Dan's phone (2026-11-27): turning it right came in as a positive beta, so the values arrive a quarter turn round
-  // from the spec's reading (beta about the phone's up/down line, gamma about its left/right line); alpha is roll.
-  const GYRO = { gain: 1, x: ['gamma', -1], y: ['beta', 1], z: ['alpha', -1] };
+  // From Dan's phone (2026-11-27/28): turning it right came in as beta (positive), tilting it up or down as alpha (it rolled
+  // the view when read as roll). So his phone sends alpha, beta, gamma about its x, y, z axes in that order, each turning the
+  // way beta does: alpha = up/down, beta = left/right, gamma = roll, all with the sign found for beta.
+  const GYRO = { gain: 1, x: ['alpha', 1], y: ['beta', 1], z: ['gamma', 1] };
   const drive = { thr: 0, held: false, firing: false, last: 0, owning: false, listening: false, gyroT: 0, gyroSeen: false, since: 0, shotUntil: 0, fireTimer: 0, shots: 0 };
   const pedalEl = document.getElementById('drivePedal'), fireEl = document.getElementById('driveFire');
   const reticleEl = document.getElementById('reticle'), gyroNoteEl = document.getElementById('gyroNote');
@@ -4507,7 +4508,7 @@
     cfgList.appendChild(batCard());
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-27 · 63';
+    tag.textContent = 'SCREEN 2026-11-28 · 64';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);

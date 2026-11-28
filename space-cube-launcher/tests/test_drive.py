@@ -30,12 +30,12 @@ with Game() as g:
     cross = lambda a, b: [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
     f0, u0 = DD(g)['fwd'], DD(g)['up']; right0 = cross(f0, u0); gyro(g, beta=90, ms=500); f1 = DD(g)['fwd']
     check('turning the phone right (positive beta, as Dan\'s phone sends it) turns the view right', dot(f1, right0) > 0.3, dot(f1, right0))
-    f2, u2 = DD(g)['fwd'], DD(g)['up']; gyro(g, gamma=60, ms=300); f3 = DD(g)['fwd']
-    check('tilting the top toward you (positive gamma, by the same quarter turn) turns the view up', dot(f3, u2) > 0.2, dot(f3, u2))
-    gyro(g, gamma=-60, ms=300)
+    f2, u2 = DD(g)['fwd'], DD(g)['up']; gyro(g, alpha=-60, ms=300); f3 = DD(g)['fwd']
+    check('tilting up comes in as alpha (as on Dan\'s phone) and turns the view up, not round', dot(f3, u2) > 0.2 and abs(dot(DD(g)['up'], cross(f2, u2))) < 0.05, (dot(f3, u2), dot(DD(g)['up'], cross(f2, u2))))
+    gyro(g, alpha=60, ms=300)
     ang = math.degrees(math.acos(max(-1, min(1, sum(a * b for a, b in zip(f0, f1))))))
     check('driving: turning the phone turns the view (about 45 deg for 90 deg/s over half a second)', 30 < ang < 60, ang)
-    gyro(g, gamma=160, ms=500); up = DD(g)['up']
+    gyro(g, alpha=-160, ms=500); up = DD(g)['up']
     fa = DD(g)['fwd']; gyro(g, beta=90, ms=500); fb = DD(g)['fwd']
     elev = lambda f: math.degrees(math.asin(max(-1, min(1, sum(a * b for a, b in zip(f, up))))))
     check('...a turn while looking up stays a turn around your own up (no swirl)', abs(elev(fa)) < 3 and abs(elev(fb)) < 3, (elev(fa), elev(fb)))
