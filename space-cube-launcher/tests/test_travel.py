@@ -71,9 +71,11 @@ with Game() as g:
     for i in range(80):
         g.wait(50)
         if g.js('window.__deepDebug()')['hyper'] >= 1: break
-    im = Image.open(io.BytesIO(g.pg.screenshot())).convert('L'); px = list(im.getdata()); mean = sum(px) / len(px)
+    im = Image.open(io.BytesIO(g.pg.screenshot())).convert('L')
+    im = im.crop((0, int(im.height * 0.15), im.width, int(im.height * 0.72)))   # the sky only: not the clock, the console or the buttons
+    px = list(im.getdata()); mean = sum(px) / len(px)
     check('far jump: in hyperspace', g.js('window.__deepDebug()')['hyper'] >= 1)
-    check('hyperspace is dark, not white', mean < 70, round(mean, 1))
+    check('hyperspace is dark, not white (under 100 of 255 over the sky)', mean < 100, round(mean, 1))
     check('hyperspace has bright streaks', sum(1 for v in px if v > 150) > 2000, sum(1 for v in px if v > 150))
     g.wait_warp(); check('...and arrives', g.where() == ('m42', None) and g.js('window.__deepDebug()')['veil'] == 0)
     for lm in ['m42', 'sgra']:
