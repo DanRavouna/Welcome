@@ -5199,8 +5199,9 @@ window.CAT = (() => {
   // Which motion value turns space about each of the camera's axes, and which way (space turns opposite to the phone).
   // From Dan's phone (2026-11-27/28): turning it right came in as beta (positive), tilting it up or down as alpha (it rolled
   // the view when read as roll). So his phone sends alpha, beta, gamma about its x, y, z axes in that order, each turning the
-  // way beta does: alpha = up/down, beta = left/right, gamma = roll. Up/down then felt reversed (Dan, 2026-11-28): flipped.
-  const GYRO = { gain: 1, x: ['alpha', -1], y: ['beta', 1], z: ['gamma', 1] };
+  // way beta does: alpha = up/down, beta = left/right, gamma = roll. Then, on Dan's word (2026-11-28), up/down and
+  // left/right each felt reversed: both flipped. Roll is untouched.
+  const GYRO = { gain: 1, x: ['alpha', -1], y: ['beta', -1], z: ['gamma', 1] };
   const drive = { thr: 0, held: false, firing: false, last: 0, owning: false, listening: false, gyroT: 0, gyroSeen: false, since: 0, shotUntil: 0, fireTimer: 0, shots: 0 };
   const pedalEl = document.getElementById('drivePedal'), fireEl = document.getElementById('driveFire');
   const reticleEl = document.getElementById('reticle'), gyroNoteEl = document.getElementById('gyroNote');
@@ -5379,7 +5380,7 @@ window.CAT = (() => {
     cfgList.appendChild(batCard());
     const tag = document.createElement('p'); tag.className = 'setHelp'; tag.id = 'buildTag';
     tag.style.cssText = 'opacity:.5;font-size:11px;text-align:center;margin-top:18px';
-    tag.textContent = 'SCREEN 2026-11-28 · 65';
+    tag.textContent = 'SCREEN 2026-11-28 · 66';
     try { if (NATIVE && window.Launcher.appVersion) tag.textContent += ' · APP ' + window.Launcher.appVersion(); } catch (e) {}
     if (NATIVE) tag.textContent += location.hostname.endsWith('github.io') ? ' · LIVE' : ' · BUILT-IN';
     cfgList.appendChild(tag);
